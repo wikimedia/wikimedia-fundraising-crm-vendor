@@ -318,5 +318,35 @@
             }
         ],
         "description": "PHPMailer is a full-featured email creation and transfer class for PHP"
+    },
+    {
+        "name": "wikimedia/DonationInterface",
+        "version": "dev-drupal",
+        "version_normalized": "dev-drupal",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git",
+            "reference": "76b80e416e5b75e5d56a6b1a7f8529e2416266ed"
+        },
+        "time": "2014-10-06 22:49:15",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "classmap": [
+                "adyen_gateway",
+                "amazon_gateway",
+                "gateway_common",
+                "globalcollect_gateway",
+                "paypal_gateway",
+                "worldpay_gateway"
+            ]
+        },
+        "license": [
+            "GPL-2.0"
+        ],
+        "description": "Wikimedia Foundation payment processing library",
+        "support": {
+            "irc": "irc://irc.freenode.net/wikimedia-fundraising"
+        }
     }
 ]
