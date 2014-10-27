@@ -1,0 +1,4 @@
+[submodule "DonationInterface"]
+	path = wikimedia/DonationInterface
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git
+	branch = origin/drupal
