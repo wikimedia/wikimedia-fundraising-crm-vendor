@@ -9,6 +9,8 @@ return array(
     'cogpowered\\FineDiff' => array($vendorDir . '/cogpowered/finediff/src'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'System' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
+    'Symfony\\Component\\HttpFoundation\\' => array($vendorDir . '/symfony/http-foundation'),
+    'Symfony\\Component\\EventDispatcher\\' => array($vendorDir . '/symfony/event-dispatcher'),
     'Net' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'Math' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'FuseSource' => array($vendorDir . '/fusesource/stomp-php/src'),
