@@ -1,0 +1,7 @@
+.svn
+*~
+*.kate-swp
+.*.swp
+
+.version-stamp
+node_modules

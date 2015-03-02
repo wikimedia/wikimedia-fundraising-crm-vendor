@@ -1,0 +1,9 @@
+.version-stamp
+
+# Configuration
+composer.phar
+config.php
+PublicHttp/.htaccess
+
+# IDE Tools
+.idea

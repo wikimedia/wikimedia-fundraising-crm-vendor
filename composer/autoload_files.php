@@ -6,5 +6,9 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    $vendorDir . '/minfraud/http/src/HTTPBase.php',
+    $vendorDir . '/minfraud/http/src/CreditCardFraudDetection.php',
+    $vendorDir . '/minfraud/http/src/TelephoneVerification.php',
     $vendorDir . '/phpseclib/phpseclib/phpseclib/Crypt/Random.php',
+    $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
 );

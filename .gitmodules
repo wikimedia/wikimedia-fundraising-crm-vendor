@@ -1,7 +1,0 @@
-[submodule "DonationInterface"]
-	path = wikimedia/DonationInterface
-	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git
-	branch = origin/drupal
-[submodule "wikimedia/SmashPig"]
-	path = wikimedia/SmashPig
-	url = https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig

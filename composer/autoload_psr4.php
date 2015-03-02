@@ -6,5 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'SmashPig\\' => array($vendorDir . '/wikimedia/SmashPig'),
+    'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
 );
