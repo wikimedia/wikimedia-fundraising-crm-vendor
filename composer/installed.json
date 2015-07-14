@@ -261,138 +261,98 @@
         "description": "PHPMailer is a full-featured email creation and transfer class for PHP"
     },
     {
-        "name": "minfraud/http",
-        "version": "v1.60",
-        "version_normalized": "1.60.0.0",
+        "name": "psr/log",
+        "version": "1.0.0",
+        "version_normalized": "1.0.0.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/maxmind/ccfd-api-php.git",
-            "reference": "553ceffe363185e20e17045d5058aba2154a6faf"
+            "url": "https://github.com/php-fig/log.git",
+            "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/maxmind/ccfd-api-php/zipball/553ceffe363185e20e17045d5058aba2154a6faf",
-            "reference": "553ceffe363185e20e17045d5058aba2154a6faf",
+            "url": "https://api.github.com/repos/php-fig/log/zipball/fe0936ee26643249e916849d48e3a51d5f5e278b",
+            "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b",
             "shasum": ""
         },
-        "time": "2014-07-23 16:34:20",
+        "time": "2012-12-21 11:40:51",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
-            "files": [
-                "src/HTTPBase.php",
-                "src/CreditCardFraudDetection.php",
-                "src/TelephoneVerification.php"
-            ]
+            "psr-0": {
+                "Psr\\Log\\": ""
+            }
         },
         "notification-url": "https://packagist.org/downloads/",
         "license": [
-            "LGPL-2.1+"
+            "MIT"
         ],
         "authors": [
             {
-                "name": "MaxMind, Inc.",
-                "email": "support@maxmind.com",
-                "homepage": "http://www.maxmind.com/"
+                "name": "PHP-FIG",
+                "homepage": "http://www.php-fig.org/"
             }
         ],
-        "description": "MaxMind minFraud HTTP API",
-        "homepage": "https://github.com/maxmind/ccfd-api-php",
+        "description": "Common interface for logging libraries",
         "keywords": [
-            "fraud",
-            "maxmind",
-            "minfraud"
+            "log",
+            "psr",
+            "psr-3"
         ]
     },
     {
-        "name": "symfony/http-foundation",
-        "version": "v2.3.25",
-        "version_normalized": "2.3.25.0",
-        "target-dir": "Symfony/Component/HttpFoundation",
+        "name": "monolog/monolog",
+        "version": "1.12.0",
+        "version_normalized": "1.12.0.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/symfony/HttpFoundation.git",
-            "reference": "d61a1aa601f343fc24ce468ef06b04b18e6e2569"
+            "url": "https://github.com/Seldaek/monolog.git",
+            "reference": "1fbe8c2641f2b163addf49cc5e18f144bec6b19f"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/d61a1aa601f343fc24ce468ef06b04b18e6e2569",
-            "reference": "d61a1aa601f343fc24ce468ef06b04b18e6e2569",
+            "url": "https://api.github.com/repos/Seldaek/monolog/zipball/1fbe8c2641f2b163addf49cc5e18f144bec6b19f",
+            "reference": "1fbe8c2641f2b163addf49cc5e18f144bec6b19f",
             "shasum": ""
         },
         "require": {
-            "php": ">=5.3.3"
+            "php": ">=5.3.0",
+            "psr/log": "~1.0"
         },
-        "time": "2015-01-30 09:53:49",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.3-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-0": {
-                "Symfony\\Component\\HttpFoundation\\": ""
-            },
-            "classmap": [
-                "Symfony/Component/HttpFoundation/Resources/stubs"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Symfony Community",
-                "homepage": "http://symfony.com/contributors"
-            },
-            {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com"
-            }
-        ],
-        "description": "Symfony HttpFoundation Component",
-        "homepage": "http://symfony.com"
-    },
-    {
-        "name": "symfony/event-dispatcher",
-        "version": "v2.3.25",
-        "version_normalized": "2.3.25.0",
-        "target-dir": "Symfony/Component/EventDispatcher",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/symfony/EventDispatcher.git",
-            "reference": "49d3432269d092b8d325b58615815fdbe93f49cb"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/49d3432269d092b8d325b58615815fdbe93f49cb",
-            "reference": "49d3432269d092b8d325b58615815fdbe93f49cb",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.3.3"
+        "provide": {
+            "psr/log-implementation": "1.0.0"
         },
         "require-dev": {
-            "symfony/dependency-injection": "~2.0,>=2.0.5"
+            "aws/aws-sdk-php": "~2.4, >2.4.8",
+            "doctrine/couchdb": "~1.0@dev",
+            "graylog2/gelf-php": "~1.0",
+            "phpunit/phpunit": "~4.0",
+            "raven/raven": "~0.5",
+            "ruflin/elastica": "0.90.*",
+            "videlalvaro/php-amqplib": "~2.4"
         },
         "suggest": {
-            "symfony/dependency-injection": "",
-            "symfony/http-kernel": ""
+            "aws/aws-sdk-php": "Allow sending log messages to AWS services like DynamoDB",
+            "doctrine/couchdb": "Allow sending log messages to a CouchDB server",
+            "ext-amqp": "Allow sending log messages to an AMQP server (1.0+ required)",
+            "ext-mongo": "Allow sending log messages to a MongoDB server",
+            "graylog2/gelf-php": "Allow sending log messages to a GrayLog2 server",
+            "raven/raven": "Allow sending log messages to a Sentry server",
+            "rollbar/rollbar": "Allow sending log messages to Rollbar",
+            "ruflin/elastica": "Allow sending log messages to an Elastic Search server",
+            "videlalvaro/php-amqplib": "Allow sending log messages to an AMQP server using php-amqplib"
         },
-        "time": "2015-01-03 13:14:51",
+        "time": "2014-12-29 21:29:35",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "2.3-dev"
+                "dev-master": "1.12.x-dev"
             }
         },
         "installation-source": "dist",
         "autoload": {
-            "psr-0": {
-                "Symfony\\Component\\EventDispatcher\\": ""
+            "psr-4": {
+                "Monolog\\": "src/Monolog"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -401,36 +361,197 @@
         ],
         "authors": [
             {
-                "name": "Symfony Community",
-                "homepage": "http://symfony.com/contributors"
-            },
-            {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com"
+                "name": "Jordi Boggiano",
+                "email": "j.boggiano@seld.be",
+                "homepage": "http://seld.be"
             }
         ],
-        "description": "Symfony EventDispatcher Component",
-        "homepage": "http://symfony.com"
+        "description": "Sends your logs to files, sockets, inboxes, databases and various web services",
+        "homepage": "http://github.com/Seldaek/monolog",
+        "keywords": [
+            "log",
+            "logging",
+            "psr-3"
+        ]
+    },
+    {
+        "name": "clio/clio",
+        "version": "0.1.8",
+        "version_normalized": "0.1.8.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/nramenta/clio.git",
+            "reference": "6a9f600b73fa213e817d5c1e67a4641aecd156ef"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/nramenta/clio/zipball/6a9f600b73fa213e817d5c1e67a4641aecd156ef",
+            "reference": "6a9f600b73fa213e817d5c1e67a4641aecd156ef",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.2"
+        },
+        "time": "2014-06-22 14:49:41",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Clio": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Nofriandi Ramenta",
+                "email": "nramenta@gmail.com"
+            }
+        ],
+        "description": "Lightweight utility and helper classes for CLI applications",
+        "keywords": [
+            "cli",
+            "console",
+            "daemon"
+        ]
+    },
+    {
+        "name": "coderkungfu/php-queue",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/p/wikimedia/fundraising/php-queue.git",
+            "reference": "da00b03c229b4437b5cb69427b8e5b9adbffaa3f"
+        },
+        "require": {
+            "clio/clio": "@stable",
+            "monolog/monolog": "~1.3",
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "amazonwebservices/aws-sdk-for-php": "dev-master",
+            "aws/aws-sdk-php": "dev-master",
+            "ext-memcache": "*",
+            "iron-io/iron_mq": "dev-master",
+            "microsoft/windowsazure": "dev-master",
+            "mrpoundsign/pheanstalk-5.3": "dev-master",
+            "predis/predis": "1.*"
+        },
+        "suggest": {
+            "Respect/Rest": "For a REST server to post job data",
+            "amazonwebservices/aws-sdk-for-php": "For AWS SQS backend support (legacy version)",
+            "aws/aws-sdk-php": "For AWS SQS backend support",
+            "clio/clio": "Support for daemonizing PHP CLI runner",
+            "fusesource/stomp-php": "For the STOMP backend",
+            "iron-io/iron_mq": "For IronMQ backend support",
+            "microsoft/windowsazure": "For Windows Azure Service Bus backend support",
+            "mrpoundsign/pheanstalk-5.3": "For Beanstalkd backend support",
+            "pecl-mongodb": "For MongoDB backend support",
+            "predis/predis": "For Redis backend support"
+        },
+        "time": "2015-06-11 20:26:19",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.0.0-dev"
+            }
+        },
+        "installation-source": "source",
+        "autoload": {
+            "psr-0": {
+                "PHPQueue": "src/"
+            }
+        },
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Michael Cheng",
+                "email": "mcheng.work@gmail.com"
+            }
+        ],
+        "description": "A unified front-end for different queuing backends. Includes a REST server, CLI interface and daemon runners.",
+        "homepage": "http://github.com/CoderKungfu/php-queue",
+        "keywords": [
+            "queue",
+            "transaction"
+        ]
+    },
+    {
+        "name": "predis/predis",
+        "version": "v1.0.1",
+        "version_normalized": "1.0.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/nrk/predis.git",
+            "reference": "7a170b3d8123c556597b4fbdb88631f99de180c2"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/nrk/predis/zipball/7a170b3d8123c556597b4fbdb88631f99de180c2",
+            "reference": "7a170b3d8123c556597b4fbdb88631f99de180c2",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.2"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "~4.0"
+        },
+        "suggest": {
+            "ext-curl": "Allows access to Webdis when paired with phpiredis",
+            "ext-phpiredis": "Allows faster serialization and deserialization of the Redis protocol"
+        },
+        "time": "2015-01-02 12:51:34",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Predis\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Daniele Alessandri",
+                "email": "suppakilla@gmail.com",
+                "homepage": "http://clorophilla.net"
+            }
+        ],
+        "description": "Flexible and feature-complete PHP client library for Redis",
+        "homepage": "http://github.com/nrk/predis",
+        "keywords": [
+            "nosql",
+            "predis",
+            "redis"
+        ]
     },
     {
         "name": "twig/twig",
-        "version": "v1.18.0",
-        "version_normalized": "1.18.0.0",
+        "version": "v1.18.2",
+        "version_normalized": "1.18.2.0",
         "source": {
             "type": "git",
             "url": "https://github.com/twigphp/Twig.git",
-            "reference": "4cf7464348e7f9893a93f7096a90b73722be99cf"
+            "reference": "e8e6575abf6102af53ec283f7f14b89e304fa602"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/twigphp/Twig/zipball/4cf7464348e7f9893a93f7096a90b73722be99cf",
-            "reference": "4cf7464348e7f9893a93f7096a90b73722be99cf",
+            "url": "https://api.github.com/repos/twigphp/Twig/zipball/e8e6575abf6102af53ec283f7f14b89e304fa602",
+            "reference": "e8e6575abf6102af53ec283f7f14b89e304fa602",
             "shasum": ""
         },
         "require": {
-            "php": ">=5.2.4"
+            "php": ">=5.2.7"
         },
-        "time": "2015-01-25 17:32:08",
+        "time": "2015-06-06 23:31:24",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -472,19 +593,71 @@
         ]
     },
     {
+        "name": "zordius/lightncandy",
+        "version": "v0.18",
+        "version_normalized": "0.18.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/zordius/lightncandy.git",
+            "reference": "24be6909c37391f4648ce1fdf19036b11bd56d05"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/zordius/lightncandy/zipball/24be6909c37391f4648ce1fdf19036b11bd56d05",
+            "reference": "24be6909c37391f4648ce1fdf19036b11bd56d05",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "4.0.17"
+        },
+        "time": "2015-01-01 04:37:19",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "classmap": [
+                "src/lightncandy.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Zordius Chen",
+                "email": "zordius@yahoo-inc.com"
+            }
+        ],
+        "description": "An extremely fast PHP implementation of handlebars ( http://handlebarsjs.com/ ) and mustache ( http://mustache.github.io/ ).",
+        "homepage": "https://github.com/zordius/lightncandy",
+        "keywords": [
+            "handlebars",
+            "logicless",
+            "mustache",
+            "php",
+            "template"
+        ]
+    },
+    {
         "name": "wikimedia/donation-interface",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "f2a16464ea48f833dff9d504c5a282e55b2bc13f"
+            "reference": "a4fc38c376a5d404aa45157c86b8d55cf47c48c3"
         },
         "require": {
-            "fusesource/stomp-php": "2.*",
-            "minfraud/http": "~1.60"
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "2.1.*",
+            "monolog/monolog": "1.12.0",
+            "psr/log": "1.0.0",
+            "zordius/lightncandy": "0.18"
         },
-        "time": "2015-03-01 21:03:51",
+        "time": "2015-07-06 19:45:20",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -507,20 +680,134 @@
         "description": "Wikimedia Foundation payment processing library"
     },
     {
+        "name": "symfony/http-foundation",
+        "version": "v2.3.30",
+        "version_normalized": "2.3.30.0",
+        "target-dir": "Symfony/Component/HttpFoundation",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/HttpFoundation.git",
+            "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
+            "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.3"
+        },
+        "require-dev": {
+            "symfony/phpunit-bridge": "~2.7"
+        },
+        "time": "2015-05-20 08:53:09",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.3-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Symfony\\Component\\HttpFoundation\\": ""
+            },
+            "classmap": [
+                "Symfony/Component/HttpFoundation/Resources/stubs"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony HttpFoundation Component",
+        "homepage": "https://symfony.com"
+    },
+    {
+        "name": "symfony/event-dispatcher",
+        "version": "v2.3.30",
+        "version_normalized": "2.3.30.0",
+        "target-dir": "Symfony/Component/EventDispatcher",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/EventDispatcher.git",
+            "reference": "af8fba40bdab97fc666173a8c2087e02445c231c"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/af8fba40bdab97fc666173a8c2087e02445c231c",
+            "reference": "af8fba40bdab97fc666173a8c2087e02445c231c",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.3"
+        },
+        "require-dev": {
+            "symfony/dependency-injection": "~2.0,>=2.0.5",
+            "symfony/phpunit-bridge": "~2.7"
+        },
+        "suggest": {
+            "symfony/dependency-injection": "",
+            "symfony/http-kernel": ""
+        },
+        "time": "2015-05-15 13:28:34",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.3-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Symfony\\Component\\EventDispatcher\\": ""
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony EventDispatcher Component",
+        "homepage": "https://symfony.com"
+    },
+    {
         "name": "wikimedia/smash-pig",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "4a580c6eda141379188e5ca92d9a9d510b77eb89"
+            "reference": "21ea7b60f7791e2fcb72ab0f98477114be6b58cc"
         },
         "require": {
+            "fusesource/stomp-php": "2.*",
             "php": ">=5.3.3",
+            "phpmailer/phpmailer": "5.2.6",
             "symfony/event-dispatcher": ">=2.1,<2.4-dev",
             "symfony/http-foundation": ">=2.1,<2.4-dev"
         },
-        "time": "2015-03-02 19:28:59",
+        "time": "2015-07-13 18:54:35",
         "type": "library",
         "installation-source": "source",
         "autoload": {

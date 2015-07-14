@@ -84,7 +84,7 @@ window.displayCreditCardForm = function () {
 						$( '#paymentContinue' ).show(); // Show continue button in 2nd section
 					} );
 				} else {
-					if ( data.result.formaction && data.gateway_params ) {
+					if ( data.result.formaction && data.result.gateway_params ) {
 						$payment = $( '#payment' );
 
 						// Empty the div; add the target iframe; then submit the request for the iframe contents
@@ -102,7 +102,7 @@ window.displayCreditCardForm = function () {
 							target: 'adyen-iframe',
 							id: 'fetch-iframe-form'
 						} );
-						$.each( data.gateway_params, function ( key, value ) {
+						$.each( data.result.gateway_params, function ( key, value ) {
 							$pForm.append( $( '<input>', { type: 'hidden', name: key, value: value } ) );
 						} );
 						$payment.append( $pForm );
@@ -164,7 +164,7 @@ $( document ).ready( function () {
 		$( '#topError' ).html( paymentErrorString );
 	}
 
-	$( '#paymentContinueBtn' ).live( 'click', function () {
+	$( '#paymentContinueBtn' ).on( 'click', function () {
 		if ( validate_personal( document.payment ) && validateAmount() ) {
 			$( '#payment' ).animate( { height: '250px' }, 1000 );
 			displayCreditCardForm();

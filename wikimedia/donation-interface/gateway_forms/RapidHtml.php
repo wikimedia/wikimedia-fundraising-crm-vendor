@@ -84,7 +84,7 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		// @noscript -> Some stuff in a noscript node
 		'@ffname_retry', //form name for retries (used by error pages)
 
-		// WorldPay Variables
+		// Worldpay Variables
 		'@wp_one_time_token',
 		'@wp_process_url',
 	);
@@ -118,8 +118,7 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		$form_errors = $this->form_errors;
 
 		$this->loadValidateJs();
-		
-		$country = $this->gateway->getData_Unstaged_Escaped( 'country' );
+
 		$ffname = $this->gateway->getData_Unstaged_Escaped( 'ffname' );
 		// Get error passed via query string
 		$error = $wgRequest->getText( 'error' );
@@ -132,9 +131,9 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		if ( empty( $this->html_file_path ) ){
 			try {
 				$this->set_html_file_path( $ffname );
-			} catch ( MWException $mwe ) {
+			} catch ( Exception $mwe ) {
 				$message = "Could not load form '$ffname'";
-				$this->gateway->log( $message, LOG_ERR );
+				$this->logger->error( $message );
 				$this->set_html_file_path( 'error-noform' );
 			}
 		}
@@ -197,13 +196,12 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		// replace data
 		foreach ( $this->data_tokens as $token ) {
 			$key = substr( $token, 1, strlen( $token )); //get the token string w/o the '@'
-			if ( $key == 'emailAdd' ) $key = 'email';
+			if ( $key === 'emailAdd' ) {
+				$key = 'email';
+			}
 			if ( $this->getEscapedValue( $key ) ) {
 				$replace = $this->getEscapedValue( $key );
 			} else {
-				$replace = '';
-			}
-			if ( $key === 'email' && $replace === 'nobody@wikimedia.org' ) {
 				$replace = '';
 			}
 			$form = str_replace( $token, $replace, $form );
@@ -289,8 +287,11 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 				$html = str_replace( $matches[ 0 ][ $i ], wfMessage( $msg_key, $params )->text(), $html );
 			} else {
 				// look for a country variant of the message and use that if found
-				$msg_text = DataValidator::wfLangSpecificFallback( $this->getEscapedValue( 'language' ),
-					array( $msg_key . '-' . strtolower( $this->getEscapedValue( 'country' ) ), $msg_key ) );
+				$msg_text = MessageUtils::getCountrySpecificMessage(
+					$msg_key,
+					$this->getEscapedValue( 'country' ),
+					$this->getEscapedValue( 'language' )
+				);
 				$html = str_replace( '%' . $msg_key . '%', $msg_text, $html );
 			}
 		}
@@ -358,11 +359,7 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 			if ( $found_file ){
 				$template = $this->replace_blocks( file_get_contents( $found_file ) );
 
-				$relative_path = $found_file;
-				$base_pos = strpos( $found_file, 'DonationInterface' );
-				if ( $base_pos !== false ) {
-					$relative_path = substr( $found_file, $base_pos );
-				}
+				$relative_path = $this->sanitizePath( $found_file );
 
 				$template = "<!-- Generated from: {$relative_path} -->{$template}<!-- end {$relative_path} -->";
 				$html = str_replace( $matches[0][$i], $template, $html );
@@ -429,7 +426,7 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 	 * Set the path to the HTML file for a requested rapid html form.
 	 *
 	 * @param string $form_key The array key defining the whitelisted form path to fetch from $wgDonationInterfaceAllowedHtmlForms
-	 * @throws MWException
+	 * @throws RuntimeException
 	 */
 	public function set_html_file_path( $form_key, $fatal = true ) {
 		$allowedForms = $this->gateway->getGlobal( 'AllowedHtmlForms' );
@@ -439,6 +436,9 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		//make sure the requested form exists.
 		if ( !array_key_exists( $form_key, $allowedForms ) ) {
 			$debug_message = "Could not find form '$form_key'";
+			$problems = true;
+		} elseif ( empty( $allowedForms[$form_key] ) ) {
+			$debug_message = "Form '$form_key' is disabled by configuration.";
 			$problems = true;
 		} elseif ( !array_key_exists( 'file', $allowedForms[$form_key] ) ) {
 			$debug_message = "Form config for '$form_key' is missing 'file' value";
@@ -492,8 +492,8 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		if ( $problems ){
 			if ( $fatal ){
 				$message = 'Requested an unavailable or non-existent form.';
-				$this->gateway->log( $message . ' ' . $debug_message . ' ' . $this->gateway->getData_Unstaged_Escaped('utm_source') , LOG_ERR );
-				throw new MWException( $message ); # TODO: translate
+				$this->logger->error( $message . ' ' . $debug_message . ' ' . $this->gateway->getData_Unstaged_Escaped('utm_source') );
+				throw new RuntimeException( $message );
 			} else {
 				return;
 			}
@@ -523,25 +523,6 @@ class Gateway_Form_RapidHtml extends Gateway_Form {
 		}
 
 		$this->html_file_path = $allowedForms[$form_key]['file'];
-	}
-
-	/**
-	 * This function limits the possible characters passed as template keys and
-	 * values to letters, numbers, hyphens and underscores. The function also
-	 * performs standard escaping of the passed values.
-	 *
-	 * @param string $string The unsafe string to escape and check for invalid characters
-	 * @param string $default
-	 * @return string $default A string matching the regex or an empty string
-	 */
-	function make_safe( $string, $default='' ) {
-		$num = preg_match( '([a-zA-Z0-9_-]+)', $string, $matches );
-
-		if ( $num == 1 ){
-			# theoretically this is overkill, but better safe than sorry
-			return wfEscapeWikiText( htmlspecialchars( $matches[0] ) );
-		}
-		return $default;
 	}
 
 	/**

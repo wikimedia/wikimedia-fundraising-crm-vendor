@@ -15,11 +15,13 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
  * @group Fundraising
  * @group DonationInterface
  * @group Splunge
+ * @group DonationData
  */
 class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 
@@ -82,11 +84,10 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 	public function testConstruct(){
 		global $wgLanguageCode, $wgRequest;
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ) ); //as if we were posted.
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ) ); //as if we were posted.
 		$returned = $ddObj->getDataEscaped();
 		$expected = array(  'posted' => '',
 			'amount' => '0.00',
-			'email' => 'nobody@wikimedia.org',
 			'country' => 'XX',
 			'payment_method' => '',
 			'referrer' => '',
@@ -145,7 +146,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 			'recurring' => '',
 		);
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $expected ); //external data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $expected ); //external data
 		$returned = $ddObj->getDataEscaped();
 
 
@@ -197,7 +198,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 
 		$this->setMwGlobals( 'wgRequest', new FauxRequest( $expected, false ) );
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ) ); //Get all data from $_GET
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ) ); //Get all data from $_GET
 		$returned = $ddObj->getDataEscaped();
 
 		$this->assertNotNull( $returned['contribution_tracking_id'], 'There is no contribution tracking ID' );
@@ -207,6 +208,28 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		unset( $returned['contribution_tracking_id'] );
 
 		$this->assertEquals( $expected, $returned, "Staged default test data does not match expected." );
+	}
+
+	/**
+	 * Check that constructor outputs certain information to logs
+	 */
+	public function testDebugLog() {
+		$expected = array (
+			'payment_method' => 'cc',
+			'utm_source' => 'test_src..cc',
+			'utm_medium' => 'test_medium',
+			'utm_campaign' => 'test_campaign',
+			'payment_submethod' => 'amex',
+			'currency_code' => 'USD',
+		);
+
+		$this->setMwGlobals( 'wgRequest', new FauxRequest( $expected, false ) );
+
+		$ddObj = new DonationData( $this->getFreshGatewayObject( ) );
+		$matches = $this->getLogMatches( LogLevel::DEBUG, '/setUtmSource: Payment method is cc, recurring = false, utm_source = cc$/' );
+		$this->assertNotEmpty( $matches );
+		$matches = $this->getLogMatches( LogLevel::DEBUG, "/Got currency from 'currency_code', now: USD$/" );
+		$this->assertNotEmpty( $matches );
 	}
 
 	/**
@@ -227,7 +250,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		unset($expected['email-opt']);
 		unset($expected['test_string']);
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $expected ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $expected ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		//unset these, because they're always new
 		$unsettable = array(
@@ -250,7 +273,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		$data = $this->testData;
 		unset( $data['zip'] );
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$this->assertEquals($ddObj->isSomething('zip'), false, "Zip should currently be nothing.");
 		$this->assertEquals($ddObj->isSomething('lname'), true, "Lname should currently be something.");
 	}
@@ -262,7 +285,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		$data = $this->testData;
 		$data['amount'] = 'this is not a number';
 		$data['amountGiven'] = 42.50;
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		$this->assertEquals( 42.50, $returned['amount'], "Amount was not properly reset" );
 		$this->assertArrayNotHasKey( 'amountGiven', $returned, "amountGiven should have been removed from the data" );
@@ -275,7 +298,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		$data = $this->testData;
 		$data['amount'] = 88.15;
 		$data['amountGiven'] = 42.50;
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		$this->assertEquals( 88.15, $returned['amount'], "Amount was not properly reset" );
 		$this->assertArrayNotHasKey( 'amountGiven', $returned, "amountGiven should have been removed from the data" );
@@ -288,7 +311,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		$data = $this->testData;
 		$data['amount'] = -1;
 		$data['amountOther'] = 3.25;
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		$this->assertEquals(3.25, $returned['amount'], "Amount was not properly reset");
 		$this->assertArrayNotHasKey( 'amountOther', $returned, "amountOther should have been removed from the data");
@@ -302,7 +325,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 		$data['amount'] = 'splunge';
 		$data['amountGiven'] = 'wombat';
 		$data['amountOther'] = 'macedonia';
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		$this->assertEquals( 'invalid', $returned['amount'], "Amount was not properly reset");
 		$this->assertArrayNotHasKey( 'amountOther', $returned, "amountOther should have been removed from the data");
@@ -319,7 +342,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 
 		$data['uselang'] = 'no';
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		$this->assertEquals( 'no', $returned['language'], "Language 'no' was normalized out of existance. Sad." );
 		$this->assertArrayNotHasKey( 'uselang', $returned, "'uselang' should have been removed from the data" );
@@ -335,7 +358,7 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 
 		$data['language'] = 'no';
 
-		$ddObj = new DonationData( $this->getFreshGatewayObject( $this->initial_vars ), $data ); //change to test mode with explicit test data
+		$ddObj = new DonationData( $this->getFreshGatewayObject( self::$initial_vars ), $data ); //change to test mode with explicit test data
 		$returned = $ddObj->getDataEscaped();
 		$this->assertEquals( 'no', $returned['language'], "Language 'no' was normalized out of existance. Sad." );
 		$this->assertArrayNotHasKey( 'uselang', $returned, "'uselang' should have been removed from the data" );

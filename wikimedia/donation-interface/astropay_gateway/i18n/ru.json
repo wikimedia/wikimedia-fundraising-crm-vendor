@@ -1,0 +1,10 @@
+{
+	"@metadata": {
+		"authors": [
+			"Mariya",
+			"Okras"
+		]
+	},
+	"astropaygateway": "Сделать ваше пожертвование сейчас",
+	"astropay_gateway-desc": "Обработка платежей Astropay"
+}

@@ -36,6 +36,7 @@ class GlobalCollectGatewayResult extends GatewayPage {
 	 */
 	protected function handleRequest() {
 		$req = $this->getRequest();
+		// TODO: Don't do that.
 		$fake = $req->getBool( 'fake' );
 		$fail = $req->getBool( 'fail' );
 
@@ -70,18 +71,18 @@ class GlobalCollectGatewayResult extends GatewayPage {
 			$f_message = "Requested order id not present in the session. (session_oid = '$session_oid')";
 
 			if ( !$_SESSION ) {
-				$this->adapter->log( "Resultswitcher: {$this->qs_oid} Is popped out, but still has no session data.", LOG_ERR );
+				$this->logger->error( "Resultswitcher: {$this->qs_oid} Is popped out, but still has no session data." );
 			}
 		}
 
 		if ( $forbidden ){
-			$this->adapter->log( $this->qs_oid . " Resultswitcher: forbidden for reason: {$f_message}", LOG_ERR );
+			$this->logger->error( $this->qs_oid . " Resultswitcher: forbidden for reason: {$f_message}" );
 			wfHttpError( 403, 'Forbidden', wfMessage( 'donate_interface-error-http-403' )->text() );
 			return;
 		}
 
 		$this->setHeaders();
-		$this->adapter->log( "Resultswitcher: OK to process Order ID: " . $this->qs_oid );
+		$this->logger->info( "Resultswitcher: OK to process Order ID: " . $this->qs_oid );
 
 		// dispatch forms/handling
 		if ( $this->adapter->checkTokens() ) {
@@ -97,29 +98,39 @@ class GlobalCollectGatewayResult extends GatewayPage {
 					if ( array_key_exists( 'pending', $_SESSION ) ){
 						$started = $_SESSION['pending'];
 						//not sure what to do with this yet, but I sure want to know if it's happening. 
-						$this->adapter->log( "Resultswitcher: Parallel Universe Unlocked. Start time: $started", LOG_ALERT );
+						$this->logger->alert( "Resultswitcher: Parallel Universe Unlocked. Start time: $started" );
 					}
 					
-					$_SESSION['pending'] = microtime( true ); //We couldn't have gotten this far if the server wasn't sticky. 
-					$_SESSION['order_status'][$oid] = $this->adapter->do_transaction( 'Confirm_CreditCard' );
+					$_SESSION['pending'] = microtime( true ); //We couldn't have gotten this far if the server wasn't sticky.
+					$result = $this->adapter->do_transaction( 'Confirm_CreditCard' );
+					$session_info = array(
+						//Just the stuff we use in displayResultsForDebug
+						'data' => $result->getData(),
+						'message' => $result->getMessage(),
+						'errors' => $result->getErrors()
+					);
+					$_SESSION['order_status'][$oid] = $session_info;
 					unset( $_SESSION['pending'] );
 					$_SESSION['order_status'][$oid]['data']['count'] = 0;
 				} else {
 					$_SESSION['order_status'][$oid]['data']['count'] = $_SESSION['order_status'][$oid]['data']['count'] + 1;
-					$this->adapter->log( "Resultswitcher: Multiple attempts to process. " . $_SESSION['order_status'][$oid]['data']['count'], LOG_ERR );
+					$this->logger->error( "Resultswitcher: Multiple attempts to process. " . $_SESSION['order_status'][$oid]['data']['count'] );
+					$result = new PaymentTransactionResult();
+					$result->setData( $_SESSION['order_status'][$oid]['data'] );
+					$result->setMessage( $_SESSION['order_status'][$oid]['message'] );
+					$result->setErrors( $_SESSION['order_status'][$oid]['errors'] );
 				}
-				$result = $_SESSION['order_status'][$oid];
 				$this->displayResultsForDebug( $result );
 				//do the switching between the... stuff. 
 
 				if ( $this->adapter->getFinalStatus() ){
 					switch ( $this->adapter->getFinalStatus() ) {
-						case 'complete':
-						case 'pending':
-						case 'pending-poke':
+						case FinalStatus::COMPLETE:
+						case FinalStatus::PENDING:
+						case FinalStatus::PENDING_POKE:
 							$go = $this->adapter->getThankYouPage();
 							break;
-						case 'failed':
+						case FinalStatus::FAILED:
 							$go = $this->getDeclinedResultPage();
 							break;
 					}
@@ -128,29 +139,29 @@ class GlobalCollectGatewayResult extends GatewayPage {
 						$this->getOutput()->addHTML( "<br>Redirecting to page $go" );
 						$this->getOutput()->redirect( $go );
 					} else {
-						$this->adapter->log("Resultswitcher: No redirect defined. Order ID: $oid", LOG_ERR);
+						$this->logger->error( "Resultswitcher: No redirect defined. Order ID: $oid" );
 					}
 				} else {
-					$this->adapter->log("Resultswitcher: No FinalStatus. Order ID: $oid", LOG_ERR);
+					$this->logger->error( "Resultswitcher: No FinalStatus. Order ID: $oid" );
 				}
 			} else {
-				$this->adapter->log("Resultswitcher: Payment method is not cc. Order ID: $oid", LOG_ERR);
+				$this->logger->error( "Resultswitcher: Payment method is not cc. Order ID: $oid" );
 			}
 		} else {
-			$this->adapter->log("Resultswitcher: Token Check Failed. Order ID: $oid", LOG_ERR);
+			$this->logger->error("Resultswitcher: Token Check Failed. Order ID: $oid" );
 		}
 	}
 	
 	/**
 	 * Get the URL to redirect to when the transaction has been declined. This will be the form the
 	 * user came from with all the data and an error message.
+	 * @throws RuntimeException
 	 */
 	function getDeclinedResultPage() {
-		$displayData = $this->adapter->getData_Unstaged_Escaped();
 		$failpage = $this->adapter->getFailPage();
 
 		if ( !$failpage ) {
-			throw new MWException( __FUNCTION__ . ': No declined result page defined. Please define a FailPage global for ' . $this->adapter->getGatewayIdentifier() );
+			throw new RuntimeException( __FUNCTION__ . ': No declined result page defined. Please define a FailPage global for ' . $this->adapter->getGatewayIdentifier() );
 		}
 		return $failpage;
 	}
@@ -169,17 +180,25 @@ class GlobalCollectGatewayResult extends GatewayPage {
 		$referrer = $this->getRequest()->getHeader( 'referer' );
 		if ( ( strpos( $referrer, $wgServer ) === false ) ) {
 			if ( !$_SESSION ) {
-				$this->adapter->log( "Resultswitcher: {$this->qs_oid} warning: iframed script cannot see session cookie.", LOG_ERR );
+				$this->logger->error( "Resultswitcher: {$this->qs_oid} warning: iframed script cannot see session cookie." );
 			}
 
 			$_SESSION['order_status'][$this->qs_oid] = 'liberated';
-			$this->adapter->log("Resultswitcher: Popping out of iframe for Order ID " . $this->qs_oid);
+			$this->logger->info( "Resultswitcher: Popping out of iframe for Order ID " . $this->qs_oid );
 
 			$this->getOutput()->allowClickjacking();
 			$this->getOutput()->addModules( 'iframe.liberator' );
 			return true;
 		}
 
-		$this->adapter->log( "Resultswitcher: good, it appears we are not in an iframe. Order ID {$this->qs_oid}" );
+		$this->logger->info( "Resultswitcher: good, it appears we are not in an iframe. Order ID {$this->qs_oid}" );
+	}
+
+	/**
+	 * Overriding so the answer is correct in case we refactor handleRequest
+	 * to use base class's handleResultRequest method.
+	 */
+	protected function isReturnFramed() {
+		return true;
 	}
 }

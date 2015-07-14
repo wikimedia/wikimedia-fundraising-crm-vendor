@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
  *
@@ -23,6 +24,25 @@
  * @group GlobalCollect
  */
 class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends DonationInterfaceTestCase {
+	public function setUp() {
+		global $wgGlobalCollectGatewayHtmlFormDir;
+
+		parent::setUp();
+
+		$this->setMwGlobals( array(
+			'wgGlobalCollectGatewayEnabled' => true,
+			'wgDonationInterfaceAllowedHtmlForms' => array(
+				'cc-vmad' => array(
+					'file' => $wgGlobalCollectGatewayHtmlFormDir . '/cc/cc-vmad.html',
+					'gateway' => 'globalcollect',
+					'payment_methods' => array('cc' => array( 'visa', 'mc', 'amex', 'discover' )),
+					'countries' => array(
+						'+' => array( 'US', ),
+					),
+				),
+			),
+		) );
+	}
 
 	/**
 	 * @param $name string The name of the test case
@@ -47,7 +67,7 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 	 * @covers GatewayAdapter::normalizeOrderID
 	 */
 	public function testNormalizeOrderID() {
-		$init = $this->initial_vars;
+		$init = self::$initial_vars;
 		unset( $init['order_id'] );
 
 		//no order_id from anywhere, explicit no generate
@@ -103,7 +123,7 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 	 * @covers GatewayAdapter::regenerateOrderID
 	 */
 	function testStickyGeneratedOrderID() {
-		$init = $this->initial_vars;
+		$init = self::$initial_vars;
 		unset( $init['order_id'] );
 
 		//no order_id from anywhere, explicit generate
@@ -157,6 +177,51 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		$data = $gateway->getTransactionData();
 
 		$this->assertEquals( 'N', $data['CVVRESULT'], 'CVV Result not loaded from XML response' );
+	}
+
+	/**
+	 * Don't fraud-fail someone for bad CVV if GET_ORDERSTATUS
+	 * comes back with STATUSID 25 and no CVVRESULT
+	 * @group CvvResult
+	 */
+	function testConfirmCreditCardStatus25() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['email'] = 'innocent@safedomain.org';
+
+		$this->setMwGlobals( 'wgRequest',
+			new FauxRequest( array( 'CVVRESULT' => 'M' ), false ) );
+
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( '25' );
+
+		$gateway->do_transaction( 'Confirm_CreditCard' );
+		$action = $gateway->getValidationAction();
+		$this->assertEquals( 'process', $action, 'Gateway should not fraud fail on STATUSID 25' );
+	}
+
+	/**
+	 * If CVVRESULT is unrecognized, fraud-fail and warn
+	 * @group CvvResult
+	 */
+	function testConfirmCreditCardBadCVVResult() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['email'] = 'innocent@safedomain.org';
+
+		$this->setMwGlobals( 'wgRequest',
+			new FauxRequest( array( 'CVVRESULT' => ' ' ), false ) );
+
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( '800' );
+
+		$gateway->do_transaction( 'Confirm_CreditCard' );
+		$result = $gateway->getCvvResult();
+		$this->assertEquals( false, $result, 'Gateway should fraud fail if CVVRESULT is not mapped' );
+		$matches = $this->getLogMatches( LogLevel::WARNING, "/Unrecognized cvv_result ' '$/" );
+		$this->assertNotEmpty( $matches, 'Did not log expected warning on unmapped CVVRESULT' );
 	}
 
 	/**
@@ -214,8 +279,8 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$result = $gateway->do_transaction( 'Confirm_CreditCard' );
-
-		$this->assertFalse( $result['status'], 'Credit card should fail if querystring and XML have different CVVRESULT' );
+		// FIXME: this is not a communication failure, it's a fraud failure
+		$this->assertFalse( $result->getCommunicationStatus(), 'Credit card should fail if querystring and XML have different CVVRESULT' );
 	}
 
 	/**
@@ -228,7 +293,7 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 	 */
 	public function testDefineVarMap() {
 
-		$gateway = $this->getFreshGatewayObject( $this->initial_vars );
+		$gateway = $this->getFreshGatewayObject( self::$initial_vars );
 
 		$var_map = array(
 			'ORDERID' => 'order_id',
@@ -288,7 +353,8 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 			'FISCALNUMBER' => 'fiscal_number',
 		);
 
-		$this->assertEquals( $var_map, $gateway->getVarMap() );
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$this->assertEquals( $var_map, $exposed->var_map );
 	}
 
 	public function testLanguageStaging() {
@@ -297,9 +363,50 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		$options['payment_submethod'] = 'visa';
 		$gateway = $this->getFreshGatewayObject( $options );
 
-		$gateway->_stageData();
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$exposed->stageData();
 
-		$this->assertEquals( $gateway->_getData_Staged( 'language' ), 'no', "'NO' donor's language was inproperly set. Should be 'no'" );
+		$this->assertEquals( $exposed->getData_Staged( 'language' ), 'no', "'NO' donor's language was inproperly set. Should be 'no'" );
+	}
+
+	public function testLanguageFallbackStaging() {
+		$options = $this->getDonorTestData( 'Catalonia' );
+		$options['payment_method'] = 'cc';
+		$options['payment_submethod'] = 'visa';
+		$gateway = $this->getFreshGatewayObject( $options );
+
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$exposed->stageData();
+
+		// Requesting the fallback language from the gateway.
+		$this->assertEquals( 'en', $exposed->getData_Staged( 'language' ) );
+	}
+
+	/**
+	 * Make sure unstaging functions don't overwrite core donor data.
+	 */
+	public function testAddResponseData_underzealous() {
+		$options = $this->getDonorTestData( 'Catalonia' );
+		$options['payment_method'] = 'cc';
+		$options['payment_submethod'] = 'visa';
+		$gateway = $this->getFreshGatewayObject( $options );
+
+		// This will set staged_data['language'] = 'en'.
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$exposed->stageData();
+
+		$ctid = mt_rand();
+
+		$gateway->addResponseData( array(
+			'contribution_tracking_id' => $ctid . '.1',
+		) );
+
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		// Desired vars were written into normalized data.
+		$this->assertEquals( $ctid, $exposed->dataObj->getVal_Escaped( 'contribution_tracking_id' ) );
+
+		// Language was not overwritten.
+		$this->assertEquals( 'ca', $exposed->dataObj->getVal_Escaped( 'language' ) );
 	}
 
 	/**
@@ -315,22 +422,25 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		$gateway = $this->getFreshGatewayObject( $init );
 		$gateway->setDummyGatewayResponseCode( '430285' );
 		$gateway->do_transaction( 'GET_ORDERSTATUS' );
-		$this->verifyNoLogErrors( $gateway );
+		$this->verifyNoLogErrors();
 
 		//Now test one we want to throw a payments error
 		$gateway = $this->getFreshGatewayObject( $init );
 		$gateway->setDummyGatewayResponseCode( '21000050' );
 		$gateway->do_transaction( 'GET_ORDERSTATUS' );
-		$logline = $this->getGatewayLogMatches( $gateway, LOG_ERR, '/Investigation required!/' );
-		$this->assertType( 'string', $logline, 'GC Error 21000050 is not generating the expected payments log error' );
+		$loglines = $this->getLogMatches( LogLevel::ERROR, '/Investigation required!/' );
+		$this->assertNotEmpty( $loglines, 'GC Error 21000050 is not generating the expected payments log error' );
+
+		//Reset logs
+		$this->testLogger->messages = array();
 
 		//Most irritating version of 20001000 - They failed to enter an expiration date on GC's form. This should log some specific info, but not an error.
 		$gateway = $this->getFreshGatewayObject( $init );
 		$gateway->setDummyGatewayResponseCode( '20001000-expiry' );
 		$gateway->do_transaction( 'GET_ORDERSTATUS' );
-		$this->verifyNoLogErrors( $gateway );
-		$logline = $this->getGatewayLogMatches( $gateway, LOG_INFO, '/processResponse:.*EXPIRYDATE/' );
-		$this->assertType( 'string', $logline, 'GC Error 20001000-expiry is not generating the expected payments log line' );
+		$this->verifyNoLogErrors();
+		$loglines = $this->getLogMatches( LogLevel::INFO, '/processResponse:.*EXPIRYDATE/' );
+		$this->assertNotEmpty( $loglines, 'GC Error 20001000-expiry is not generating the expected payments log line' );
 	}
 
 	/**
@@ -354,8 +464,13 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		$gateway->setDummyGatewayResponseCode( $code );
 		$gateway->do_transaction( 'Confirm_CreditCard' );
 		$this->assertEquals( 1, count( $gateway->curled ), "Gateway kept trying even with response code $code!  MasterCard could fine us a thousand bucks for that!" );
-		$this->assertEquals( 1, count( $gateway->limbo_stomps ), "Gateway sent no limbostomps for code $code!  Should have sent an antimessage!" );
+
+		$this->assertEquals( 1, count( $gateway->limbo_stomps ), "Gateway sent no limbostomps for code $code!  Should have sent exactly one antimessage!" );
 		$this->assertEquals( true, $gateway->limbo_stomps[0], "Gateway sent wrong stomp message for code $code!  Should have sent an antimessage!" );
+
+		// Test Memcache mirror
+		$this->assertEquals( 1, count( $gateway->memcache_limbo_stomps ), "Gateway sent no (memcache) limbostomps for code $code!  Should have sent exactly one antimessage!" );
+		$this->assertEquals( true, $gateway->memcache_limbo_stomps[0], "Gateway sent wrong (memcache) stomp message for code $code!  Should have sent an antimessage!" );
 	}
 
 	/**
@@ -426,11 +541,30 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 
 		$gateway = $this->getFreshGatewayObject( $init );
 		$gateway->setDummyGatewayResponseCode( $code );
-		$start_id = $gateway->_getData_Staged( 'order_id' );
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$start_id = $exposed->getData_Staged( 'order_id' );
 		$gateway->do_transaction( 'Confirm_CreditCard' );
-		$finish_id = $gateway->_getData_Staged( 'order_id' );
-		$logline = $this->getGatewayLogMatches( $gateway, LOG_INFO, '/Repeating transaction on request for vars:/' );
-		$this->assertEmpty( $logline, "Log says we are going to repeat the transaction for code $code, but that is not true" );
+		$finish_id = $exposed->getData_Staged( 'order_id' );
+		$loglines = $this->getLogMatches( LogLevel::INFO, '/Repeating transaction on request for vars:/' );
+		$this->assertEmpty( $loglines, "Log says we are going to repeat the transaction for code $code, but that is not true" );
 		$this->assertEquals( $start_id, $finish_id, "Needlessly regenerated order id for code $code ");
+	}
+
+	/**
+	 * doPayment should return an iframe result with normal data
+	 */
+	function testDoPaymentSuccess() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['email'] = 'innocent@clean.com';
+		$init['ffname'] = 'cc-vmad';
+		unset( $init['order_id'] );
+
+		$gateway = $this->getFreshGatewayObject( $init );
+		$result = $gateway->doPayment();
+		$this->assertEmpty( $result->isFailed(), 'PaymentResult should not be failed' );
+		$this->assertEmpty( $result->getErrors(), 'PaymentResult should have no errors' );
+		$this->assertEquals( 'url_placeholder', $result->getIframe(), 'PaymentResult should have iframe set' );
 	}
 }

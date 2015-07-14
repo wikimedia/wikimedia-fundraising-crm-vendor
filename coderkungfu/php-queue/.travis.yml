@@ -1,0 +1,33 @@
+#
+# this file provides configuration for Travis Continuous Integration
+# written by Sam-Mauris Yong
+#
+
+language: php
+php:
+  - 5.3
+  - 5.4
+  - 5.5
+  - 5.6
+  - 7.0
+  - hhvm
+ 
+matrix:
+  allow_failures:
+    - php: 7.0
+    - php: hhvm
+
+mysql:
+  database: phpqueuetest
+  username: root
+  encoding: utf8
+
+before_script:
+  - mysql -e 'create database phpqueuetest;'
+  - composer self-update
+  - composer install --no-dev
+
+script: phpunit --coverage-text -c phpunit.travis.xml
+
+after_script:
+  - "wget --quiet http://mauris.sg/bin/pdc.phar && php pdc.phar src"

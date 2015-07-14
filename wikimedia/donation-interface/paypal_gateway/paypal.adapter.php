@@ -19,8 +19,11 @@
 class PaypalAdapter extends GatewayAdapter {
 	const GATEWAY_NAME = 'Paypal';
 	const IDENTIFIER = 'paypal';
-	const COMMUNICATION_TYPE = 'namevalue';
 	const GLOBAL_PREFIX = 'wgPaypalGateway';
+
+	public function getCommunicationType() {
+		return 'redirect';
+	}
 
 	function __construct( $options = array() ) {
 		parent::__construct( $options );
@@ -57,10 +60,9 @@ class PaypalAdapter extends GatewayAdapter {
 		$this->accountInfo = array();
 	}
 	function defineReturnValueMap() {}
-	function getResponseStatus( $response ) {}
-	function getResponseErrors( $response ) {}
-	function getResponseData( $response ) {}
-	function processResponse( $response, &$retryVars = null ) {}
+	function processResponse( $response ) {
+		$this->transaction_response->setCommunicationStatus( true );
+	}
 	function defineDataConstraints() {}
 	function defineOrderIDMeta() {
 		$this->order_id_meta = array (
@@ -105,7 +107,6 @@ class PaypalAdapter extends GatewayAdapter {
 				'no_note' => 0,
 				'return' => $this->getGlobal( 'ReturnURL' ),
 			),
-			'communication_type' => 'redirect',
 		);
 		$this->transactions[ 'DonateXclick' ] = array(
 			'request' => array(
@@ -133,7 +134,6 @@ class PaypalAdapter extends GatewayAdapter {
 				'cmd' => '_xclick',
 				'no_shipping' => '1'
 			),
-			'communication_type' => 'redirect',
 		);
 		$this->transactions[ 'DonateRecurring' ] = array(
 			'request' => array(
@@ -168,7 +168,24 @@ class PaypalAdapter extends GatewayAdapter {
 				'src' => '1',
 				'srt' => $this->getGlobal( 'RecurringLength' ), // number of installments
 			),
-			'communication_type' => 'redirect',
+		);
+	}
+
+	public function doPayment() {
+		if ( $this->getData_Unstaged_Escaped( 'recurring' ) ) {
+			$resultData = $this->do_transaction( 'DonateRecurring' );
+		} else {
+			$country = $this->getData_Unstaged_Escaped( 'country' );
+			if ( in_array( $country, $this->getGlobal( 'XclickCountries' ) ) ) {
+				$resultData = $this->do_transaction( 'DonateXclick' );
+			} else {
+				$resultData = $this->do_transaction( 'Donate' );
+			}
+		}
+
+		return PaymentResult::fromResults(
+			$resultData,
+			$this->getFinalStatus()
 		);
 	}
 
@@ -182,7 +199,7 @@ class PaypalAdapter extends GatewayAdapter {
 			case 'DonateRecurring':
 				$this->transactions[ $transaction ][ 'url' ] = $this->getGlobal( 'URL' ) . '?' . http_build_query( $this->buildRequestParams() );
 				$result = parent::do_transaction( $transaction );
-				$this->finalizeInternalStatus( 'complete' );
+				$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 				return $result;
 		}
 	}

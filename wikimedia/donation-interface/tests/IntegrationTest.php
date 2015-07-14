@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
  * @group Fundraising
@@ -33,15 +34,40 @@ class DonationInterface_IntegrationTest extends DonationInterfaceTestCase {
 		$this->testAdapterClass = $adapterclass;
 
 		parent::__construct( $name, $data, $dataName );
-//		self::setupMoreForms();
+	}
+
+	public function setUp() {
+		global $wgGlobalCollectGatewayHtmlFormDir, $wgPaypalGatewayHtmlFormDir;
+
+		parent::setUp();
+
+		$this->setMwGlobals( array(
+			'wgGlobalCollectGatewayEnabled' => true,
+			'wgPaypalGatewayEnabled' => true,
+			'wgDonationInterfaceAllowedHtmlForms' => array(
+				'cc-vmad' => array(
+					'file' => $wgGlobalCollectGatewayHtmlFormDir . '/cc/cc-vmad.html',
+					'gateway' => 'globalcollect',
+					'payment_methods' => array ( 'cc' => array ( 'visa', 'mc', 'amex', 'discover' ) ),
+					'countries' => array (
+						'+' => array ( 'US', ),
+					),
+				),
+				'paypal' => array(
+					'file' => $wgPaypalGatewayHtmlFormDir . '/paypal.html',
+					'gateway' => 'paypal',
+					'payment_methods' => array ( 'paypal' => 'ALL' ),
+				),
+			),
+		) );
 	}
 
 	//this is meant to simulate a user choosing paypal, then going back and choosing GC.
 	public function testBackClickPayPalToGC() {
-		$this->testAdapterClass = 'TestingPayPalAdapter';
+		$this->testAdapterClass = 'TestingPaypalAdapter';
 		$options = $this->getDonorTestData( 'US' );
-//		unset( $options['ffname'] );
 
+		$options['payment_method'] = 'paypal';
 		$gateway = $this->getFreshGatewayObject( $options );
 		$gateway->do_transaction( 'Donate' );
 
@@ -58,8 +84,8 @@ class DonationInterface_IntegrationTest extends DonationInterfaceTestCase {
 		$this->assertEquals( 'cc-vmad', $ffname, "GC did not load the expected form." );
 
 		$errors = '';
-		if ( array_key_exists( LOG_ERR, $gateway->testlog ) ) {
-			foreach ( $gateway->testlog[LOG_ERR] as $msg ) {
+		if ( array_key_exists( LogLevel::ERROR, $this->testLogger->messages ) ) {
+			foreach ( $this->testLogger->messages[LogLevel::ERROR] as $msg ) {
 				$errors += "$msg\n";
 			}
 		}
@@ -67,5 +93,3 @@ class DonationInterface_IntegrationTest extends DonationInterfaceTestCase {
 	}
 
 }
-
-

@@ -29,7 +29,13 @@ class TestingGenericAdapter extends GatewayAdapter {
 	public $revalidateCount = 0;
 	public static $fakeGlobals = array();
 
+	public static $fakeIdentifier;
+
 	public static $acceptedCurrencies = array();
+
+	public function getCommunicationType() {
+		return 'xml';
+	}
 
 	public function revalidate($check_not_empty = array()) {
 		if ( $this->errorsForRevalidate ) {
@@ -52,6 +58,21 @@ class TestingGenericAdapter extends GatewayAdapter {
 			return TestingGenericAdapter::$fakeGlobals[$name];
 		}
 		return parent::getGlobal( $name );
+	}
+
+	public static function getIdentifier() {
+		if ( self::$fakeIdentifier ) {
+			return self::$fakeIdentifier;
+		}
+		return GatewayAdapter::getIdentifier();
+	}
+
+	/**
+	 * Clear the static globals cache.
+	 * FIXME static cache can't possibly get us enough performance to make these hoops worthwhile
+	 */
+	public static function clearGlobalsCache() {
+		self::$globalsCache = array();
 	}
 
 	public function defineAccountInfo() {
@@ -81,16 +102,7 @@ class TestingGenericAdapter extends GatewayAdapter {
 	public function defineVarMap() {
 	}
 
-	public function getResponseData($response) {
-	}
-
-	public function getResponseErrors($response) {
-	}
-
-	public function getResponseStatus($response) {
-	}
-
-	public function processResponse($response, &$retryVars = null) {
+	public function processResponse( $response ) {
 	}
 
 	public function setGatewayDefaults() {
@@ -100,4 +112,6 @@ class TestingGenericAdapter extends GatewayAdapter {
 		return TestingGenericAdapter::$acceptedCurrencies;
 	}
 
+	public function doPayment() {
+	}
 }

@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
  * @group		Fundraising
@@ -31,10 +32,10 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	);
 
 	/**
-	 * Returns an array of the vars we expect to be set before people hit payments.
+	 * An array of the vars we expect to be set before people hit payments.
 	 * @var array
 	 */
-	public $initial_vars = array (
+	public static $initial_vars = array (
 		'ffname' => 'testytest',
 		'referrer' => 'www.yourmom.com', //please don't go there.
 		'currency_code' => 'USD',
@@ -46,6 +47,11 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * @var GatewayAdapter	$gatewayAdapter
 	 */
 	protected $gatewayAdapter;
+
+	/**
+	 * @var TestingDonationLogger
+	 */
+	protected $testLogger;
 
 	/**
 	 * @param $name string The name of the test case
@@ -65,11 +71,14 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	}
 
 	protected function setUp() {
+		$this->testLogger = new TestingDonationLogger();
+		DonationLoggerFactory::$overrideLogger = $this->testLogger;
 		parent::setUp();
 	}
 
 	protected function tearDown() {
 		$this->resetAllEnv();
+		DonationLoggerFactory::$overrideLogger = null;
 		parent::tearDown();
 	}
 
@@ -94,7 +103,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 
 		$this->gatewayAdapter->setCurrentTransaction('INSERT_ORDERWITHPAYMENT');
 
-		$request = trim( $this->gatewayAdapter->_buildRequestXML() );
+		$exposed = TestingAccessWrapper::newFromObject( $this->gatewayAdapter );
+		$request = trim( $exposed->buildRequestXML() );
 
 		$expected = $this->getExpectedXmlRequestForGlobalCollect( $optionsForTestData, $options );
 		
@@ -105,9 +115,9 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 *
 	 * @param string $country The country we want the test user to be from.
 	 * @return array Donor data to use
-	 * @throws MWException when there is no data available for the requested country
+	 * @throws OutOfBoundsException when there is no data available for the requested country
 	 */
-	public function getDonorTestData( $country = '' ) {
+	public static function getDonorTestData( $country = '' ) {
 		$donortestdata = array (
 			'US' => array ( //default
 				'city' => 'San Francisco',
@@ -119,6 +129,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'lname' => 'Surname',
 				'amount' => '1.55',
 				'language' => 'en',
+				'email' => 'nobody@wikimedia.org',
 			),
 			'ES' => array (
 				'city' => 'Barcelona',
@@ -130,6 +141,17 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'lname' => 'Apellido',
 				'amount' => '1.55',
 				'language' => 'es',
+			),
+			'Catalonia' => array (
+				'city' => 'Barcelona',
+				'state' => 'XX',
+				'zip' => '0',
+				'currency_code' => 'EUR',
+				'street' => '123 Calle Fake',
+				'fname' => 'Nombre',
+				'lname' => 'Apellido',
+				'amount' => '1.55',
+				'language' => 'ca',
 			),
 			'NO' => array (
 				'city' => 'Oslo',
@@ -209,6 +231,16 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'amount' => '1.55',
 				'language' => 'en',
 			),
+			'BR' => array (
+				'currency_code' => 'BRL',
+				'fiscal_number' => '00003456789',
+				'payment_submethod' => 'test_bank',
+				'fname' => 'Nome',
+				'lname' => 'Apelido',
+				'amount' => '100',
+				'language' => 'pt',
+				'email' => 'nobody@example.org'
+			),
 		);
 		//default to US
 		if ( $country === '' ) {
@@ -216,11 +248,11 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		}
 
 		if ( array_key_exists( $country, $donortestdata ) ) {
-			$donortestdata = array_merge( $this->initial_vars, $donortestdata[$country] );
+			$donortestdata = array_merge( self::$initial_vars, $donortestdata[$country] );
 			$donortestdata['country'] = $country;
 			return $donortestdata;
 		}
-		throw new MWException( __FUNCTION__ . ": No donor data for country '$country'" );
+		throw new OutOfBoundsException( __FUNCTION__ . ": No donor data for country '$country'" );
 	}
 
 	/**
@@ -275,7 +307,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		global $wgRequest, $wgServer, $wgArticlePath, $wgDonationInterfaceThankYouPage;
 
 		$orderId = $this->gatewayAdapter->getData_Unstaged_Escaped( 'order_id' );
-		$merchantref = $this->gatewayAdapter->_getData_Staged( 'contribution_tracking_id' );
+		$exposed = TestingAccessWrapper::newFromObject( $this->gatewayAdapter );
+		$merchantref = $exposed->getData_Staged( 'contribution_tracking_id' );
 		//@TODO: WHY IN THE NAME OF ZARQUON are we building XML in a STRING format here?!?!?!!!1one1!?. Great galloping galumphing giraffes.
 		$expected  = '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
 		$expected .= '<XML>';
@@ -362,7 +395,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * the constructor of the gateway object that I can't get to without
 	 * refactoring the whole thing. @TODO: Refactor the gateway adapter
 	 * constructor.
-	 * @return \class The new relevant gateway adapter object.
+	 * @return GatewayAdapter The new relevant gateway adapter object.
 	 */
 	function getFreshGatewayObject( $external_data = null, $setup_hacks = array() ) {
 		$p1 = null;
@@ -402,6 +435,25 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		$_SERVER['HTTP_HOST'] = TESTS_HOSTNAME;
 		$_SERVER['SERVER_NAME'] = TESTS_HOSTNAME;
 		$_SERVER['SCRIPT_NAME'] = __FILE__;
+
+		// Wipe out the $instance of these classes to make sure they're
+		// re-created with fresh gateway instances for the next test
+		$singleton_classes = array(
+			'Gateway_Extras_ConversionLog',
+			'Gateway_Extras_CustomFilters',
+			'Gateway_Extras_CustomFilters_Functions',
+			'Gateway_Extras_CustomFilters_IP_Velocity',
+			'Gateway_Extras_CustomFilters_MinFraud',
+			'Gateway_Extras_CustomFilters_Referrer',
+			'Gateway_Extras_CustomFilters_Source',
+			'Gateway_Extras_SessionVelocityFilter',
+		);
+		foreach( $singleton_classes as $singleton_class ) {
+			$singleton_class::$instance = null;
+		}
+
+		$baseGateway = TestingAccessWrapper::newFromObject( 'GatewayAdapter' );
+		$baseGateway->globalsCache = array();
 	}
 
 	/**
@@ -450,7 +502,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		// file_put_contents( '/tmp/xmlout.txt', $form_html );
 
 		if ( $fail_on_log_errors ) {
-			$this->verifyNoLogErrors( $formpage->adapter );
+			$this->verifyNoLogErrors();
 		}
 
 		$dom_thingy = new DomDocument();
@@ -542,20 +594,19 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		$this->assertEquals( $check, $value, "Expected $label to be $check, found $value instead.");
 	}
 	/**
-	 * Asserts that $gateway has no log entries of LOG_ERR or worse.
-	 * @param object $gateway The gateway to check
+	 * Asserts that there are no log entries of LOG_ERR or worse.
 	 */
-	function verifyNoLogErrors( $gateway ) {
-		$log = $gateway->testlog;
+	function verifyNoLogErrors( ) {
+		$log = $this->testLogger->messages;
 
-		$this->assertTrue( is_array( $log ), "Missing the adapter testlog" );
+		$this->assertTrue( is_array( $log ), "Missing the test log" );
 
 		//for our purposes, an "error" is LOG_ERR or less.
 		$checklogs = array (
-			LOG_ERR => "Oops: We've got LOG_ERRors.",
-			LOG_CRIT => "Critical errors!",
-			LOG_ALERT => "Log Alerts!",
-			LOG_EMERG => "Logs says the servers are actually on fire.",
+			LogLevel::ERROR => "Oops: We've got LOG_ERRors.",
+			LogLevel::CRITICAL => "Critical errors!",
+			LogLevel::ALERT => "Log Alerts!",
+			LogLevel::EMERGENCY => "Logs says the servers are actually on fire.",
 		);
 
 		$message = false;
@@ -570,29 +621,20 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 
 	/**
 	 * Finds a relevant line/lines in a gateway's log array
-	 * @param test adapter $gateway The gateway that should have the log line you're looking for.
-	 * @param integer $log_level A standard level that the line should... get logged at.
+	 * @param string $log_level One of the constants in \Psr\Log\LogLevel
 	 * @param string $match A regex to match against the log lines.
-	 * @return mixed The full log line that matches the $match, an array if there were multiples, or false if none were found.
+	 * @return array All log lines that match $match.
 	 */
-	public function getGatewayLogMatches( $gateway, $log_level, $match ) {
-		$log = $gateway->testlog;
+	public function getLogMatches( $log_level, $match ) {
+		$log = $this->testLogger->messages;
 		if ( !array_key_exists( $log_level, $log ) ) {
 			return false;
 		}
-
 		$return = array ( );
 		foreach ( $log[$log_level] as $line ) {
 			if ( preg_match( $match, $line ) ) {
 				$return[] = $line;
 			}
-		}
-
-		if ( empty( $return ) ) {
-			return false;
-		}
-		if ( sizeof( $return ) === 1 ) {
-			return $return[0];
 		}
 		return $return;
 	}

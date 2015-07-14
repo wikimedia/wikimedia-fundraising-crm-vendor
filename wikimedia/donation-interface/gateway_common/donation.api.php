@@ -22,6 +22,7 @@ class DonationApi extends ApiBase {
 		);
 
 		if ( $this->gateway == 'globalcollect' ) {
+			// FIXME: no test code path in prod
 			if ( $wgDonationInterfaceTestMode === true ) {
 				$gatewayObj = new TestingGlobalCollectAdapter( $gateway_opts );
 			} else {
@@ -44,42 +45,48 @@ class DonationApi extends ApiBase {
 
 		//$normalizedData = $gatewayObj->getData_Unstaged_Escaped();
 		$outputResult = array();
-		if ( array_key_exists( 'message', $result ) ) {
-			$outputResult['message'] = $result['message'];
+		if ( $result->getMessage() !== null ) {
+			$outputResult['message'] = $result->getMessage();
 		}
-		if ( array_key_exists( 'status', $result ) ) {
-			$outputResult['status'] = $result['status'];
+		if ( $result->getCommunicationStatus() !== null ) {
+			$outputResult['status'] = $result->getCommunicationStatus();
 		}
 
-		if ( array_key_exists( 'data', $result ) ) {
-			if ( array_key_exists( 'PAYMENT', $result['data'] )
-				&& array_key_exists( 'RETURNURL', $result['data']['PAYMENT'] ) )
-			{
-				$outputResult['returnurl'] = $result['data']['PAYMENT']['RETURNURL'];
+		$data = $result->getData();
+		if ( !empty( $data ) ) {
+			if ( array_key_exists( 'PAYMENT', $data )
+				&& array_key_exists( 'RETURNURL', $data['PAYMENT'] )
+			) {
+				$outputResult['returnurl'] = $data['PAYMENT']['RETURNURL'];
 			}
-			if ( array_key_exists( 'FORMACTION', $result['data'] ) ) {
-				$outputResult['formaction'] = $result['data']['FORMACTION'];
+			if ( array_key_exists( 'FORMACTION', $data ) ) {
+				$outputResult['formaction'] = $data['FORMACTION'];
+			}
+			if ( array_key_exists( 'gateway_params', $data ) ) {
+				$outputResult['gateway_params'] = $data['gateway_params'];
 			}
 			if ( $gatewayObj->getMerchantID() === 'test' ) {
 				$outputResult['testform'] = true;
 			}
-			if ( array_key_exists( 'RESPMSG', $result['data'] ) ) {
-				$outputResult['responsemsg'] = $result['data']['RESPMSG'];
+			if ( array_key_exists( 'RESPMSG', $data ) ) {
+				$outputResult['responsemsg'] = $data['RESPMSG'];
 			}
-			if ( array_key_exists( 'ORDERID', $result['data'] ) ) {
-				$outputResult['orderid'] = $result['data']['ORDERID'];
+			if ( array_key_exists( 'ORDERID', $data ) ) {
+				$outputResult['orderid'] = $data['ORDERID'];
 			}
 		}
-		if ( array_key_exists( 'errors', $result ) && $result['errors'] ) {
-			$outputResult['errors'] = $result['errors'];
+		$errors = $result->getErrors();
+		if ( !empty( $errors ) ) {
+			$simplify = function( $error ) {
+				return $error['message'];
+			};
+			// TODO:objectify errors, decide here whether to include debug info
+			$outputResult['errors'] = array_map( $simplify, $errors );
 			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
 		}
 
 		if ( $this->donationData ) {
 			$this->getResult()->addValue( null, 'request', $this->donationData );
-		}
-		if ( array_key_exists( 'gateway_params', $result ) ) {
-			$this->getResult()->addValue( null, 'gateway_params', $result['gateway_params'] );
 		}
 		$this->getResult()->addValue( null, 'result', $outputResult );
 	}

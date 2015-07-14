@@ -16,10 +16,12 @@
  *
  */
 
+/**
+ * @see https://amazonpayments.s3.amazonaws.com/FPS_ASP_Guides/ASP_Advanced_Users_Guide.pdf
+ */
 class AmazonAdapter extends GatewayAdapter {
 	const GATEWAY_NAME = 'Amazon';
 	const IDENTIFIER = 'amazon';
-	public $communication_type = 'xml';
 	const GLOBAL_PREFIX = 'wgAmazonGateway';
 
 	function __construct( $options = array() ) {
@@ -32,6 +34,13 @@ class AmazonAdapter extends GatewayAdapter {
 		}
 	}
 
+	public function getCommunicationType() {
+		if ( $this->transaction_option( 'redirect' ) ) {
+			return 'redirect';
+		}
+		return 'xml';
+	}
+
 	function defineStagedVars() {}
 	function defineVarMap() {
 		$this->var_map = array(
@@ -41,7 +50,7 @@ class AmazonAdapter extends GatewayAdapter {
 			"status" => "gateway_status",
 			"buyerEmail" => "email",
 			"transactionDate" => "date_collect",
-			"buyerName" => "fname", // This is dealt with in processResponse()
+			"buyerName" => "fname", // This is dealt with in addDataFromURI()
 			"errorMessage" => "error_message",
 			"paymentMethod" => "payment_submethod",
 			"referenceId" => "contribution_tracking_id",
@@ -188,11 +197,25 @@ class AmazonAdapter extends GatewayAdapter {
 		return $queryparams;
 	}
 
+	public function doPayment() {
+		if ( $this->getData_Unstaged_Escaped( 'recurring' ) ) {
+			$resultData = $this->do_transaction( 'DonateMonthly' );
+		} else {
+			$resultData = $this->do_transaction( 'Donate' );
+		}
+
+		return PaymentResult::fromResults(
+			$resultData,
+			$this->getFinalStatus()
+		);
+	}
+
 	function do_transaction( $transaction ) {
 		global $wgRequest, $wgOut;
 		$this->session_addDonorData();
 
 		$this->setCurrentTransaction( $transaction );
+		$this->transaction_response = new PaymentTransactionResponse();
 
 		$override_url = $this->transaction_option( 'url' );
 		if ( !empty( $override_url ) ) {
@@ -217,7 +240,7 @@ class AmazonAdapter extends GatewayAdapter {
 			unset( $request_params[ 'title' ] );
 			$incoming = http_build_query( $request_params, '', '&' );
 			$this->transactions[ $transaction ][ 'values' ][ 'HttpParameters' ] = $incoming;
-			$this->log( "received callback from amazon with: $incoming", LOG_DEBUG );
+			$this->logger->debug( "received callback from amazon with: $incoming" );
 			break;
 		}
 
@@ -230,14 +253,14 @@ class AmazonAdapter extends GatewayAdapter {
 			case 'Donate':
 			case 'DonateMonthly':
 				$query_str = $this->encodeQuery( $query );
-				$this->log( "At $transaction, redirecting with query string: $query_str", LOG_DEBUG );
+				$this->logger->debug( "At $transaction, redirecting with query string: $query_str" );
 				
 				//always have to do this before a redirect. 
 				$this->dataObj->saveContributionTrackingData();
 
 				//@TODO: This shouldn't be happening here. Oh Amazon... Why can't you be more like PayPalAdapter?
 				$wgOut->redirect("{$this->getGlobal( "URL" )}?{$query_str}&signature={$signature}");
-				return;
+				break;
 
 			case 'VerifySignature':
 				// We don't currently use this. In fact we just ignore the return URL signature.
@@ -246,28 +269,31 @@ class AmazonAdapter extends GatewayAdapter {
 				$query_str = $this->encodeQuery( $query );
 				$this->url .= "?{$query_str}&Signature={$signature}";
 
-				$this->log( "At $transaction, query string: $query_str", LOG_DEBUG );
+				$this->logger->debug( "At $transaction, query string: $query_str" );
 
 				parent::do_transaction( $transaction );
 
-				if ( $this->getFinalStatus() == 'complete' ) {
+				if ( $this->getFinalStatus() === FinalStatus::COMPLETE ) {
 					$this->unstaged_data = $this->dataObj->getDataEscaped(); // XXX not cool.
 					$this->runPostProcessHooks();
 					$this->doLimboStompTransaction( true );
+					$this->deleteLimboMessage();
 				}
-				return;
+				break;
 
 			case 'ProcessAmazonReturn':
-				// What we need to do here is make sure
+				// What we need to do here is make sure THE WHAT
+				// FIXME: This is resultswitcher logic.
 				$this->addDataFromURI();
 				$this->analyzeReturnStatus();
-				return;
+				break;
 
 			default:
-				$this->log( "At $transaction; THIS IS NOT DEFINED!", LOG_CRIT );
-				$this->finalizeInternalStatus( 'failed' );
-				return;
+				$this->logger->critical( "At $transaction; THIS IS NOT DEFINED!" );
+				$this->finalizeInternalStatus( FinalStatus::FAILED );
 		}
+
+		return $this->transaction_response;
 	}
 
 	static function getCurrencies() {
@@ -287,7 +313,7 @@ class AmazonAdapter extends GatewayAdapter {
 		if ( $this->getFinalStatus() === false ) {
 
 			$txnid = $this->dataObj->getVal_Escaped( 'gateway_txn_id' );
-			$this->setTransactionResult( $txnid, 'gateway_txn_id' );
+			$this->transaction_response->setGatewayTransactionId( $txnid );
 
 			// Second make sure that the inbound request had a matching outbound session. If it
 			// doesn't we drop it.
@@ -296,13 +322,13 @@ class AmazonAdapter extends GatewayAdapter {
 				// We will however log it if we have a seemingly valid transaction id
 				if ( $txnid != null ) {
 					$ctid = $this->getData_Unstaged_Escaped( 'contribution_tracking_id' );
-					$this->log( "$ctid failed orderid verification but has txnid '$txnid'. Investigation required.", LOG_ALERT );
+					$this->logger->alert( "$ctid failed orderid verification but has txnid '$txnid'. Investigation required." );
 					if ( $this->getGlobal( 'UseOrderIdValidation' ) ) {
-						$this->finalizeInternalStatus( 'failed' );
+						$this->finalizeInternalStatus( FinalStatus::FAILED );
 						return;
 					}
 				} else {
-					$this->finalizeInternalStatus( 'failed' );
+					$this->finalizeInternalStatus( FinalStatus::FAILED );
 					return;
 				}
 			}
@@ -311,24 +337,24 @@ class AmazonAdapter extends GatewayAdapter {
 			// about the transaction.
 			// todo: lots of other statuses we can interpret
 			// see: http://docs.amazonwebservices.com/AmazonSimplePay/latest/ASPAdvancedUserGuide/ReturnValueStatusCodes.html
-			$this->log( "Transaction $txnid returned with status " . $this->dataObj->getVal_Escaped( 'gateway_status' ), LOG_INFO );
+			$this->logger->info( "Transaction $txnid returned with status " . $this->dataObj->getVal_Escaped( 'gateway_status' ) );
 			switch ( $this->dataObj->getVal_Escaped( 'gateway_status' ) ) {
 				case 'PS':  // Payment success
-					$this->finalizeInternalStatus( 'complete' );
+					$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 					$this->doStompTransaction();
 					break;
 
 				case 'PI':  // Payment initiated, it will complete later
-					$this->finalizeInternalStatus( 'pending' );
+					$this->finalizeInternalStatus( FinalStatus::PENDING );
 					$this->doStompTransaction();
 					break;
 
 				case 'SS':  // Subscription success -- processing handled by the IPN listener
-					$this->finalizeInternalStatus('complete');
+					$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 					break;
 
 				case 'SI':  // Subscription initiated -- processing handled by the IPN listener
-					$this->finalizeInternalStatus('pending');
+					$this->finalizeInternalStatus( FinalStatus::PENDING );
 					break;
 
 				case 'PF':  // Payment failed
@@ -337,17 +363,18 @@ class AmazonAdapter extends GatewayAdapter {
 				default:	// All other errorz
 					$status = $this->dataObj->getVal_Escaped( 'gateway_status' );
 					$errString = $this->dataObj->getVal_Escaped( 'error_message' );
-					$this->log( "Transaction $txnid failed with ($status) $errString", LOG_INFO );
-					$this->finalizeInternalStatus( 'failed' );
+					$this->logger->info( "Transaction $txnid failed with ($status) $errString" );
+					$this->finalizeInternalStatus( FinalStatus::FAILED );
 					break;
 			}
 		} else {
-			$this->log( 'Apparently we attempted to process a transaction that already had a final status... Odd', LOG_ERR );
+			$this->logger->error( 'Apparently we attempted to process a transaction that already had a final status... Odd' );
 		}
 	}
 
 	/**
 	 * Adds translated data from the URI string into donation data
+	 * FIXME: This should be done by unstaging functions.
 	 */
 	function addDataFromURI() {
 		global $wgRequest;
@@ -380,7 +407,7 @@ class AmazonAdapter extends GatewayAdapter {
 							$add_data['payment_submethod'] = $submethods[$value];
 						} else {
 							//We don't rely on this anywhere serious, but I want to know about it anyway.
-							$this->log( "Amazon just coughed up a surprise payment submethod of '$value'.", LOG_ERR );
+							$this->logger->error( "Amazon just coughed up a surprise payment submethod of '$value'." );
 							$add_data['payment_submethod'] = 'unknown';
 						}
 						break;
@@ -396,13 +423,33 @@ class AmazonAdapter extends GatewayAdapter {
 		$txnid = $this->dataObj->getVal_Escaped( 'gateway_txn_id' );
 		$email = $this->dataObj->getVal_Escaped( 'email' );
 
-		$this->log( "Added data to session for txnid $txnid. Now serving email $email.", LOG_INFO );
+		$this->logger->info( "Added data to session for txnid $txnid. Now serving email $email." );
 	}
 
-	function processResponse( $response, &$retryVars = null ) {
-		if ( ( $this->getCurrentTransaction() == 'VerifySignature' ) && ( $response['data'] == true ) ) {
-			$this->log( "Transaction failed in response data verification.", LOG_INFO );
-			$this->finalizeInternalStatus( 'failed' );
+	/**
+	 * We would call this function for the VerifySignature transaction, if we
+	 * ever used that.
+	 * @param DomDocument $response
+	 * @throws ResponseProcessingException
+	 */
+	public function processResponse( $response ) {
+		$this->transaction_response->setErrors( $this->parseResponseErrors( $response ) );
+		if ( $this->getCurrentTransaction() !== 'VerifySignature' ) {
+			return;
+		}
+		$statuses = $response->getElementsByTagName( 'VerificationStatus' );
+		$verified = false;
+		$commStatus = false;
+		foreach ( $statuses as $node ) {
+			$commStatus = true;
+			if ( strtolower( $node->nodeValue ) == 'success' ) {
+				$verified = true;
+			}
+		}
+		$this->transaction_response->setCommunicationStatus( $commStatus );
+		if ( !$verified ) {
+			$this->logger->info( "Transaction failed in response data verification." );
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
 		}
 	}
 
@@ -450,22 +497,7 @@ class AmazonAdapter extends GatewayAdapter {
 		return $opts;
 	}
 
-	function getResponseData( $response ) {
-		// The XML string isn't really all that useful, so just return TRUE if the signature
-		// was verified
-		if ( $this->getCurrentTransaction() == 'VerifySignature' ) {
-			$statuses = $response->getElementsByTagName( 'VerificationStatus' );
-			foreach ( $statuses as $node ) {
-				if ( strtolower( $node->nodeValue ) == 'success' ) {
-					return TRUE;
-				}
-			}
-		}
-
-		return FALSE;
-	}
-
-	public function getResponseStatus( $response ) {
+	function parseResponseCommunicationStatus( $response ) {
 		$aok = false;
 
 		if ( $this->getCurrentTransaction() == 'VerifySignature' ) {
@@ -480,7 +512,7 @@ class AmazonAdapter extends GatewayAdapter {
 	}
 
 	// @todo FIXME: This doesn't go anywhere.
-	function getResponseErrors( $response ) {
+	function parseResponseErrors( $response ) {
 		$errors = array( );
 		foreach ( $response->getElementsByTagName( 'Error' ) as $node ) {
 			$code = '';
@@ -492,6 +524,8 @@ class AmazonAdapter extends GatewayAdapter {
 				if ( $childnode->nodeName === "Message" ) {
 					$message = $childnode->nodeValue;
 				}
+				// TODO: Convert to internal codes and translate.
+				// $errors[$code] = $message;
 			}
 		}
 		return $errors;
@@ -508,5 +542,12 @@ class AmazonAdapter extends GatewayAdapter {
 	 */
 	protected function buildRequestXML( $rootElement = 'XML', $encoding = 'UTF-8' ) {
 		return '';
+	}
+
+	/**
+	 * Amount is returned as a dollar amount, so override base class division by 100.
+	 */
+	protected function unstage_amount() {
+		$this->unstaged_data['amount'] = $this->getData_Staged( 'amount' );
 	}
 }

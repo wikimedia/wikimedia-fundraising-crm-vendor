@@ -8,6 +8,17 @@ abstract class Gateway_Form {
 	public $form_errors;
 
 	/**
+	 * Gateway-specific logger
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	protected $logger;
+
+	/**
+	 * @var GatewayAdapter
+	 */
+	protected $gateway;
+
+	/**
 	 * Required method for returning the full HTML for a form.
 	 *
 	 * Code invoking forms will expect this method to be set.  Requiring only
@@ -18,10 +29,10 @@ abstract class Gateway_Form {
 	 */
 	abstract function getForm();
 
-	public function __construct( &$gateway ) {
-		global $wgOut, $wgRequest;
+	public function __construct( $gateway ) {
 
-		$this->gateway = & $gateway;
+		$this->gateway = $gateway;
+		$this->logger = DonationLoggerFactory::getLogger( $gateway );
 		$gateway_errors = $this->gateway->getAllErrors();
 
 		// @codeCoverageIgnoreStart
@@ -130,5 +141,37 @@ abstract class Gateway_Form {
 	 */
 	protected function getEscapedValue( $key ) {
 		return $this->gateway->getData_Unstaged_Escaped( $key );
+	}
+
+	/**
+	 * This function limits the possible characters passed as template keys and
+	 * values to letters, numbers, hyphens and underscores. The function also
+	 * performs standard escaping of the passed values.
+	 *
+	 * @param string $string The unsafe string to escape and check for invalid characters
+	 * @return string Sanitized version of input
+	 */
+	function make_safe( $string ) {
+		$stripped = preg_replace( '/[^-_\w]/', '', $string );
+
+		// theoretically this is overkill, but better safe than sorry
+		return wfEscapeWikiText( htmlspecialchars( $stripped ) );
+	}
+
+	public function getResources() {
+		return array();
+	}
+
+	/**
+	 * Given an absolute file path, returns path relative to extension base dir.
+	 * @param string $absolutePath
+	 * @return string path relative to DonationInterface/
+	 */
+	protected function sanitizePath( $absolutePath ) {
+		$base_pos = strpos( $absolutePath, 'DonationInterface' );
+		if ( $base_pos !== false ) {
+			return substr( $absolutePath, $base_pos );
+		}
+		return $absolutePath;
 	}
 }

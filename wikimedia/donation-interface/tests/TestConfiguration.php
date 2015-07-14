@@ -63,8 +63,11 @@ global $wgDonationInterfaceTestMode,
 	$wgAmazonGatewayAccountInfo,
 	$wgAdyenGatewayBaseURL,
 	$wgAdyenGatewayAccountInfo,
-	$wgWorldPayGatewayAccountInfo,
-	$wgWorldPayGatewayURL,
+	$wgAstropayGatewayURL,
+	$wgAstropayGatewayTestingURL,
+	$wgAstropayGatewayAccountInfo,
+	$wgWorldpayGatewayAccountInfo,
+	$wgWorldpayGatewayURL,
 	$wgMinFraudLicenseKey,
 	$wgMinFraudTimeout,
 	$wgDonationInterfaceMinFraudServers,
@@ -120,8 +123,23 @@ $wgAdyenGatewayAccountInfo['test'] = array (
 	'SkinCode' => 'testskin',
 );
 
-/** WorldPay **/
-$wgWorldPayGatewayAccountInfo['test'] = array (
+/** Astropay **/
+$wgAstropayGatewayURL = 'https://astropay.example.com/';
+$wgAstropayGatewayTestingURL = 'https://sandbox.astropay.example.com/';
+$wgAstropayGatewayAccountInfo['test'] = array (
+	'Create' => array(
+		'Login' => 'createlogin',
+		'Password' => 'createpass',
+	),
+	'Status' => array(
+		'Login' => 'statuslogin',
+		'Password' => 'statuspass',
+	),
+	'SecretKey' => 'NanananananananananananananananaBatman',
+);
+
+/** Worldpay **/
+$wgWorldpayGatewayAccountInfo['test'] = array (
 	'Username' => 'testname',
 	'Password' => 'testpass',
 	'MerchantId' => '123456',
@@ -143,7 +161,7 @@ $wgWorldPayGatewayAccountInfo['test'] = array (
 		'fj_store_id',
 	),
 );
-$wgWorldPayGatewayURL = 'https://test.worldpay.com';
+$wgWorldpayGatewayURL = 'https://test.worldpay.com';
 
 $wgMinFraudLicenseKey = 'testkey';
 $wgMinFraudTimeout = 1;

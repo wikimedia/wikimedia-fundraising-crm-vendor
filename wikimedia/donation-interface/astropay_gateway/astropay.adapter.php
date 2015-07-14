@@ -1,0 +1,706 @@
+<?php
+/**
+ * Wikimedia Foundation
+ *
+ * LICENSE
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ */
+use Psr\Log\LogLevel;
+
+/**
+ * AstropayAdapter
+ * Implementation of GatewayAdapter for processing payments via Astropay
+ */
+class AstropayAdapter extends GatewayAdapter {
+	const GATEWAY_NAME = 'Astropay';
+	const IDENTIFIER = 'astropay';
+	const GLOBAL_PREFIX = 'wgAstropayGateway';
+
+	public function getFormClass() {
+		return 'Gateway_Form_Mustache';
+	}
+
+	public function getCommunicationType() {
+		return 'namevalue';
+	}
+
+	public function getResponseType() {
+		$override = $this->transaction_option( 'response_type' );
+		if ( $override ) {
+			return $override;
+		}
+		return 'json';
+	}
+
+	function defineAccountInfo() {
+		$this->accountInfo = $this->account_config;
+	}
+
+	function defineDataConstraints() {
+		$this->dataConstraints = array(
+			'x_login'		=> array( 'type' => 'alphanumeric',	'length' => 10, ),
+			'x_trans_key'	=> array( 'type' => 'alphanumeric',	'length' => 10, ),
+			'x_invoice'		=> array( 'type' => 'alphanumeric',	'length' => 20, ),
+			'x_amount'		=> array( 'type' => 'numeric', ),
+			'x_currency'	=> array( 'type' => 'alphanumeric',	'length' => 3, ),
+			'x_bank'		=> array( 'type' => 'alphanumeric',	'length' => 3, ),
+			'x_country'		=> array( 'type' => 'alphanumeric',	'length' => 2, ),
+			'x_description'	=> array( 'type' => 'alphanumeric',	'length' => 200, ),
+			'x_iduser'		=> array( 'type' => 'alphanumeric',	'length' => 20, ),
+			'x_cpf'			=> array( 'type' => 'alphanumeric',	'length' => 30, ),
+			'x_name'		=> array( 'type' => 'alphanumeric', ),
+			'x_email'		=> array( 'type' => 'alphanumeric', ),
+			'x_bdate'		=> array( 'type' => 'date',	'length' => 8, ),
+			'x_address'		=> array( 'type' => 'alphanumeric', ),
+			'x_zip'			=> array( 'type' => 'alphanumeric',	'length' => 10, ),
+			'x_city'		=> array( 'type' => 'alphanumeric', ),
+			'x_state'		=> array( 'type' => 'alphanumeric',	'length' => 2, ),
+			'country_code'	=> array( 'type' => 'alphanumeric',	'length' => 2, ),
+		);
+	}
+
+	function defineErrorMap() {
+		$this->error_map = array(
+			'internal-0000' => 'donate_interface-processing-error', // Failed pre-process checks.
+			ResponseCodes::DUPLICATE_ORDER_ID => 'donate_interface-processing-error', // Order ID already used in a previous transaction
+		);
+	}
+
+	function defineStagedVars() {
+		$this->staged_vars = array(
+			'full_name',
+			'donor_id',
+			'bank_code',
+		);
+	}
+
+	/**
+	 * Define var_map
+	 */
+	function defineVarMap() {
+		$this->var_map = array(
+			'x_login'		=> 'merchant_id',
+			'x_trans_key'	=> 'merchant_password',
+			'x_invoice'		=> 'order_id',
+			'x_amount'		=> 'amount',
+			'x_currency'	=> 'currency_code',
+			'x_bank'		=> 'bank_code',
+			'x_country'		=> 'country',
+			'x_description'	=> 'description',
+			'x_iduser'		=> 'donor_id',
+			'x_cpf'			=> 'fiscal_number',
+			'x_name'		=> 'full_name',
+			'x_email'		=> 'email',
+			// We've been told bdate is non-mandatory, despite the docs
+			'x_bdate'		=> 'birth_date',
+			'x_address'		=> 'street',
+			'x_zip'			=> 'zip',
+			'x_city'		=> 'city',
+			'x_state'		=> 'state',
+			'x_document'	=> 'gateway_txn_id',
+			'country_code'	=> 'country',
+		);
+	}
+
+	function defineReturnValueMap() {
+		$this->return_value_map = array();
+		// 6: Transaction not found in the system
+		$this->addCodeRange( 'PaymentStatus', 'result', FinalStatus::FAILED, 6 );
+		// 7: Pending transaction awaiting approval
+		$this->addCodeRange( 'PaymentStatus', 'result', FinalStatus::PENDING, 7 );
+		// 8: Operation rejected by bank
+		$this->addCodeRange( 'PaymentStatus', 'result', FinalStatus::FAILED, 8 );
+		// 9: Amount Paid.  Transaction successfully concluded
+		$this->addCodeRange( 'PaymentStatus', 'result', FinalStatus::COMPLETE, 9 );
+	}
+
+	/**
+	 * Sets up the $order_id_meta array.
+	 * For Astropay, we use the ct_id.numAttempt format because we don't get
+	 * a gateway transaction ID until the user has actually paid.  If the user
+	 * doesn't return to the result switcher, we will need to use the order_id
+	 * to find a pending queue message with donor details to flesh out the
+	 * audit entry or listener message that tells us the payment succeeded.
+	 */
+	public function defineOrderIDMeta() {
+		$this->order_id_meta = array (
+			'alt_locations' => array ( '_POST' => 'x_invoice' ),
+			'generate' => TRUE,
+			'ct_id' => TRUE,
+			'length' => 20,
+		);
+	}
+
+	function setGatewayDefaults() {}
+
+	function defineTransactions() {
+		$this->transactions = array( );
+
+		$this->transactions[ 'NewInvoice' ] = array(
+			'path' => 'api_curl/streamline/NewInvoice',
+			'request' => array(
+				'x_login',
+				'x_trans_key', // password
+				'x_invoice', // order id
+				'x_amount',
+				'x_currency',
+				'x_bank', // payment submethod bank code
+				'x_country',
+				'x_description',
+				'x_iduser',
+				'x_cpf',
+				'x_name',
+				'x_email',
+				// Omitting the following optional fields
+				// 'x_bdate',
+				// 'x_address',
+				// 'x_zip',
+				// 'x_city',
+				// 'x_state',
+				'control',
+				'type',
+			),
+			'values' => array(
+				'x_login' => $this->accountInfo['Create']['Login'],
+				'x_trans_key' => $this->accountInfo['Create']['Password'],
+				'x_description' => WmfFramework::formatMessage( 'donate_interface-donation-description' ),
+				'type' => 'json',
+			)
+		);
+
+		$this->transactions[ 'GetBanks' ] = array(
+			'path' => 'api_curl/apd/get_banks_by_country',
+			'request' => array(
+				'x_login',
+				'x_trans_key',
+				'country_code',
+				'type',
+			),
+			'values' => array(
+				'x_login' => $this->accountInfo['Create']['Login'],
+				'x_trans_key' => $this->accountInfo['Create']['Password'],
+				'type' => 'json',
+			)
+		);
+
+		$this->transactions[ 'PaymentStatus' ] = array(
+			'path' => '/apd/webpaystatus',
+			'request' => array(
+				'x_login',
+				'x_trans_key',
+				'x_invoice',
+			),
+			'values' => array(
+				'x_login' => $this->accountInfo['Status']['Login'],
+				'x_trans_key' => $this->accountInfo['Status']['Password'],
+			),
+			'response_type' => 'delimited',
+			'response_delimiter' => '|',
+			'response_keys' => array(
+				'result', // status code
+				'x_iduser',
+				'x_invoice',
+				'x_amount',
+				'PT', // 0 for production, 1 for test
+				'x_control', // signature, calculated like control string
+							// called 'Sign' in docs, but renamed here for consistency
+							// with parameter POSTed to resultswitcher.
+				'x_document', // unique id at Astropay
+				'x_bank',
+				'x_payment_type',
+				'x_bank_name',
+				'x_currency',
+			)
+		);
+
+		// Not for running with do_transaction, just a handy place to keep track
+		// of what we expect POSTed to the resultswitcher.
+		$this->transactions[ 'ProcessReturn' ] = array(
+			'request' => array(
+				'result',
+				'x_invoice',
+				'x_iduser',
+				'x_description',
+				'x_document',
+				'x_amount',
+				'x_control',
+			)
+		);
+	}
+
+	public function definePaymentMethods() {
+		$this->payment_methods = array();
+
+		$this->payment_methods['cc'] = array(
+			'validation' => array(
+				'name' => true,
+				'email' => true,
+			),
+		);
+
+		$this->payment_methods['bt'] = array(
+			'validation' => array(
+				'name' => true,
+				'email' => true,
+			),
+		);
+
+		$this->payment_submethods = array();
+
+		if ( self::getGlobal( 'Test' ) ) {
+			// Test bank labelled 'GNB' on their site
+			// Data for testing in Brazil (other countries can use random #s)
+			// Cpf: 00003456789
+			// Email: testing@astropaycard.com
+			// Name: ASTROPAY TESTING
+			// Birthdate: 04/03/1984
+			$this->payment_submethods['test_bank'] = array(
+				'bank_code' => 'TE',
+				'label' => 'GNB',
+				'group' => 'cc',
+			);
+		}
+
+		// Visa
+		$this->payment_submethods['visa'] = array(
+			'bank_code' => 'VI',
+			'label' => 'Visa',
+			'group' => 'cc',
+			'countries' => array(
+				'AR' => true,
+				'BR' => true,
+			),
+			'logo' => 'card-visa-lg.png',
+		);
+
+		// MasterCard
+		$this->payment_submethods['mc'] = array(
+			'bank_code' => 'MC',
+			'label' => 'MasterCard',
+			'group' => 'cc',
+			'countries' => array(
+				'AR' => true,
+				'BR' => true,
+			),
+			'logo' => 'card-mc-lg.png',
+		);
+
+		// American Express
+		$this->payment_submethods['amex'] = array(
+			'bank_code' => 'AE',
+			'label' => 'American Express',
+			'group' => 'cc',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'card-amex-lg.png',
+		);
+
+		// Visa Debit
+		$this->payment_submethods['visa_debit'] = array(
+			'bank_code' => 'VD',
+			'label' => 'Visa Debit',
+			'group' => 'cc',
+			'countries' => array(
+				'MX' => true,
+			),
+		);
+
+		// MasterCard debit
+		$this->payment_submethods['mc_debit'] = array(
+			'bank_code' => 'MD',
+			'label' => 'Mastercard Debit',
+			'group' => 'cc',
+			'countries' => array(
+				'MX' => true,
+			),
+		);
+
+		// Elo (Brazil-only)
+		$this->payment_submethods['elo'] = array(
+			'bank_code' => 'EL',
+			'label' => 'Elo',
+			'group' => 'cc',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'card-elo.png',
+		);
+
+		// Diners Club
+		$this->payment_submethods['dc'] = array(
+			'bank_code' => 'DC',
+			'label' => 'Diners Club',
+			'group' => 'cc',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'card-dinersclub-lg.png',
+		);
+
+		// Hipercard
+		$this->payment_submethods['hiper'] = array(
+			'bank_code' => 'HI',
+			'label' => 'Hipercard',
+			'group' => 'cc',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'card-hiper.png',
+		);
+
+		// Argencard
+		$this->payment_submethods['argen'] = array(
+			'bank_code' => 'AG',
+			'label' => 'Argencard',
+			'group' => 'cc',
+			'countries' => array( 'AR' => true, ),
+			'logo' => 'card-argencard.png',
+		);
+
+		// Banco do Brasil
+		$this->payment_submethods['banco_do_brasil'] = array(
+			'bank_code' => 'BB',
+			'label' => 'Banco do Brasil',
+			'group' => 'bt',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'bank-banco_do_brasil.png',
+		);
+
+		// Itau
+		$this->payment_submethods['itau'] = array(
+			'bank_code' => 'I',
+			'label' => 'Itau',
+			'group' => 'bt',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'bank-itau.png',
+		);
+
+		// Bradesco
+		$this->payment_submethods['bradesco'] = array(
+			'bank_code' => 'B',
+			'label' => 'Bradesco',
+			'group' => 'bt',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'bank-bradesco.png',
+		);
+
+		// Caixa
+		$this->payment_submethods['caixa'] = array(
+			'bank_code' => 'CA',
+			'label' => 'Caixa',
+			'group' => 'bt',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'bank-caixa.png',
+		);
+
+		// HSBC
+		$this->payment_submethods['hsbc'] = array(
+			'bank_code' => 'H',
+			'label' => 'HSBC',
+			'group' => 'bt',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'bank-hsbc.png',
+		);
+
+		// Santander (Brazil)
+		$this->payment_submethods['santander'] = array(
+			'bank_code' => 'SB',
+			'label' => 'Santander',
+			'group' => 'bt',
+			'countries' => array( 'BR' => true, ),
+			'logo' => 'bank-santander.png',
+		);
+
+	}
+
+	function doPayment() {
+		$transaction_result = $this->do_transaction( 'NewInvoice' );
+		$this->runAntifraudHooks();
+		if ( $this->getValidationAction() !== 'process' ) {
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
+		}
+		$result = PaymentResult::fromResults(
+			$transaction_result,
+			$this->getFinalStatus()
+		);
+		if ( $result->getRedirect() ) {
+			$this->doLimboStompTransaction();
+			// Write the donor's details to the log for the audit processor
+			$this->logPaymentDetails();
+			// Feed the message into the pending queue, so the CRM queue consumer
+			// can read it to fill in donor details when it gets a partial message
+			$this->setLimboMessage( 'pending' );
+		}
+		return $result;
+	}
+
+	/**
+	 * Overriding parent method to add fiscal number
+	 * @return array of required field names
+	 */
+	public function getRequiredFields() {
+		$fields = parent::getRequiredFields();
+		$fields[] = 'fiscal_number';
+		return $fields;
+	}
+	/**
+	 * Overriding @see GatewayAdapter::getTransactionSpecificValue to add a
+	 * calculated signature.
+	 * @param string $gateway_field_name
+	 * @param boolean $token
+	 * @return mixed
+	 */
+	protected function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
+		if ( $gateway_field_name === 'control' ) {
+			$message = $this->getData_Staged( 'order_id' ) . 'V'
+				. $this->getData_Staged( 'amount' ) . 'I'
+				. $this->getData_Staged( 'donor_id' ) . '2'
+				. $this->getData_Staged( 'bank_code' ) . '1'
+				. $this->getData_Staged( 'fiscal_number' ) . 'H'
+				. /* bdate omitted */ 'G'
+				. $this->getData_Staged( 'email' ) .'Y'
+				. /* zip omitted */ 'A'
+				. /* street omitted */ 'P'
+				. /* city omitted */ 'S'
+				. /* state omitted */ 'P';
+			return $this->calculateSignature( $message );
+		}
+		return parent::getTransactionSpecificValue( $gateway_field_name, $token );
+	}
+
+	/*
+	 * Seems more sane to do it this way than provide a single input box
+	 * and try to parse out fname and lname.
+	 */
+	protected function stage_full_name() {
+		$name_parts = array();
+		if ( isset( $this->unstaged_data['fname'] ) ) {
+			$name_parts[] = $this->unstaged_data['fname'];
+		}
+		if ( isset( $this->unstaged_data['lname'] ) ) {
+			$name_parts[] = $this->unstaged_data['lname'];
+		}
+		$this->staged_data['full_name'] = implode( ' ', $name_parts );
+	}
+
+	/**
+	 * They need a 20 char string for a customer ID - give them the first 20
+	 * characters of the email address for easy lookup
+	 */
+	protected function stage_donor_id() {
+		$this->staged_data['donor_id'] = substr( $this->getData_Staged( 'email' ), 0, 20 );
+	}
+
+	protected function stage_bank_code() {
+		$submethod = $this->getPaymentSubmethod();
+		if ( $submethod ) {
+			$meta = $this->getPaymentSubmethodMeta( $submethod );
+			if ( isset( $meta['bank_code'] ) ) {
+				$this->staged_data['bank_code'] = $meta['bank_code'];
+			}
+		}
+	}
+
+	protected function unstage_payment_submethod() {
+		$method = $this->getData_Staged( 'payment_method' );
+		$bank = $this->getData_Staged( 'bank_code' );
+		$filter = function( $submethod ) use ( $method, $bank ) {
+			return $submethod['group'] === $method && $submethod['bank_code'] === $bank;
+		};
+		$candidates = array_filter( $this->payment_submethods, $filter );
+		if ( count( $candidates ) !== 1 ) {
+			throw new UnexpectedValueException( "No unique payment submethod defined for payment method $method and bank code $bank." );
+		}
+		$keys = array_keys( $candidates );
+		$this->unstaged_data['payment_submethod'] = $keys[0];
+	}
+
+	static function getCurrencies() {
+		$currencies = array(
+			'ARS', // Argentinian peso
+			'BOB', // Bolivian Boliviano
+			'BRL', // Brazilian Real
+			'BZD', // Belize Dollar
+			'CLP', // Chilean Peso
+			'COP', // Colombian Peso
+			'MXN', // Mexican Peso
+			'PEN', // Peruvian Nuevo Sol
+			'USD', // U.S. dollar
+		);
+		return $currencies;
+	}
+
+	/**
+	 * Processes JSON data from Astropay API, and also processes GET/POST params
+	 * on donor's return to ResultSwitcher
+	 * @param array $response JSON response decoded to array, or GET/POST
+	 *        params from request
+	 * @throws ResponseProcessingException
+	 */
+	public function processResponse( $response ) {
+		// May need to initialize transaction_response, as we can be called by
+		// GatewayPage to process responses outside of do_transaction
+		if ( !$this->transaction_response ) {
+			$this->transaction_response = new PaymentTransactionResponse();
+		}
+		$this->transaction_response->setData( $response );
+		if ( !$response ) {
+			throw new ResponseProcessingException(
+				'Missing or badly formatted response',
+				ResponseCodes::NO_RESPONSE
+			);
+		}
+		switch( $this->getCurrentTransaction() ) {
+		case 'PaymentStatus':
+			$this->processStatusResponse( $response );
+			break;
+		case 'ProcessReturn':
+			$this->processStatusResponse( $response );
+			if ( !isset( $response['x_document'] ) ) {
+				$this->logger->error( 'Astropay did not post back their transaction ID in x_document' );
+				throw new ResponseProcessingException(
+					'Astropay did not post back their transaction ID in x_document',
+					ResponseCodes::MISSING_TRANSACTION_ID
+				);
+			}
+			$this->transaction_response->setGatewayTransactionId( $response['x_document'] );
+			$status = $this->findCodeAction( 'PaymentStatus', 'result', $response['result'] );
+			$this->logger->info( "Payment status $status coming back to ResultSwitcher" );
+			$this->finalizeInternalStatus( $status );
+			$this->runPostProcessHooks();
+			$this->deleteLimboMessage();
+			$this->doLimboStompTransaction( TRUE ); // TODO: stop mirroring to STOMP
+			break;
+		case 'NewInvoice':
+			$this->processNewInvoiceResponse( $response );
+			if ( isset( $response['link'] ) ) {
+				$this->transaction_response->setRedirect( $response['link'] );
+			}
+			break;
+		}
+	}
+
+	/**
+	 * Sets communication status and errors for responses to NewInvoice
+	 * @param array $response
+	 */
+	protected function processNewInvoiceResponse( $response ) {
+		if ( !isset( $response['status'] ) ) {
+			$this->transaction_response->setCommunicationStatus( false );
+			$this->logger->error( 'Astropay response does not have a status code' );
+			throw new ResponseProcessingException(
+				'Astropay response does not have a status code',
+				ResponseCodes::MISSING_REQUIRED_DATA
+			);
+		}
+		$this->transaction_response->setCommunicationStatus( true );
+		if ( $response['status'] === '0' ) {
+			if ( !isset( $response['link'] ) ) {
+				$this->logger->error( 'Astropay NewInvoice success has no link' );
+				throw new ResponseProcessingException(
+					'Astropay NewInvoice success has no link',
+					ResponseCodes::MISSING_REQUIRED_DATA
+				);
+			}
+		} else {
+			$logme = "Astropay response has non-zero status {$response['status']}.";
+			if ( isset( $response['desc'] ) ) {
+				// They don't give us codes to distinguish failure modes, so we
+				// have to parse the description.
+				if ( preg_match( '/invoice already used/i', $response['desc'] ) ) {
+					$this->logger->error( 'Order ID collision! Starting again.' );
+					// Increment numAttempt to get a new order ID
+					$this->incrementNumAttempt();
+					throw new ResponseProcessingException(
+						'Order ID collision! Starting again.',
+						ResponseCodes::DUPLICATE_ORDER_ID,
+						array( 'order_id' )
+					);
+				}
+				$logme .= '  Error description: ' . $response['desc'];
+			} else {
+				$logme .= '  Full response: ' . $this->getTransactionRawResponse();
+			}
+			$this->logger->warning( $logme );
+			$this->transaction_response->setErrors( array(
+				'internal-0000' => array (
+					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
+					'debugInfo' => $logme,
+					'logLevel' => LogLevel::WARNING
+				)
+			) );
+		}
+	}
+
+	/**
+	 * Sets communication status and errors for responses to PaymentStatus or
+	 * parameters POSTed back to ResultSwitcher
+	 * @param array $response
+	 */
+	protected function processStatusResponse( $response ) {
+		if ( !isset( $response['result'] ) ||
+			 !isset( $response['x_amount'] ) ||
+			 !isset( $response['x_invoice'] ) ||
+			 !isset( $response['x_control'] ) ) {
+			$this->transaction_response->setCommunicationStatus( false );
+			$message = 'Astropay response missing one or more required keys.  Full response: '
+				. print_r( $response, true );
+			$this->logger->error( $message );
+			throw new ResponseProcessingException( $message, ResponseCodes::MISSING_REQUIRED_DATA );
+		}
+		$this->verifyStatusSignature( $response );
+		if ( $response['result'] === '6' ) {
+			$logme = 'Astropay reports they cannot find the transaction for order ID ' .
+				$this->getData_Unstaged_Escaped( 'order_id' );
+			$this->logger->error( $logme );
+			$this->transaction_response->setErrors( array(
+				'internal-0000' => array (
+					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
+					'debugInfo' => $logme,
+					'logLevel' => LogLevel::ERROR
+				)
+			) );
+		}
+	}
+
+	/**
+	 * Check whether a status message has a valid signature.
+	 * @param array $data
+	 *        Requires 'result', 'x_amount', 'x_invoice', and 'x_control' keys
+	 * @throws ResponseProcessingException if signature is invalid
+	 */
+	function verifyStatusSignature( $data ) {
+		if ( $this->getCurrentTransaction() === 'ProcessReturn' ) {
+			$login = $this->accountInfo['Create']['Login'];
+		} else {
+			$login = $this->accountInfo['Status']['Login'];
+		}
+
+		$message = $login .
+			$data['result'] .
+			$data['x_amount'] .
+			$data['x_invoice'];
+		$signature = $this->calculateSignature( $message );
+
+		if ( $signature !== $data['x_control'] ) {
+			$message = 'Bad signature in transaction ' . $this->getCurrentTransaction();
+			$this->logger->error( $message );
+			throw new ResponseProcessingException( $message, ResponseCodes::BAD_SIGNATURE );
+		}
+	}
+
+	protected function calculateSignature( $message ) {
+		$key = $this->accountInfo['SecretKey'];
+		return strtoupper(
+			hash_hmac( 'sha256', pack( 'A*', $message ), pack( 'A*', $key ) )
+		);
+	}
+
+	protected function logPaymentDetails() {
+		$details = $this->getStompTransaction();
+		$this->logger->info( 'Redirecting for transaction: ' . json_encode( $details ) );
+	}
+}

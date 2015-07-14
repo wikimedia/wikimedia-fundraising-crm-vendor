@@ -33,14 +33,21 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 	/**
 	 * The gateway adapter object
-	 * @var object $adapter
+	 * @var GatewayAdapter $adapter
 	 */
 	public $adapter;
+
+	/**
+	 * Gateway-specific logger
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	protected $logger;
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->logger = DonationLoggerFactory::getLogger( $this->adapter );
 		$this->getOutput()->addModules( 'donationInterface.skinOverride' );
 		
 		$me = get_called_class();
@@ -55,12 +62,31 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	public function execute( $par ) {
 		global $wgContributionTrackingFundraiserMaintenance, $wgContributionTrackingFundraiserMaintenanceUnsched;
 
+		// FIXME: Deprecate "language" param.
+		$language = $this->getRequest()->getVal( 'language' );
+		if ( $language ) {
+			RequestContext::getMain()->setLanguage( $language );
+			global $wgLang;
+			$wgLang = RequestContext::getMain()->getLanguage();
+		}
+
+		if ( $this->adapter->getGlobal( 'Enabled' ) !== true ) {
+			$this->displayFailPage();
+			return;
+		}
+
 		if( $wgContributionTrackingFundraiserMaintenance
 			|| $wgContributionTrackingFundraiserMaintenanceUnsched ){
 			$this->getOutput()->redirect( Title::newFromText('Special:FundraiserMaintenance')->getFullURL(), '302' );
 			return;
 		}
-		$this->handleRequest();
+
+		try {
+			$this->handleRequest();
+		} catch ( Exception $ex ) {
+			$this->logger->error( "Gateway page errored out due to: " . $ex->getMessage() );
+			$this->displayFailPage();
+		}
 	}
 
 	/**
@@ -113,22 +139,31 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		if ( $form_class && class_exists( $form_class ) ){
 			$form_obj = new $form_class( $this->adapter );
 			$form = $form_obj->getForm();
+			$wgOut->addModules( $form_obj->getResources() );
 			$wgOut->addHTML( $form );
 		} else {
-
-			$page = $this->adapter->getGlobal( "FailPage" );
-
-			$log_message = '"Redirecting to [ ' . $page . ' ] "';
-			$this->log( $log_message, LOG_INFO );
-
-			if ( $page ) {
-
-				$language = $this->getRequest()->getVal( 'language' );
-				$page = wfAppendQuery( $page, array( 'uselang' => $language ) );
-			}
-
-			$wgOut->redirect( $page );
+			$this->displayFailPage();
 		}
+	}
+
+	/**
+	 * Display a generic failure page
+	 */
+	public function displayFailPage() {
+		global $wgOut;
+
+		$page = $this->adapter->getGlobal( "FailPage" );
+
+		$log_message = "Redirecting to [{$page}]";
+		$this->logger->info( $log_message );
+
+		// FIXME: And if !page, redirect does not work below.
+		if ( $page ) {
+			$language = $this->getRequest()->getVal( 'language' );
+			$page = wfAppendQuery( $page, array( 'uselang' => $language ) );
+		}
+
+		$wgOut->redirect( $page );
 	}
 
 	/**
@@ -144,30 +179,32 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 *
 	 * Displays useful information for debugging purposes.
 	 * Enable with $wgDonationInterfaceDisplayDebug, or the adapter equivalent.
-	 * @param array $results
+	 * @param PaymentTransactionResponse $results
 	 * @return null
 	 */
-	protected function displayResultsForDebug( $results = array() ) {
+	protected function displayResultsForDebug( PaymentTransactionResponse $results = null ) {
 		global $wgOut;
 		
-		$results = empty( $results ) ? $this->adapter->getTransactionAllResults() : $results;
+		$results = empty( $results ) ? $this->adapter->getTransactionResponse() : $results;
 		
 		if ( $this->adapter->getGlobal( 'DisplayDebug' ) !== true ){
 			return;
 		}
-		$wgOut->addHTML( HTML::element( 'span', null, $results['message'] ) );
+		$wgOut->addHTML( HTML::element( 'span', null, $results->getMessage() ) );
 
-		if ( !empty( $results['errors'] ) ) {
+		$errors = $results->getErrors();
+		if ( !empty( $errors ) ) {
 			$wgOut->addHTML( HTML::openElement( 'ul' ) );
-			foreach ( $results['errors'] as $code => $value ) {
-				$wgOut->addHTML( HTML::element('li', null, "Error $code: $value" ) );
+			foreach ( $errors as $code => $value ) {
+				$wgOut->addHTML( HTML::element('li', null, "Error $code: " . print_r( $value, true ) ) );
 			}
 			$wgOut->addHTML( HTML::closeElement( 'ul' ) );
 		}
 
-		if ( !empty( $results['data'] ) ) {
+		$data = $results->getData();
+		if ( !empty( $data ) ) {
 			$wgOut->addHTML( HTML::openElement( 'ul' ) );
-			foreach ( $results['data'] as $key => $value ) {
+			foreach ( $data as $key => $value ) {
 				if ( is_array( $value ) ) {
 					$wgOut->addHTML( HTML::openElement('li', null, $key ) . HTML::openElement( 'ul' ) );
 					foreach ( $value as $key2 => $val2 ) {
@@ -201,15 +238,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		} else {
 			$wgOut->addHTML( "No Debug Array" );
 		}
-	}
-
-	/**
-	 * logs messages to the current gateway adapter's configured log location
-	 * @param string $msg The message to log
-	 * @param int|string $log_level The severity level of the message.
-	 */
-	public function log( $msg, $log_level=LOG_INFO ) {
-		$this->adapter->log( $msg, $log_level );
 	}
 
 	/**
@@ -286,6 +314,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * enabled for this adapter, convert intended amount to default currency.
 	 *
 	 * @return boolean whether currency conversion was performed
+	 * @throws DomainException
 	 */
 	protected function fallbackToDefaultCurrency() {
 		$defaultCurrency = $this->adapter->getGlobal( 'FallbackCurrency' );
@@ -302,7 +331,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		$oldCurrency = $this->adapter->getData_Unstaged_Escaped( 'currency_code' );
 		if ( $oldCurrency === $defaultCurrency ) {
 			$adapterClass = $this->adapter->getGatewayAdapterClass();
-			throw new MWException( __FUNCTION__ . " Unsupported currency $defaultCurrency set as fallback for $adapterClass." );
+			throw new DomainException( __FUNCTION__ . " Unsupported currency $defaultCurrency set as fallback for $adapterClass." );
 		}
 		$oldAmount = $this->adapter->getData_Unstaged_Escaped( 'amount' );
 		$usdAmount = 0.0;
@@ -332,7 +361,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			'currency_code' => $defaultCurrency
 		) );
 
-		$this->adapter->log( "Unsupported currency $oldCurrency forced to $defaultCurrency" );
+		$this->logger->info( "Unsupported currency $oldCurrency forced to $defaultCurrency" );
 		return true;
 	}
 
@@ -346,18 +375,16 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		// dispatch forms/handling
 		if ( $this->adapter->checkTokens() ) {
-			// If the user posted to this form, or we've been sent here with an
-			// immediate "redirect=1" param, try to process the transaction.
-			if ( $this->adapter->posted
-				|| $this->adapter->getData_Unstaged_Escaped( 'redirect' )
-			) {
+			if ( $this->isProcessImmediate() ) {
 				// Check form for errors
+				// FIXME: Should this be rolled into adapter.doPayment?
 				$form_errors = $this->validateForm();
 
 				// If there were errors, redisplay form, otherwise proceed to next step
 				if ( $form_errors ) {
 					$this->displayForm();
 				} else {
+					// Attempt to process the payment, and render the response.
 					$this->processPayment();
 				}
 			} else {
@@ -365,10 +392,39 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 				$this->displayForm();
 			}
 		} else { //token mismatch
-			$error['general']['token-mismatch'] = wfMsg( 'donate_interface-token-mismatch' );
+			$error['general']['token-mismatch'] = $this->msg( 'donate_interface-token-mismatch' );
 			$this->adapter->addManualError( $error );
 			$this->displayForm();
 		}
+	}
+
+	/**
+	 * Determine if we should attempt to process the payment now
+	 *
+	 * @return bool True if we should attempt processing.
+	 */
+	protected function isProcessImmediate() {
+		// If the user posted to this form, process immediately.
+		if ( $this->adapter->posted ) {
+			return true;
+		}
+
+		// Otherwise, respect the "redirect" parameter.  If it is "1", try to
+		// skip the interstitial page.  If it's "0", do not process immediately.
+		$redirect = $this->adapter->getData_Unstaged_Escaped( 'redirect' );
+		if ( $redirect !== null ) {
+			return ( $redirect === '1' || $redirect === 'true' );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether or not the user comes back to the resultswitcher in an iframe
+	 * @return boolean true if we need to pop out of an iframe, otherwise false
+	 */
+	protected function isReturnFramed() {
+		return false;
 	}
 
 	/**
@@ -395,14 +451,15 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$liberated = true;
 		}
 
+		// XXX need to know whether we were in an iframe or not.
 		global $wgServer;
-		if ( ( strpos( $referrer, $wgServer ) === false ) && !$liberated ) {
+		if ( $this->isReturnFramed() && ( strpos( $referrer, $wgServer ) === false ) && !$liberated ) {
 			$_SESSION[ 'order_status' ][ $oid ] = 'liberated';
-			$this->adapter->log("Resultswitcher: Popping out of iframe for Order ID " . $oid);
+			$this->logger->info( "Resultswitcher: Popping out of iframe for Order ID " . $oid );
 			//TODO: Move the $forbidden check back to the beginning of this if block, once we know this doesn't happen a lot.
 			//TODO: If we get a lot of these messages, we need to redirect to something more friendly than FORBIDDEN, RAR RAR RAR.
 			if ( $forbidden ) {
-				$this->adapter->log("Resultswitcher: $oid SHOULD BE FORBIDDEN. Reason: $f_message", LOG_ERR);
+				$this->logger->error( "Resultswitcher: $oid SHOULD BE FORBIDDEN. Reason: $f_message" );
 			}
 			$this->getOutput()->allowClickjacking();
 			$this->getOutput()->addModules( 'iframe.liberator' );
@@ -412,29 +469,32 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		$this->setHeaders();
 
 		if ( $forbidden ){
-			$this->adapter->log( "Resultswitcher: Request forbidden. " . $f_message . " Adapter Order ID: $oid", LOG_CRIT );
-			return;
-		} else {
-			$this->adapter->log( "Resultswitcher: OK to process Order ID: " . $oid );
+			throw new RuntimeException( "Resultswitcher: Request forbidden. " . $f_message . " Adapter Order ID: $oid" );
 		}
+		$this->logger->info( "Resultswitcher: OK to process Order ID: " . $oid );
 
 		if ( $this->adapter->checkTokens() ) {
-			if ( $this->adapter->isResponse() ) {
-				$this->getOutput()->allowClickjacking();
-				$this->getOutput()->addModules( 'iframe.liberator' );
-				if ( NULL === $this->adapter->processResponse() ) {
-					switch ( $this->adapter->getFinalStatus() ) {
-					case 'complete':
-					case 'pending':
-						$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
-						return;
-					}
-				}
-				$this->getOutput()->redirect( $this->adapter->getFailPage() );
+			$this->getOutput()->allowClickjacking();
+			// FIXME: do we really need this again?
+			$this->getOutput()->addModules( 'iframe.liberator' );
+			// processResponse expects some data, so let's feed it all the
+			// GET and POST vars
+			$response = $this->getRequest()->getValues();
+			// TODO: run the whole set of getResponseStatus, getResponseErrors
+			// and getResponseData first.  Maybe do_transaction with a
+			// communication_type of 'incoming' and a way to provide the
+			// adapter the GET/POST params harvested here.
+			$this->adapter->processResponse( $response );
+			switch ( $this->adapter->getFinalStatus() ) {
+			case FinalStatus::COMPLETE:
+			case FinalStatus::PENDING:
+				$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
+				return;
 			}
 		} else {
-			$this->adapter->log( "Resultswitcher: Token Check Failed. Order ID: $oid", LOG_ERR );
+			$this->logger->error( "Resultswitcher: Token Check Failed. Order ID: $oid" );
 		}
+		$this->getOutput()->redirect( $this->adapter->getFailPage() );
 	}
 
 	/**
@@ -444,5 +504,63 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 */
 	protected function processPayment() {
 		$this->renderResponse( $this->adapter->doPayment() );
+	}
+
+	/**
+	 * Take UI action suggested by the payment result
+	 */
+	protected function renderResponse( PaymentResult $result ) {
+		if ( $result->isFailed() ) {
+			$this->getOutput()->redirect( $this->adapter->getFailPage() );
+		} elseif ( $url = $result->getRedirect() ) {
+			$this->getOutput()->redirect( $url );
+		} elseif ( $url = $result->getIframe() ) {
+			// Show a form containing an iframe.
+
+			// Well, that's sketchy.  See TODO in renderIframe: we should
+			// accomplish this entirely by passing an iframeSrcUrl parameter
+			// to the template.
+			$this->displayForm();
+
+			$this->renderIframe( $url );
+		} elseif ( $form = $result->getForm() ) {
+			// Show another form.
+
+			$this->adapter->addRequestData( array(
+				'ffname' => $form,
+			) );
+			$this->displayForm();
+		} elseif ( $errors = $result->getErrors() ) {
+			// FIXME: Creepy.  Currently, the form inspects adapter errors.  Use
+			// the stuff encapsulated in PaymentResult instead.
+			$this->displayForm();
+		} else {
+			// Success.
+			$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
+		}
+	}
+
+	/**
+	 * Append iframe
+	 *
+	 * TODO: Should be rendered by the template.
+	 *
+	 * @param string $url
+	 */
+	protected function renderIframe( $url ) {
+		$attrs = array(
+			'id' => 'paymentiframe',
+			'name' => 'paymentiframe',
+			'width' => '680',
+			'height' => '300'
+		);
+
+		$attrs['frameborder'] = '0';
+		$attrs['style'] = 'display:block;';
+		$attrs['src'] = $url;
+		$paymentFrame = Xml::openElement( 'iframe', $attrs );
+		$paymentFrame .= Xml::closeElement( 'iframe' );
+
+		$this->getOutput()->addHTML( $paymentFrame );
 	}
 }

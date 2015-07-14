@@ -11,12 +11,25 @@
  */
 class GatewayFormChooser extends UnlistedSpecialPage {
 
+	/**
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	protected $logger;
+
 	function __construct() {
+		$this->logger = DonationLoggerFactory::getLogger();
 		parent::__construct( 'GatewayFormChooser' );
 	}
 
 	function execute( $par ) {
-		global $wgContributionTrackingFundraiserMaintenance, $wgContributionTrackingFundraiserMaintenanceUnsched;
+		global $wgContributionTrackingFundraiserMaintenance,
+			$wgContributionTrackingFundraiserMaintenanceUnsched,
+			$wgDonationInterfaceEnableFormChooser;
+
+		if ( !$wgDonationInterfaceEnableFormChooser ) {
+			throw new BadTitleError();
+		}
+
 
 		if( $wgContributionTrackingFundraiserMaintenance
 			|| $wgContributionTrackingFundraiserMaintenanceUnsched ){
@@ -32,7 +45,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		$recurring = $this->getRequest()->getVal( 'recurring', false );
 		$gateway = $coerceNull( $this->getRequest()->getVal( 'gateway', null ) );
 
-		//This is clearly going to go away before we deploy this bizniss.
+		// FIXME: This is clearly going to go away before we deploy this bizniss.
 		$testNewGetAll = $this->getRequest()->getVal( 'testGetAll', false );
 		if ( $testNewGetAll ){
 			$forms = self::getAllValidForms( $country, $currency, $paymentMethod, $paymentSubMethod, $recurring, $gateway );
@@ -48,9 +61,8 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		if ( $form === null ) {
 			$utmSource = $this->getRequest()->getVal( 'utm_source', '' );
 
-			GatewayAdapter::_log(
-				"Not able to find a valid form for country '$country', currency '$currency', method '$paymentMethod', submethod '$paymentSubMethod', recurring: '$recurring', gateway '$gateway' for utm source '$utmSource'",
-				LOG_ERR
+			$this->logger->error(
+				"Not able to find a valid form for country '$country', currency '$currency', method '$paymentMethod', submethod '$paymentSubMethod', recurring: '$recurring', gateway '$gateway' for utm source '$utmSource'"
 			);
 			$this->getOutput()->showErrorPage( 'donate_interface-error-msg-general', 'donate_interface-error-no-form' );
 			return;
@@ -87,6 +99,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	 * to get one.
 	 * @param array $other_params An array of any params that DonationData
 	 * will harvest and understand.
+	 * @throw UnexpectedValueException
 	 */
 	static function buildPaymentsFormURL( $form_key, $other_params = array ( ) ) {
 		// And... construct the URL
@@ -121,14 +134,26 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 			$gateway = $form_info['gateway'];
 
 			if ( is_array( $gateway ) ) {
+				// Accept gateway hint if it's already specified for this form.
 				if ( array_key_exists( 'gateway', $params ) && in_array( $params['gateway'], $gateway ) ) {
 					$gateway = $params['gateway'];
 				} else {
+					// TODO: Throw an UnexpectedValueException, once we've updated payments mw-core.
 					throw new MWException( __FUNCTION__ . " Cannot determine appropriate gateway to use for ffname '$form_key'. " );
 				}
 			}
 
-			$specialpage = ucfirst( $gateway ) . "Gateway";
+			// FIXME: We aren't doing ucfirst, more like camlcase.  Kludge like hell:
+			switch ( $gateway ) {
+				case 'globalcollect':
+					$specialpage = 'GlobalCollectGateway';
+					break;
+				case 'worldpay':
+					$specialpage = 'WorldpayGateway';
+					break;
+				default:
+					$specialpage = ucfirst( $gateway ) . "Gateway";
+			}
 		}
 
 		// set the default redirect
@@ -138,6 +163,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	/**
 	 * Gets all the valid forms that match the provided paramters.
 	 * These parameters should exactly match the params in getOneValidForm.
+	 * TODO: Should be passed as a hash or object.
 	 * @global array $wgDonationInterfaceAllowedHtmlForms Contains all whitelisted forms and meta data
 	 * @param string $country Optional country code filter
 	 * @param string $currency Optional currency code filter
@@ -150,7 +176,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	static function getAllValidForms( $country = null, $currency = null, $payment_method = null,
 		$payment_submethod = null, $recurring = false, $gateway = null
 	) {
-		global $wgDonationInterfaceAllowedHtmlForms, $wgDonationInterfaceClassMap;
+		global $wgDonationInterfaceAllowedHtmlForms;
 		$forms = $wgDonationInterfaceAllowedHtmlForms;
 
 		//Destroy all optional params that have no values and should be null.
@@ -348,13 +374,19 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 
 	/**
 	 * Return an array of all the currently enabled gateways. 
-	 * I had hoped there would be more to this...
-	 * @global type $wgDonationInterfaceEnabledGateways
-	 * @return array
+	 *
+	 * @return array of gateway identifiers.
 	 */
 	static function getAllEnabledGateways(){
-		global $wgDonationInterfaceEnabledGateways;
-		return $wgDonationInterfaceEnabledGateways;
+		global $wgDonationInterfaceGatewayAdapters;
+
+		$enabledGateways = array();
+		foreach ( $wgDonationInterfaceGatewayAdapters as $gatewayClass ) {
+			if ( $gatewayClass::getGlobal( 'Enabled' ) ) {
+				$enabledGateways[] = $gatewayClass::getIdentifier();
+			}
+		}
+		return $enabledGateways;
 	}
 
 	/**
@@ -462,6 +494,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	 * @param string $gateway The gateway used for the payment that failed
 	 * @param string $payment_method The code for the payment method that failed
 	 * @param string $payment_submethod Code for the payment submethod that failed
+	 * @throws RuntimeException
 	 */
 	static function getBestErrorForm( $gateway, $payment_method, $payment_submethod = null ) {
 		global $wgDonationInterfaceAllowedHtmlForms;
@@ -506,6 +539,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		}
 
 		if ( !sizeof( $error_forms ) ) {
+			// TODO: Throw an RuntimeException, once we've updated payments mw-core.
 			throw new MWException( __FUNCTION__ . "No error form found for gateway '$gateway', method '$payment_method', submethod '$payment_submethod'" );
 		}
 

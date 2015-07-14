@@ -115,7 +115,7 @@ class DataValidator {
 		//'donate_interface-error-msg' => 'Please enter your $1';
 		//If they have no defined error message, give 'em the default. 
 		if ($type === 'not_empty'){
-			if ( $message_field != 'general' && self::wmfMessageExists( $error_message_field_string, $language ) ) {
+			if ( $message_field != 'general' && MessageUtils::messageExists( $error_message_field_string, $language ) ) {
 				return WmfFramework::formatMessage(
 					'donate_interface-error-msg',
 					WmfFramework::formatMessage( $error_message_field_string )
@@ -145,20 +145,20 @@ class DataValidator {
 			
 			if ( $type === 'calculated'){
 				//try for the special "calculated" error message.
-				if ( self::wmfMessageExists( $error_message_string . '-calc', $language ) ) {
+				if ( MessageUtils::messageExists( $error_message_string . '-calc', $language ) ) {
 					return WmfFramework::formatMessage($error_message_string . '-calc');
 				}
 			}
 			
 //			//try for the "invalid whatever" error message.
-//			if ( self::wmfMessageExists( $error_message_string, $language ) ) {
+//			if ( MessageUtils::messageExists( $error_message_string, $language ) ) {
 //				return WmfFramework::formatMessage( $error_message_string );
 //			}
 			
 			//try for new more specific default correction message
 			if ( $message_field != 'general' 
-				&& self::wmfMessageExists( $error_message_field_string, $language )
-				&& self::wmfMessageExists( 'donate_interface-error-msg-field-correction', $language ) ) {
+				&& MessageUtils::messageExists( $error_message_field_string, $language )
+				&& MessageUtils::messageExists( 'donate_interface-error-msg-field-correction', $language ) ) {
 				return WmfFramework::formatMessage(
 					'donate_interface-error-msg-field-correction',
 					WmfFramework::formatMessage( $error_message_field_string )
@@ -169,71 +169,6 @@ class DataValidator {
 		//ultimate defaultness. 
 		return WmfFramework::formatMessage( 'donate_interface-error-msg-general' );
 	}
-	
-	
-	/**
-	 * wmfMessageExists returns true if a translatable message has been defined 
-	 * for the string and language that have been passed in, false if none is 
-	 * present. 
-	 * TODO: move
-	 * @param string $msg_key The message string to look up.
-	 * @param string $language A valid mediawiki language code.
-	 * @return boolean - true if message exists, otherwise false.
-	 */
-	public static function wmfMessageExists( $msg_key, $language ){
-		$language = strtolower( $language );
-		if ( WmfFramework::messageExists( $msg_key, $language ) ){
-			# if we are looking for English, we already know the answer
-			if ( $language == 'en' ){
-				return true;
-			}
-
-			# get the english version of the message
-			$msg_en = WmfFramework::formatMessage( $msg_key, 'en' );
-			# attempt to get the message in the specified language
-			$msg_lang = WmfFramework::formatMessage( $msg_key, $language );
-
-			# if the messages are the same, the message fellback to English, return false
-			return strcmp( $msg_en, $msg_lang ) != 0;
-		}
-		return false;
-	}
-
-	/**
-	 * wfLangSpecificFallback - returns the text of the first existant message
-	 * in the requested language. If no messages are found in that language, the
-	 * function returns the first existant fallback message.
-	 * TODO: Belongs somewhere very else.
-	 *
-	 * @param string $language the code of the requested language
-	 * @param array $msg_keys
-	 * @throws MWException
-	 * @return String the text of the first existant message
-	 */
-	public static function wfLangSpecificFallback( $language='en', $msg_keys=array() ){
-
-		if ( count( $msg_keys ) < 1 ){
-			throw new MWException( __FUNCTION__ . " BAD PROGRAMMER. No message keys given." );
-		}
-
-		# look for the first message that exists
-		foreach ( $msg_keys as $m ){
-			if ( self::wmfMessageExists( $m, $language ) ){
-				return WmfFramework::formatMessage( $m, $language );
-			}
-		}
-
-		# we found nothing in the requested language, return the first fallback message that exists
-		foreach ( $msg_keys as $m ){
-			if ( WmfFramework::messageExists( $m, $language ) ){
-				return WmfFramework::formatMessage( $m, $language );
-			}
-		}
-
-		# somehow we still don't have a message, return a default error message
-		return WmfFramework::formatMessage( $msg_keys[0] );
-	}
-
 
 	/**
 	 * validate
@@ -245,7 +180,7 @@ class DataValidator {
 	 * on. If this is not populated, no fields will throw errors for being empty,
 	 * UNLESS they are required for a field that uses them for more complex
 	 * validation (the 'calculated' phase).
-	 * @throws MWException
+	 * @throws BadMethodCallException
 	 * @return array An array of errors in a format ready for any derivitive of
 	 * the main DonationInterface Form class to display. The array will be empty
 	 * if no errors were generated and everything passed OK.
@@ -275,7 +210,7 @@ class DataValidator {
 		// Define all default validations.
 		$validations = array(
 			'not_empty' => array(
-				'amount',
+				'amount' => 'validate_non_zero',
 				'country',
 				'currency_code',
 				'gateway',
@@ -298,13 +233,13 @@ class DataValidator {
 			),
 			// Note that order matters for this group, dependencies must come first.
 			'calculated' => array(
+				'gateway' => 'validate_gateway',
 				'address' => 'validate_address',
 				'city' => 'validate_address',
 				'country' => 'validate_country_allowed',
 				'email' => 'validate_email',
 				'street' => 'validate_address',
 				'currency_code' => 'validate_currency_code',
-				'gateway' => 'validate_gateway',
 				'fname' => 'validate_name',
 				'lname' => 'validate_name',
 				'name' => 'validate_name',
@@ -355,7 +290,7 @@ class DataValidator {
 				// Prepare to call the thing.
 				$callable = array( 'DataValidator', $validation_function );
 				if ( !is_callable( $callable ) ) {
-					throw new Exception( __FUNCTION__ . " BAD PROGRAMMER. No function {$validation_function} for $field" );
+					throw new BadMethodCallException( __FUNCTION__ . " BAD PROGRAMMER. No function {$validation_function} for $field" );
 				}
 				$result = null;
 				// Handle special cases.
@@ -534,8 +469,7 @@ class DataValidator {
 		}
 		return false;
 	}
-	
-	
+
 	/**
 	 * validate_gateway
 	 * Checks to make sure the gateway is populated with a valid and enabled 
@@ -544,9 +478,14 @@ class DataValidator {
 	 * @return boolean True if $value is a valid gateway, otherwise false
 	 */
 	protected static function validate_gateway( $value ){
-		global $wgDonationInterfaceEnabledGateways;
+		global $wgDonationInterfaceGatewayAdapters;
 
-		return in_array( $value, $wgDonationInterfaceEnabledGateways, true );
+		foreach ( $wgDonationInterfaceGatewayAdapters as $adapterClass ) {
+			if ( $adapterClass::getIdentifier() === $value ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -625,6 +564,21 @@ class DataValidator {
 	 */
 	public static function validate_address( $value ) {
 		return !DataValidator::cc_number_exists_in_str( $value );
+	}
+
+	/**
+	 * Checks to make sure that the $value is present in the $data array, and not equivalent to zero.
+	 * @param string $value The value to check for non-zeroness.
+	 * @param array $data The whole data set.
+	 * @return boolean True if the $value is not missing or zero, otherwise false.
+	 */
+	public static function validate_non_zero( $value ) {
+		if ( $value === null || $value === ''
+			|| preg_match( '/^0+(\.0+)?$/', $value )
+		) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -733,6 +687,7 @@ EOT;
 	 * @param string $currency_code
 	 * @param float $amount
 	 * @return float
+	 * @throws UnexpectedValueException
 	 */
 	public static function convert_to_usd( $currency_code, $amount ) {
 		$rates = CurrencyRates::getCurrencyRates();
@@ -740,7 +695,7 @@ EOT;
 		if ( array_key_exists( $code, $rates ) ) {
 			$usd_amount = $amount / $rates[$code];
 		} else {
-			throw new MWException( 'Bad programmer!  Bad currency made it too far through the portcullis' );
+			throw new UnexpectedValueException( 'Bad programmer!  Bad currency made it too far through the portcullis' );
 		}
 		return $usd_amount;
 	}
@@ -816,7 +771,6 @@ EOT;
 	 *
 	 * @param string $ip The IP addx we want to check
 	 * @param array $ip_list IP list to check against
-	 * @throws MWException
 	 * @return bool
 	 */
 	public static function ip_is_listed( $ip, $ip_list ) {

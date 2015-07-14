@@ -1,0 +1,63 @@
+{{{ template_trail }}}
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+	<tbody>
+	<tr>
+		<td id="appeal" valign="top">
+			{{{ appeal_text }}}
+		</td>
+		<td id="donate" valign="top">
+			<div id="greenBackground" class="">
+				{{> no_script }}
+				<div id="topError" class="creditcard-error-msg">{{# errors }}<p class="error">{{ message }}</p>{{/ errors }}</div>
+
+			<form name="payment" id="payment-form" method="post" action="{{ action }}">
+				<div id="payment_gateway-personal-info">
+					<table id="payment-table-donor">
+						<tbody>
+						<tr>
+							<td>
+								<div id="step1header">
+									{{> payment_amount }}
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<h3 class="cc_header">{{ l10n "donate_interface-cc-form-header-personal" }}<img src="{{ script_path }}/extensions/DonationInterface/gateway_forms/includes/padlock.gif" style="vertical-align:baseline;margin-left:8px;"></h3>
+							</td>
+						</tr>
+{{> personal_info }}
+{{> payment_method }}
+						</tbody>
+					</table>
+				</div>
+				<input type="hidden" name="gateway" value="{{ gateway }}" id="gateway" />
+				<input type="hidden" value="{{ country }}" name="country" id="country" />
+				<input type="hidden" value="0" name="PaypalRedirect" id="PaypalRedirect">
+				<input type="hidden" value="{{ expiration }}" name="expiration" id="expiration"/>
+				<input type="hidden" value="{{ utm_source }}" name="utm_source"/>
+				<input type="hidden" value="{{ utm_medium }}" name="utm_medium"/>
+				<input type="hidden" value="{{ utm_campaign }}" name="utm_campaign"/>
+				<input type="hidden" value="{{ language }}" name="language"/>
+				<input type="hidden" value="{{ referrer }}" name="referrer"/>
+				<input type="hidden" value="{{ token }}" name="token"/>
+				<input type="hidden" value="{{ order_id }}"  name="order_id"/>
+				<input type="hidden" value="{{ contribution_tracking_id }}" name="contribution_tracking_id"/>
+				<input type="hidden" value="{{ data_hash }}" name="data_hash"/>
+				<input type="hidden" value="{{ gateway }}" name="gateway"/>
+				<input type="hidden" value="{{ payment_method }}" name="payment_method"/>
+			</form>
+			</div>
+			<p id="informationsharing">{{{ l10n "donate_interface-informationsharing" "url" }}}<!-- TODO: use url param --></p>
+			<table>
+				<tr>
+					<td>
+{{> more_info_links }}
+					</td>
+					<td>{{{ verisign_logo }}}</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	</tbody>
+</table>

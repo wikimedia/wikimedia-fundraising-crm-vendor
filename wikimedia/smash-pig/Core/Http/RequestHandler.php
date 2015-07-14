@@ -3,9 +3,8 @@
 use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
 use SmashPig\Core\Logging\Logger;
-use SmashPig\Core\AutoLoader;
 
-use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
+use Symfony\Component\HttpFoundation\ParameterBag;
 
 /**
  * Entry point for the base initialized SmashPig application. Expects the requested
@@ -15,11 +14,6 @@ use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
  *
  * This class will load the requested configuration view; and then look for the action
  * to have been registered under the 'endpoints' node.
- *
- * -- AutoLoader Integration --
- * This class will look under the 'namespaces' node for any new namespaces it needs to
- * tell the autoloader about. It is expected that 'namespaces' is an array of arrays.
- * Each subarray is required to have a 'namespace' key and a 'disk-path' key.
  */
 class RequestHandler {
 	/**
@@ -28,6 +22,9 @@ class RequestHandler {
 	 * @return Response
 	 */
 	public static function process( $configPath = null ) {
+		// Can go away once we require PHP 5.6
+		ini_set( 'default_charset', 'UTF-8' );
+
 		// --- Get the request and response objects
 		$request = Request::createFromGlobals();
 		$response = new Response();
@@ -49,12 +46,10 @@ class RequestHandler {
 		$action = array_shift( $parts );
 
 		// --- Initialize core services ---
-		if ( $configPath === null ) {
-			$configPath = AutoLoader::getInstallPath();
-		}
+		$configPath = __DIR__ . '/../../';
 		$config = new Configuration(
-			AutoLoader::makePath( $configPath, 'config_defaults.php' ),
-			AutoLoader::makePath( $configPath, 'config.php' ),
+			$configPath . 'config_defaults.php',
+			$configPath . 'config.php',
 			$view,
 			true
 		);
@@ -62,8 +57,20 @@ class RequestHandler {
 		Context::init( $config );
 		Logger::enterContext( Context::get()->getContextId() );
 
+		if ( $config->nodeExists( 'charset' ) ) {
+			// recreate the request with a different input encoding
+			// FIXME: This is only converting the POST values.  Also,
+			// is there really no better way to do this?
+			$decoded = rawurldecode( $request->getContent() );
+			$content = mb_convert_encoding( $decoded, 'UTF-8', $config->val( 'charset' ) );
+
+			parse_str( $content, $data );
+			$request->request = new ParameterBag( $data );
+		}
+
 		set_error_handler( '\SmashPig\Core\Http\RequestHandler::lastChanceErrorHandler' );
 		set_exception_handler( '\SmashPig\Core\Http\RequestHandler::lastChanceExceptionHandler' );
+		register_shutdown_function('\SmashPig\Core\Http\RequestHandler::shutdownHandler');
 
 		// Check to make sure there's even a point to continuing
 		Logger::info( "Starting processing for request, configuration view: '$view', action: '$action'" );
@@ -72,11 +79,6 @@ class RequestHandler {
 			$response->setStatusCode( 403, "Action '$action' not configured. Cannot continue." );
 			return $response;
 		}
-
-		// Register fun additional things
-		AutoLoader::getInstance()->addConfiguredIncludePaths();
-		AutoLoader::getInstance()->addConfiguredNamespaces();
-		AutoLoader::getInstance()->addConfiguredIncludes();
 
 		// Inform the request object of our security environment
 		$trustedHeader = $config->val( 'security/ip-header-name' );
@@ -103,6 +105,13 @@ class RequestHandler {
 			$response->setContent( '' );
 		}
 		return $response;
+	}
+
+	public static function shutdownHandler() {
+		$lastError = error_get_last();
+		if ( $lastError and $lastError['type'] === E_ERROR ) {
+			Logger::alert("Fatal error caught by shutdown handler. ({$lastError['type']}) {$lastError['message']} @ {$lastError['file']}:{$lastError['line']}");
+		}
 	}
 
 	public static function lastChanceErrorHandler( $errno, $errstr, $errfile = 'Unknown File',

@@ -7,4 +7,6 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
+    'Predis\\' => array($vendorDir . '/predis/predis/src'),
+    'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
 );

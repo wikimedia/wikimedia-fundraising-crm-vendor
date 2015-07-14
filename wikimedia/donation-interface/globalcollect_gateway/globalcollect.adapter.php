@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
  * GlobalCollectAdapter
@@ -23,8 +24,12 @@
 class GlobalCollectAdapter extends GatewayAdapter {
 	const GATEWAY_NAME = 'Global Collect';
 	const IDENTIFIER = 'globalcollect';
-	public $communication_type = 'xml';
 	const GLOBAL_PREFIX = 'wgGlobalCollectGateway';
+	const GC_CC_LIMBO_QUEUE = 'globalcollect-cc-limbo';
+
+	public function getCommunicationType() {
+		return 'xml';
+	}
 
 	/**
 	 * Add a key to the transaction INSERT_ORDERWITHPAYMENT.
@@ -337,21 +342,21 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			'OK' => true,
 			'NOK' => false,
 		);
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending', 0, 70 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'failed', 100, 180 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending-poke', 200 ); //The cardholder was successfully authenticated... but we have to DO_FINISHPAYMENT
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'failed', 220, 280 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending', 300 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'failed', 310, 350 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'revised', 400 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending-poke', 525 ); //"The payment was challenged by your Fraud Ruleset and is pending" - we never see this.
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending', 550 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending-poke', 600 ); //Payments sit here until we SET_PAYMENT
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'pending', 625, 650 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'complete', 800, 975 ); //these are all post-authorized, but technically pre-settled...
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'complete', 1000, 1050 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'failed', 1100, 99999 );
-		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'failed', 100000, 999999 ); // 102020 - ACTION 130 IS NOT ALLOWED FOR MERCHANT NNN, IPADDRESS NNN.NNN.NNN.NNN
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING, 0, 70 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 100, 180 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING_POKE, 200 ); //The cardholder was successfully authenticated... but we have to DO_FINISHPAYMENT
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 220, 280 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING, 300 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 310, 350 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::REVISED, 400 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING_POKE, 525 ); //"The payment was challenged by your Fraud Ruleset and is pending" - we never see this.
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING, 550 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING_POKE, 600 ); //Payments sit here until we SET_PAYMENT
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::PENDING, 625, 650 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::COMPLETE, 800, 975 ); //these are all post-authorized, but technically pre-settled...
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::COMPLETE, 1000, 1050 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 1100, 99999 );
+		$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 100000, 999999 ); // 102020 - ACTION 130 IS NOT ALLOWED FOR MERCHANT NNN, IPADDRESS NNN.NNN.NNN.NNN
 
 
 		$this->defineGoToThankYouOn();
@@ -386,16 +391,16 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 *
 	 * Denied:
 	 * - failed
-	 * - Any thing else not defined in $goToThankYouOn
+	 * - Any thing else not defined @see FinalStatus
 	 *
 	 */
 	public function defineGoToThankYouOn() {
 
 		$this->goToThankYouOn = array(
-			'complete',
-			'pending',
-			'pending-poke',
-			'revised',
+			FinalStatus::COMPLETE,
+			FinalStatus::PENDING,
+			FinalStatus::PENDING_POKE,
+			FinalStatus::REVISED,
 		);
 	}
 
@@ -1064,10 +1069,69 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		);
 	}
 
+	public function doPayment() {
+		$payment_method = $this->getPaymentMethod();
+
+		// FIXME: this should happen during normalization, and before validatation.
+		if ( $payment_method === 'dd'
+				and !$this->getPaymentSubmethod() ) {
+			// Synthesize a submethod based on the country.
+			$country_code = strtolower( $this->getData_Unstaged_Escaped( 'country' ) );
+			$this->addRequestData( array(
+				'payment_submethod' => "dd_{$country_code}",
+			) );
+		}
+
+		// Execute the proper transaction code:
+		switch ( $payment_method ) {
+			case 'cc': 
+				// FIXME: we don't actually use this code path, it's done from gc.cc.js instead.
+
+				$this->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
+
+				// Display an iframe for credit cards
+				return PaymentResult::newIframe( $this->getTransactionDataFormAction() );
+
+			case 'bt':
+			case 'obt':
+				$this->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
+
+				if ( in_array( $this->getFinalStatus(), $this->getGoToThankYouOn() ) ) {
+					return PaymentResult::newForm( 'end-' . $payment_method );
+				}
+				break;
+				
+			case 'dd':
+				$this->do_transaction('Direct_Debit');
+				break;
+				
+			case 'ew':
+			case 'rtbt':
+			case 'cash':
+				$this->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
+				$formAction = $this->getTransactionDataFormAction();
+
+				// Redirect to the bank
+				if ( $formAction ) {
+					return PaymentResult::newRedirect( $formAction );
+				}
+				break;
+			
+			default: 
+				$this->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
+		}
+
+		return PaymentResult::fromResults(
+			$this->transaction_response,
+			$this->getFinalStatus()
+		);
+	}
+
 	/**
 	 * Because GC has some processes that involve more than one do_transaction
 	 * chained together, we're catching those special ones in an overload and
 	 * letting the rest behave normally.
+	 * @return PaymentTransactionResponse
 	 */
 	public function do_transaction( $transaction ) {
 		$this->session_addDonorData();
@@ -1089,13 +1153,18 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		}
 	}
 
-
+	/**
+	 * Either confirm or reject the payment
+	 * @global WebRequest $wgRequest
+	 * @return PaymentTransactionResponse
+	 */
 	private function transactionConfirm_CreditCard(){
 		global $wgRequest; //this is for pulling vars straight from the querystring
 		$pull_vars = array(
 			'CVVRESULT' => 'cvv_result',
 			'AVSRESULT' => 'avs_result',
 		);
+		// FIXME: Refactor as normal unstaging.
 		$qsResults = array();
 		foreach ( $pull_vars as $theirkey => $ourkey) {
 			$tmp = $wgRequest->getVal( $theirkey, null );
@@ -1112,9 +1181,11 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$this->addResponseData( $qsResults );
 			$logmsg = 'CVV Result from querystring: ' . $this->getData_Unstaged_Escaped( 'cvv_result' );
 			$logmsg .= ', AVS Result from querystring: ' . $this->getData_Unstaged_Escaped( 'avs_result' );
-			$this->log( $logmsg );
+			$this->logger->info( $logmsg );
 			//add an antimessage for everything but orphans
-			$this->log( 'Adding Antimessage' );
+			$this->logger->info( 'Adding Antimessage' );
+			$this->deleteLimboMessage( self::GC_CC_LIMBO_QUEUE );
+			// TODO: Stop mirroring to STOMP
 			$this->doLimboStompTransaction( true );
 		} else { //this is an orphan transaction.
 			$is_orphan = true;
@@ -1123,14 +1194,15 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			//...aside from the fact that if the user has gotten this far, they left
 			//the part where they could add more data.
 			//By now, "incomplete" definitely means "failed" for 0-70.
-			$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'failed', 0, 70 );
+			$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 0, 70 );
 		}
 
 		$cancelflag = false; //this will denote the thing we're trying to do with the donation attempt
 		$problemflag = false; //this will get set to true, if we can't continue and need to give up and just log the hell out of it.
 		$problemmessage = ''; //to be used in conjunction with the flag.
-		$problemseverity = LOG_ERR; //to be used also in conjunction with the flag, to route the message to the appropriate log. Urf.
+		$problemseverity = LogLevel::ERROR; //to be used also in conjunction with the flag, to route the message to the appropriate log. Urf.
 		$original_status_code = NULL;
+		$ran_hooks = false;
 
 		$loopcount = $this->getGlobal( 'RetryLoopCount' );
 		$loops = 0;
@@ -1138,17 +1210,24 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		for ( $loops = 0; $loops < $loopcount && !$cancelflag && !$problemflag; ++$loops ){
 			$gotCVV = false;
 			$status_result = $this->do_transaction( 'GET_ORDERSTATUS' );
+			$validationAction = $this->getValidationAction();
+			if ( !$is_orphan ) {
+				// live users get antifraud hooks run in this txn's pre-process
+				$ran_hooks = true;
+			}
+			// FIXME: Refactor as normal unstaging.
 			$xmlResults = array(
 				'cvv_result' => '',
 				'avs_result' => ''
 			);
-			if ( array_key_exists('data', $status_result) ) {
+			$data = $status_result->getData();
+			if ( !empty( $data ) ) {
 				foreach ( $pull_vars as $theirkey => $ourkey) {
-					if ( !array_key_exists( $theirkey, $status_result['data'] ) ) {
+					if ( !array_key_exists( $theirkey, $data ) ) {
 						continue;
 					}
 					$gotCVV = true;
-					$xmlResults[$ourkey] = $status_result['data'][$theirkey];
+					$xmlResults[$ourkey] = $data[$theirkey];
 					if ( array_key_exists( $ourkey, $qsResults ) && $qsResults[$ourkey] != $xmlResults[$ourkey] ) {
 						$problemflag = true;
 						$problemmessage = "$theirkey value '$qsResults[$ourkey]' from querystring does not match value '$xmlResults[$ourkey]' from GET_ORDERSTATUS XML";
@@ -1158,23 +1237,25 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$this->addResponseData( $xmlResults );
 			$logmsg = 'CVV Result from XML: ' . $this->getData_Unstaged_Escaped( 'cvv_result' );
 			$logmsg .= ', AVS Result from XML: ' . $this->getData_Unstaged_Escaped( 'avs_result' );
-			$this->log( $logmsg );
+			$this->logger->info( $logmsg );
 
-			if ( array_key_exists( 'force_cancel', $status_result ) && $status_result['force_cancel'] ) {
+			if ( $status_result->getForceCancel() ) {
 				$cancelflag = true; //don't retry or MasterCard will fine us
 			}
 
-			if ( $is_orphan && !$cancelflag ) {
-				if ( $loops === 0 ){ //only want to do this once - it's not going to change.
+			if ( $is_orphan && !$cancelflag && !empty( $data ) ) {
+				$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
+				if ( $action === FinalStatus::PENDING_POKE && !$ran_hooks ){ //only want to do this once - it's not going to change.
 					$this->runAntifraudHooks();
+					$ran_hooks = true;
 				}
-				$status_result['action'] = $this->getValidationAction();
+				$validationAction = $this->getValidationAction();
 			}
 
 			//we filtered
-			if ( array_key_exists( 'action', $status_result ) && $status_result['action'] != 'process' ){
+			if ( $validationAction !== 'process' ){
 				$cancelflag = true; //don't retry: We've fraud-failed them intentionally.
-			} elseif ( array_key_exists( 'status', $status_result ) && $status_result['status'] === false ) {
+			} elseif ( $status_result->getCommunicationStatus() === false ) {
 			//can't communicate or internal error
 				$problemflag = true;
 				$problemmessage = "Can't communicate or internal error."; // /me shrugs - I think the orphan slayer is hitting this sometimes. Confusing.
@@ -1203,38 +1284,44 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					$problemmessage = "We don't have an order status after doing a GET_ORDERSTATUS.";
 				}
 				switch ( $order_status_results ){
-					case 'failed' :
-					case 'revised' :
+					case FinalStatus::FAILED :
+					case FinalStatus::REVISED :
 						$cancelflag = true; //makes sure we don't try to confirm.
 						break 2;
-					case 'complete' :
+					case FinalStatus::COMPLETE :
 						$problemflag = true; //nothing to be done.
 						$problemmessage = "GET_ORDERSTATUS reports that the payment is already complete.";
-						$problemseverity = LOG_INFO;
+						$problemseverity = LogLevel::INFO;
 						break 2;
-					case 'pending-poke' :
+					case FinalStatus::PENDING_POKE :
 						if ( $is_orphan && !$gotCVV ){
 							$problemflag = true;
 							$problemmessage = "Unable to retrieve orphan cvv/avs results (Communication problem?).";
 						}
+						if ( !$ran_hooks ) {
+							$problemflag = true;
+							$problemmessage = 'On the brink of payment confirmation without running antifraud hooks';
+							$problemseverity = LogLevel::ERROR;
+							break 2;
+						}
 
 						//none of this should ever execute for a transaction that doesn't use 3d secure...
 						if ( $txn_data['STATUSID'] === '200' && ( $loops < $loopcount-1 ) ){
-							$this->log( "Running DO_FINISHPAYMENT ($loops)" );
+							$this->logger->info( "Running DO_FINISHPAYMENT ($loops)" );
 
 							$dopayment_result = $this->do_transaction( 'DO_FINISHPAYMENT' );
-							$dopayment_data = $dopayment_result['data'];
+							$dopayment_data = $dopayment_result->getData();
 							//Check the txn status and result code to see if we should bother continuing
 							if ( $this->getTransactionStatus() ){
-								$this->log( "DO_FINISHPAYMENT ($loops) returned with status ID " . $dopayment_data['STATUSID'] );
-								if ( $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $dopayment_data['STATUSID'] ) === 'failed' ){
+								$this->logger->info( "DO_FINISHPAYMENT ($loops) returned with status ID " . $dopayment_data['STATUSID'] );
+								if ( $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $dopayment_data['STATUSID'] ) === FinalStatus::FAILED ){
 									//ack and die.
 									$problemflag = true; //nothing to be done.
 									$problemmessage = "DO_FINISHPAYMENT says the payment failed. Giving up forever.";
-									$this->finalizeInternalStatus('failed');
+									$this->finalizeInternalStatus( FinalStatus::FAILED );
 								}
 							} else {
-								$this->log( "DO_FINISHPAYMENT ($loops) returned NOK", LOG_ERR );
+								$this->logger->error( "DO_FINISHPAYMENT ($loops) returned NOK" );
 							}
 							break;
 						}
@@ -1243,7 +1330,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 							break 2; //no need to loop.
 						}
 
-					case 'pending' :
+					case FinalStatus::PENDING :
 						//if it's really pending at this point, we need to...
 						//...leave it alone. If we're orphan slaying, this will stay in the queue.
 						break 2;
@@ -1254,14 +1341,15 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		//if we got here with no problemflag,
 		//confirm or cancel the payment based on $cancelflag
 		if ( !$problemflag ){
-			if ( isset( $status_result['data'] ) && is_array( $status_result['data'] ) ){
+			if ( is_array( $data ) ){
+				// FIXME: Refactor as normal unstaging.
 				//if they're set, get CVVRESULT && AVSRESULT
 				$pull_vars['EFFORTID'] = 'effort_id';
 				$pull_vars['ATTEMPTID'] = 'attempt_id';
 				$addme = array();
 				foreach ( $pull_vars as $theirkey => $ourkey) {
-					if ( array_key_exists( $theirkey, $status_result['data'] ) ){
-						$addme[$ourkey] = $status_result['data'][$theirkey];
+					if ( array_key_exists( $theirkey, $data ) ){
+						$addme[$ourkey] = $data[$theirkey];
 					}
 				}
 
@@ -1272,14 +1360,13 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 			if ( !$cancelflag ) {
 				$final = $this->do_transaction( 'SET_PAYMENT' );
-				if ( isset( $final['status'] ) && $final['status'] === true ) {
-					$this->finalizeInternalStatus( 'complete' );
+				if ( $final->getCommunicationStatus() === true ) {
+					$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 					//get the old status from the first txn, and add in the part where we set the payment.
-					$this->setTransactionResult( "Original Response Status (pre-SET_PAYMENT): " . $original_status_code, 'txn_message' );
-					$this->runPostProcessHooks();  //stomp is in here
-					$add_antimessage = true;
+					$this->transaction_response->setTxnMessage( "Original Response Status (pre-SET_PAYMENT): " . $original_status_code );
+					$this->runPostProcessHooks();  // Queueing is in here.
 				} else {
-					$this->finalizeInternalStatus( 'failed' );
+					$this->finalizeInternalStatus( FinalStatus::FAILED );
 					$problemflag = true;
 					$problemmessage = "SET_PAYMENT couldn't communicate properly!";
 				}
@@ -1292,7 +1379,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					 * In fact, GC will error out if we try to do that, and tell
 					 * us there is nothing to cancel.
 					 */
-					$this->finalizeInternalStatus( 'failed' );
+					$this->finalizeInternalStatus( FinalStatus::FAILED );
 				} else {
 					//in case we got wiped out, set the final status to what it was before.
 					$this->finalizeInternalStatus( $order_status_results );
@@ -1303,23 +1390,28 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		if ( $problemflag || $cancelflag ){
 			if ( $cancelflag ){ //cancel wins
 				$problemmessage = "Cancelling payment";
-				$problemseverity = LOG_INFO;
+				$problemseverity = LogLevel::INFO;
 				$errors = array( '1000001' => $problemmessage );
 			} else {
 				$errors = array( '1000000' => 'Transaction could not be processed due to an internal error.' );
 			}
 
 			//we have probably had a communication problem that could mean stranded payments.
-			$this->log( $problemmessage, $problemseverity );
+			$this->logger->log( $problemseverity, $problemmessage );
 			//hurm. It would be swell if we had a message that told the user we had some kind of internal error.
-			$ret = array(
-				'status' => false,
-				//DO NOT PREPEND $problemmessage WITH ANYTHING!
-				//orphans.php is looking for specific things in position 0.
-				'message' => $problemmessage,
-				'errors' => $errors,
-				'action' => $this->getValidationAction(),
-			);
+			$ret = new PaymentTransactionResponse();
+			$ret->setCommunicationStatus( false );
+			//DO NOT PREPEND $problemmessage WITH ANYTHING!
+			//orphans.php is looking for specific things in position 0.
+			$ret->setMessage( $problemmessage );
+			foreach( $errors as $code => $error ) {
+				$ret->addError( $code, array(
+					'message' => $error,
+					'debugInfo' => 'Failure in transactionConfirm_CreditCard',
+					'logLevel' => $problemseverity
+				) );
+			}
+			// TODO: should we set $this->transaction_response ?
 			return $ret;
 		}
 
@@ -1332,12 +1424,12 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 */
 	protected function transactionRecurring_Charge() {
 		$result = $this->do_transaction('DO_PAYMENT');
-		if ($result['status']) {
+		if ( $result->getCommunicationStatus() ) {
 			$result = $this->do_transaction('GET_ORDERSTATUS');
 			$data = $this->getTransactionData();
 			$orderStatus = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
-			if ( $this->getTransactionStatus() && $orderStatus == 'pending-poke' ) {
-				$this->transactions['SET_PAYMENT']['values']['PAYMENTPRODUCTID'] = $result['data']['PAYMENTPRODUCTID'];
+			if ( $this->getTransactionStatus() && $orderStatus === FinalStatus::PENDING_POKE ) {
+				$this->transactions['SET_PAYMENT']['values']['PAYMENTPRODUCTID'] = $data['PAYMENTPRODUCTID'];
 				$result = $this->do_transaction('SET_PAYMENT');
 			}
 		}
@@ -1346,27 +1438,31 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
     protected function transactionDirect_Debit() {
 		$result = $this->do_transaction('DO_BANKVALIDATION');
-		if ($result['status'])
+		if ( $result->getCommunicationStatus() )
 		{
 			$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['HOSTEDINDICATOR'] = 0;
 			$result = $this->do_transaction('INSERT_ORDERWITHPAYMENT');
-			if (isset($result['status']) && $result['status'])
+			if ( $result->getCommunicationStatus() === true )
 			{
-				if ($this->getFinalStatus() == 'pending-poke')
+				if ( $this->getFinalStatus() === FinalStatus::PENDING_POKE )
 				{
 					$txn_data = $this->getTransactionData();
 					$original_status_code = isset( $txn_data['STATUSID']) ? $txn_data['STATUSID'] : 'NOT SET';
 
-					$result = $this->do_transaction('SET_PAYMENT');
-					if (isset($result['status']) && $result['status'] === true)
+					$result = $this->do_transaction( 'SET_PAYMENT' );
+					if ( $result->getCommunicationStatus() === true )
 					{
-						$this->finalizeInternalStatus( 'complete' );
+						$this->finalizeInternalStatus( FinalStatus::COMPLETE );
+						// TODO: Stop emitting antimessage.
 						$this->doLimboStompTransaction( true );
 					} else {
-						$this->finalizeInternalStatus( 'failed' );
+						$this->finalizeInternalStatus( FinalStatus::FAILED );
 						//get the old status from the first txn, and add in the part where we set the payment.
-						$this->setTransactionResult( "Original Response Status (pre-SET_PAYMENT): " . $original_status_code, 'txn_message' );
+						$this->transaction_response->setTxnMessage( "Original Response Status (pre-SET_PAYMENT): " . $original_status_code );
 					}
+
+					// We won't need the limbo message again, either way, so cancel it.
+					$this->deleteLimboMessage();
 				}
             }
         }
@@ -1379,7 +1475,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * @param DomDocument	$response	The response XML loaded into a DomDocument
 	 * @return bool
 	 */
-	public function getResponseStatus( $response ) {
+	public function parseResponseCommunicationStatus( $response ) {
 
 		$aok = true;
 
@@ -1403,27 +1499,32 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * @param array	$response	The response array
 	 * @return array
 	 */
-	public function getResponseErrors( $response ) {
+	public function parseResponseErrors( $response ) {
 		$errors = array( );
 		foreach ( $response->getElementsByTagName( 'ERROR' ) as $node ) {
 			$code = '';
 			$message = '';
+			$debugInfo = '';
 			foreach ( $node->childNodes as $childnode ) {
 				if ( $childnode->nodeName === "CODE" ) {
 					$code = $childnode->nodeValue;
 				}
 				if ( $childnode->nodeName === "MESSAGE" ) {
 					$message = $childnode->nodeValue;
-					$this->setTransactionResult( $message, 'raw_error_msg'); //this is a hack. @TODO: Refactor all 3rd party error handling
+					$debugInfo = $message;
 					//I am hereby done screwing around with GC field constraint violations.
 					//They vary between ***and within*** payment types, and their docs are a joke.
 					if ( strpos( $message, 'DOES NOT HAVE LENGTH' ) !== false ) {
-						$this->log( $message, LOG_ERR );
+						$this->logger->error( $message );
 					}
 				}
 			}
 
-			$errors[ $code ] = ( $this->getGlobal( 'DisplayDebug' ) ) ? '*** ' . $message : $this->getErrorMapByCodeAndTranslate( $code );
+			$errors[ $code ] = array(
+				'logLevel' => LogLevel::ERROR,
+				'message' => ( $this->getGlobal( 'DisplayDebug' ) ) ? '*** ' . $message : $this->getErrorMapByCodeAndTranslate( $code ),
+				'debugInfo' => $debugInfo,
+			);
 		}
 		return $errors;
 	}
@@ -1438,7 +1539,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * @param DOMDocument	$response	The response object
 	 * @return array
 	 */
-	public function getResponseData( $response ) {
+	public function parseResponseData( $response ) {
 		$data = array( );
 
 		$transaction = $this->getCurrentTransaction();
@@ -1451,11 +1552,11 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 				//if we have no order ID yet (or it's somehow wrong), retrieve it and put it in the usual place.
 				if ( array_key_exists( 'ORDERID', $data ) && ( $data['ORDERID'] != $this->getData_Unstaged_Escaped( 'order_id' ) ) ) {
-					$this->log( "inside " . $data['ORDERID'] );
+					$this->logger->info( "inside " . $data['ORDERID'] );
 					$this->normalizeOrderID( $data['ORDERID'] );
-					$this->log( print_r( $this->getOrderIDMeta(), true ) );
+					$this->logger->info( print_r( $this->getOrderIDMeta(), true ) );
 					$this->addRequestData( array ( 'order_id' => $data['ORDERID'] ) );
-					$this->log( print_r( $this->getOrderIDMeta(), true ) );
+					$this->logger->info( print_r( $this->getOrderIDMeta(), true ) );
 					$this->session_addDonorData();
 				}
 
@@ -1465,7 +1566,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					if ( array_key_exists( 'additional_success_status', $payment_info ) && is_array( $payment_info['additional_success_status'] ) ){
 						foreach ( $payment_info['additional_success_status'] as $status ){
 							//mangle the definition of success.
-							$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', 'complete', $status );
+							$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::COMPLETE, $status );
 						}
 					}
 					if ( $this->getTransactionStatus() ) {
@@ -1498,7 +1599,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				if ( isset( $data['STATUSID'] ) ) {
 					$this->finalizeInternalStatus( $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] ) );
 				} else {
-					$this->finalizeInternalStatus( 'failed' );
+					$this->finalizeInternalStatus( FinalStatus::FAILED );
 				}
 				$data['ORDER'] = $this->xmlChildrenToArray( $response, 'ORDER' );
 				break;
@@ -1563,8 +1664,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 *
 	 * @param array    $data    The data array
 	 *
-	 * @throws MWException
-	 * @return boolean
+	 * @throws UnexpectedValueException
+	 * @return string One of the constants defined in @see FinalStatus
 	 */
 	public function checkDoBankValidation( &$data ) {
 		$checks = &$data['CHECKSPERFORMED'];
@@ -1574,16 +1675,14 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		$isWarning = 0;
 		$isNotChecked = 0;
 
-		$return = 'failed';
-
 		if ( !is_array( $checks['CHECKS'] ) ) {
 			// Should we trigger an error if no checks are performed?
 			// For now, just return failed.
-			return $return;
+			return FinalStatus::FAILED;
 		}
 
 		// We only mark validation as a failure if we have warnings or errors.
-		$return = 'complete';
+		$return = FinalStatus::COMPLETE;
 
 		foreach ( $checks['CHECKS'] as $checkCode => $checkResult ) {
 			// Prefix error codes with dbv for DO_BANKVALIDATION
@@ -1607,22 +1706,22 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			} else {
 				$message = 'Unknown check result: (' . $checkResult . ')';
 
-				throw new MWException( $message );
+				throw new UnexpectedValueException( $message );
 			}
 		}
 
 		// The return text needs to match something in @see $this->defineGoToThankYouOn()
 		if ( $isPass ) {
-			$return = 'complete';
+			$return = FinalStatus::COMPLETE;
 		}
 
 		if ( $isWarning ) {
-			$this->log( 'Got warnings from bank validation: ' . print_r( $data['errors'], TRUE ), LOG_ERR );
-			$return = 'complete';
+			$this->logger->error( 'Got warnings from bank validation: ' . print_r( $data['errors'], TRUE ) );
+			$return = FinalStatus::COMPLETE;
 		}
 
 		if ( $isError ) {
-			$return = 'failed';
+			$return = FinalStatus::FAILED;
 		}
 
 		return $return;
@@ -1714,7 +1813,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			'UYU', // Uruguayan peso
 			'USD', // U.S. dollar
 // - Removed temporarily for WellsFargo (28/06/13)			'UZS', // Uzbekistani som
-// - removed temporarily (WorldPay)			'VND', // Vietnamese dong
+// - removed temporarily (Worldpay)			'VND', // Vietnamese dong
 			'VEF', // Venezuelan bolívar
 			'XAF', // Central African CFA franc
 			'XCD', // East Caribbean dollar
@@ -1725,34 +1824,39 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	}
 
 	/**
-	 * Process the response
+	 * Process the response and set transaction_response properties
 	 *
-	 * @param array	$response   The response array
-	 * @param       $retryVars  If the transaction suffered a recoverable error, this will be
-	 *  an array of all variables that need to be recreated and restaged.
+	 * @param DomDocument $response Cleaned-up XML from the GlobalCollect API
 	 *
-	 * @return An actionable error code if it happened.
+	 * @throws ResponseProcessingException with code and potentially retry vars.
 	 */
-	public function processResponse( $response, &$retryVars = null ) {
+	public function processResponse( $response ) {
+		$this->transaction_response->setCommunicationStatus(
+			$this->parseResponseCommunicationStatus( $response )
+		);
+		$errors = $this->parseResponseErrors( $response );
+		$this->transaction_response->setErrors( $errors );
+		$data = $this->parseResponseData( $response );
+		$this->transaction_response->setData( $data );
 		//set the transaction result message
-		$responseStatus = isset( $response['data']['STATUSID'] ) ? $response['data']['STATUSID'] : '';
-		$this->setTransactionResult( "Response Status: " . $responseStatus, 'txn_message' ); //TODO: Translate for GC.
-		$this->setTransactionResult( $this->getData_Unstaged_Escaped( 'order_id' ), 'gateway_txn_id' );
+		$responseStatus = isset( $data['STATUSID'] ) ? $data['STATUSID'] : '';
+		$this->transaction_response->setTxnMessage( "Response Status: " . $responseStatus ); //TODO: Translate for GC.
+		$this->transaction_response->setGatewayTransactionId( $this->getData_Unstaged_Escaped( 'order_id' ) );
 
 		$retErrCode = null;
+		$retErrMsg = '';
+		$retryVars = array();
 
 		// We are also curious to know if there were any recoverable errors
-		foreach ( $response['errors'] as $errCode => $errMsg ) {
-			if ( $retryVars === null ) {
-				$retryVars = array();
-			}
-
+		foreach ( $errors as $errCode => $errObj ) {
+			$errMsg = $errObj['message'];
 			switch ( $errCode ) {
 				case 300620:
 				// Oh no! We've already used this order # somewhere else! Restart!
-					$this->log( 'Order ID collission! Starting again.', LOG_ERR );
+					$this->logger->error( 'Order ID collission! Starting again.' );
 					$retryVars[] = 'order_id';
 					$retErrCode = $errCode;
+					$retErrMsg = $errMsg;
 					break;
 				case 430260: //wow: If we were a point of sale, we'd be calling security.
 				case 430357: //lost or stolen card
@@ -1765,16 +1869,21 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				case 430330: //invalid card number
 				case 430354: //issuer unknown
 					// All five these should stop us from retrying at all
-					// Null out the retry vars and return immediately
+					// Null out the retry vars and throw error immediately
 					$retryVars = null;
-					$this->log( "Got error code $errCode, not retrying to avoid MasterCard fines.", LOG_INFO );
-					$this->setTransactionResult( true, 'force_cancel' );
-					$this->setTransactionResult( array(
-							'internal-0003' => $this->getErrorMapByCodeAndTranslate( 'internal-0003' ),
-						),
-						'errors'
+					$this->logger->info( "Got error code $errCode, not retrying to avoid MasterCard fines." );
+					// TODO: move forceCancel - maybe to the exception?
+					$this->transaction_response->setForceCancel( true );
+					$this->transaction_response->setErrors( array(
+							'internal-0003' => array(
+								'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0003' ),
+							)
+						)
 					);
-					return $errCode;
+					throw new ResponseProcessingException(
+						"Got error code $errCode, not retrying to avoid MasterCard fines.",
+						$errCode
+					);
 				case 430285: //most common declined cc code.
 				case 430396: //not authorized to cardholder, whatever that means.
 				case 430409: //Declined, because "referred". wth does that even.
@@ -1787,18 +1896,19 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					//look in the message for more clues.
 					//Yes: That's an 8-digit error code that buckets a silly number of validation issues, some of which are legitimately ours.
 					//The only way to tell is to search the English message.
-					//@TODO: Refactor all 3rd party error handling for GC. This whole switch should definitely be in getResponseErrors; It is very silly that this is here at all.
-					$raw = $this->getTransactionAllResults();
-					$raw = $raw['raw_error_msg'];
+					//@TODO: Refactor all 3rd party error handling for GC. This whole switch should definitely be in parseResponseErrors; It is very silly that this is here at all.
 					$not_errors = array( //add more of these stupid things here, if log noise makes you want to
 						'/NULL VALUE NOT ALLOWED FOR EXPIRYDATE/',
 						'/DID NOT PASS THE LUHNCHECK/',
 					);
-					foreach ($not_errors as $regex){
-						if ( preg_match( $regex, $raw ) ){
+					foreach ( $not_errors as $regex ){
+						if ( preg_match( $regex, $errObj['debugInfo'] ) ){
 							//not a system error, but definitely the end of the payment attempt. Log it to info and leave.
-							$this->log(__FUNCTION__ . ": $raw", LOG_INFO);
-							return $errCode;
+							$this->logger->info( __FUNCTION__ . ": {$errObj['debugInfo']}" );
+							throw new ResponseProcessingException(
+								$errMsg,
+								$errCode
+							);
 						}
 					}
 
@@ -1815,12 +1925,17 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					 * @TODO: This absolutely happens IRL. Attempt to handle gracefully once we figure out what that means.
 					 */
 				default:
-					$this->log( __FUNCTION__ . " Error $errCode : $errMsg", LOG_ERR );
+					$this->logger->error( __FUNCTION__ . " Error $errCode : $errMsg" );
 					break;
 			}
 		}
-
-		return $retErrCode;
+		if ( $retErrCode ) {
+			throw new ResponseProcessingException(
+				$retErrMsg,
+				$retErrCode,
+				$retryVars
+			);
+		}
 	}
 
 	/**
@@ -1881,16 +1996,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		}
 
 		$this->staged_data['language'] = $language;
-	}
-
-	protected function unstage_language() {
-		$language = strtolower( $this->staged_data['language'] );
-
-		if ( $language === 'sc' ){
-			$language = 'zh';
-		}
-
-		$this->unstaged_data['language'] = $language;
 	}
 
 	/**
@@ -1969,7 +2074,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				$this->staged_data['payment_product'] = $types[$payment_submethod];
 			} else {
 				if ( !empty( $payment_submethod ) ) {
-					$this->log( "Could not find a cc payment product for '$payment_submethod'", LOG_ERR );
+					$this->logger->error( "Could not find a cc payment product for '$payment_submethod'" );
 				}
 			}
 
@@ -1999,7 +2104,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 			// FIXME: that's one hell of a staging function.  Move this to a do_transaction helper.
 			if ( $enable3ds ) {
-				$this->log( "3dSecure enabled for $currency in $country" );
+				$this->logger->info( "3dSecure enabled for $currency in $country" );
 				$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['AUTHENTICATIONINDICATOR'] = '1';
 			}
 		} else {
@@ -2008,10 +2113,10 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				if ( array_key_exists( $payment_submethod, $this->payment_submethods ) && isset( $this->payment_submethods[$payment_submethod]['paymentproductid'] ) ) {
 					$this->staged_data['payment_product'] = $this->payment_submethods[$payment_submethod]['paymentproductid'];
 				} else {
-					$this->log( "Could not find a payment product for '$payment_submethod' in payment_submethods array", LOG_ERR );
+					$this->logger->error( "Could not find a payment product for '$payment_submethod' in payment_submethods array" );
 				}
 			} else {
-				$this->log( "payment_submethod found to be empty. Probably okay though.", LOG_DEBUG );
+				$this->logger->debug( "payment_submethod found to be empty. Probably okay though." );
 			}
 		}
 	}
@@ -2299,8 +2404,14 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		if ( $this->getTransactionStatus() === true ) {
 			$data = $this->getTransactionData();
 			$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
-			if ($action != 'failed'){
+			if ( $action != FinalStatus::FAILED ){
+				// TODO: Stop mirroring to STOMP.
 				$this->doLimboStompTransaction();
+				if ( $this->getData_Unstaged_Escaped( 'payment_method' ) === 'cc' ) {
+					$this->setLimboMessage( self::GC_CC_LIMBO_QUEUE );
+				} else {
+					$this->setLimboMessage();
+				}
 			}
 		}
 	}
@@ -2319,13 +2430,19 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * determine if we want to fail the transaction ourselves or not.
 	 */
 	public function getCVVResult(){
-		if ( is_null( $this->getData_Unstaged_Escaped( 'cvv_result' ) ) ){
+		$from_processor = $this->getData_Unstaged_Escaped( 'cvv_result' );
+		if ( is_null( $from_processor ) ){
 			return null;
 		}
 
 		$cvv_map = $this->getGlobal( 'CvvMap' );
 
-		$result = $cvv_map[$this->getData_Unstaged_Escaped( 'cvv_result' )];
+		if ( !isset( $cvv_map[$from_processor] ) ) {
+			$this->logger->warning( "Unrecognized cvv_result '$from_processor'" );
+			return false;
+		}
+
+		$result = $cvv_map[$from_processor];
 		return $result;
 
 	}
@@ -2363,5 +2480,4 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			return false;
 		}
 	}
-
 }

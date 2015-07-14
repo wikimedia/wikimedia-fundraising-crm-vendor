@@ -5,6 +5,8 @@
  * @TODO: Extend/damage things here. I'm sure we'll need it eventually...
  */
 class TestingPaypalAdapter extends PaypalAdapter {
+	public static $fakeGlobals = array();
+
 	/**
 	 * Set the error code you want the dummy response to return
 	 */
@@ -30,8 +32,8 @@ class TestingPaypalAdapter extends PaypalAdapter {
 
 		//could start stashing these in a further-down subdir if payment type starts getting in the way,
 		//but frankly I don't want to write tests that test our dummy responses.
-		$file_path = dirname( __FILE__ ) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
-		$file_path .= 'Responses' . DIRECTORY_SEPARATOR . self::getIdentifier() . DIRECTORY_SEPARATOR;
+		$file_path = __DIR__ . '/../';
+		$file_path .= 'Responses' . '/' . self::getIdentifier() . '/';
 		$file_path .= $this->getCurrentTransaction() . $code . '.testresponse';
 
 		//these are all going to be short, so...
@@ -58,4 +60,10 @@ class TestingPaypalAdapter extends PaypalAdapter {
 		);
 	}
 
+	public static function getGlobal( $name ) {
+		if ( array_key_exists( $name, TestingPaypalAdapter::$fakeGlobals ) ) {
+			return TestingPaypalAdapter::$fakeGlobals[$name];
+		}
+		return parent::getGlobal( $name );
+	}
 }

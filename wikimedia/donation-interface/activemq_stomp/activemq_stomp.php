@@ -1,27 +1,16 @@
 <?php
 
-# Alert the user that this is not a valid entry point to MediaWiki if they try to access the special pages file directly.
-if ( !defined( 'MEDIAWIKI' ) ) {
-	echo <<<EOT
-To install my extension, put the following line in LocalSettings.php:
-require_once( "\$IP/extensions/DonationInterface/activemq_stomp/activemq_stomp.php" );
-EOT;
-	exit( 1 );
-}
-
-$wgExtensionCredits['other'][] = array(
-	'name' => 'ActiveMQ - PHP STOMP',
-	'author' => 'Four Kitchens; Wikimedia Foundation',
-	'url' => '',
-	'descriptionmsg' => 'activemq_stomp-desc',
-	'version' => '1.0.0',
-);
-
 /*
  * Create <donate /> tag to include landing page donation form
  */
 
 function efStompSetup( &$parser ) {
+	global $wgDonationInterfaceEnableStomp;
+
+	if ( $wgDonationInterfaceEnableStomp !== true ) {
+		return true;
+	}
+
 	// redundant and causes Fatal Error
 	// $parser->disableCache();
 
@@ -52,9 +41,15 @@ function efStompTest( $input, $args, &$parser ) {
  *
  * @return bool Just returns true all the time. Presumably an indication that
  * nothing exploded big enough to kill the whole thing.
+ * @throws RuntimeException
  */
 function sendSTOMP( $transaction, $queue = 'default' ) {
-	global $IP, $wgStompServer, $wgStompQueueNames;
+	global $IP, $wgStompServer, $wgStompQueueNames,
+		$wgDonationInterfaceEnableStomp;
+
+	if ( $wgDonationInterfaceEnableStomp !== true ) {
+		return true;
+	}
 
 	// Find the queue name
 	if ( array_key_exists( $transaction['payment_method'] . "-$queue", $wgStompQueueNames ) ) {
@@ -121,7 +116,7 @@ function sendSTOMP( $transaction, $queue = 'default' ) {
 	$result = $con->send( "/queue/$queueName", $message, $properties );
 
 	if ( !$result ) {
-		throw new Exception( "Send to $queueName failed for this message: $message" );
+		throw new RuntimeException( "Send to $queueName failed for this message: $message" );
 	}
 
 	$con->disconnect();
@@ -138,6 +133,12 @@ function sendSTOMP( $transaction, $queue = 'default' ) {
  * nothing exploded big enough to kill the whole thing.
  */
 function sendPendingSTOMP( $transaction ) {
+	global $wgDonationInterfaceEnableStomp;
+
+	if ( $wgDonationInterfaceEnableStomp !== true ) {
+		return true;
+	}
+
 	return sendSTOMP( $transaction, 'pending' );
 }
 
@@ -162,6 +163,12 @@ function sendLimboSTOMP( $transaction ) {
  * nothing exploded big enough to kill the whole thing.
  */
 function sendFreeformSTOMP( $transaction, $queue ) {
+	global $wgDonationInterfaceEnableStomp;
+
+	if ( $wgDonationInterfaceEnableStomp !== true ) {
+		return true;
+	}
+
 	$transaction['freeform'] = true;
 	return sendSTOMP( $transaction, $queue );
 }

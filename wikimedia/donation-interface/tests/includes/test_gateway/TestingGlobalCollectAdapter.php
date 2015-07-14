@@ -6,11 +6,11 @@
  * TODO: Add dependency injection to the base class so we don't have to repeat code here.
  */
 class TestingGlobalCollectAdapter extends GlobalCollectAdapter {
-	public $testlog = array ( );
 
 	public $curled = array ( );
 
-	public $limbo_stomps = array ( );
+	public $limbo_stomps = array();
+	public $memcache_limbo_stomps = array();
 
 	/**
 	 * Also set a useful MerchantID.
@@ -43,36 +43,6 @@ class TestingGlobalCollectAdapter extends GlobalCollectAdapter {
 	}
 
 	/**
-	 * Returns the variable $this->dataObj which should be an instance of
-	 * DonationData.
-	 *
-	 * @return DonationData
-	 */
-	public function getDonationData() {
-		return $this->dataObj;
-	}
-
-	public function _addCodeRange() {
-		return call_user_func_array(array($this, 'addCodeRange'), func_get_args());
-	}
-
-	public function _findCodeAction() {
-		return call_user_func_array(array($this, 'findCodeAction'), func_get_args());
-	}
-
-	public function _buildRequestXML() {
-		return call_user_func_array( array ( $this, 'buildRequestXML' ), func_get_args() );
-	}
-
-	public function _getData_Staged() {
-		return call_user_func_array( array ( $this, 'getData_Staged' ), func_get_args() );
-	}
-
-	public function _stageData() {
-		$this->stageData();
-	}
-
-	/**
 	 * @TODO: Get rid of this and the override mechanism as soon as you
 	 * refactor the constructor into something reasonable.
 	 * @return type
@@ -91,15 +61,16 @@ class TestingGlobalCollectAdapter extends GlobalCollectAdapter {
 	public function doLimboStompTransaction( $antiMessage = false ) {
 		$this->limbo_stomps[] = $antiMessage;
 	}
+
+	public function setLimboMessage( $queue = 'limbo' ) {
+		$this->memcache_limbo_stomps[] = false;
+	}
+
 	/**
-	* Trap the error log so we can use it in testing
-	* @param type $msg
-	* @param type $log_level
-	* @param type $log_id_suffix
-	*/
-	public function log( $msg, $log_level = LOG_INFO, $log_id_suffix = ''){
-		//I don't care about the suffix right now, particularly.
-		$this->testlog[$log_level][] = $msg;
+	 * Stub out the limboStomp fn and record the calls
+	 */
+	public function deleteLimboMessage( $queue = 'limbo' ) {
+		$this->memcache_limbo_stomps[] = true;
 	}
 
 	//@TODO: That minfraud jerk needs its own isolated tests.
@@ -111,10 +82,6 @@ class TestingGlobalCollectAdapter extends GlobalCollectAdapter {
 		parent::runAntifraudHooks();
 
 		$this->batch = $is_batch;
-	}
-
-	public function getRiskScore() {
-		return $this->risk_score;
 	}
 
 	/**
@@ -138,20 +105,21 @@ class TestingGlobalCollectAdapter extends GlobalCollectAdapter {
 
 	/**
 	 * Load in some dummy response XML so we can test proper response processing
+	 * @throws RuntimeException
 	 */
 	protected function curl_exec( $ch ) {
 		$code = '';
 		if ( property_exists( $this, 'dummyGatewayResponseCode' ) ) {
 			$code = '_' . $this->dummyGatewayResponseCode;
 			if ( $this->dummyGatewayResponseCode == 'Exception' ) {
-				throw new Exception('blah!');
+				throw new RuntimeException('blah!');
 			}
 		}
 
 		//could start stashing these in a further-down subdir if payment type starts getting in the way,
 		//but frankly I don't want to write tests that test our dummy responses.
-		$file_path = dirname( __FILE__ ) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
-		$file_path .= 'Responses' . DIRECTORY_SEPARATOR . self::getIdentifier() . DIRECTORY_SEPARATOR;
+		$file_path = __DIR__ . '/../';
+		$file_path .= 'Responses' . '/' . self::getIdentifier() . '/';
 		$file_path .= $this->getCurrentTransaction() . $code . '.testresponse';
 
 		//these are all going to be short, so...

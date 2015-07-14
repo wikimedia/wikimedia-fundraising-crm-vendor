@@ -33,22 +33,26 @@ class DonationInterface_FormChooserTest extends DonationInterfaceTestCase {
 		$this->testAdapterClass = $adapterclass;
 
 		parent::__construct( $name, $data, $dataName );
-		self::setupMoreForms();
 	}
 
-	public static function setupMoreForms() {
-		global $wgDonationInterfaceAllowedHtmlForms, $wgDonationInterfaceHtmlFormDir,
-		$wgGlobalCollectGatewayHtmlFormDir, $wgPaypalGatewayHtmlFormDir,
-		$wgAmazonGatewayHtmlFormDir, $wgWorldPayGatewayHtmlFormDir,
-		$wgDonationInterfaceFormDirs;
+	public function setUp() {
+		parent::setUp();
 
-		$form_dirs = array (
-			'default' => $wgDonationInterfaceHtmlFormDir,
-			'gc' => $wgGlobalCollectGatewayHtmlFormDir,
-			'paypal' => $wgPaypalGatewayHtmlFormDir,
-			'amazon' => $wgAmazonGatewayHtmlFormDir,
-			'worldpay' => $wgWorldPayGatewayHtmlFormDir,
-		);
+		$this->setMwGlobals( array(
+			'wgDonationInterfaceEnableFormChooser' => true,
+			'wgGlobalCollectGatewayEnabled' => true,
+			'wgPaypalGatewayEnabled' => true,
+			'wgWorldpayGatewayEnabled' => true,
+		) );
+
+		$this->setupMoreForms();
+	}
+
+	public function setupMoreForms() {
+		global $wgDonationInterfaceAllowedHtmlForms,
+			$wgDonationInterfaceFormDirs;
+
+		$form_dirs = $wgDonationInterfaceFormDirs;
 
 		$moreForms = array ( );
 
@@ -133,8 +137,12 @@ class DonationInterface_FormChooserTest extends DonationInterfaceTestCase {
 			'payment_methods' => array ( 'cc' => 'ALL' ),
 		);
 
-		$wgDonationInterfaceAllowedHtmlForms = array_merge( $wgDonationInterfaceAllowedHtmlForms, $moreForms );
-		$wgDonationInterfaceFormDirs = $form_dirs;
+		$this->setMwGlobals( array(
+			'wgDonationInterfaceAllowedHtmlForms' => array_merge(
+				$wgDonationInterfaceAllowedHtmlForms,
+				$moreForms
+			),
+		) );
 	}
 
 	function testGetOneValidForm_CC_SpecificCountry() {
@@ -161,7 +169,10 @@ class DonationInterface_FormChooserTest extends DonationInterfaceTestCase {
 
 	function testMaintenanceMode_Redirect() {
 		global $wgContributionTrackingFundraiserMaintenance;
-		$wgContributionTrackingFundraiserMaintenance = true;
+
+		$this->setMwGlobals( array(
+			'wgContributionTrackingFundraiserMaintenance' => true,
+		) );
 
 		$expectedLocation = Title::newFromText('Special:FundraiserMaintenance')->getFullURL();
 		$assertNodes = array(

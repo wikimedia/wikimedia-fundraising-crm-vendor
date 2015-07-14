@@ -31,8 +31,6 @@ $config_defaults = array(
 
 			// Library definitions
 			'stomp' => array(
-				'lib-path' => '',
-
 				'uri' => 'tcp://localhost:61613',
 				'timeout' => 1,
 				'refresh-connection' => false,
@@ -127,6 +125,22 @@ $config_defaults = array(
 				'inst-args' => array(),
 			)
 		),
+	),
+
+	'astropay' => array(
+		'actions' => array(
+			'SmashPig\PaymentProviders\AstroPay\Actions\IncomingMessage',
+		),
+
+		'endpoints' => array(
+			'listener' => array(
+				'class' => 'SmashPig\PaymentProviders\AstroPay\AstroPayListener',
+				'inst-args' => array(),
+			),
+		),
+		'login' => 'createlogin',
+		'secret' => 'secretkey',
+		'charset' => 'iso-8859-1',
 	),
 
 	'paypal' => array(

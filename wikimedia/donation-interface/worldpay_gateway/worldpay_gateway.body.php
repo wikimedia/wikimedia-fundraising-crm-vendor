@@ -17,16 +17,16 @@
  */
 
 /**
- * WorldPayGateway
+ * WorldpayGateway
  *
  */
-class WorldPayGateway extends GatewayPage {
+class WorldpayGateway extends GatewayPage {
 
 	/**
 	 * Constructor - set up the new special page
 	 */
 	public function __construct() {
-		$this->adapter = new WorldPayAdapter();
+		$this->adapter = new WorldpayAdapter();
 		parent::__construct();
 	}
 
@@ -39,28 +39,12 @@ class WorldPayGateway extends GatewayPage {
 	protected function handleRequest() {
 		$this->getOutput()->addModules( 'ext.donationinterface.worldpay.styles' ); //loads early
 		$this->getOutput()->addModules( 'ext.donationinterface.worldpay.code' ); //loads at normal time
-		$this->setHeaders();
 
-		// dispatch forms/handling
-		if ( $this->adapter->checkTokens() ) {
-			$ott = $this->getRequest()->getText( 'OTT' );
-			if ( $ott ) {
-				$this->adapter->do_transaction( 'QueryAuthorizeDeposit' );
-				if ( $this->adapter->getFinalStatus() === 'failed' ) {
-					$this->getOutput()->redirect( $this->adapter->getFailPage() );
-				} else {
-					$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
-				}
+		$this->handleDonationRequest();
+	}
 
-			} else {
-				// Show either the initial form or an error form
-				$this->adapter->session_addDonorData();
-				$this->displayForm();
-			}
-		} else { //token mismatch
-			$error['general']['token-mismatch'] = $this->msg( 'donate_interface-token-mismatch' )->text();
-			$this->adapter->addManualError( $error );
-			$this->displayForm();
-		}
+	protected function isProcessImmediate() {
+		// FIXME: should be checked by the adapter rather than looking at the request.
+		return $this->getRequest()->getText( 'OTT' );
 	}
 }

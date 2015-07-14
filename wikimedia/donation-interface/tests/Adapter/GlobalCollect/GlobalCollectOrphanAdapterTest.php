@@ -16,6 +16,7 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
  *
@@ -25,6 +26,25 @@
  * @group OrphanSlayer
  */
 class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends DonationInterfaceTestCase {
+	public function setUp() {
+		global $wgGlobalCollectGatewayHtmlFormDir;
+
+		parent::setUp();
+
+		$this->setMwGlobals( array(
+			'wgGlobalCollectGatewayEnabled' => true,
+			'wgDonationInterfaceAllowedHtmlForms' => array(
+				'cc-vmad' => array(
+					'file' => $wgGlobalCollectGatewayHtmlFormDir . '/cc/cc-vmad.html',
+					'gateway' => 'globalcollect',
+					'payment_methods' => array('cc' => array( 'visa', 'mc', 'amex', 'discover' )),
+					'countries' => array(
+						'+' => array( 'US', ),
+					),
+				),
+			),
+		) );
+	}
 
 	/**
 	 * @param $name string The name of the test case
@@ -51,7 +71,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 
 		$this->assertInstanceOf( $class, $gateway );
 
-		$this->verifyNoLogErrors( $gateway );
+		$this->verifyNoLogErrors();
 	}
 
 
@@ -73,7 +93,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		$gateway->loadDataAndReInit( $data, $useDB = false );
 		$this->assertEquals( $gateway->getData_Unstaged_Escaped( 'order_id' ), '444444', 'loadDataAndReInit failed to stick OrderID' );
 
-		$this->verifyNoLogErrors( $gateway );
+		$this->verifyNoLogErrors();
 	}
 
 	public function testBatchOrderID_no_generate() {
@@ -94,7 +114,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		$gateway->loadDataAndReInit( $data, $useDB = false );
 		$this->assertEquals( $gateway->getData_Unstaged_Escaped( 'order_id' ), '777777', 'loadDataAndReInit failed to stick OrderID on second batch item' );
 
-		$this->verifyNoLogErrors( $gateway );
+		$this->verifyNoLogErrors();
 	}
 
 	public function testGCFormLoad() {
@@ -139,10 +159,32 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		$gateway->setDummyGatewayResponseCode( $code );
 		$result = $gateway->do_transaction( 'Confirm_CreditCard' );
 		$this->assertEquals( 1, count( $gateway->curled ), "Gateway kept trying even with response code $code!  MasterCard could fine us a thousand bucks for that!" );
-		$this->assertEquals( false, $result['status'], "Error code $code should mean status of do_transaction is false" );
-		$this->assertTrue( array_key_exists( 'errors', $result ), 'Orphan adapter needs to see the errors to consider it rectified' );
-		$this->assertTrue( array_key_exists('1000001', $result['errors'] ), 'Orphan adapter needs error 1000001 to consider it rectified' );
-		$logline = $this->getGatewayLogMatches( $gateway, LOG_INFO, "/Got error code $code, not retrying to avoid MasterCard fines./" );
-		$this->assertType( 'string', $logline, "GC Error $code is not generating the expected payments log error" );
+		$this->assertEquals( false, $result->getCommunicationStatus(), "Error code $code should mean status of do_transaction is false" );
+		$errors = $result->getErrors();
+		$this->assertFalse( empty( $errors ), 'Orphan adapter needs to see the errors to consider it rectified' );
+		$this->assertTrue( array_key_exists( '1000001', $errors ), 'Orphan adapter needs error 1000001 to consider it rectified' );
+		$loglines = $this->getLogMatches( LogLevel::INFO, "/Got error code $code, not retrying to avoid MasterCard fines./" );
+		$this->assertNotEmpty( $loglines, "GC Error $code is not generating the expected payments log error" );
+	}
+
+	/**
+	 * Don't fraud-fail someone for bad CVV if GET_ORDERSTATUS
+	 * comes back with STATUSID 25 and no CVVRESULT
+	 * @group CvvResult
+	 */
+	function testConfirmCreditCardStatus25() {
+		$gateway = $this->getFreshGatewayObject( null, array ( 'order_id_meta' => array ( 'generate' => FALSE ) ) );
+
+		$init = array_merge( $this->getDonorTestData(), $this->dummy_utm_data );
+		$init['ffname'] = 'cc-vmad';
+		$init['order_id'] = '55555';
+		$init['email'] = 'innocent@clean.com';
+
+		$gateway->loadDataAndReInit( $init, $useDB = false );
+		$gateway->setDummyGatewayResponseCode( '25' );
+
+		$gateway->do_transaction( 'Confirm_CreditCard' );
+		$action = $gateway->getValidationAction();
+		$this->assertEquals( 'process', $action, 'Gateway should not fraud fail on STATUSID 25' );
 	}
 }

@@ -13,10 +13,15 @@
  * 
  * @author khorn
  */
-class DonationData {
+class DonationData implements LogPrefixProvider {
 	protected $normalized = array( );
 	protected $gateway;
+	protected $gatewayID;
 	protected $validationErrors = null;
+	/**
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	protected $logger;
 
 	/**
 	 * DonationData constructor
@@ -24,11 +29,12 @@ class DonationData {
 	 * @param mixed $data An optional array of donation data that will, if 
 	 * present, circumvent the usual process of gathering the data from various 
 	 * places in $wgRequest, or 'false' to gather the data the usual way. 
-	 * Default is false. 
+	 * Default is false.
 	 */
 	function __construct( $gateway, $data = false ) {
 		$this->gateway = $gateway;
 		$this->gatewayID = $this->gateway->getIdentifier();
+		$this->logger = DonationLoggerFactory::getLogger( $gateway, '', $this );
 		$this->populateData( $data );
 	}
 
@@ -122,6 +128,7 @@ class DonationData {
 				'ffname',
 				'recurring',
 				'recurring_paypal',
+				'redirect',
 				'user_ip',
 				'server_ip',
 			);
@@ -197,14 +204,6 @@ class DonationData {
 		$escaped = $this->normalized;
 		array_walk( $escaped, array( $this, 'sanitizeInput' ) );
 		return $escaped;
-	}
-
-	/**
-	 * Returns an array of normalized (but unescaped) donation data
-	 * @return array 
-	 */
-	public function getDataUnescaped() {
-		return $this->normalized;
 	}
 
 	/**
@@ -400,11 +399,11 @@ class DonationData {
 				//we're still going to try to regen.
 				$near_countries = array ( 'XX', 'EU', 'AP', 'A1', 'A2', 'O1' );
 				if ( !in_array( $country, $near_countries ) ) {
-					$this->log( __FUNCTION__ . ": $country is not a country, or a recognized placeholder.", LOG_WARNING );
+					$this->logger->warning( __FUNCTION__ . ": $country is not a country, or a recognized placeholder." );
 				}
 			}
 		} else {
-			$this->log( __FUNCTION__ . ': Country not set.', LOG_WARNING );
+			$this->logger->warning( __FUNCTION__ . ': Country not set.' );
 		}
 
 		//try to regenerate the country if we still don't have a valid one yet
@@ -420,11 +419,11 @@ class DonationData {
 					// TODO: to change error_reporting is less worse?
 					$country = @geoip_country_code_by_name( $ip );
 					if ( !$country ) {
-						$this->log( __FUNCTION__ . ": GeoIP lookup function found nothing for $ip! No country available.", LOG_WARNING );
+						$this->logger->warning( __FUNCTION__ . ": GeoIP lookup function found nothing for $ip! No country available." );
 					}
 				}
 			} else {
-				$this->log( 'GeoIP lookup function is missing! No country available.', LOG_WARNING );
+				$this->logger->warning( 'GeoIP lookup function is missing! No country available.' );
 			}
 
 			//still nothing good? Give up.
@@ -452,16 +451,16 @@ class DonationData {
 		if ( $this->isSomething( 'currency' ) ) {
 			$currency = $this->getVal( 'currency' );
 			$this->expunge( 'currency' );
-			$this->log( "Got currency from 'currency', now: $currency", LOG_DEBUG );
+			$this->logger->debug( "Got currency from 'currency', now: $currency" );
 		} elseif ( $this->isSomething( 'currency_code' ) ) {
 			$currency = $this->getVal( 'currency_code' );
-			$this->log( "Got currency from 'currency_code', now: $currency", LOG_DEBUG );
+			$this->logger->debug( "Got currency from 'currency_code', now: $currency" );
 		}
 		
 		//TODO: This is going to fail miserably if there's no country yet.
 		if ( !$currency ){
 			$currency = NationalCurrencies::getNationalCurrency( $this->getVal( 'country' ) );
-			$this->log( "Got currency from 'country', now: $currency", LOG_DEBUG );
+			$this->logger->debug( "Got currency from 'country', now: $currency" );
 		}
 		
 		$this->setVal( 'currency_code', $currency );
@@ -531,7 +530,7 @@ class DonationData {
 			foreach ( $keys as $key ){
 				$mess .= ' ' . $key . '=' . $this->getVal( $key );
 			}
-			$this->log( $mess, LOG_DEBUG );
+			$this->logger->debug( $mess );
 			$this->setVal('amount', 'invalid');
 			return;
 		}
@@ -603,7 +602,7 @@ class DonationData {
 					$message = "Submethod normalization conflict!: ";
 					$message .= 'payment_submethod = ' . $this->getVal( 'payment_submethod' );
 					$message .= ", and exploded payment_method = '$submethod'. Going with the first option.";
-					$this->log( $message, LOG_DEBUG );
+					$this->logger->debug( $message );
 				}
 			}
 			$submethod = $this->getVal( 'payment_submethod' );
@@ -636,21 +635,6 @@ class DonationData {
 	 */
 	protected function sanitizeInput( &$value, $key ) {
 		$value = htmlspecialchars( $value, ENT_COMPAT, 'UTF-8', false );
-	}
-
-	/**
-	 * log: This grabs the adapter class that instantiated DonationData, and
-	 * uses its log function.
-	 * @TODO: Once the DonationData constructor does less, we can stop using
-	 * the static log function in the gateway. As it is, we're trying to log
-	 * things as we're constructing, when as far as the gateway cares we
-	 * don't exist yet. Very circular.
-	 * @param string $message The message to log.
-	 * @param int|string $log_level
-	 */
-	protected function log( $message, $log_level = LOG_INFO ) {
-		$message = $this->getLogMessagePrefix() . $message;
-		$this->gateway->_log( $message, $log_level );
 	}
 
 	/**
@@ -690,18 +674,12 @@ class DonationData {
 	 * Normalize email
 	 * Check regular name, and horrible old name for values (preferring the
 	 * reasonable name over the legacy version)
-	 * Set the value to 'nobody@wikimedia.org' if nothing has been entered.
 	 */
 	protected function setEmail() {
 		// Look at the old style value (because that's canonical if populated first)
 		$email = $this->getVal( 'emailAdd' );
 		if ( is_null( $email ) ) {
 			$email = $this->getVal( 'email' );
-		}
-
-		if ( is_null( $email ) ) {
-			// We still have nothing, populate with default
-			$email = 'nobody@wikimedia.org';
 		}
 
 		$this->setVal( 'email', $email );
@@ -760,7 +738,7 @@ class DonationData {
 		}
 
 		$recurring_str = var_export( $this->getVal( 'recurring' ), true );
-		$this->log( __FUNCTION__ . ": Payment method is {$this->getVal( 'payment_method' )}, recurring = {$recurring_str}, utm_source = {$utm_payment_method_family}", LOG_DEBUG );
+		$this->logger->debug( __FUNCTION__ . ": Payment method is {$this->getVal( 'payment_method' )}, recurring = {$recurring_str}, utm_source = {$utm_payment_method_family}" );
 
 		// split the utm_source into its parts for easier manipulation
 		$source_parts = explode( ".", $utm_source );
@@ -801,7 +779,6 @@ class DonationData {
 	 * @return array Clean tracking data 
 	 */
 	public function getCleanTrackingData( $unset = false ) {
-		global $wgContributionTrackingAnalyticsUpgrade;
 
 		// define valid tracking fields
 		$tracking_fields = array(
@@ -855,7 +832,7 @@ class DonationData {
 
 		if ( !$db ) {
 			// TODO: This might be a critical failure; do we want to throw an exception instead?
-			$this->log( 'Failed to create a connect to contribution_tracking database', LOG_ERR );
+			$this->logger->error( 'Failed to create a connect to contribution_tracking database' );
 			return false;
 		}
 
@@ -879,7 +856,7 @@ class DonationData {
 			if ( $db->insert( 'contribution_tracking', $tracking_data ) ) {
 				$ctid =  $db->insertId();
 			} else {
-				$this->log( 'Failed to create a new contribution_tracking record', LOG_ERR );
+				$this->logger->error( 'Failed to create a new contribution_tracking record' );
 				return false;
 			}
 		}
@@ -905,22 +882,13 @@ class DonationData {
 		}
 		$this->normalize();
 	}
-
-	/**
-	 * Gets the name of the adapter class that instantiated DonationData. 
-	 * @return mixed The name of the class if it exists, or false. 
-	 */
-	protected function getAdapterClass(){
-		return get_class( $this->gateway );
-	}
 	
 	/**
 	 * Returns an array of field names we intend to send to activeMQ via a Stomp 
 	 * message. Note: These are field names from the FORM... not the field names 
 	 * that will appear in the stomp message. 
-	 * TODO: Move the mapping for donation data from 
-	 * /extensions/DonationData/activemq_stomp/activemq_stomp.php
-	 * to somewhere in DonationData. 	 * 
+	 * TODO: Consider moving the mapping for donation data from DonationQueue
+	 * to somewhere in DonationData.
 	 */
 	public static function getStompMessageFields() {
 		$stomp_fields = array(

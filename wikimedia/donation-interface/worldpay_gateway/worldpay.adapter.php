@@ -15,18 +15,18 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 
 /**
- * WorldPayAdapter
+ * WorldpayAdapter
  *
  */
-class WorldPayAdapter extends GatewayAdapter {
+class WorldpayAdapter extends GatewayAdapter {
 
-	const GATEWAY_NAME = 'WorldPay Gateway';
+	const GATEWAY_NAME = 'Worldpay Gateway';
 	const IDENTIFIER = 'worldpay';
-	const GLOBAL_PREFIX = 'wgWorldPayGateway';
+	const GLOBAL_PREFIX = 'wgWorldpayGateway';
 
-	public $communication_type = 'xml';
 	public $redirect = FALSE;
 	public $log_outbound = TRUE;
 
@@ -53,7 +53,7 @@ class WorldPayAdapter extends GatewayAdapter {
 	/**
 	 * @var string[] ISO Currency code letters to numbers (from appendix B of the
 	 * integration manual). These are also apparently all the currencies that
-	 * WorldPay can support.
+	 * Worldpay can support.
 	 */
 	static $CURRENCY_CODES = array(
 		'AED' => 784,
@@ -182,6 +182,10 @@ class WorldPayAdapter extends GatewayAdapter {
 		parent::__construct( $options );
 	}
 
+	public function getCommunicationType() {
+		return 'xml';
+	}
+
 	function defineStagedVars() {
 		$this->staged_vars = array(
 			'returnto',
@@ -290,9 +294,16 @@ class WorldPayAdapter extends GatewayAdapter {
 		}
 	}
 
+	/**
+	 * Worldpay doesn't check order numbers until settlement at
+	 * which point it's too late to do much about it. So; our order
+	 * numbers will by the contribution tracking ID with an attempt
+	 * number appended, indicated by the ct_id flag.
+	 */
 	function defineOrderIDMeta() {
 		$this->order_id_meta = array (
 			'generate' => TRUE,
+			'ct_id' => TRUE,
 		);
 	}
 
@@ -680,15 +691,15 @@ class WorldPayAdapter extends GatewayAdapter {
 		// Anything other than 2170 must be treated as failure for PT-C.
 		// ***LOOK AT THIS COMMENT: If you add AuthorizePaymentForFraud success statuses here,
 		// you will need to whack a finalizeInternalStatus in do_transaction_QueryAuthorizeDeposit
-		$this->addCodeRange( 'AuthorizePaymentForFraud', 'MessageCode', 'failed', 2000, 2049 );
-		$this->addCodeRange( 'AuthorizePaymentForFraud', 'MessageCode', 'failed', 2051, 2099 );
-		$this->addCodeRange( 'AuthorizePaymentForFraud', 'MessageCode', 'failed', 2101, 2999 );
+		$this->addCodeRange( 'AuthorizePaymentForFraud', 'MessageCode', FinalStatus::FAILED, 2000, 2049 );
+		$this->addCodeRange( 'AuthorizePaymentForFraud', 'MessageCode', FinalStatus::FAILED, 2051, 2099 );
+		$this->addCodeRange( 'AuthorizePaymentForFraud', 'MessageCode', FinalStatus::FAILED, 2101, 2999 );
 
-		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', 'failed', 2000, 2049 );
-		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', 'complete', 2050 );
-		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', 'failed', 2051, 2099 );
-		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', 'complete', 2100 );
-		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', 'failed', 2101, 2999 );
+		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', FinalStatus::FAILED, 2000, 2049 );
+		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', FinalStatus::COMPLETE, 2050 );
+		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', FinalStatus::FAILED, 2051, 2099 );
+		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', FinalStatus::COMPLETE, 2100 );
+		$this->addCodeRange( 'AuthorizeAndDepositPayment', 'MessageCode', FinalStatus::FAILED, 2101, 2999 );
 	}
 
 	function defineVarMap() {
@@ -736,6 +747,17 @@ class WorldPayAdapter extends GatewayAdapter {
 			&& in_array( $this->staged_data['wp_storeid'], $this->account_config['SpecialSnowflakeStoreIDs'] );
 	}
 
+	public function doPayment() {
+		return PaymentResult::fromResults(
+			$this->do_transaction( 'QueryAuthorizeDeposit' ),
+			$this->getFinalStatus()
+		);
+	}
+
+	/**
+	 * @param string $transaction
+	 * @return PaymentTransactionResponse
+	 */
 	public function do_transaction( $transaction ) {
 		$this->url = $this->getGlobal( 'URL' );
 
@@ -744,7 +766,7 @@ class WorldPayAdapter extends GatewayAdapter {
 		switch ( $transaction ) {
 			case 'GenerateToken':
 				$result = parent::do_transaction( $transaction );
-				if ( !$result['errors'] ) {
+				if ( !$result->getErrors() ) {
 					// Save the OTT to the session for later
 					$this->session_addDonorData();
 				}
@@ -753,7 +775,7 @@ class WorldPayAdapter extends GatewayAdapter {
 
 			case 'QueryAuthorizeDeposit':
 				$result = $this->do_transaction_QueryAuthorizeDeposit();
-				$this->setTransactionResult( $this->getData_Unstaged_Escaped( 'order_id' ), 'gateway_txn_id' );
+				$this->transaction_response->setGatewayTransactionId( $this->getData_Unstaged_Escaped( 'order_id' ) );
 				$this->runPostProcessHooks();
 				return $result;
 				break;
@@ -779,7 +801,7 @@ class WorldPayAdapter extends GatewayAdapter {
 	 *
 	 * @return bool
 	 */
-	function getResponseStatus( $response ) {
+	function parseResponseCommunicationStatus( $response ) {
 		foreach( $response->getElementsByTagName( 'MessageCode' ) as $node) {
 			return true;
 		}
@@ -791,12 +813,12 @@ class WorldPayAdapter extends GatewayAdapter {
 	 *
 	 * If the site has $wgDonationInterfaceDisplayDebug = true, then the real
 	 * messages will be sent to the client. Messages will not be translated or
-	 * obfuscated.
+	 * obfuscated.  TODO: check DisplayDebug at output, not here
 	 *
 	 * @param DOMDocument	$response	The XML response data all loaded into a DOMDocument
 	 * @return array
 	 */
-	function getResponseErrors( $response ) {
+	function parseResponseErrors( $response ) {
 		$code = false;
 		$message = false;
 		$errors = array( );
@@ -814,67 +836,44 @@ class WorldPayAdapter extends GatewayAdapter {
 		if ( $code ) {
 			//determine if the response code is, in fact, an error.
 			$action = $this->findCodeAction( $this->getCurrentTransaction(), 'MessageCode', $code );
-			if ( $action === 'failed' ) {
+			if ( $action === FinalStatus::FAILED ) {
 				//use generic internals, I think.
 				//I can't tell if I'm being lazy here, or if we genuinely don't need to get specific with this.
-				$errors[$code] = ( $this->getGlobal( 'DisplayDebug' ) ) ? '*** ' . $message : $this->getErrorMapByCodeAndTranslate( 'internal-0003' );
+				$errors[$code] = array(
+					'logLevel' => LogLevel::DEBUG,
+					'message' => $this->getGlobal( 'DisplayDebug' ) ? '*** ' . $message : $this->getErrorMapByCodeAndTranslate( 'internal-0003' ),
+					'debugInfo' => $message
+				);
 			}
 		}
 		return $errors;
 	}
 
 	/**
-	 *
-	 * @param type $response
-	 * @param type $retryVars
+	 * @param DomDocument $response
 	 */
-	public function processResponse( $response, &$retryVars = null ) {
-		$self = $this;
-		$addData = function( $pull_vars ) use ( $response, $self ) {
-				$emptyVars = array( );
-				$addme = array( );
-				foreach ( $pull_vars as $theirs => $ours ) {
-					if ( isset( $response['data'][$theirs] ) ) {
-						$addme[$ours] = $response['data'][$theirs];
-					} else {
-						$emptyVars[] = $theirs;
-					}
-				}
-				$self->addResponseData( $addme );
-				return $emptyVars;
-			};
-		$setFailOnEmpty = function( $emptyVars ) use ( $response, $self ) {
-				if ( count( $emptyVars ) !== 0 ) {
-					$self->setTransactionResult( false, 'status' );
-					$self->setTransactionResult( array(
-						'internal-0001' => $self->getErrorMapByCodeAndTranslate( 'internal-0001' )),
-					'errors'
-					);
-					$code = isset( $response['data']['MessageCode'] ) ? $response['data']['MessageCode'] : 'None given';
-					$message = isset( $response['data']['Message'] ) ? $response['data']['Message'] : 'None given';
-					$self->setTransactionResult(
-						"Transaction failed (empty vars): ({$code}) {$message}", 'message'
-					);
-					return $code;
-				}
-				return null;
-			};
-
-		$return = null;
+	public function processResponse( $response ) {
+		$this->transaction_response->setCommunicationStatus(
+			$this->parseResponseCommunicationStatus( $response )
+		);
+		$errors = $this->parseResponseErrors( $response );
+		$this->transaction_response->setErrors( $errors );
+		$data = $this->parseResponseData( $response );
+		$this->transaction_response->setData( $data );
 		switch ( $this->getCurrentTransaction() ) {
 			case 'GenerateToken':
-				$return = $setFailOnEmpty( $addData( array(
+				$this->addRequiredData( $data, array(
 					'OTT' => 'wp_one_time_token',
 					'OTTProcessURL' => 'wp_process_url',
 					'RDID' => 'wp_rdid',
-				) ) );
+				) );
 				break;
 
 			case 'QueryTokenData':
-				$return = $setFailOnEmpty( $addData( array(
+				$this->addRequiredData( $data, array(
 					'CardId' => 'wp_card_id',
 					'CreditCardType' => 'payment_submethod',
-				) ) );
+				) );
 				break;
 
 			case 'AuthorizePaymentForFraud':
@@ -888,12 +887,12 @@ class WorldPayAdapter extends GatewayAdapter {
 					'PTTID' => 'wp_pttid',
 					'CVNMatch' => 'cvv_result',
 				);
-				$return = $setFailOnEmpty( $addData( $needfulThings ) );
+				$this->addRequiredData( $data, $needfulThings );
 				$this->dataObj->expunge( 'cvv' );
 				break;
 		}
-		if ( isset( $response['data']['MessageCode'] ) ) {
-			$code = $response['data']['MessageCode'];
+		if ( isset( $data['MessageCode'] ) ) {
+			$code = $data['MessageCode'];
 			// 'Retain card' or 'Card stolen'.  Penalize the IP
 			if ( ( $code == '2648' || $code == '2952' || $code == '2954' )
 				&& $this->getGlobal( 'EnableIPVelocityFilter' )
@@ -901,15 +900,52 @@ class WorldPayAdapter extends GatewayAdapter {
 				Gateway_Extras_CustomFilters_IP_Velocity::penalize( $this );
 			}
 		}
-		return $return;
 	}
 
-	function getResponseData( $response ) {
+	/**
+	 * Adds required data from the response to our staged collection
+	 * @param array $data parsed out of payment processor API response
+	 * @param array $pull_vars required variables. keys are their var names, values are ours
+	 * @throws ResponseProcessingException if any required variables are missing
+	 */
+	protected function addRequiredData( $data, $pull_vars ) {
+		$emptyVars = array( );
+		$addme = array( );
+		foreach ( $pull_vars as $theirs => $ours ) {
+			if ( isset( $data[$theirs] ) ) {
+				$addme[$ours] = $data[$theirs];
+			} else {
+				$emptyVars[] = $theirs;
+			}
+		}
+		$this->addResponseData( $addme );
+		if ( count( $emptyVars ) !== 0 ) {
+			$this->transaction_response->setCommunicationStatus( false );
+			$this->transaction_response->setErrors( array(
+				'internal-0001' => array(
+					'debugInfo' => 'Empty variables ' . implode( ',', $emptyVars ),
+					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0001' ),
+					'logLevel' => LogLevel::ERROR
+				),
+			) );
+			$code = isset( $data['MessageCode'] ) ? $data['MessageCode'] : 'None given';
+			$message = isset( $data['Message'] ) ? $data['Message'] : 'None given';
+			$this->transaction_response->setMessage(
+				"Transaction failed (empty vars): ({$code}) {$message}"
+			);
+			throw new ResponseProcessingException(
+				$message,
+				$code
+			);
+		}
+	}
+
+	public function parseResponseData( $response ) {
 		$data = $this->xmlChildrenToArray( $response, 'TMSTN' );
 		return $data;
 	}
 
-	// WorldPay is apparently not very worldly in the ways of alphabets
+	// Worldpay is apparently not very worldly in the ways of alphabets
 	protected function buildRequestXML( $rootElement = 'TMSTN', $encoding = 'ISO-8859-1' ) {
 		$xml = parent::buildRequestXML( $rootElement, $encoding );
 		return 'StringIn=' . str_replace( "\n", '', $xml );
@@ -937,7 +973,7 @@ class WorldPayAdapter extends GatewayAdapter {
 
 		$this->staged_data['returnto'] = str_replace(
 			'$1',
-			'Special:WorldPayGateway?token=' . rawurlencode( $this->token_getSaltedSessionToken() ),
+			'Special:WorldpayGateway?token=' . rawurlencode( $this->token_getSaltedSessionToken() ),
 			$wgServer . $wgArticlePath
 		);
 	}
@@ -967,7 +1003,7 @@ class WorldPayAdapter extends GatewayAdapter {
 	}
 
 	protected function stage_merchant_reference_2() {
-		$email = $this->getData_Unstaged_Escaped( 'email' );
+		$email = $this->getData_Staged( 'email' );
 		$alphanumeric = preg_replace('/[^0-9a-zA-Z]/', ' ', $email);
 		$this->staged_data['merchant_reference_2'] = $alphanumeric;
 	}
@@ -979,6 +1015,9 @@ class WorldPayAdapter extends GatewayAdapter {
 		);
 	}
 
+	/**
+	 * @throws RuntimeException
+	 */
 	protected function loadRoutingInfo( $transaction ) {
 		switch ( $transaction ) {
 			case 'QueryAuthorizeDeposit':
@@ -1004,7 +1043,7 @@ class WorldPayAdapter extends GatewayAdapter {
 						$currency === $storeCurrency
 					) {
 						list( $merchantId, $storeId ) = $info;
-						$this->log( "Using MID: {$merchantId}, SID: {$storeId} for " .
+						$this->logger->info( "Using MID: {$merchantId}, SID: {$storeId} for " .
 							"submethod: {$submethod}, country: {$country}, currency: {$currency}."
 						);
 						break;
@@ -1012,7 +1051,7 @@ class WorldPayAdapter extends GatewayAdapter {
 				}
 
 				if ( !$merchantId ) {
-					throw new MWException( 'Could not find account information for ' .
+					throw new RuntimeException( 'Could not find account information for ' .
 						"submethod: {$submethod}, country: {$country}, currency: {$currency}." );
 				} else {
 					$this->staged_data['wp_merchant_id'] = $merchantId;
@@ -1081,6 +1120,11 @@ class WorldPayAdapter extends GatewayAdapter {
 
 		$cvv_map = $this->getGlobal( 'CvvMap' );
 
+		if ( !isset( $cvv_map[$cvv_result] ) ) {
+			$this->logger->warning( "Unrecognized cvv_result '$cvv_result'" );
+			return false;
+		}
+
 		$result = $cvv_map[$cvv_result];
 		return $result;
 	}
@@ -1089,7 +1133,7 @@ class WorldPayAdapter extends GatewayAdapter {
 	 * getAVSResult is intended to be used by the functions filter, to
 	 * determine if we want to fail the transaction ourselves or not.
 	 *
-	 * In WorldPay, we get two values back that we get to synthesize
+	 * In Worldpay, we get two values back that we get to synthesize
 	 * together: One for address, and one for zip.
 	 */
 	public function getAVSResult() {
@@ -1126,14 +1170,14 @@ class WorldPayAdapter extends GatewayAdapter {
 	 * Will run the QueryTokenData, AuthorizePaymentForFraud, and
 	 * AuthorizeAndDepositPayment API calls.
 	 *
-	 * @return array Transaction status
+	 * @return PaymentTransactionResponse
 	 */
 	protected function do_transaction_QueryAuthorizeDeposit() {
 		// Obtain all the form data from tokenization server
 		$result = $this->do_transaction( 'QueryTokenData' );
 		if ( !$this->getTransactionStatus() ) {
-			$this->log( 'Failed transaction because QueryTokenData failed', LOG_ERR );
-			$this->finalizeInternalStatus( 'failed' );
+			$this->logger->error( 'Failed transaction because QueryTokenData failed' );
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
 			return $result;
 		}
 
@@ -1142,14 +1186,15 @@ class WorldPayAdapter extends GatewayAdapter {
 		if ( $this->getGlobal( 'NoFraudIntegrationTest' ) !== true ) {
 			$result = $this->do_transaction( 'AuthorizePaymentForFraud' );
 			if ( !$this->getTransactionStatus() ) {
-				$this->log( 'Failed transaction because AuthorizePaymentForFraud failed' );
-				$this->finalizeInternalStatus( 'failed' );
+				$this->logger->info( 'Failed transaction because AuthorizePaymentForFraud failed' );
+				$this->finalizeInternalStatus( FinalStatus::FAILED );
 				return $result;
 			}
-			$code = $result[ 'data' ][ 'MessageCode' ];
+			$data = $result->getData();
+			$code = $data[ 'MessageCode' ];
 			$result_status = $this->findCodeAction( 'AuthorizePaymentForFraud', 'MessageCode', $code );
 			if ( $result_status ) {
-				$this->log(
+				$this->logger->info(
 					"Finalizing transaction at AuthorizePaymentForFraud to {$result_status}. Code: {$code}"
 				);
 				//NOOOOO.
@@ -1164,51 +1209,25 @@ class WorldPayAdapter extends GatewayAdapter {
 		// We've successfully passed fraud checks; authorize and deposit the payment
 		$result = $this->do_transaction( 'AuthorizeAndDepositPayment' );
 		if ( !$this->getTransactionStatus() ) {
-			$this->log( 'Failed transaction because AuthorizeAndDepositPayment failed' );
-			$this->finalizeInternalStatus( 'failed' );
+			$this->logger->info( 'Failed transaction because AuthorizeAndDepositPayment failed' );
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
 			return $result;
 		}
-		$code = $result[ 'data' ][ 'MessageCode' ];
+		$data = $result->getData();
+		$code = $data['MessageCode'];
 		$result_status = $this->findCodeAction( 'AuthorizeAndDepositPayment', 'MessageCode', $code );
 		if ( $result_status ) {
-			$this->log(
+			$this->logger->info(
 				"Finalizing transaction at AuthorizeAndDepositPayment to {$result_status}. Code: {$code}"
 			);
 			$this->finalizeInternalStatus( $result_status );
 		} else {
-			$this->log(
+			$this->logger->error(
 				'Finalizing transaction at AuthorizeAndDepositPayment to failed because MessageCode (' .
-				$code . ') was unknown.',
-				LOG_ERR
+				$code . ') was unknown.'
 			);
-			$this->finalizeInternalStatus( 'failed' );
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
 		}
 		return $result;
-	}
-
-	/**
-	 * WorldPay doesn't check order numbers until settlement at
-	 * which point it's too late to do much about it. So; our order
-	 * numbers will by the contribution tracking ID with an attempt
-	 * number appended.
-	 *
-	 * OrderNumber is limited to 17 characters (alpha numeric)
-	 *
-	 * We're going to produce them as [0-9]{4-10}\.[0-9]{2}
-	 *
-	 * @return int|string
-	 */
-	public function generateOrderID( $dataObj = null ) {
-		$dataObj = ( $dataObj ) ?: $this->dataObj;
-
-		$ctid = $dataObj->getVal_Escaped( 'contribution_tracking_id' );
-		if ( !$ctid ) {
-			$ctid = $dataObj->saveContributionTrackingData( true );
-		}
-
-		$this->session_ensure();
-		$attemptNum = $this->session_getData( 'numAttempt' ) ?: 0;
-
-		return "{$ctid}.{$attemptNum}";
 	}
 }

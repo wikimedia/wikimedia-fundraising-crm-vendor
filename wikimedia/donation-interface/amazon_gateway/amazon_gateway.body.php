@@ -43,20 +43,25 @@ class AmazonGateway extends GatewayPage {
 				if ( $this->getRequest()->getText( 'ffname', 'default' ) === 'amazon-recurring'
 					||  $this->getRequest()->getText( 'recurring', 0 )
 				) {
-					$this->adapter->do_transaction( 'DonateMonthly' );
-				} else {
-					$this->adapter->do_transaction( 'Donate' );
+					// FIXME: do this in the form param harvesting step
+					$this->adapter->addRequestData( array(
+						'recurring' => 1,
+					) );
 				}
+				$this->adapter->doPayment();
+				// TODO: move redirect here.
 				return;
 			}
 
-			$this->log( 'At gateway return with params: ' . json_encode( $this->getRequest()->getValues() ), LOG_INFO );
+			// TODO: move resultswitching out
+			$this->logger->info( 'At gateway return with params: ' . json_encode( $this->getRequest()->getValues() ) );
 			if ( $this->adapter->checkTokens() && $this->getRequest()->getText( 'status' ) ) {
 				$this->adapter->do_transaction( 'ProcessAmazonReturn' );
 
 				$status = $this->adapter->getFinalStatus();
 
-				if ( ( $status == 'complete' ) || ( $status == 'pending' ) ) {
+				// FIXME: Isn't this why we have $goToThankYouOn?
+				if ( $status === FinalStatus::COMPLETE || $status === FinalStatus::PENDING ) {
 					$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
 				}
 				else {
@@ -67,7 +72,7 @@ class AmazonGateway extends GatewayPage {
 				if ( !is_null( $specialform ) && $this->adapter->isValidSpecialForm( $specialform ) ){
 					$this->displayForm();
 				} else {
-					$this->log( 'Failed to process gateway return. Tokens bad or no status.', LOG_ERR );
+					$this->logger->error( 'Failed to process gateway return. Tokens bad or no status.' );
 				}
 			}
 		}

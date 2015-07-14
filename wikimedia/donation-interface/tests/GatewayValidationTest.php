@@ -30,7 +30,10 @@ class GatewayValidationTest extends DonationInterfaceTestCase {
 		parent::setUp();
 
 		$this->setMwGlobals( array(
-			'wgDonationInterfaceEnabledGateways' => array( 'donation' ), // base class.  awkward.
+			// FIXME: base class sketchiness.
+			'wgDonationInterfaceGatewayAdapters' => array(
+				'GatewayAdapter',
+			),
 			'wgDonationInterfacePriceFloor' => 2.00,
 			'wgDonationInterfacePriceCeiling' => 100.00,
 		) );
@@ -41,6 +44,12 @@ class GatewayValidationTest extends DonationInterfaceTestCase {
 		$this->adapter = new TestingGenericAdapter();
 		$this->page->adapter = $this->adapter;
 		parent::setUp();
+	}
+
+	public function tearDown() {
+		TestingGenericAdapter::$fakeIdentifier = null;
+
+		parent::tearDown();
 	}
 
 	public function testPassesValidation() {
@@ -163,5 +172,27 @@ class GatewayValidationTest extends DonationInterfaceTestCase {
 
 		$errors = $this->adapter->getValidationErrors();
 		$this->assertArrayHasKey( 'currency_code', $errors );
+	}
+
+	/**
+	 * @covers DataValidator::validate_gateway
+	 */
+	public function testBadGatewayError() {
+		$badGateway = uniqid();
+
+		// The gateway is calculated from adapter class, so this validation
+		// doesn't happen in practice and we can't fake a bad gateway using
+		// GatewayAdapter::addRequestData().
+
+		TestingGenericAdapter::$fakeIdentifier = $badGateway;
+		$this->adapter = new TestingGenericAdapter();
+		$this->page->adapter = $this->adapter;
+
+		$this->page->validateForm();
+
+		$this->assertFalse( $this->adapter->validatedOK() );
+
+		$errors = $this->adapter->getValidationErrors();
+		$this->assertArrayHasKey( 'general', $errors );
 	}
 }

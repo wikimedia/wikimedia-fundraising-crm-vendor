@@ -39,7 +39,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 	public static function setupFraudMaps() {
 		//yeesh.
 		global $wgDonationInterfaceCustomFiltersActionRanges, $wgDonationInterfaceCustomFiltersRefRules, $wgDonationInterfaceCustomFiltersSrcRules,
-		$wgDonationInterfaceCustomFiltersFunctions, $wgGlobalCollectGatewayCustomFiltersFunctions, $wgWorldPayGatewayCustomFiltersFunctions,
+		$wgDonationInterfaceCustomFiltersFunctions, $wgGlobalCollectGatewayCustomFiltersFunctions, $wgWorldpayGatewayCustomFiltersFunctions,
 		$wgDonationInterfaceCountryMap, $wgDonationInterfaceUtmCampaignMap, $wgDonationInterfaceUtmSourceMap, $wgDonationInterfaceUtmMediumMap,
 		$wgDonationInterfaceEmailDomainMap;
 
@@ -68,7 +68,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 		$wgGlobalCollectGatewayCustomFiltersFunctions['getCVVResult'] = 20;
 		$wgGlobalCollectGatewayCustomFiltersFunctions['getAVSResult'] = 25;
 
-		$wgWorldPayGatewayCustomFiltersFunctions = $wgGlobalCollectGatewayCustomFiltersFunctions;
+		$wgWorldpayGatewayCustomFiltersFunctions = $wgGlobalCollectGatewayCustomFiltersFunctions;
 
 		$wgDonationInterfaceCountryMap = array (
 			'US' => 40,
@@ -105,7 +105,8 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 		$gateway->runAntifraudHooks();
 
 		$this->assertEquals( 'reject', $gateway->getValidationAction(), 'Validation action is not as expected' );
-		$this->assertEquals( 157.5, $gateway->getRiskScore(), 'RiskScore is not as expected' );
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$this->assertEquals( 157.5, $exposed->risk_score, 'RiskScore is not as expected' );
 
 		unset( $wgGlobalCollectGatewayEnableMinfraud );
 	}

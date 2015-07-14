@@ -5,12 +5,6 @@
  */
 class TestingAdyenAdapter extends AdyenAdapter {
 
-	public $testlog = array ( );
-
-	public function _buildRequestParams() {
-		return $this->buildRequestParams();
-	}
-
 	//@TODO: That minfraud jerk needs its own isolated tests.
 	function runAntifraudHooks() {
 		//now screw around with the batch settings to trick the fraud filters into triggering
@@ -20,28 +14,6 @@ class TestingAdyenAdapter extends AdyenAdapter {
 		parent::runAntifraudHooks();
 
 		$this->batch = $is_batch;
-	}
-
-	public function _getData_Staged() {
-		return call_user_func_array( array ( $this, 'getData_Staged' ), func_get_args() );
-	}
-
-	/**
-	 * So we can fake a risk score
-	 */
-	public function setRiskScore( $score ) {
-		$this->risk_score = $score;
-	}
-
-	/**
-	 * Trap the error log so we can use it in testing
-	 * @param type $msg
-	 * @param type $log_level
-	 * @param type $log_id_suffix
-	 */
-	public function log( $msg, $log_level = LOG_INFO, $log_id_suffix = '' ) {
-		//I don't care about the suffix right now, particularly.
-		$this->testlog[$log_level][] = $msg;
 	}
 
 	/**
@@ -69,8 +41,8 @@ class TestingAdyenAdapter extends AdyenAdapter {
 
 		//could start stashing these in a further-down subdir if payment type starts getting in the way,
 		//but frankly I don't want to write tests that test our dummy responses.
-		$file_path = dirname( __FILE__ ) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
-		$file_path .= 'Responses' . DIRECTORY_SEPARATOR . self::getIdentifier() . DIRECTORY_SEPARATOR;
+		$file_path = __DIR__ . '/../';
+		$file_path .= 'Responses' . '/' . self::getIdentifier() . '/';
 		$file_path .= $this->getCurrentTransaction() . $code . '.testresponse';
 
 		//these are all going to be short, so...
