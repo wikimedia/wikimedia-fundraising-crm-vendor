@@ -642,44 +642,6 @@
         ]
     },
     {
-        "name": "wikimedia/donation-interface",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "a4fc38c376a5d404aa45157c86b8d55cf47c48c3"
-        },
-        "require": {
-            "coderkungfu/php-queue": "dev-master",
-            "fusesource/stomp-php": "2.1.*",
-            "monolog/monolog": "1.12.0",
-            "psr/log": "1.0.0",
-            "zordius/lightncandy": "0.18"
-        },
-        "time": "2015-07-06 19:45:20",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "classmap": [
-                "adyen_gateway",
-                "amazon_gateway",
-                "gateway_common",
-                "globalcollect_gateway",
-                "paypal_gateway",
-                "worldpay_gateway"
-            ],
-            "files": [
-                "gateway_common/WmfFramework.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "description": "Wikimedia Foundation payment processing library"
-    },
-    {
         "name": "symfony/http-foundation",
         "version": "v2.3.30",
         "version_normalized": "2.3.30.0",
@@ -839,5 +801,43 @@
             "donations",
             "payments"
         ]
+    },
+    {
+        "name": "wikimedia/donation-interface",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
+            "reference": "80f1e488856d9c5ba9c5f8cc204e39691050bc56"
+        },
+        "require": {
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "2.1.*",
+            "monolog/monolog": "1.12.0",
+            "psr/log": "1.0.0",
+            "zordius/lightncandy": "0.18"
+        },
+        "time": "2015-07-17 19:58:45",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "classmap": [
+                "adyen_gateway",
+                "amazon_gateway",
+                "gateway_common",
+                "globalcollect_gateway",
+                "paypal_gateway",
+                "worldpay_gateway"
+            ],
+            "files": [
+                "gateway_common/WmfFramework.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0"
+        ],
+        "description": "Wikimedia Foundation payment processing library"
     }
 ]

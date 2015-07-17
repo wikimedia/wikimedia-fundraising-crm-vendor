@@ -9,8 +9,12 @@
  * charges through GlobalCollect.
  */
 class WmfFramework_Drupal {
-	static function debugLog( $identifier, $msg ) {
-		watchdog( 'DonationInterface', "{$identifier}: {$msg}", NULL, WATCHDOG_DEBUG );
+	static function debugLog( $identifier, $msg, $level = 'DEBUG' ) {
+		$severity = constant( "WATCHDOG_$level" ); // Yep, they all match!
+		// Janky XML sanitization so we can see the tags
+		// watchdog strips so aggressively that htmlspecialchars doesn't help
+		$escaped = str_replace( array( '<', '>' ), array( '{', '}' ), $msg );
+		watchdog( 'DonationInterface', "{$identifier}: {$escaped}", NULL, $severity );
 	}
 
 	static function getIP() {
