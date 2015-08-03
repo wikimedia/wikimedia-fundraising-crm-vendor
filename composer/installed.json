@@ -754,13 +754,51 @@
         "homepage": "https://symfony.com"
     },
     {
+        "name": "wikimedia/donation-interface",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
+            "reference": "899be810fa33ae02e09f606ca5669b6d6890b236"
+        },
+        "require": {
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "2.1.*",
+            "monolog/monolog": "1.12.0",
+            "psr/log": "1.0.0",
+            "zordius/lightncandy": "0.18"
+        },
+        "time": "2015-07-17 19:58:45",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "classmap": [
+                "adyen_gateway",
+                "amazon_gateway",
+                "gateway_common",
+                "globalcollect_gateway",
+                "paypal_gateway",
+                "worldpay_gateway"
+            ],
+            "files": [
+                "gateway_common/WmfFramework.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0"
+        ],
+        "description": "Wikimedia Foundation payment processing library"
+    },
+    {
         "name": "wikimedia/smash-pig",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "21ea7b60f7791e2fcb72ab0f98477114be6b58cc"
+            "reference": "955d5147b36a2f6bbfdd9aaf35fa5539d016c89b"
         },
         "require": {
             "fusesource/stomp-php": "2.*",
@@ -769,7 +807,7 @@
             "symfony/event-dispatcher": ">=2.1,<2.4-dev",
             "symfony/http-foundation": ">=2.1,<2.4-dev"
         },
-        "time": "2015-07-13 18:54:35",
+        "time": "2015-07-31 19:10:19",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -801,43 +839,5 @@
             "donations",
             "payments"
         ]
-    },
-    {
-        "name": "wikimedia/donation-interface",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "899be810fa33ae02e09f606ca5669b6d6890b236"
-        },
-        "require": {
-            "coderkungfu/php-queue": "dev-master",
-            "fusesource/stomp-php": "2.1.*",
-            "monolog/monolog": "1.12.0",
-            "psr/log": "1.0.0",
-            "zordius/lightncandy": "0.18"
-        },
-        "time": "2015-07-17 22:38:02",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "classmap": [
-                "adyen_gateway",
-                "amazon_gateway",
-                "gateway_common",
-                "globalcollect_gateway",
-                "paypal_gateway",
-                "worldpay_gateway"
-            ],
-            "files": [
-                "gateway_common/WmfFramework.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "description": "Wikimedia Foundation payment processing library"
     }
 ]
