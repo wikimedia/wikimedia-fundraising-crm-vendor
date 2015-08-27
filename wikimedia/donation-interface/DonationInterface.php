@@ -38,6 +38,8 @@ if ( !isset( $wgDonationInterfaceTestMode) || $wgDonationInterfaceTestMode !== t
  * CLASSES
  */
 $wgAutoloadClasses['CurrencyRates'] = __DIR__ . '/gateway_common/CurrencyRates.php';
+$wgAutoloadClasses['CurrencyRatesModule'] = __DIR__ . '/modules/CurrencyRatesModule.php';
+$wgAutoloadClasses['CyclicalArray'] = __DIR__ . '/globalcollect_gateway/CyclicalArray.php';
 $wgAutoloadClasses['DonationData'] = __DIR__ . '/gateway_common/DonationData.php';
 $wgAutoloadClasses['DonationLoggerFactory'] = __DIR__ . '/gateway_common/DonationLoggerFactory.php';
 $wgAutoloadClasses['DonationLogProcessor'] = __DIR__ . '/gateway_common/DonationLogProcessor.php';
@@ -72,8 +74,8 @@ $wgAutoloadClasses['GlobalCollectGateway'] = __DIR__ . '/globalcollect_gateway/g
 $wgAutoloadClasses['GlobalCollectGatewayResult'] = __DIR__ . '/globalcollect_gateway/globalcollect_resultswitcher.body.php';
 
 $wgAutoloadClasses['GlobalCollectAdapter'] = __DIR__ . '/globalcollect_gateway/globalcollect.adapter.php';
-$wgAutoloadClasses['GlobalCollectOrphanAdapter'] = __DIR__ . '/globalcollect_gateway/scripts/orphan_adapter.php';
-$wgAutoloadClasses['GlobalCollectOrphanRectifier'] = __DIR__ . '/globalcollect_gateway/scripts/orphans.php';
+$wgAutoloadClasses['GlobalCollectOrphanAdapter'] = __DIR__ . '/globalcollect_gateway/orphan.adapter.php';
+$wgAutoloadClasses['GlobalCollectOrphanRectifier'] = __DIR__ . '/globalcollect_gateway/GlobalCollectOrphanRectifier.php';
 
 // Amazon
 $wgAutoloadClasses['AmazonGateway'] = __DIR__ . '/amazon_gateway/amazon_gateway.body.php';
@@ -204,6 +206,12 @@ $wgDonationInterfacePriceFloor = 1.00;
 $wgDonationInterfacePriceCeiling = 10000.00;
 
 /**
+ * When true, error forms will be preferred over FailPage specified below
+ * @var bool
+ */
+$wgDonationInterfaceRapidFail = false;
+
+/**
  * Default Thank You and Fail pages for all of donationinterface - language will be calc'd and appended at runtime.
  */
 //$wgDonationInterfaceThankYouPage = 'https://wikimediafoundation.org/wiki/Thank_You';
@@ -247,8 +255,9 @@ $wgDonationInterface3DSRules = array(
 );
 
 //GlobalCollect gateway globals
+$wgGlobalCollectGatewayTestingURL = 'https://ps.gcsip.nl/wdl/wdl';
+// Actually it's ps.gcsip.com, but trust me it's better this way.
 $wgGlobalCollectGatewayURL = 'https://ps.gcsip.nl/wdl/wdl';
-$wgGlobalCollectGatewayTestingURL = 'https://'; // GlobalCollect testing URL
 
 #	$wgGlobalCollectGatewayAccountInfo['example'] = array(
 #		'MerchantID' => '', // GlobalCollect ID
@@ -416,21 +425,6 @@ $wgWorldpayGatewayAvsZipMap = array (
 	'' => 50, //No code returned. All the points.
 );
 
-$wgStompServer = "";
-
-// In this array, 'default', 'pending', and 'limbo' are required keys for those categories of
-// transactions. The value is the name of the queue. To single out a transaction type, ie:
-// credit cards, prepend 'cc-' to the base key name.
-//
-// If the resultant queue name evaluates to false, the message will not be queued on the server.
-$wgStompQueueNames = array(
-	'default' => 'test-default',    // Previously known as $wgStompQueueName
-	'pending' => 'test-pending',    // Previously known as $wgPendingStompQueueName
-	'limbo' => 'test-limbo', // Previously known as $wgLimboStompQueueName
-	'payments-antifraud' => 'payments-antifraud', //noncritical: Basically shoving the fraud log into a database.
-	'payments-init' => 'payments-init', //noncritical: same as above with the payments-initial log
-);
-
 /**
  * @global array $wgDonationInterfaceDefaultQueueServer
  *
@@ -467,26 +461,35 @@ $wgDonationInterfaceDefaultQueueServer = array(
 $wgDonationInterfaceQueues = array(
 	// Incoming donations that we think have been paid for.
 	'completed' => array(),
+
 	// So-called limbo queue for GlobalCollect, where we store donor personal
 	// information while waiting for the donor to return from iframe or a
 	// redirect.  It's very important that this data is not stored anywhere
 	// permanent such as logs or the database, until we know this person
 	// finished making a donation.
 	// FIXME: Note that this must be an instance of KeyValueStore.
-	'globalcollect-cc-limbo' => array(
-		'type' => 'PHPQueue\Backend\Memcache',
-		'servers' => array( 'localhost' ),
-		# 30 days, in seconds
-		'expiry' => 2592000,
-	),
-	// The general limbo queue (see above). FIXME: deprecated?
-	'limbo' => array(
-		'type' => 'PHPQueue\Backend\Memcache',
-		'servers' => array( 'localhost' ),
-		'expiry' => 2592000,
-	),
-	// Where limbo messages go to die, if the orphan slayer decides they are
-	// still in one of the pending states.  FIXME: who reads from this queue?
+	//
+	// Example of a PCI-compliant queue configuration:
+	//
+	// 'globalcollect-cc-limbo' => array(
+	// 	'type' => 'PHPQueue\Backend\Predis',
+	//  # Note that servers cannot be an array, due to some incompatibility
+	//  # with aggregate connections.
+	// 	'servers' => 'tcp://payments1003.eqiad.net',
+	// 	# 1 hour, in seconds
+	// 	'expiry' => 3600,
+	// 	'score_key' => 'date',
+	// ),
+	//
+	// Example of aliasing a queue
+	//
+	// 'globalcollect-cc-limbo' => array(
+	//     # Point at the main CC limbo queue.
+	//     'queue' => 'cc-limbo',
+	// ),
+
+	// Transactions still needing action before they are settled.
+	// FIXME: who reads from this queue?
 	'pending' => array(),
 
 	// Non-critical queues
@@ -725,7 +728,6 @@ $wgDonationInterfaceUtmMediumMap = array();
  */
 $wgDonationInterfaceUtmSourceMap = array();
 
-$wgDonationInterfaceEnableStomp = false;
 $wgDonationInterfaceEnableQueue = false;
 $wgDonationInterfaceEnableConversionLog = false; //this is definitely an Extra
 $wgDonationInterfaceEnableMinfraud = false; //this is definitely an Extra
@@ -775,14 +777,6 @@ $wgDonationInterfaceGatewayAdapters[] = 'PaypalAdapter';
 
 $wgSpecialPages['WorldpayGateway'] = 'WorldpayGateway';
 $wgDonationInterfaceGatewayAdapters[] = 'WorldpayAdapter';
-
-//Stomp hooks
-// FIXME: There's no point in using hooks any more, since we're switching
-// behavior inside the callbacks and not via conditional hooking.
-$wgHooks['ParserFirstCallInit'][] = 'efStompSetup';
-$wgHooks['gwStomp'][] = 'sendSTOMP';
-$wgHooks['gwPendingStomp'][] = 'sendPendingSTOMP';
-$wgHooks['gwFreeformStomp'][] = 'sendFreeformSTOMP';
 
 //Custom Filters hooks
 $wgHooks['GatewayValidate'][] = array( 'Gateway_Extras_CustomFilters::onValidate' );
@@ -928,9 +922,7 @@ $wgResourceModules[ 'ext.donationInterface.errorMessages' ] = array(
 
 // minimum amounts for all currencies
 $wgResourceModules[ 'di.form.core.minimums' ] = array(
-	'scripts' => 'validate.currencyMinimums.js',
-	'localBasePath' => __DIR__ . '/modules',
-	'remoteExtPath' => 'DonationInterface/modules'
+	'class' => 'CurrencyRatesModule',
 );
 
 // form validation resource
@@ -948,6 +940,7 @@ $wgMessagesDirs['DonationInterface'][] = __DIR__ . '/gateway_common/i18n/country
 $wgMessagesDirs['DonationInterface'][] = __DIR__ . '/gateway_common/i18n/countries';
 $wgMessagesDirs['DonationInterface'][] = __DIR__ . '/gateway_common/i18n/us-states';
 $wgMessagesDirs['DonationInterface'][] = __DIR__ . '/gateway_common/i18n/canada-provinces';
+$wgExtensionMessagesFiles['GatewayAliases'] = __DIR__ . '/DonationInterface.alias.php';
 
 $wgMessagesDirs['DonationInterface'][] = __DIR__ . '/amazon_gateway/i18n';
 $wgExtensionMessagesFiles['AmazonGatewayAlias'] = __DIR__ . '/amazon_gateway/amazon_gateway.alias.php';
@@ -983,7 +976,6 @@ $wgDonationInterfaceAllowedHtmlForms = array();
 $wgDonationInterfaceFormDirs = array(
 	'adyen' => $wgAdyenGatewayHtmlFormDir,
 	'amazon' => $wgAmazonGatewayHtmlFormDir,
-	'astropay' => $wgAstropayGatewayHtmlFormDir,
 	'default' => $wgDonationInterfaceHtmlFormDir,
 	'gc' => $wgGlobalCollectGatewayHtmlFormDir,
 	'paypal' => $wgPaypalGatewayHtmlFormDir,
@@ -996,11 +988,6 @@ require_once __DIR__ . '/DonationInterfaceFormSettings.php';
 /**
  * FUNCTIONS
  */
-
-//---Stomp functions---
-// TODO: Encapsulate in a class, or deprecate.
-require_once( __DIR__ . '/activemq_stomp/activemq_stomp.php'  );
-$wgAutoloadClasses['Stomp'] = __DIR__ . '/activemq_stomp/Stomp.php';
 
 function efDonationInterfaceUnitTests( &$files ) {
 	global $wgAutoloadClasses;

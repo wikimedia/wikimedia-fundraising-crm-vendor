@@ -12,6 +12,14 @@
  * @author awight
  */
 class DataValidator {
+
+	// because of the hacky way we test for translation existence in getErrorMessage,
+	// we need to explicitly specify which fields we want to try to get country-
+	// specific names for.
+	protected static $countrySpecificFields = array(
+		'fiscal_number',
+	);
+
 	/**
 	 * getErrorToken, intended to be used by classes that exist relatively close 
 	 * to the form classes, returns the error token (defined on the forms) that 
@@ -35,6 +43,7 @@ class DataValidator {
 			case 'card_num':
 			case 'card_type':
 			case 'cvv':
+			case 'fiscal_number':
 			case 'fname':
 			case 'lname':
 			case 'city':
@@ -66,6 +75,7 @@ class DataValidator {
 			'card_num' => '',
 			'card_type' => '',
 			'cvv' => '',
+			'fiscal_number' => '',
 			'fname' => '',
 			'lname' => '',
 			'city' => '',
@@ -90,11 +100,10 @@ class DataValidator {
 	 *        'calculated' - fields that failed some kind of multiple-field data
 	 * integrity check.
 	 * @param string $language MediaWiki language code
-	 * @param string $value - The value of the field. So far, only used to say
-	 * more precise things about Credit Cards.
+	 * @param string $country ISO country code
 	 * @return String
 	 */
-	public static function getErrorMessage( $field, $type, $language, $value = null ){
+	public static function getErrorMessage( $field, $type, $language, $country = null ){
 		//this is gonna get ugly up in here. 
 		//error_log( __FUNCTION__ . " $field, $type, $value " );
 
@@ -109,16 +118,24 @@ class DataValidator {
 		//postal code is a weird one. More L10n than I18n. 
 		//'donate_interface-error-msg-postal' => 'postal code',
 
-		$error_message_field_string = 'donate_interface-error-msg-' . $message_field;
+		$error_message_field_key = 'donate_interface-error-msg-' . $message_field;
+
+		if ( $country !== null && in_array( $message_field, self::$countrySpecificFields ) ) {
+			$translated_field_name = MessageUtils::getCountrySpecificMessage( $error_message_field_key, $country, $language );
+		} else if ( MessageUtils::messageExists( $error_message_field_key, $language ) ) {
+			$translated_field_name = WmfFramework::formatMessage( $error_message_field_key );
+		} else {
+			$translated_field_name = false;
+		}
 
 		//Empty messages should get: 
 		//'donate_interface-error-msg' => 'Please enter your $1';
 		//If they have no defined error message, give 'em the default. 
 		if ($type === 'not_empty'){
-			if ( $message_field != 'general' && MessageUtils::messageExists( $error_message_field_string, $language ) ) {
+			if ( $message_field != 'general' && $translated_field_name ) {
 				return WmfFramework::formatMessage(
 					'donate_interface-error-msg',
-					WmfFramework::formatMessage( $error_message_field_string )
+					$translated_field_name
 				);
 			} 
 		}
@@ -133,35 +150,25 @@ class DataValidator {
 				case 'amount': 
 					$suffix = 'invalid-amount';
 					break;
-				case 'card_num': //god damn it.
-					$suffix = 'card_num'; //more defaultness.
-					if (!is_null($value)){
-						$suffix = self::getCardType($value);
-					}
-					break;
 			}
-			
-			$error_message_string = 'donate_interface-error-msg-' . $suffix;
-			
+
+			$error_key_calc = 'donate_interface-error-msg-' . $suffix . '-calc';
+
 			if ( $type === 'calculated'){
-				//try for the special "calculated" error message.
-				if ( MessageUtils::messageExists( $error_message_string . '-calc', $language ) ) {
-					return WmfFramework::formatMessage($error_message_string . '-calc');
+				// try for the special "calculated" error message.
+				// Note: currently only used for country
+				if ( MessageUtils::messageExists( $error_key_calc, $language ) ) {
+					return WmfFramework::formatMessage( $error_key_calc );
 				}
 			}
-			
-//			//try for the "invalid whatever" error message.
-//			if ( MessageUtils::messageExists( $error_message_string, $language ) ) {
-//				return WmfFramework::formatMessage( $error_message_string );
-//			}
-			
+
 			//try for new more specific default correction message
 			if ( $message_field != 'general' 
-				&& MessageUtils::messageExists( $error_message_field_string, $language )
+				&& $translated_field_name
 				&& MessageUtils::messageExists( 'donate_interface-error-msg-field-correction', $language ) ) {
 				return WmfFramework::formatMessage(
 					'donate_interface-error-msg-field-correction',
-					WmfFramework::formatMessage( $error_message_field_string )
+					$translated_field_name
 				);
 			}
 		}
@@ -246,6 +253,9 @@ class DataValidator {
 
 				// Depends on currency_code and gateway.
 				'amount' => 'validate_amount',
+
+				// Depends on country
+				'fiscal_number' => 'validate_fiscal_number',
 			),
 		);
 
@@ -259,6 +269,11 @@ class DataValidator {
 		$errors = array();
 
 		$language = DataValidator::guessLanguage( $data );
+		if ( empty( $data['country'] ) ) {
+			$country = null;
+		} else {
+			$country = $data['country'];
+		}
 
 		foreach ( $validations as $phase => $fields ) {
 			foreach ( $fields as $key => $custom ) {
@@ -305,6 +320,9 @@ class DataValidator {
 					case 'validate_currency_code':
 						$result = call_user_func( $callable, $data[$field], $gateway->getCurrencies() );
 						break;
+					case 'validate_fiscal_number':
+						$result = call_user_func( $callable, $data[$field], $data['country'] );
+						break;
 					default:
 						$result = call_user_func( $callable, $data[$field] );
 						break;
@@ -314,7 +332,7 @@ class DataValidator {
 				$results[$phase][$field] = $result;
 				if ( $result === false ) {
 					// We did the check, and it failed.
-					$errors[$errorToken] = self::getErrorMessage( $field, $phase, $language );
+					$errors[$errorToken] = self::getErrorMessage( $field, $phase, $language, $country );
 				}
 			}
 		}
@@ -578,6 +596,70 @@ class DataValidator {
 		) {
 			return false;
 		}
+		return true;
+	}
+
+	/**
+	 * Rudimentary tests of fiscal number format for different countries
+	 * @param string $value The alleged fiscal number
+	 * @param array $country The country whose format we care about
+	 * @return boolean True if the $value is a valid fiscal number, false otherwise
+	 */
+	public static function validate_fiscal_number( $value, $country ) {
+		$countryRules = array(
+			'AR' => array(
+				'numeric' => true,
+				'min' => 8,
+				'max' => 8,
+			),
+			'BR' => array(
+				'numeric' => true,
+				'min' => 11,
+				'max' => 14,
+			),
+			'CO' => array(
+				'numeric' => true,
+				'min' => 11,
+				'max' => 14,
+			),
+			'CL' => array(
+				'min' => 8,
+				'max' => 9,
+			),
+			'MX' => array(
+				'min' => 10,
+				'max' => 18,
+			),
+			'PE' => array(
+				'numeric' => true,
+				'min' => 8,
+				'max' => 9,
+			),
+			'UY' => array(
+				'numeric' => true,
+				'min' => 6,
+				'max' => 8,
+			),
+		);
+
+		if ( !isset( $countryRules[$country] ) ) {
+			return true;
+		}
+
+		$rules = $countryRules[$country];
+		$unpunctuated = preg_replace( '/[^A-Za-z0-9]/', '', $value );
+
+		if ( !empty( $rules['numeric'] ) ) {
+			if ( !is_numeric( $unpunctuated ) ) {
+				return false;
+			}
+		}
+
+		$length = strlen( $unpunctuated );
+		if ( $length < $rules['min'] || $length > $rules['max'] ) {
+			return false;
+		}
+
 		return true;
 	}
 

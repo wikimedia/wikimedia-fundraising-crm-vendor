@@ -27,6 +27,10 @@ class AstropayAdapter extends GatewayAdapter {
 	const GLOBAL_PREFIX = 'wgAstropayGateway';
 
 	public function getFormClass() {
+		if ( strpos( $this->dataObj->getVal_Escaped( 'ffname' ), 'error') === 0 ) {
+			// TODO: make a mustache error form
+			return parent::getFormClass();
+		}
 		return 'Gateway_Form_Mustache';
 	}
 
@@ -78,9 +82,10 @@ class AstropayAdapter extends GatewayAdapter {
 
 	function defineStagedVars() {
 		$this->staged_vars = array(
-			'full_name',
-			'donor_id',
 			'bank_code',
+			'donor_id',
+			'fiscal_number',
+			'full_name',
 		);
 	}
 
@@ -126,7 +131,7 @@ class AstropayAdapter extends GatewayAdapter {
 
 	/**
 	 * Sets up the $order_id_meta array.
-	 * For Astropay, we use the ct_id.numAttempt format because we don't get
+	 * For Astropay, we use the ct_id.sequence format because we don't get
 	 * a gateway transaction ID until the user has actually paid.  If the user
 	 * doesn't return to the result switcher, we will need to use the order_id
 	 * to find a pending queue message with donor details to flesh out the
@@ -241,10 +246,13 @@ class AstropayAdapter extends GatewayAdapter {
 	public function definePaymentMethods() {
 		$this->payment_methods = array();
 
+		// TODO if we add countries where fiscal number is not required:
+		// make fiscal_number validation depend on country
 		$this->payment_methods['cc'] = array(
 			'validation' => array(
 				'name' => true,
 				'email' => true,
+				'fiscal_number' => true,
 			),
 		);
 
@@ -252,6 +260,7 @@ class AstropayAdapter extends GatewayAdapter {
 			'validation' => array(
 				'name' => true,
 				'email' => true,
+				'fiscal_number' => true,
 			),
 		);
 
@@ -417,6 +426,11 @@ class AstropayAdapter extends GatewayAdapter {
 	}
 
 	function doPayment() {
+		// If this is not our first NewInvoice call, get a fresh order ID
+		if ( $this->session_getData( 'sequence' ) ) {
+			$this->regenerateOrderID();
+		}
+
 		$transaction_result = $this->do_transaction( 'NewInvoice' );
 		$this->runAntifraudHooks();
 		if ( $this->getValidationAction() !== 'process' ) {
@@ -427,7 +441,6 @@ class AstropayAdapter extends GatewayAdapter {
 			$this->getFinalStatus()
 		);
 		if ( $result->getRedirect() ) {
-			$this->doLimboStompTransaction();
 			// Write the donor's details to the log for the audit processor
 			$this->logPaymentDetails();
 			// Feed the message into the pending queue, so the CRM queue consumer
@@ -455,20 +468,25 @@ class AstropayAdapter extends GatewayAdapter {
 	 */
 	protected function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
 		if ( $gateway_field_name === 'control' ) {
-			$message = $this->getData_Staged( 'order_id' ) . 'V'
-				. $this->getData_Staged( 'amount' ) . 'I'
-				. $this->getData_Staged( 'donor_id' ) . '2'
-				. $this->getData_Staged( 'bank_code' ) . '1'
-				. $this->getData_Staged( 'fiscal_number' ) . 'H'
-				. /* bdate omitted */ 'G'
-				. $this->getData_Staged( 'email' ) .'Y'
-				. /* zip omitted */ 'A'
-				. /* street omitted */ 'P'
-				. /* city omitted */ 'S'
-				. /* state omitted */ 'P';
+			$message = $this->getMessageToSign();
 			return $this->calculateSignature( $message );
 		}
 		return parent::getTransactionSpecificValue( $gateway_field_name, $token );
+	}
+
+	protected function getMessageToSign() {
+		return str_replace( '+', ' ',
+			$this->getData_Staged( 'order_id' ) . 'V'
+			. $this->getData_Staged( 'amount' ) . 'I'
+			. $this->getData_Staged( 'donor_id' ) . '2'
+			. $this->getData_Staged( 'bank_code' ) . '1'
+			. $this->getData_Staged( 'fiscal_number' ) . 'H'
+			. /* bdate omitted */ 'G'
+			. $this->getData_Staged( 'email' ) .'Y'
+			. /* zip omitted */ 'A'
+			. /* street omitted */ 'P'
+			. /* city omitted */ 'S'
+			. /* state omitted */ 'P' );
 	}
 
 	/*
@@ -491,7 +509,10 @@ class AstropayAdapter extends GatewayAdapter {
 	 * characters of the email address for easy lookup
 	 */
 	protected function stage_donor_id() {
-		$this->staged_data['donor_id'] = substr( $this->getData_Staged( 'email' ), 0, 20 );
+		// We use these to look up donations by email, so strip out the trailing
+		// spam-tracking sub-address to get the email we'd see complaints from.
+		$email = preg_replace( '/\+[^@]*/', '', $this->getData_Staged( 'email' ) );
+		$this->staged_data['donor_id'] = substr( $email, 0, 20 );
 	}
 
 	protected function stage_bank_code() {
@@ -501,6 +522,16 @@ class AstropayAdapter extends GatewayAdapter {
 			if ( isset( $meta['bank_code'] ) ) {
 				$this->staged_data['bank_code'] = $meta['bank_code'];
 			}
+		}
+	}
+
+	/**
+	 * Strip any punctuation from fiscal number before submitting
+	 */
+	protected function stage_fiscal_number() {
+		$value = $this->getData_Unstaged_Escaped( 'fiscal_number' );
+		if ( $value ) {
+			$this->staged_data['fiscal_number'] = preg_replace( '/[^a-zA-Z0-9]/', '', $value );
 		}
 	}
 
@@ -571,8 +602,7 @@ class AstropayAdapter extends GatewayAdapter {
 			$this->logger->info( "Payment status $status coming back to ResultSwitcher" );
 			$this->finalizeInternalStatus( $status );
 			$this->runPostProcessHooks();
-			$this->deleteLimboMessage();
-			$this->doLimboStompTransaction( TRUE ); // TODO: stop mirroring to STOMP
+			$this->deleteLimboMessage( 'pending' );
 			break;
 		case 'NewInvoice':
 			$this->processNewInvoiceResponse( $response );
@@ -588,6 +618,8 @@ class AstropayAdapter extends GatewayAdapter {
 	 * @param array $response
 	 */
 	protected function processNewInvoiceResponse( $response ) {
+		// Increment sequence number so next NewInvoice call gets a new order ID
+		$this->incrementSequenceNumber();
 		if ( !isset( $response['status'] ) ) {
 			$this->transaction_response->setCommunicationStatus( false );
 			$this->logger->error( 'Astropay response does not have a status code' );
@@ -606,30 +638,59 @@ class AstropayAdapter extends GatewayAdapter {
 				);
 			}
 		} else {
-			$logme = "Astropay response has non-zero status {$response['status']}.";
+			$logme = 'Astropay response has non-zero status.  Full response: '
+				. print_r( $response, true );
+			$this->logger->warning( $logme );
+
+			$code = 'internal-0000';
+			$message = $this->getErrorMapByCodeAndTranslate( $code );
+			$context = null;
+
 			if ( isset( $response['desc'] ) ) {
-				// They don't give us codes to distinguish failure modes, so we
-				// have to parse the description.
-				if ( preg_match( '/invoice already used/i', $response['desc'] ) ) {
+				// error codes are unreliable, so we have to examine the description
+				if ( preg_match( '/^invoice already used/i', $response['desc'] ) ) {
 					$this->logger->error( 'Order ID collision! Starting again.' );
-					// Increment numAttempt to get a new order ID
-					$this->incrementNumAttempt();
 					throw new ResponseProcessingException(
 						'Order ID collision! Starting again.',
 						ResponseCodes::DUPLICATE_ORDER_ID,
 						array( 'order_id' )
 					);
+				} else if ( preg_match( '/^could not (register user|make the deposit)/i', $response['desc'] ) ) {
+					// AstroPay is overwhelmed.  Tell the donor to try again soon.
+					$message = WmfFramework::formatMessage( 'donate_interface-try-again' );
+				} else if ( preg_match( '/^user (unauthorized|blacklisted)/i', $response['desc'] ) ) {
+					// They are blacklisted by Astropay for shady doings,
+					// or listed delinquent by their government.
+					// Either way, we can't process 'em through AstroPay
+					$this->finalizeInternalStatus( FinalStatus::FAILED );
+				} else if ( preg_match( '/^the user limit has been exceeded/i', $response['desc'] ) ) {
+					// They've spent too much via AstroPay today.
+					// Setting context to 'amount' will tell the form to treat
+					// this like a validation error and make amount editable.
+					$context = 'amount';
+					$message = WmfFramework::formatMessage( 'donate_interface-error-msg-limit' );
+				} else if ( preg_match( '/param x_cpf$/i', $response['desc'] ) ) {
+					// Something wrong with the fiscal number
+					$context = 'fiscal_number';
+					$language = $this->dataObj->getVal_Escaped( 'language' );
+					$country = $this->dataObj->getVal_Escaped( 'country' );
+					$message = DataValidator::getErrorMessage( 'fiscal_number', 'calculated', $language, $country );
+				} else if ( preg_match( '/invalid control/i', $response['desc'] ) ) {
+					// They think we screwed up the signature.  Log what we signed.
+					$signed = $this->getMessageToSign();
+					$signature = $this->getTransactionSpecificValue( 'control' );
+					$this->logger->error( "$logme Signed message: '$signed' Signature: '$signature'" );
+				} else {
+					// Some less common error.  Also log message at 'error' level
+					$this->logger->error( $logme );
 				}
-				$logme .= '  Error description: ' . $response['desc'];
-			} else {
-				$logme .= '  Full response: ' . $this->getTransactionRawResponse();
 			}
-			$this->logger->warning( $logme );
 			$this->transaction_response->setErrors( array(
-				'internal-0000' => array (
-					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
+				$code => array (
+					'message' => $message,
 					'debugInfo' => $logme,
-					'logLevel' => LogLevel::WARNING
+					'logLevel' => LogLevel::WARNING,
+					'context' => $context
 				)
 			) );
 		}

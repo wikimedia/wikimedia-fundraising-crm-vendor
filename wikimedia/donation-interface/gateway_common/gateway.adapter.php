@@ -126,7 +126,7 @@ interface GatewayType {
 	 *	order IDs, false if we are deferring order_id generation to the
 	 *	gateway.
 	 * 'ct_id' => boolean value.  If True, when generating order ID use
-	 * the contribution tracking ID with the attempt number appended
+	 * the contribution tracking ID with the sequence number appended
 	 *
 	 * Will eventually contain the following keys/values:
 	 * 'final'=> The value that we have chosen as the valid order ID for
@@ -388,9 +388,11 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$this->defineDataConstraints();
 		$this->definePaymentMethods();
 
-		$this->session_resetOnGatewaySwitch(); //clear out the old stuff before DD snarfs it.
+		$this->session_resetOnSwitch(); // Need to do this before creating DonationData
 
+		// FIXME: this should not have side effects like setting order_id_meta['final']
 		$this->dataObj = new DonationData( $this, $options['external_data'] );
+
 		$this->setValidationErrors( $this->getOriginalValidationErrors() );
 
 		$this->unstaged_data = $this->dataObj->getDataEscaped();
@@ -446,7 +448,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	public function getLogMessagePrefix() {
 		if ( !is_object( $this->dataObj ) ) {
 			//please avoid exploding; It's just a log line.
-			return 'Constructing!';
+			return 'Constructing! ';
 		}
 		return $this->dataObj->getLogMessagePrefix();
 	}
@@ -464,31 +466,34 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
-	 * getFailPage should either return a full page url, or false.
-	 * @return mixed Page URL in string format, or false if none is set.
+	 * @return string full Page URL
 	 */
 	public function getFailPage() {
 		//Prefer RapidFail.
-		if ( self::getGlobal( "RapidFailPage" ) ) {
+		if ( self::getGlobal( 'RapidFail' ) ) {
 			$data = $this->getData_Unstaged_Escaped();
 
 			//choose which fail page to go for.
 			try {
 				$fail_ffname = GatewayFormChooser::getBestErrorForm( $data['gateway'], $data['payment_method'], $data['payment_submethod'] );
+				return GatewayFormChooser::buildPaymentsFormURL( $fail_ffname, $this->getRetryData() );
 			} catch ( Exception $e ) {
 				$this->logger->error( 'Cannot determine best error form. ' . $e->getMessage() );
 			}
-
-			return GatewayFormChooser::buildPaymentsFormURL( $fail_ffname, $this->getRetryData() );
 		}
-		$page = self::getGlobal( "FailPage" );
-		if ( $page ) {
-
-			$language = $this->getData_Unstaged_Escaped( 'language' );
-
-			$page .= '?uselang=' . $language;
+		$page = self::getGlobal( 'FailPage' );
+		if ( filter_var( $page, FILTER_VALIDATE_URL ) ) {
+			return $this->appendLanguageAndMakeURL( $page );
 		}
-		return $page;
+
+		// FIXME: either add Special:FailPage to avoid depending on wiki content,
+		// or update the content on payments to be consistent with the /lang
+		// format of ThankYou pages so we can use appendLanguageAndMakeURL here.
+		$failTitle = Title::newFromText( $page );
+		$language = $this->getData_Unstaged_Escaped( 'language' );
+		$url = wfAppendQuery( $failTitle->getFullURL(), array( 'uselang' => $language ) );
+
+		return $url;
 	}
 
 	/**
@@ -701,6 +706,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 
 		$translatedMessage = WmfFramework::formatMessage( $response_message );
 
+		// FIXME: don't do this.
 		// Check to see if an error message exists in translation
 		if ( substr( $translatedMessage, 0, 3 ) !== '&lt;' ) {
 
@@ -1373,7 +1379,6 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * problem. (timeout, bad URL, etc.)
 	 */
 	protected function curl_transaction( $data ) {
-		// assign header data necessary for the curl_setopt() function
 		$this->getStopwatch( __FUNCTION__, true );
 
 		// Basic variable init
@@ -1401,6 +1406,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 			return false;
 		}
 
+		// assign header data necessary for the curl_setopt() function
 		$headers = $this->getCurlBaseHeaders();
 		$headers[] = 'Content-Length: ' . strlen( $data );
 
@@ -1413,10 +1419,11 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		// As suggested in the PayPal developer forum sample code, try more than once to get a
 		// response in case there is a general network issue
 		$continue = true;
-		$i = 1;
+		$tries = 0;
 		$curl_response = false;
+		$loopCount = $this->getGlobal( 'RetryLoopCount' );
 
-		while ( ( $i++ <= 3 ) && ( $continue === true )) {
+		do {
 			$this->logger->info( "Preparing to send {$this->getCurrentTransaction()} transaction to $gatewayName" );
 
 			// Execute the cURL operation
@@ -1468,8 +1475,16 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 				$err = curl_error( $ch );
 				$this->logger->alert( "cURL transaction  to $gatewayName failed: ($errno) $err" );
 			}
-
-		} // End while cURL transaction hasn't returned something useful
+			$tries++;
+			if ( $tries >= $loopCount ) {
+				$continue = false;
+			}
+			if ( $continue ) {
+				// If we're going to try again, log timing for this particular curl attempt and reset
+				$this->saveCommunicationStats( __FUNCTION__, $this->getCurrentTransaction(), "cURL problems" );
+				$this->getStopwatch( __FUNCTION__, true );
+			}
+		} while ( $continue ); // End while cURL transaction hasn't returned something useful
 
 		// Clean up and return
 		curl_close( $ch );
@@ -1527,11 +1542,10 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
-	 * This is only public for the orphan script.
 	 * Harvest the data we need back from the gateway.
 	 * @return array a key/value array
 	 */
-	public function parseResponseData( $response ) {
+	protected function parseResponseData( $response ) {
 		return array();
 	}
 
@@ -1856,81 +1870,33 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
-	 * Function that adds a stomp message to a special 'limbo' queue, for data
-	 * that is either highly likely or completely guaranteed to be bifurcated by
-	 * handing the ball to a third-party process.
-	 *
-	 * @param bool $antiMessage If TRUE message will be formatted to destroy a message in the limbo
-	 *  queue when the orphan slayer is run.
-	 *
-	 * @return null
-	 */
-	protected function doLimboStompTransaction( $antiMessage = false ) {
-		if ( !$this->getGlobal( 'EnableStomp' ) ){
-			return;
-		}
-
-		$this->debugarray[] = "Attempting Limbo Stomp Transaction!";
-
-		$transaction = $this->getStompTransaction( $antiMessage );
-
-		try {
-			WmfFramework::runHooks( 'gwStomp', array( $transaction, 'limbo' ) );
-		} catch ( Exception $e ) {
-			$this->logger->critical( "STOMP ERROR. Could not add message to 'limbo' queue: {$e->getMessage()} " . json_encode( $transaction ) );
-		}
-	}
-
-	/**
 	 * Formats an array in preparation for dispatch to a STOMP queue
-	 *
-	 * @param bool $antiMessage If TRUE, message will be prepared to destroy
-	 * @param bool $recoverTimestamp If TRUE the timestamp will be set to any recoverable timestamp
-	 *  from the transaction. If it cannot be recovered or this argument is false, it will take the
-	 *  current time.
 	 *
 	 * @return array Pass this return array to STOMP :)
 	 *
 	 * TODO: Stop saying "STOMP".
 	 */
-	protected function getStompTransaction( $antiMessage = false, $recoverTimestamp = false ) {
+	protected function getStompTransaction() {
 		$transaction = array(
 			'gateway_txn_id' => $this->getTransactionGatewayTxnID(),
-			'payment_method' => $this->getData_Unstaged_Escaped( 'payment_method' ),
 			'response' => $this->getTransactionMessage(),
 			// Can this be deprecated?
 			'correlation-id' => $this->getCorrelationID(),
 			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceMessage',
-			'gateway' => $this->getData_Unstaged_Escaped( 'gateway' ),
 		);
 
-		if ( $antiMessage == true ) {
-			// As anti-messages only exist to destroy messages all we need is the identifier
-			$transaction['antimessage'] = 'true';
-		} else {
-			// Else we actually need the rest of the data
-			$stomp_data = array_intersect_key(
-				$this->getData_Unstaged_Escaped(),
-				array_flip( $this->dataObj->getStompMessageFields() )
-			);
+		// Add the rest of the relevant data
+		$stomp_data = array_intersect_key(
+			$this->getData_Unstaged_Escaped(),
+			array_flip( $this->dataObj->getStompMessageFields() )
+		);
 
-			// The order here is important, values in $transaction are considered more definitive
-			// in case the transaction already had keys with those values
-			$transaction = array_merge( $stomp_data, $transaction );
+		// The order here is important, values in $transaction are considered more definitive
+		// in case the transaction already had keys with those values
+		$transaction = array_merge( $stomp_data, $transaction );
 
-			// And now determine the date; which is annoyingly not as easy as one would like it
-			// if we're attempting to recover some data: ie: we're an orphan
-			$timestamp = null;
-			if ( $recoverTimestamp === true ) {
-				if ( !is_null( $this->getData_Unstaged_Escaped( 'date' ) ) ) {
-					$timestamp = $this->getData_Unstaged_Escaped( 'date' );
-				} elseif ( !is_null( $this->getData_Unstaged_Escaped( 'ts' ) ) ) {
-					// That this works is mildly surprising
-					$timestamp = strtotime( $this->getData_Unstaged_Escaped( 'ts' ) );
-				}
-			}
-			$transaction['date'] = ( $timestamp === null ) ? time() : $timestamp;
-		}
+		// FIXME: Note that we're not using any existing date or ts fields.  Why is that?
+		$transaction['date'] = time();
 
 		return $transaction;
 	}
@@ -1947,6 +1913,9 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 			$this->logger->warning( "Trying to send a freeform STOMP message with no class defined. Bad programmer." );
 			$transaction['php-message-class'] = 'undefined-loser-message';
 		}
+
+		// Mark as freeform so we avoid normalization.
+		$transaction['freeform'] = true;
 
 		//bascially, add all the stuff we have come to take for granted, because syslog.
 		$transaction['gateway_txn_id'] = $this->getTransactionGatewayTxnID();
@@ -2104,17 +2073,14 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * if the address line contains no numerical data.
 	 */
 	protected function stage_street() {
-		if ( !isset( $this->unstaged_data['street'] ) ) {
-			//nothing to do.
-			return;
+		$street = '';
+		if ( isset( $this->unstaged_data['street'] ) ) {
+			$street = trim( $this->unstaged_data['street'] );
 		}
 
-		$is_garbage = false;
-		$street = trim( $this->unstaged_data['street'] );
-		( strlen( $street ) === 0 ) ? $is_garbage = true : null;
-		( !DataValidator::validate_not_just_punctuation( $street ) ) ? $is_garbage = true : null;
-
-		if ( $is_garbage ){
+		if ( !$street
+			|| !DataValidator::validate_not_just_punctuation( $street )
+		) {
 			$this->staged_data['street'] = 'N0NE PROVIDED'; //The zero is intentional. See function comment.
 		}
 	}
@@ -2126,27 +2092,26 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * something along so that AVS checks get triggered at all.
 	 */
 	protected function stage_zip() {
-		if ( !isset( $this->unstaged_data['zip'] ) ) {
-			//nothing to do.
-			return;
+		$zip = '';
+		if ( isset( $this->unstaged_data['zip'] ) ) {
+			$zip = trim( $this->unstaged_data['zip'] );
 		}
-		if ( strlen( trim( $this->unstaged_data['zip'] ) ) === 0  ){
+		if ( strlen( $zip ) === 0 ) {
 			//it would be nice to check for more here, but the world has some
 			//straaaange postal codes...
-			$this->unstaged_data['zip'] = '0';
+			$this->staged_data['zip'] = '0';
 		}
 
 		//country-based zip grooming to make AVS (marginally) happy
-		switch ($this->getData_Unstaged_Escaped( 'country' ) ){
+		switch ( $this->getData_Unstaged_Escaped( 'country' ) ) {
 			case 'CA':
 				//Canada goes "A0A 0A0"
-				$this->staged_data['zip'] = strtoupper( $this->unstaged_data['zip'] );
+				$this->staged_data['zip'] = strtoupper( $zip );
 				//In the event that they only forgot the space, help 'em out.
-				$regex = '/[A-Z]{1}\d{1}[A-Z]{1}\d{1}[A-Z]{1}\d{1}/';
+				$regex = '/[A-Z]\d[A-Z]\d[A-Z]\d/';
 				if ( strlen( $this->staged_data['zip'] ) === 6
-					&& preg_match( $regex, $this->unstaged_data['zip'] )
+					&& preg_match( $regex, $zip )
 				) {
-					$zip = $this->unstaged_data['zip'];
 					$this->staged_data['zip'] = substr( $zip, 0, 3 ) . ' ' . substr( $zip, 3, 3 );
 				}
 				break;
@@ -2295,6 +2260,9 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$this->payment_init_logger->info( $msg );
 	}
 
+	/**
+	 * Build and send a message to the payments-init queue, once the initial workflow is complete.
+	 */
 	public function sendFinalStatusMessage( $status ) {
 		$transaction = array (
 			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceFinalStatus',
@@ -2319,7 +2287,10 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$transaction = $this->makeFreeformStompTransaction( $transaction );
 
 		try {
-			WmfFramework::runHooks( 'gwFreeformStomp', array ( $transaction, 'payments-init' ) );
+			// FIXME: Dispatch "freeform" messages transparently as well.
+			// TODO: write test
+			$this->logger->info( 'Pushing transaction to payments-init queue.' );
+			DonationQueue::instance()->push( $transaction, 'payments-init' );
 		} catch ( Exception $e ) {
 			$this->logger->error( 'Unable to send payments-init message' );
 		}
@@ -2361,6 +2332,8 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	/**
 	 * Returns an array of errors, in the format $error_code => $error_message.
 	 * This should be an empty array on transaction success.
+	 *
+	 * @deprecated
 	 *
 	 * @return array
 	 */
@@ -2445,6 +2418,26 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$_SESSION['numAttempt'] = $attempts;
 	}
 
+	/**
+	 * Some payment gateways require a distinct identifier for each API call
+	 * or for each new payment attempt, even if retrying an attempt that failed
+	 * validation.  This is slightly different from numAttempt, which is only
+	 * incremented when setting a final status for a payment attempt.
+	 * It is the child class's responsibility to increment this at the
+	 * appropriate time.
+	 */
+	protected function incrementSequenceNumber() {
+		self::session_ensure();
+		$sequence = self::session_getData( 'sequence' ); //intentionally outside the 'Donor' key.
+		if ( is_numeric( $sequence ) ) {
+			$sequence += 1;
+		} else {
+			$sequence = 1;
+		}
+
+		$_SESSION['sequence'] = $sequence;
+	}
+
 	public function setHash( $hashval ) {
 		$this->dataObj->setVal( 'data_hash', $hashval );
 	}
@@ -2520,7 +2513,11 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 
 	protected function deleteLimboMessage( $queue = 'limbo' ) {
 		$this->logger->info( "Clearing transaction from limbo store [$queue]" );
-		DonationQueue::instance()->delete( $this->getCorrelationID(), $queue );
+		try {
+			DonationQueue::instance()->delete( $this->getCorrelationID(), $queue );
+		} catch( BadMethodCallException $ex ) {
+			$this->logger->warning( "Backend for queue [$queue] does not support deletion.  Hope your message had an expiration date!" );
+		}
 	}
 
 	/**
@@ -2719,6 +2716,9 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 						'fname',
 						'lname'
 					);
+					break;
+				case 'fiscal_number' :
+					$check_not_empty = array( 'fiscal_number' );
 					break;
 				default:
 					$this->logger->error( "bad required group name: {$type}" );
@@ -3129,6 +3129,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 				'PaymentForms',
 				'numAttempt',
 				'order_status', //for post-payment activities
+				'sequence',
 			);
 			$msg = '';
 			foreach ( $_SESSION as $key => $value ) {
@@ -3153,16 +3154,77 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
-	 * Check to see if we've changed gateways, and throw out the garbage
-	 * from the old gateway if so.  Prevents order_id leakage!
+	 * Check to see if donor is making a repeated attempt that is incompatible
+	 * with the previous attempt, such as a gateway changes.  Reset certain
+	 * things if so.  Prevents order_id leakage, log spam, and recur problems.
+	 * FIXME: this all has to be special cases because we need to compare
+	 * session values with request values that are normalized by DonationData,
+	 * and DonationData's idea of normalization includes some stuff we don't
+	 * want to do yet, like assigning order ID and saving contribution tracking.
 	 */
-	protected function session_resetOnGatewaySwitch() {
+	protected function session_resetOnSwitch() {
 		if ( !$this->session_exists() ) {
 			return;
 		}
-		$old_gateway = $this->session_getData( 'Donor', 'gateway' );
-		if ( $old_gateway !== null && $old_gateway !== $this::IDENTIFIER ) {
+		$oldData = $this->session_getData( 'Donor' );
+		if ( !$oldData ) {
+			return;
+		}
+
+		// If the gateway has changed, reset everything
+		$newGateway = $this->getIdentifier();
+		if ( !empty( $oldData['gateway'] ) && $oldData['gateway'] !== $newGateway ) {
+			$this->logger->info(
+				"Gateway changed from {$oldData['gateway']} to $newGateway.  Resetting session."
+			);
 			$this->session_resetForNewAttempt( true );
+			return;
+		}
+
+		// Now compare session with current request parameters
+		$newRequest = RequestContext::getMain()->getRequest();
+		// Reset submethod when method changes to avoid form mismatch errors
+		if ( !empty( $oldData['payment_method'] ) && !empty( $oldData['payment_submethod'] ) ) {
+			// Cut down version of the normalization from DonationData
+			$newMethod = null;
+			foreach( array( 'payment_method', 'paymentmethod' ) as $key ) {
+				if ( $newRequest->getVal( $key ) ) {
+					$newMethod = $newRequest->getVal( $key );
+				}
+			}
+			if ( $newMethod ) {
+				$parts = explode( '.', $newMethod );
+				$newMethod = $parts[0];
+				if ( $newMethod !== $oldData['payment_method'] ) {
+					$this->logger->info(
+						"Payment method changed from {$oldData['payment_method']} to $newMethod.  Unsetting submethod."
+					);
+					unset( $_SESSION['Donor']['payment_submethod'] );
+				}
+			}
+		}
+
+		// Don't reuse order IDs between recurring and non-recurring donations
+		// Recurring is stored in session as '1' for true and '' for false
+		// Only reset if there is an explicit querystring parameter.
+		if ( isset( $oldData['recurring'] ) && !empty( $oldData['order_id'] ) ) {
+			$newRecurring = '';
+			$hasRecurParam = false;
+			foreach( array( 'recurring_paypal', 'recurring' ) as $key ) {
+				$newVal = $newRequest->getVal( $key );
+				if ( $newVal !== null ) {
+					$hasRecurParam = true;
+				}
+				if ( $newVal === '1' || $newVal === 'true' ) {
+					$newRecurring = '1';
+				}
+			}
+			if ( $hasRecurParam && ( $newRecurring !== $oldData['recurring'] ) ) {
+				$this->logger->info(
+					"Recurring changed from '{$oldData['recurring']}' to '$newRecurring'.  Unsetting order ID."
+				);
+				unset( $_SESSION['Donor']['order_id'] );
+			}
 		}
 	}
 
@@ -3446,15 +3508,21 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 			$message = "ffname '$ffname' was invalid, but the country-specific '$ffname-$country' works. utm_source = '$utm', referrer = '$ref'";
 			$this->logger->warning( $message );
 		} else {
-			//Invalid form. Go get one that is valid, and squak in the error logs.
+			//Invalid form. Go get one that is valid, and squawk in the error logs.
 			$new_ff = GatewayFormChooser::getOneValidForm( $country, $currency, $payment_method, $payment_submethod, $recurring, $gateway );
 			$this->addRequestData( array ( 'ffname' => $new_ff ) );
 
 			//now construct a useful error message
-			$this->logger->error(
-				"ffname '{$ffname}' is invalid. Assigning ffname '{$new_ff}'. " .
-				"I currently am choosing for: " . $this->getLogDebugJSON()
-			);
+			$message = "ffname '{$ffname}' is invalid. Assigning ffname '{$new_ff}'. " .
+				"I currently am choosing for: " . $this->getLogDebugJSON();
+
+			if ( empty( $ffname ) ) {
+				// Gateway-specific link didn't specify a form, but we have a
+				// default. Don't squawk too loud.
+				$this->logger->warning( $message );
+			} else {
+				$this->logger->error( $message );
+			}
 
 			//Turn these off by setting the LogDebug global to false.
 			$this->logger->debug( "GET: " . json_encode( $_GET ) );
@@ -3701,7 +3769,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	public function generateOrderID( $dataObj = null ) {
 		if ( $this->getOrderIDMeta( 'ct_id' ) ) {
 			// This option means use the contribution tracking ID with the
-			// attempt number tacked on to the end for uniqueness
+			// sequence number tacked on to the end for uniqueness
 			$dataObj = ( $dataObj ) ?: $this->dataObj;
 
 			$ctid = $dataObj->getVal_Escaped( 'contribution_tracking_id' );
@@ -3710,9 +3778,9 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 			}
 
 			$this->session_ensure();
-			$attemptNum = $this->session_getData( 'numAttempt' ) ?: 0;
+			$sequence = $this->session_getData( 'sequence' ) ?: 0;
 
-			return "{$ctid}.{$attemptNum}";
+			return "{$ctid}.{$sequence}";
 		}
 		$order_id = ( string ) mt_rand( 1000, 9999999999 );
 		return $order_id;
@@ -3864,7 +3932,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$logObj = array (
 			'ffname',
 			'country',
-			'currency',
+			'currency_code',
 			'payment_method',
 			'payment_submethod',
 			'recurring',

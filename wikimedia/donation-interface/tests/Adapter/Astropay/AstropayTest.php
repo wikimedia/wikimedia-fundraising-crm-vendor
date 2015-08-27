@@ -150,7 +150,7 @@ class DonationInterface_Adapter_Astropay_AstropayTest extends DonationInterfaceT
 		);
 		$this->assertEquals( $expected, $gateway->getTransactionErrors(),
 			'Wrong error for code "1"' );
-		$logged = $this->getLogMatches( LogLevel::WARNING, '/This error message should appear in the log.$/' );
+		$logged = $this->getLogMatches( LogLevel::WARNING, '/This error message should appear in the log./' );
 		$this->assertNotEmpty( $logged );
 	}
 
@@ -198,17 +198,103 @@ class DonationInterface_Adapter_Astropay_AstropayTest extends DonationInterfaceT
 
 		$result = $gateway->doPayment();
 
-		$expected = array(
-			'internal-0000' => array(
-				'message' => wfMessage( 'donate_interface-processing-error')->inLanguage( $init['language'] )->text(),
-				'debugInfo' => 'Astropay response has non-zero status 1.  Error description: This error message should appear in the log.',
-				'logLevel' => LogLevel::WARNING
-			)
-		);
-		$this->assertEquals( $expected, $result->getErrors(),
+		$expectedMessage = wfMessage( 'donate_interface-processing-error')->inLanguage( $init['language'] )->text();
+		$actual = $result->getErrors();
+		$this->assertEquals( $expectedMessage, $actual['internal-0000']['message'],
 			'Wrong error array in PaymentResult' );
+
+		$logged = $this->getLogMatches( LogLevel::WARNING, '/This error message should appear in the log./' );
+		$this->assertNotEmpty( $logged );
 		// TODO: Should this really be a refresh, or should we finalize to failed here?
 		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
+	}
+
+	/**
+	 * Should set a validation error on amount
+	 */
+	function testDoPaymentLimitExceeded() {
+		$init = $this->getDonorTestData( 'BR' );
+		$this->setLanguage( $init['language'] );
+		$init['payment_method'] = 'cc';
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( 'limit_exceeded' );
+
+		$result = $gateway->doPayment();
+		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
+
+		$errors = $gateway->getTransactionResponse()->getErrors();
+		$expectedMessage = wfMessage( 'donate_interface-error-msg-limit')->inLanguage( $init['language'] )->text();
+		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
+		$this->assertEquals( 'amount', $errors['internal-0000']['context'] );
+	}
+
+	/**
+	 * Should set a validation error on fiscal_number
+	 */
+	function testDoPaymentBadFiscalNumber() {
+		$init = $this->getDonorTestData( 'BR' );
+		$this->setLanguage( $init['language'] );
+		$init['payment_method'] = 'cc';
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( 'fiscal_number' );
+
+		$result = $gateway->doPayment();
+		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
+
+		$errors = $gateway->getTransactionResponse()->getErrors();
+		$expectedMessage = DataValidator::getErrorMessage( 'fiscal_number', 'calculated', $init['language'], $init['country'] );
+		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
+		$this->assertEquals( 'fiscal_number', $errors['internal-0000']['context'] );
+	}
+
+	/**
+	 * Should finalize to failed
+	 */
+	function testDoPaymentUserUnauthorized() {
+		$init = $this->getDonorTestData( 'BR' );
+		$this->setLanguage( $init['language'] );
+		$init['payment_method'] = 'cc';
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( 'user_unauthorized' );
+
+		$result = $gateway->doPayment();
+		$this->assertTrue( $result->isFailed() );
+	}
+
+	/**
+	 * Should tell the user to try again
+	 */
+	function testDoPaymentCouldNotRegister() {
+		$init = $this->getDonorTestData( 'BR' );
+		$this->setLanguage( $init['language'] );
+		$init['payment_method'] = 'cc';
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( 'could_not_register' );
+
+		$result = $gateway->doPayment();
+		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
+
+		$errors = $gateway->getTransactionResponse()->getErrors();
+		$expectedMessage = wfMessage( 'donate_interface-try-again')->inLanguage( $init['language'] )->text();
+		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
+	}
+
+	/**
+	 * Should tell the user to try again
+	 */
+	function testDoPaymentCouldNotMakeDeposit() {
+		$init = $this->getDonorTestData( 'BR' );
+		$this->setLanguage( $init['language'] );
+		$init['payment_method'] = 'cc';
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( 'could_not_make_deposit' );
+
+		$result = $gateway->doPayment();
+		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
+
+		$errors = $gateway->getTransactionResponse()->getErrors();
+		$expectedMessage = wfMessage( 'donate_interface-try-again')->inLanguage( $init['language'] )->text();
+		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
 	}
 
 	/**
@@ -389,5 +475,57 @@ class DonationInterface_Adapter_Astropay_AstropayTest extends DonationInterfaceT
 		unset( $actual['contribution_tracking_id'] );
 		unset( $actual['date'] );
 		$this->assertEquals( $expected, $actual, 'Logged the wrong stuff!' );
+	}
+
+	function testStageFiscalNumber() {
+		$init = $this->getDonorTestData( 'BR' );
+		$init['fiscal_number'] = '000.034.567-89';
+		$gateway = $this->getFreshGatewayObject( $init );
+
+		$gateway->doPayment();
+
+		$exposed = TestingAccessWrapper::newFromObject( $gateway );
+		$staged = $exposed->getData_Staged( 'fiscal_number' );
+		$this->assertEquals( '00003456789', $staged, 'Not stripping fiscal_number punctuation in doPayment' );
+	}
+
+	/**
+	 * We should increment the order ID with each NewInvoice call
+	 */
+	function testNewInvoiceOrderId() {
+		$init = $this->getDonorTestData( 'BR' );
+		$firstAttempt = $this->getFreshGatewayObject( $init );
+		$firstAttempt->setDummyGatewayResponseCode( '1' );
+ 
+		$firstAttempt->doPayment();
+
+		$secondAttempt = $this->getFreshGatewayObject( $init );
+		$secondAttempt->doPayment();
+
+		parse_str( $firstAttempt->curled[0], $firstParams );
+		parse_str( $secondAttempt->curled[0], $secondParams );
+
+		$this->assertNotEquals( $firstParams['x_invoice'], $secondParams['x_invoice'],
+			'Not generating new order id for NewInvoice call'
+		);
+	}
+
+	/**
+	 * We should increment the order ID with each NewInvoice call, even when
+	 * retrying inside a single doPayment call
+	 */
+	function testNewInvoiceOrderIdRetry() {
+		$init = $this->getDonorTestData( 'BR' );
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( 'collision' );
+ 
+		$gateway->doPayment();
+
+		parse_str( $gateway->curled[0], $firstParams );
+		parse_str( $gateway->curled[1], $secondParams );
+
+		$this->assertNotEquals( $firstParams['x_invoice'], $secondParams['x_invoice'],
+			'Not generating new order id for retried NewInvoice call'
+		);
 	}
 }

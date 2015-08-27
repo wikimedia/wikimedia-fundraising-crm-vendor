@@ -1,8 +1,8 @@
 <?php
 
 class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
-	//Data we know to be good, that we always want to re-assert after a load or an addData. 
-	//so far: order_id and the utm data we pull from contribution tracking. 
+	//Data we know to be good, that we always want to re-assert after a load or an addData.
+	//so far: order_id and the utm data we pull from contribution tracking.
 	protected $hard_data = array ( );
 
 	public static function getLogIdentifier() {
@@ -22,9 +22,9 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 				$unstaged += $this->unstage_data( $val, false );
 			} else {
 				if ( array_key_exists( $key, $this->var_map ) ) {
-					//run the unstage data functions. 
+					//run the unstage data functions.
 					$unstaged[$this->var_map[$key]] = $val;
-					//this would be EXTREMELY bad to put in the regular adapter. 
+					//this would be EXTREMELY bad to put in the regular adapter.
 					$this->staged_data[$this->var_map[$key]] = $val;
 				} else {
 					//$unstaged[$key] = $val;
@@ -67,7 +67,7 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 			);
 			foreach($utm_keys as $key){
 				$this->hard_data[$key] = $data[$key];
-			}			
+			}
 		}
 		$this->reAddHardData();
 
@@ -81,9 +81,9 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 
 		$this->stageData();
 
-		//have to do this again here. 
+		//have to do this again here.
 		$this->reAddHardData();
-		
+
 		$this->revalidate();
 	}
 
@@ -94,7 +94,7 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 
 	private function reAddHardData() {
 		//anywhere else, and this would constitute abuse of the system.
-		//so don't do it. 
+		//so don't do it.
 		$data = $this->hard_data;
 
 		if ( array_key_exists( 'order_id', $data ) ) {
@@ -117,16 +117,16 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 
 		$data = array( );
 
-		// if contrib tracking id is not already set, we need to insert the data, otherwise update			
+		// if contrib tracking id is not already set, we need to insert the data, otherwise update
 		if ( $ctid ) {
 			$res = $db->select(
-				'contribution_tracking', 
+				'contribution_tracking',
 				array(
 					'utm_source',
 					'utm_campaign',
 					'utm_medium',
 					'ts'
-				), 
+				),
 				array( 'id' => $ctid )
 			);
 			foreach ( $res as $thing ) {
@@ -150,54 +150,21 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 	}
 
 	/**
-	 * Copying this here because it's the fastest way to bring in an actual timestamp. 
+	 * Copy the timestamp rather than using the current time.
+	 *
+	 * FIXME: Carefully move this to the base class and decide when appropriate.
 	 */
-	protected function doStompTransaction() {
-		if ( !$this->getGlobal( 'EnableStomp' ) ) {
-			return;
-		}
-		$this->debugarray[] = "Attempting Stomp Transaction!";
-		$hook = '';
+	protected function getStompTransaction() {
+		$transaction = parent::getStompTransaction();
 
-		$status = $this->getFinalStatus();
-		switch ( $status ) {
-			case FinalStatus::COMPLETE:
-				$hook = 'gwStomp';
-				break;
-			case FinalStatus::PENDING:
-			case FinalStatus::PENDING_POKE:
-				$hook = 'gwPendingStomp';
-				break;
-		}
-		if ( $hook === '' ) {
-			$this->debugarray[] = "No Stomp Hook Found for FINAL_STATUS $status";
-			return;
-		}
-
+		// Overwrite the time field, if historical date is available.
 		if ( !is_null( $this->getData_Unstaged_Escaped( 'date' ) ) ) {
-			$timestamp = $this->getData_Unstaged_Escaped( 'date' );
-		} else {
-			if ( !is_null( $this->getData_Unstaged_Escaped( 'ts' ) ) ) {
-				$timestamp = strtotime( $this->getData_Unstaged_Escaped( 'ts' ) ); //I hate that this works.
-			} else {
-				$timestamp = time();
-			}
+			$transaction['date'] = $this->getData_Unstaged_Escaped( 'date' );
+		} elseif ( !is_null( $this->getData_Unstaged_Escaped( 'ts' ) ) ) {
+			$transaction['date'] = strtotime( $this->getData_Unstaged_Escaped( 'ts' ) ); //I hate that this works. FIXME: wat.
 		}
 
-		// send the thing.
-		$transaction = array(
-			'response' => $this->getTransactionMessage(),
-			'date' => $timestamp,
-			'gateway_txn_id' => $this->getTransactionGatewayTxnID(),
-			//'language' => '',
-		);
-		$transaction += $this->getData_Unstaged_Escaped();
-
-		try {
-			WmfFramework::runHooks( $hook, array( $transaction ) );
-		} catch ( Exception $e ) {
-			$this->logger->critical( "STOMP ERROR. Could not add message. " . $e->getMessage() );
-		}
+		return $transaction;
 	}
 
 	/**

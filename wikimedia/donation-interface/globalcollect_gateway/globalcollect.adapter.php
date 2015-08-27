@@ -235,6 +235,31 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			430452	=> 'globalcollect_gateway-response-default', // Not authorised :: This message was generated when trying to attempt a direct debit transaction from Belgium.
 			430900	=> 'globalcollect_gateway-response-default', // NO VALID PROVIDERS FOUND FOR COMBINATION MERCHANTID: NNNN, PAYMENTPRODUCT: NNN, COUNTRYCODE: XX, CURRENCYCODE: XXX
 
+			// Errors where the suggested action is to try again
+			20205	=> 'donate_interface-try-again', // COULD NOT START TRANSACTION
+			103000	=> 'donate_interface-try-again', // ANOTHER_ACTION_IS_IN_PROCESS
+			400850	=> 'donate_interface-try-again', // IDEAL_SYSTEM_MAINTENANCE
+			430150	=> 'donate_interface-try-again', // READ_REQUEST_EXCEPTION
+			430160	=> 'donate_interface-try-again', // Unable to authorize  ALL_TERMINAL_IDS_FOR_MERCHANT_CURRENCY_IN_USE
+			430215	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_101
+			430220	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_103
+			430225	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_111
+			430230	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_113
+			430235	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_183
+			430240	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_601
+			430245	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_605
+			430430	=> 'donate_interface-try-again', // Unable to authorize  TIMEOUT
+			430433	=> 'donate_interface-try-again', // Unable to authorize  TOO_MUCH_USAGE
+			430581	=> 'donate_interface-try-again', // Not authorized  SOFT_DECLINE_BUYER_HAS_ALTERNATE_FUNDING_SOURCE
+			485000	=> 'donate_interface-try-again', // Unable to authorize  NEW_ACCOUNT_INFO_AVAILABLE
+			485010	=> 'donate_interface-try-again', // Unable to authorize  TRY_AGAIN_LATER
+			4311130	=> 'donate_interface-try-again', // PBS_SERVICE_NOT_AVAILABLE
+			4360025	=> 'donate_interface-try-again', // ECARD SYSTEM ERROR
+			4500600	=> 'donate_interface-try-again', // BOKU ERROR
+			4500700	=> 'donate_interface-try-again', // SUB1 ERROR
+			22000045	=> 'donate_interface-try-again', // COMMUNICATION ERROR
+			9999999999	=> 'donate_interface-try-again', // ERROR_IN_PROCESSING_THE_REQUEST
+
 			// Internal messages
 			'internal-0000' => 'donate_interface-processing-error', // Failed failed pre-process checks.
 			'internal-0001' => 'donate_interface-processing-error', // Transaction could not be processed due to an internal error.
@@ -1155,6 +1180,9 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 	/**
 	 * Either confirm or reject the payment
+	 *
+	 * FIXME: This function is way too complex.  Unroll into new functions.
+	 *
 	 * @global WebRequest $wgRequest
 	 * @return PaymentTransactionResponse
 	 */
@@ -1182,11 +1210,11 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$logmsg = 'CVV Result from querystring: ' . $this->getData_Unstaged_Escaped( 'cvv_result' );
 			$logmsg .= ', AVS Result from querystring: ' . $this->getData_Unstaged_Escaped( 'avs_result' );
 			$this->logger->info( $logmsg );
-			//add an antimessage for everything but orphans
-			$this->logger->info( 'Adding Antimessage' );
+
+			// If we have a querystring, this means we're processing a live donor
+			// coming back from GlobalCollect, and the transaction is not orphaned
+			$this->logger->info( 'Donor returned, deleting limbo message' );
 			$this->deleteLimboMessage( self::GC_CC_LIMBO_QUEUE );
-			// TODO: Stop mirroring to STOMP
-			$this->doLimboStompTransaction( true );
 		} else { //this is an orphan transaction.
 			$is_orphan = true;
 			//have to change this code range: All these are usually "pending" and
@@ -1258,7 +1286,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			} elseif ( $status_result->getCommunicationStatus() === false ) {
 			//can't communicate or internal error
 				$problemflag = true;
-				$problemmessage = "Can't communicate or internal error."; // /me shrugs - I think the orphan slayer is hitting this sometimes. Confusing.
+				$problemmessage = "Can't communicate or internal error: "
+					. $status_result->getMessage();
 			}
 
 			$order_status_results = false;
@@ -1421,26 +1450,50 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 	/**
 	 * Process a non-initial effort_id charge.
+	 *
+	 * Finalizes the transaction according to the outcome.
+	 *
+	 * @return PaymentTransactionResponse Last API response we received, in
+	 * case the caller wants to try to extract information.
 	 */
 	protected function transactionRecurring_Charge() {
-		$response = $this->do_transaction( 'DO_PAYMENT' );
-		$result = PaymentResult::fromResults(
-			$response,
-			$this->getFinalStatus()
-		);
-		if ( $response->getCommunicationStatus()
-			 && !$result->isFailed()
-			 && !$result->getErrors()
-		   ) {
-			$response = $this->do_transaction( 'GET_ORDERSTATUS' );
-			$data = $this->getTransactionData();
-			$orderStatus = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
-			if ( $this->getTransactionStatus() && $orderStatus === FinalStatus::PENDING_POKE ) {
-				$this->transactions['SET_PAYMENT']['values']['PAYMENTPRODUCTID'] = $data['PAYMENTPRODUCTID'];
-				$response = $this->do_transaction('SET_PAYMENT');
-			}
+		$do_payment_response = $this->do_transaction( 'DO_PAYMENT' );
+		// Ignore possible NOK, we might be resuming an incomplete charge in which
+		// case DO_PAYMENT is expected to fail.  There's no status code returned
+		// from this call, in that case.
+
+		// So get the status and see what we've accomplished so far.
+		$get_orderstatus_response = $this->do_transaction( 'GET_ORDERSTATUS' );
+		$data = $this->getTransactionData();
+
+		// If can't even get the status, fail.
+		if ( !$get_orderstatus_response->getCommunicationStatus() ) {
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
+			return $get_orderstatus_response;
 		}
-		return $response;
+
+		// Test that we're in status 600 now, and fail if not.
+		if ( !isset( $data['STATUSID'] )
+			|| $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] ) !== FinalStatus::PENDING_POKE
+		) {
+			// FIXME: It could actually be in a pending state at this point,
+			// I wish we could express that uncertainty.
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
+			return $get_orderstatus_response;
+		}
+
+		// Settle.
+		$this->transactions['SET_PAYMENT']['values']['PAYMENTPRODUCTID'] = $data['PAYMENTPRODUCTID'];
+		$set_payment_response = $this->do_transaction('SET_PAYMENT');
+
+		// Finalize the transaction as complete or failed.
+		if ( $set_payment_response->getCommunicationStatus() ) {
+			$this->finalizeInternalStatus( FinalStatus::COMPLETE );
+		} else {
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
+		}
+
+		return $set_payment_response;
 	}
 
     protected function transactionDirect_Debit() {
@@ -1460,8 +1513,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					if ( $result->getCommunicationStatus() === true )
 					{
 						$this->finalizeInternalStatus( FinalStatus::COMPLETE );
-						// TODO: Stop emitting antimessage.
-						$this->doLimboStompTransaction( true );
 					} else {
 						$this->finalizeInternalStatus( FinalStatus::FAILED );
 						//get the old status from the first txn, and add in the part where we set the payment.
@@ -1857,6 +1908,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		// We are also curious to know if there were any recoverable errors
 		foreach ( $errors as $errCode => $errObj ) {
 			$errMsg = $errObj['message'];
+			$messageFromProcessor = $errObj['debugInfo'];
 			switch ( $errCode ) {
 				case 300620:
 				// Oh no! We've already used this order # somewhere else! Restart!
@@ -1922,7 +1974,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 				case 21000050 : //REQUEST {0} VALUE {2} OF FIELD {1} IS NOT A NUMBER WITH MINLENGTH {3}, MAXLENGTH {4} AND PRECISION {5}  : More validation pain.
 					//say something painful here.
-					$errMsg = 'Blocking validation problems with this payment. Investigation required! ' . $this->getLogDebugJSON();
+					$errMsg = 'Blocking validation problems with this payment. Investigation required! '
+								. "Original error: '$messageFromProcessor'.  Our data: " . $this->getLogDebugJSON();
 				case 400120:
 					/* INSERTATTEMPT PAYMENT FOR ORDER ALREADY FINAL FOR COMBINATION.
 					 * They already gave us money or failed...
@@ -1930,6 +1983,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					 * What should we actually do with these people, other than the default error log?
 					 * Special error page saying that they may already have donated?
 					 * @TODO: This absolutely happens IRL. Attempt to handle gracefully once we figure out what that means.
+					 *
+					 * I think we can just SET_PAYMENT at this point. -AW
 					 */
 				default:
 					$this->logger->error( __FUNCTION__ . " Error $errCode : $errMsg" );
@@ -2412,8 +2467,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$data = $this->getTransactionData();
 			$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
 			if ( $action != FinalStatus::FAILED ){
-				// TODO: Stop mirroring to STOMP.
-				$this->doLimboStompTransaction();
 				if ( $this->getData_Unstaged_Escaped( 'payment_method' ) === 'cc' ) {
 					$this->setLimboMessage( self::GC_CC_LIMBO_QUEUE );
 				} else {

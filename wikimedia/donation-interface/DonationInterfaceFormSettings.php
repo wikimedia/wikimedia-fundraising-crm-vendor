@@ -10,20 +10,24 @@ $form_dirs = $wgDonationInterfaceFormDirs;
 /**********
  * Amazon *
  **********/
-$forms_whitelist['amazon'] = array(
-	'file' => $form_dirs['amazon'] . '/amazon.html',
-	'gateway' => 'amazon',
-	'payment_methods' => array('amazon' => 'ALL'),
-	'redirect',
-);
-
-$forms_whitelist['amazon-recurring'] = array(
-	'file' => $form_dirs['amazon'] . '/amazon-recurring.html',
-	'gateway' => 'amazon',
-	'payment_methods' => array('amazon' => 'ALL'),
-	'redirect',
-	'recurring',
-);
+/**
+ * DISABLED 2015-08-21, the simplepay API is no longer supported.
+ *
+ * $forms_whitelist['amazon'] = array(
+ * 	'file' => $form_dirs['amazon'] . '/amazon.html',
+ * 	'gateway' => 'amazon',
+ * 	'payment_methods' => array('amazon' => 'ALL'),
+ * 	'redirect',
+ * );
+ * 
+ * $forms_whitelist['amazon-recurring'] = array(
+ * 	'file' => $form_dirs['amazon'] . '/amazon-recurring.html',
+ * 	'gateway' => 'amazon',
+ * 	'payment_methods' => array('amazon' => 'ALL'),
+ * 	'redirect',
+ * 	'recurring',
+ * );
+*/
 
 /****************************
  * Bank Transfer - Two-Step *
@@ -214,14 +218,35 @@ $forms_whitelist['cc-vmad'] = array(
 	),
 );
 
+$forms_whitelist['cc-vjma'] = array(
+	'file' => $form_dirs['gc'] . '/cc/cc-vjma.html',
+	'gateway' => 'globalcollect',
+	'payment_methods' => array('cc' => array( 'visa', 'jcb', 'mc', 'amex' )),
+	'countries' => array(
+		'+' => array( 'JP', ),
+	),
+	'selection_weight' => 10,
+);
+
+$forms_whitelist['cc-jvma'] = array(
+	'file' => $form_dirs['gc'] . '/cc/cc-jvma.html',
+	'gateway' => 'globalcollect',
+	'payment_methods' => array('cc' => array( 'jcb', 'visa', 'mc', 'amex' )),
+	'countries' => array(
+		'+' => array( 'JP', ),
+	),
+	'selection_weight' => 0,
+);
+
+
 $forms_whitelist['cc-vmaj'] = array(
 	'file' => $form_dirs['gc'] . '/cc/cc-vmaj.html',
 	'gateway' => 'globalcollect',
 	'payment_methods' => array('cc' => array( 'visa', 'mc', 'amex', 'jcb' )),
 	'countries' => array(
 		'+' => array( 'AD', 'AT', 'AU', 'BE', 'BH', 'DE', 'EC', 'ES', 'FI', 'FR', 'GB',
-					  'GF', 'GR', 'HK', 'IE', 'IT', 'JP', 'KR', 'LU', 'MY', 'NL', 'PR',
-					  'PT', 'SG', 'SI', 'SK', 'TH', 'TW', ),
+					  'GF', 'GR', 'HK', 'IE', 'IT', 'KR', 'LU', 'MY', 'NL', 'PR', 'PT',
+					  'SG', 'SI', 'SK', 'TH', 'TW', ),
 	),
 );
 
@@ -444,7 +469,7 @@ $forms_whitelist['paypal-recurring'] = array(
  * Astropay *
  ************/
 $forms_whitelist['astropay'] = array(
-	'file' => $form_dirs['astropay'] . '/astropay.html',
+	'file' => __DIR__ . '/gateway_forms/mustache/index.html.mustache',
 	'gateway' => 'astropay',
 	'countries' => array( '+' => 'BR', ),
 	'currencies' => array( '+' => array(
@@ -542,19 +567,19 @@ $forms_whitelist['wp-ddcc'] = array(
 
 $forms_whitelist['error-default'] = array (
 	'file' => $form_dirs['default'] . '/error-cc.html',
-	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'paypal', 'worldpay' ),
+	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal', 'worldpay' ),
 	'special_type' => 'error', //buuuurble
 );
 
 $forms_whitelist['error-noform'] = array (
 	'file' => $form_dirs['default'] . '/error-noform.html',
-	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'paypal', 'worldpay' ),
+	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal', 'worldpay' ),
 	'special_type' => 'error',
 );
 
 $forms_whitelist['error-cc'] = array (
 	'file' => $form_dirs['default'] . '/error-cc.html',
-	'gateway' => array ( 'globalcollect', 'adyen', 'worldpay' ),
+	'gateway' => array ( 'globalcollect', 'adyen', 'astropay', 'worldpay' ),
 	'payment_methods' => array ( 'cc' => 'ALL' ),
 	'special_type' => 'error',
 );
