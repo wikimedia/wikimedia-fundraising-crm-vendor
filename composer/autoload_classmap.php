@@ -29,6 +29,7 @@ return array(
     'GlobalCollectGatewayResult' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/globalcollect_resultswitcher.body.php',
     'GlobalCollectOrphanAdapter' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/orphan.adapter.php',
     'GlobalCollectOrphanRectifier' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/GlobalCollectOrphanRectifier.php',
+    'GlobalCollectRefundMaintenance' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/scripts/refund.php',
     'LCRun3' => $vendorDir . '/zordius/lightncandy/src/lightncandy.php',
     'LightnCandy' => $vendorDir . '/zordius/lightncandy/src/lightncandy.php',
     'LogPrefixProvider' => $vendorDir . '/wikimedia/donation-interface/gateway_common/gateway.adapter.php',

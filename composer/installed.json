@@ -418,6 +418,104 @@
         ]
     },
     {
+        "name": "zordius/lightncandy",
+        "version": "v0.18",
+        "version_normalized": "0.18.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/zordius/lightncandy.git",
+            "reference": "24be6909c37391f4648ce1fdf19036b11bd56d05"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/zordius/lightncandy/zipball/24be6909c37391f4648ce1fdf19036b11bd56d05",
+            "reference": "24be6909c37391f4648ce1fdf19036b11bd56d05",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "4.0.17"
+        },
+        "time": "2015-01-01 04:37:19",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "classmap": [
+                "src/lightncandy.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Zordius Chen",
+                "email": "zordius@yahoo-inc.com"
+            }
+        ],
+        "description": "An extremely fast PHP implementation of handlebars ( http://handlebarsjs.com/ ) and mustache ( http://mustache.github.io/ ).",
+        "homepage": "https://github.com/zordius/lightncandy",
+        "keywords": [
+            "handlebars",
+            "logicless",
+            "mustache",
+            "php",
+            "template"
+        ]
+    },
+    {
+        "name": "wikimedia/smash-pig",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
+            "reference": "955d5147b36a2f6bbfdd9aaf35fa5539d016c89b"
+        },
+        "require": {
+            "fusesource/stomp-php": "2.*",
+            "php": ">=5.3.3",
+            "phpmailer/phpmailer": "5.2.6",
+            "symfony/event-dispatcher": ">=2.1,<2.4-dev",
+            "symfony/http-foundation": ">=2.1,<2.4-dev"
+        },
+        "time": "2015-07-31 19:10:19",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "SmashPig\\": "./"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPLv2"
+        ],
+        "authors": [
+            {
+                "name": "Katie Horn",
+                "email": "khorn@wikimedia.org"
+            },
+            {
+                "name": "Matthew Walker",
+                "email": "mwalker@wikimedia.org"
+            },
+            {
+                "name": "Adam Roses Wight",
+                "email": "awight@wikimedia.org"
+            }
+        ],
+        "description": "The open source PHP flexible payments library and frontend/backend mediator.",
+        "homepage": "http://smashpig.org",
+        "keywords": [
+            "donations",
+            "payments"
+        ]
+    },
+    {
         "name": "coderkungfu/php-queue",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
@@ -534,6 +632,118 @@
         ]
     },
     {
+        "name": "symfony/event-dispatcher",
+        "version": "v2.3.30",
+        "version_normalized": "2.3.30.0",
+        "target-dir": "Symfony/Component/EventDispatcher",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/EventDispatcher.git",
+            "reference": "af8fba40bdab97fc666173a8c2087e02445c231c"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/af8fba40bdab97fc666173a8c2087e02445c231c",
+            "reference": "af8fba40bdab97fc666173a8c2087e02445c231c",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.3"
+        },
+        "require-dev": {
+            "symfony/dependency-injection": "~2.0,>=2.0.5",
+            "symfony/phpunit-bridge": "~2.7"
+        },
+        "suggest": {
+            "symfony/dependency-injection": "",
+            "symfony/http-kernel": ""
+        },
+        "time": "2015-05-15 13:28:34",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.3-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Symfony\\Component\\EventDispatcher\\": ""
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony EventDispatcher Component",
+        "homepage": "https://symfony.com"
+    },
+    {
+        "name": "symfony/http-foundation",
+        "version": "v2.3.30",
+        "version_normalized": "2.3.30.0",
+        "target-dir": "Symfony/Component/HttpFoundation",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/HttpFoundation.git",
+            "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
+            "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.3"
+        },
+        "require-dev": {
+            "symfony/phpunit-bridge": "~2.7"
+        },
+        "time": "2015-05-20 08:53:09",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.3-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Symfony\\Component\\HttpFoundation\\": ""
+            },
+            "classmap": [
+                "Symfony/Component/HttpFoundation/Resources/stubs"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony HttpFoundation Component",
+        "homepage": "https://symfony.com"
+    },
+    {
         "name": "twig/twig",
         "version": "v1.18.2",
         "version_normalized": "1.18.2.0",
@@ -593,223 +803,13 @@
         ]
     },
     {
-        "name": "zordius/lightncandy",
-        "version": "v0.18",
-        "version_normalized": "0.18.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/zordius/lightncandy.git",
-            "reference": "24be6909c37391f4648ce1fdf19036b11bd56d05"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/zordius/lightncandy/zipball/24be6909c37391f4648ce1fdf19036b11bd56d05",
-            "reference": "24be6909c37391f4648ce1fdf19036b11bd56d05",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.3.0"
-        },
-        "require-dev": {
-            "phpunit/phpunit": "4.0.17"
-        },
-        "time": "2015-01-01 04:37:19",
-        "type": "library",
-        "installation-source": "dist",
-        "autoload": {
-            "classmap": [
-                "src/lightncandy.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Zordius Chen",
-                "email": "zordius@yahoo-inc.com"
-            }
-        ],
-        "description": "An extremely fast PHP implementation of handlebars ( http://handlebarsjs.com/ ) and mustache ( http://mustache.github.io/ ).",
-        "homepage": "https://github.com/zordius/lightncandy",
-        "keywords": [
-            "handlebars",
-            "logicless",
-            "mustache",
-            "php",
-            "template"
-        ]
-    },
-    {
-        "name": "symfony/http-foundation",
-        "version": "v2.3.30",
-        "version_normalized": "2.3.30.0",
-        "target-dir": "Symfony/Component/HttpFoundation",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/symfony/HttpFoundation.git",
-            "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
-            "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.3.3"
-        },
-        "require-dev": {
-            "symfony/phpunit-bridge": "~2.7"
-        },
-        "time": "2015-05-20 08:53:09",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.3-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-0": {
-                "Symfony\\Component\\HttpFoundation\\": ""
-            },
-            "classmap": [
-                "Symfony/Component/HttpFoundation/Resources/stubs"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com"
-            },
-            {
-                "name": "Symfony Community",
-                "homepage": "https://symfony.com/contributors"
-            }
-        ],
-        "description": "Symfony HttpFoundation Component",
-        "homepage": "https://symfony.com"
-    },
-    {
-        "name": "symfony/event-dispatcher",
-        "version": "v2.3.30",
-        "version_normalized": "2.3.30.0",
-        "target-dir": "Symfony/Component/EventDispatcher",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/symfony/EventDispatcher.git",
-            "reference": "af8fba40bdab97fc666173a8c2087e02445c231c"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/af8fba40bdab97fc666173a8c2087e02445c231c",
-            "reference": "af8fba40bdab97fc666173a8c2087e02445c231c",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.3.3"
-        },
-        "require-dev": {
-            "symfony/dependency-injection": "~2.0,>=2.0.5",
-            "symfony/phpunit-bridge": "~2.7"
-        },
-        "suggest": {
-            "symfony/dependency-injection": "",
-            "symfony/http-kernel": ""
-        },
-        "time": "2015-05-15 13:28:34",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.3-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-0": {
-                "Symfony\\Component\\EventDispatcher\\": ""
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com"
-            },
-            {
-                "name": "Symfony Community",
-                "homepage": "https://symfony.com/contributors"
-            }
-        ],
-        "description": "Symfony EventDispatcher Component",
-        "homepage": "https://symfony.com"
-    },
-    {
-        "name": "wikimedia/smash-pig",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "955d5147b36a2f6bbfdd9aaf35fa5539d016c89b"
-        },
-        "require": {
-            "fusesource/stomp-php": "2.*",
-            "php": ">=5.3.3",
-            "phpmailer/phpmailer": "5.2.6",
-            "symfony/event-dispatcher": ">=2.1,<2.4-dev",
-            "symfony/http-foundation": ">=2.1,<2.4-dev"
-        },
-        "time": "2015-07-31 19:10:19",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "psr-4": {
-                "SmashPig\\": "./"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPLv2"
-        ],
-        "authors": [
-            {
-                "name": "Katie Horn",
-                "email": "khorn@wikimedia.org"
-            },
-            {
-                "name": "Matthew Walker",
-                "email": "mwalker@wikimedia.org"
-            },
-            {
-                "name": "Adam Roses Wight",
-                "email": "awight@wikimedia.org"
-            }
-        ],
-        "description": "The open source PHP flexible payments library and frontend/backend mediator.",
-        "homepage": "http://smashpig.org",
-        "keywords": [
-            "donations",
-            "payments"
-        ]
-    },
-    {
         "name": "wikimedia/donation-interface",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "74f4e078c48a44a90c9e8563ff365e679deb8c75"
+            "reference": "1971cbbc12b967ff776399e57f5098de04785637"
         },
         "require": {
             "coderkungfu/php-queue": "dev-master",
