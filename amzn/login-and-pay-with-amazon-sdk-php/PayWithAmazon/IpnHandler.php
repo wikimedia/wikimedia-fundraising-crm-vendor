@@ -7,7 +7,7 @@ namespace PayWithAmazon;
  */
 
 require_once 'HttpCurl.php';
-require_once 'Interface.php';
+require_once 'IpnHandlerInterface.php';
 class IpnHandler implements IpnHandlerInterface
 {
 
@@ -61,6 +61,7 @@ class IpnHandler implements IpnHandlerInterface
     private function checkConfigKeys($ipnConfig)
     {
         $ipnConfig = array_change_key_case($ipnConfig, CASE_LOWER);
+	$ipnConfig = $this->trimArray($ipnConfig);
 
         foreach ($ipnConfig as $key => $value) {
             if (array_key_exists($key, $this->ipnConfig)) {
@@ -98,7 +99,17 @@ class IpnHandler implements IpnHandlerInterface
         }
     }
 
-
+    /* Trim the input Array key values */
+    
+    private function trimArray($array)
+    {
+	foreach ($array as $key => $value)
+	{
+	    $array[$key] = trim($value);
+	}
+	return $array;
+    }
+    
     private function validateHeaders()
     {
         // Quickly check that this is a sns message
@@ -397,10 +408,8 @@ class IpnHandler implements IpnHandlerInterface
         $remainingFields = array(
                             'NotificationReferenceId' =>$ipnMessage['NotificationReferenceId'],
                             'NotificationType' =>$ipnMessage['NotificationType'],
-                            'IsSample' =>$ipnMessage['IsSample'],
                             'SellerId' =>$ipnMessage['SellerId'],
-                            'ReleaseEnvironment' =>$ipnMessage['ReleaseEnvironment'],
-                            'Version' =>$ipnMessage['Version']);
+                            'ReleaseEnvironment' =>$ipnMessage['ReleaseEnvironment'] );
 
         return $remainingFields;
     }

@@ -1,11 +1,11 @@
 <?php
 namespace PayWithAmazon;
 
-require_once '../PayWithAmazon/Client.php';
+require_once '../PayWithAmazon/PaymentsClient.php';
 require_once '../PayWithAmazon/ResponseParser.php';
 require_once 'Signature.php';
 
-class ClientTest extends \PHPUnit_Framework_TestCase
+class PaymentsClientTest extends \PHPUnit_Framework_TestCase
 {
     private $configParams = array(
                 'merchant_id' => 'test',
@@ -28,7 +28,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testConfigArray()
     {
         try {
-            $client = new Client($this->configParams);
+            $client = new PaymentsClient($this->configParams);
         } catch (\Exception $expected) {
             $this->assertRegExp('/is not a Json File or the Json File./i', strval($expected));
         }
@@ -38,14 +38,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase
                 'a' => 'A',
                 'b' => 'B'
             );
-            $client = new Client($configParams);
+            $client = new PaymentsClient($configParams);
         } catch (\Exception $expected) {
             $this->assertRegExp('/is either not part of the configuration or has incorrect Key name./i', strval($expected));
         }
 
         try {
             $configParams = array();
-            $client = new Client($configParams);
+            $client = new PaymentsClient($configParams);
         } catch (\Exception $expected) {
             $this->assertRegExp('/$config cannot be null./i', strval($expected));
         }
@@ -55,14 +55,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         try {
             $configParams = "config.json";
-            $client = new Client($configParams);
+            $client = new PaymentsClient($configParams);
         } catch (\Exception $expected) {
             $this->assertRegExp('/Error with message - content is not in json format./i', strval($expected));
         }
 
         try {
             $configParams = "abc.json";
-            $client = new Client($configParams);
+            $client = new PaymentsClient($configParams);
         } catch (\Exception $expected) {
             $this->assertRegExp('/is not a Json File path or the Json File./i', strval($expected));
         }
@@ -70,7 +70,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSandboxSetter()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         try {
             $client->setSandbox(true);
         } catch (\Exception $expected) {
@@ -86,7 +86,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetOrderReferenceDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' => 'SellerId',
             'amazon_order_reference_id' => 'AmazonOrderReferenceId',
@@ -111,7 +111,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSetOrderReferenceDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'Merchant_Id' 		=> 'SellerId',
             'amazon_order_reference_id' => 'AmazonOrderReferenceId',
@@ -142,7 +142,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testConfirmOrderReference()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		=> 'SellerId',
             'amazon_order_reference_id' => 'AmazonOrderReferenceId',
@@ -166,7 +166,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCancelOrderReference()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		=> 'SellerId',
             'amazon_order_reference_id' => 'AmazonOrderReferenceId',
@@ -191,7 +191,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCloseOrderReference()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		=> 'SellerId',
             'amazon_order_reference_id' => 'AmazonOrderReferenceId',
@@ -216,7 +216,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCloseAuthorization()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		=> 'SellerId',
             'amazon_authorization_id'   => 'AmazonAuthorizationId',
@@ -241,7 +241,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testAuthorize()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		 => 'SellerId',
             'amazon_order_reference_id'  => 'AmazonOrderReferenceId',
@@ -272,7 +272,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetAuthorizationDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' => 'SellerId',
             'amazon_authorization_id' => 'AmazonAuthorizationId',
@@ -296,7 +296,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCapture()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		=> 'SellerId',
             'amazon_authorization_id' 	=> 'AmazonAuthorizationId',
@@ -325,7 +325,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetCaptureDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 	=> 'SellerId',
             'amazon_capture_id' => 'AmazonCaptureId',
@@ -349,7 +349,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testRefund()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 	  => 'SellerId',
             'amazon_capture_id'   => 'AmazonCaptureId',
@@ -378,7 +378,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetRefundDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 	=> 'SellerId',
             'amazon_refund_id'  => 'AmazonRefundId',
@@ -402,7 +402,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetServiceStatus()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id'    => 'SellerId',
             'mws_auth_token' => 'MWSAuthToken'
@@ -425,7 +425,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCreateOrderReferenceForId()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		=> 'SellerId',
             'id' 			=> 'Id',
@@ -459,7 +459,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetBillingAgreementDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		  => 'SellerId',
             'amazon_billing_agreement_id' => 'AmazonBillingAgreementId',
@@ -484,7 +484,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSetBillingAgreementDetails()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		  => 'SellerId',
             'amazon_billing_agreement_id' => 'AmazonBillingAgreementId',
@@ -513,7 +513,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testConfirmBillingAgreement()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		  => 'SellerId',
             'amazon_billing_agreement_id' => 'AmazonBillingAgreementId',
@@ -537,7 +537,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testValidateBillingAgreement()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		  => 'SellerId',
             'amazon_billing_agreement_id' => 'AmazonBillingAgreementId',
@@ -561,7 +561,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testAuthorizeOnBillingAgreement()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 			=> 'SellerId',
             'amazon_billing_agreement_id' 	=> 'AmazonBillingAgreementId',
@@ -598,7 +598,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCloseBillingAgreement()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $fieldMappings = array(
             'merchant_id' 		  => 'SellerId',
             'amazon_billing_agreement_id' => 'AmazonBillingAgreementId',
@@ -623,13 +623,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCharge()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
         $apiCallParams = array('amazon_reference_id' => 'S01-TEST');
 
         $client->charge($apiCallParams);
 
         try {
-            $client = new Client($this->configParams);
+            $client = new PaymentsClient($this->configParams);
             $apiCallParams = array('amazon_reference_id' => '');
             $client->charge($apiCallParams);
         } catch (\Exception $expected) {
@@ -637,7 +637,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         }
 
         try {
-            $client = new Client($this->configParams);
+            $client = new PaymentsClient($this->configParams);
             $apiCallParams = array('amazon_reference_id' => 'T01');
             $client->charge($apiCallParams);
         } catch (\Exception $expected) {
@@ -649,7 +649,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         try {
             $this->configParams['region'] = '';
-            $client = new Client($this->configParams);
+            $client = new PaymentsClient($this->configParams);
             $client->getUserInfo('Atza');
         } catch (\Exception $expected) {
             $this->assertRegExp('/is a required parameter./i', strval($expected));
@@ -657,7 +657,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         try {
             $this->configParams['region'] = 'us';
-            $client = new Client($this->configParams);
+            $client = new PaymentsClient($this->configParams);
             $client->getUserInfo(null);
         } catch (\Exception $expected) {
             $this->assertRegExp('/Access Token is a required parameter and is not set./i', strval($expected));
@@ -666,7 +666,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSignature()
     {
-        $client = new Client($this->configParams);
+        $client = new PaymentsClient($this->configParams);
 
         $parameters['SellerId']         = $this->configParams['merchant_id'];
         $parameters['AWSAccessKeyId']   = $this->configParams['access_key'];
@@ -689,7 +689,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function test500or503()
     {
        try  {
-            $client = new Client($this->configParams);
+            $client = new PaymentsClient($this->configParams);
 
             $url = 'https://www.justcharge.me/OffAmazonPayments_Sandbox/2013-01-01';
             $client->setMwsServiceUrl($url);
@@ -808,7 +808,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     private function callPrivateMethod($client, $methodName, $parameters)
     {
-        $reflectionClass = new \ReflectionClass("PayWithAmazon\Client");
+        $reflectionClass = new \ReflectionClass("PayWithAmazon\PaymentsClient");
         $reflectionMethod = $reflectionClass->getMethod($methodName);
         $reflectionMethod->setAccessible(true);
         $expectedStringParams = $reflectionMethod->invoke($client, $parameters);

@@ -12,7 +12,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php",
-                "reference": "24b31581d85c232a3b0f5038c2894d565c831392"
+                "reference": "8d4bb3131acf6f9842372619b7147852bc349574"
             },
             "require": {
                 "ext-curl": "*",
@@ -43,7 +43,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2015-08-24 21:48:53"
+            "time": "2015-10-07 15:01:25"
         },
         {
             "name": "fusesource/stomp-php",

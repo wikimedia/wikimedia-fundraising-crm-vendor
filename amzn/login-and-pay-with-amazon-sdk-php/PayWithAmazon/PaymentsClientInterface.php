@@ -3,7 +3,7 @@ namespace PayWithAmazon;
 
 /* Interface class to showcase the public API methods for Pay With Amazon */
 
-interface ClientInterface
+interface PaymentsClientInterface
 {
     /* Takes user configuration array from the user as input
      * Takes JSON file path with configuration information as input
@@ -167,8 +167,8 @@ interface ClientInterface
      * @param requestParameters['amazon_authorization_id'] - [String]
      * @param requestParameters['capture_amount'] - [String]
      * @param requestParameters['currency_code'] - [String]
-     * @param requestParameters[capture_reference_id'] - [String]
-     * @param requestParameters['provider_credit_details'] - [array (array())]
+     * @param requestParameters['capture_reference_id'] - [String]
+     * @optional requestParameters['provider_credit_details'] - [array (array())]
      * @optional requestParameters['seller_capture_note'] - [String]
      * @optional requestParameters['soft_descriptor'] - [String]
      * @optional requestParameters['mws_auth_token'] - [String]
@@ -194,7 +194,7 @@ interface ClientInterface
      * @param requestParameters['refund_reference_id'] - [String]
      * @param requestParameters['refund_amount'] - [String]
      * @param requestParameters['currency_code'] - [String]
-     * @param requestParameters['provider_credit_reversal_details'] - [array(array())]
+     * @optional requestParameters['provider_credit_reversal_details'] - [array(array())]
      * @optional requestParameters['seller_refund_note'] [String]
      * @optional requestParameters['soft_descriptor'] - [String]
      * @optional requestParameters['mws_auth_token'] - [String]
@@ -295,8 +295,8 @@ interface ClientInterface
      *
      * @param requestParameters['merchant_id'] - [String]
      * @param requestParameters['amazon_billing_agreement_id'] - [String]
-     * @param AuthorizationReferenceId [String]
-     * @param AuthorizationAmount [String]
+     * @param requestParameters['authorization_reference_id'] [String]
+     * @param requestParameters['authorization_amount'] [String]
      * @param requestParameters['currency_code'] - [String]
      * @optional requestParameters['seller_authorization_note'] [String]
      * @optional requestParameters['transaction_timeout'] - Defaults to 1440 minutes
@@ -331,11 +331,17 @@ interface ClientInterface
      * 3. Authorize (with Capture) / AuthorizeOnBillingAgreeemnt (with Capture)
      *
      * @param requestParameters['merchant_id'] - [String]
+     *
      * @param requestParameters['amazon_reference_id'] - [String] : Order Reference ID /Billing Agreement ID
+     * If requestParameters['amazon_reference_id'] is empty then the following is required,
+     * @param requestParameters['amazon_order_reference_id'] - [String] : Order Reference ID
+     * or,
+     * @param requestParameters['amazon_billing_agreement_id'] - [String] : Billing Agreement ID
+     * 
      * @param $requestParameters['charge_amount'] - [String] : Amount value to be captured
-     * @param requestParameters['charge_currency_code'] - [String] : Currency Code for the Amount
+     * @param requestParameters['currency_code'] - [String] : Currency Code for the Amount
      * @param requestParameters['authorization_reference_id'] - [String]- Any unique string that needs to be passed
-     * @optional requestParameters['charge_note'] - [String] : seller note sent to the buyer
+     * @optional requestParameters['charge_note'] - [String] : Seller Note sent to the buyer
      * @optional requestParameters['transaction_timeout'] - [String] : Defaults to 1440 minutes
      * @optional requestParameters['charge_order_id'] - [String] : Custom Order ID provided
      * @optional requestParameters['mws_auth_token'] - [String]
@@ -373,101 +379,4 @@ interface ClientInterface
      */
     
     public function reverseProviderCredit($requestParameters = array());
-}
-
-/* Interface for IpnHandler.php */
-
-interface IpnHandlerInterface
-{
-   /* Takes headers and body of the IPN message as input in the constructor
-    * verifies that the IPN is from the right resource and has the valid data
-    */
-   
-    public function __construct($headers, $body, $ipnConfig = null);
-    
-    /* returnMessage() - JSON decode the raw [Message] portion of the IPN */
-    
-    public function returnMessage();
-
-    /* toJson() - Converts IPN [Message] field to JSON
-     *
-     * Has child elements
-     * ['NotificationData'] [XML] - API call XML notification data
-     * @param remainingFields - consists of remaining IPN array fields that are merged
-     * Type - Notification
-     * MessageId -  ID of the Notification
-     * Topic ARN - Topic of the IPN
-     * @return response in JSON format
-     */
-    
-    public function toJson();
-
-    /* toArray() - Converts IPN [Message] field to associative array
-     * @return response in array format
-     */
-    
-    public function toArray();
-}
-
-/* Interface for HttpCurl.php */
-
-interface HttpCurlInterface
-{
-    /* Takes user configuration array as input
-     * Takes configuration for API call or IPN config
-     */
-    
-    public function __construct($config = null);
-    
-    /* Set Http header for Access token for the GetUserInfo call */
-    
-    public function setHttpHeader();
-    
-    /* Setter for  Access token to get the user info */
-    
-    public function setAccessToken($accesstoken);
-    
-    /* POST using curl for the following situations
-     * 1. API calls
-     * 2. IPN certificate retrieval
-     * 3. Get User Info
-     */
-    
-    public function httpPost($url, $userAgent = null, $parameters = null);
-    
-    /* GET using curl for the following situations
-     * 1. IPN certificate retrieval
-     * 3. Get User Info
-     */
-    
-    public function httpGet($url, $userAgent = null);
-}
-
-/* Interface for ResponseParser.php */
-
-interface ResponseInterface
-{
-    /* Takes response from the API call */
-    
-    public function __construct($response = null);
-    
-    /* Returns the XML portion of the response */
-    
-    public function toXml();
-    
-    /* toJson  - converts XML into Json
-     * @param $response [XML]
-     */
-    
-    public function toJson();
-    
-    /* toArray  - converts XML into associative array
-     * @param $this->_response [XML]
-     */
-    
-    public function toArray();
-    
-    /* Get the status of the BillingAgreement */
-    
-    public function getBillingAgreementDetailsStatus($response);
 }
