@@ -1,8 +1,9 @@
 <?php namespace SmashPig\PaymentProviders\Amazon\Actions;
 
 use SmashPig\Core\Actions\IListenerMessageAction;
-use SmashPig\Core\SmashPigException;
 use SmashPig\Core\Logging\Logger;
+use SmashPig\Core\Messages\ListenerMessage;
+use SmashPig\Core\SmashPigException;
 use SmashPig\PaymentProviders\Amazon\AmazonApi;
 
 /**
@@ -16,10 +17,11 @@ class AssociateRefundParent implements IListenerMessageAction {
 		if ( get_class( $msg ) !== self::MESSAGE_CLASS ) {
 			return true;
 		}
-		$refundId = $msg->gateway_txn_id;
+		$refundId = $msg->getGatewayTransactionId();
+		Logger::info( "Looking up ID of original transaction for refund $refundId" );
 		try {
 			$parentId = AmazonApi::findRefundParentId( $refundId );
-			$msg['gateway_parent_id'] = $parentId;
+			$msg->setParentId( $parentId );
 			return true;
 		} catch( SmashPigException $ex ) {
 			Logger::error( $ex->getMessage() );
