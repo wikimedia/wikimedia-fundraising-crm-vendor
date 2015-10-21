@@ -34,6 +34,8 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	public function getForm() {
 		$data = $this->getData();
 		$data = $data + $this->getErrors();
+		$data = $data + $this->getUrls();
+
 		self::$country = $data['country'];
 
 		$template = file_get_contents( $this->topLevelForm );
@@ -85,7 +87,8 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$data['has_no_script_redirect'] = isset( $redirect ); // grr
 
 		$appealWikiTemplate = $this->gateway->getGlobal( 'AppealWikiTemplate' );
-		$appeal = $this->make_safe( $request->getText( 'appeal', 'Appeal-default' ) );
+		$defaultAppeal = $this->gateway->getGlobal( 'DefaultAppeal' );
+		$appeal = $this->make_safe( $request->getText( 'appeal', $defaultAppeal ) );
 		$appealWikiTemplate = str_replace( '$appeal', $appeal, $appealWikiTemplate );
 		$appealWikiTemplate = str_replace( '$language', $data['language'], $appealWikiTemplate );
 		$data['appeal_text'] = $output->parse( '{{' . $appealWikiTemplate . '}}' );
@@ -109,12 +112,14 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		foreach( $required_fields as $field ) {
 			$data["{$field}_required"] = true;
 		}
+
 		foreach( $this->gateway->getCurrencies() as $currency ) {
 			$data['currencies'][] = array(
 				'code' => $currency,
 				'selected' => ( $currency === $data['currency_code'] ),
 			);
 		}
+		$data['recurring'] = (bool) $data['recurring'];
 		return $data;
 	}
 
@@ -141,6 +146,15 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		return $return;
 	}
 
+	protected function getUrls() {
+		return array(
+			'problems_url' => $this->gateway->localizeGlobal( 'ProblemsURL' ),
+			'otherways_url' => $this->gateway->localizeGlobal( 'OtherWaysURL' ),
+			'faq_url' => $this->gateway->localizeGlobal( 'FaqURL' ),
+			'tax_url' => $this->gateway->localizeGlobal( 'TaxURL' ),
+		);
+	}
+
 	/**
 	 * Get a message value specific to the donor's country and language
 	 * @param array $params first value is used as message key
@@ -164,7 +178,6 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	public function getResources() {
 		return array(
 			'ext.donationinterface.mustache.styles',
-			'ext.donationinterface.mustache.scripts'
 		);
 	}
 }

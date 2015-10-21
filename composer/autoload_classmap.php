@@ -10,6 +10,7 @@ return array(
     'AdyenGateway' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen_gateway.body.php',
     'AdyenGatewayResult' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen_resultswitcher.body.php',
     'AmazonAdapter' => $vendorDir . '/wikimedia/donation-interface/amazon_gateway/amazon.adapter.php',
+    'AmazonBillingApi' => $vendorDir . '/wikimedia/donation-interface/amazon_gateway/amazon.api.php',
     'AmazonGateway' => $vendorDir . '/wikimedia/donation-interface/amazon_gateway/amazon_gateway.body.php',
     'CurrencyRates' => $vendorDir . '/wikimedia/donation-interface/gateway_common/CurrencyRates.php',
     'CyclicalArray' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/CyclicalArray.php',
@@ -54,6 +55,7 @@ return array(
     'WmfFramework_Mediawiki' => $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFramework.mediawiki.php',
     'WorldpayAdapter' => $vendorDir . '/wikimedia/donation-interface/worldpay_gateway/worldpay.adapter.php',
     'WorldpayGateway' => $vendorDir . '/wikimedia/donation-interface/worldpay_gateway/worldpay_gateway.body.php',
+    'WorldpayGatewayResult' => $vendorDir . '/wikimedia/donation-interface/worldpay_gateway/worldpay_resultswitcher.body.php',
     'WorldpayValidateApi' => $vendorDir . '/wikimedia/donation-interface/worldpay_gateway/worldpay.api.php',
     'phpmailerException' => $vendorDir . '/phpmailer/phpmailer/class.phpmailer.php',
 );
