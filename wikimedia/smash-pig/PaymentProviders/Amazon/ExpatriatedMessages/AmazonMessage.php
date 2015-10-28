@@ -9,6 +9,7 @@ abstract class AmazonMessage extends ListenerMessage {
 	protected $currency;
 	protected $date;
 	protected $gross;
+	protected $merchantReference;
 
 	/**
 	 * Do common normalizations.  Subclasses should perform normalizations
@@ -39,9 +40,5 @@ abstract class AmazonMessage extends ListenerMessage {
 	protected function setGatewayIds( $amazonId ) {
 		$this->gateway_txn_id = $amazonId;
 		$this->correlationId = 'amazon-' . $this->gateway_txn_id;
-	}
-
-	public function getGatewayTransactionId() {
-		return $this->gateway_txn_id;
 	}
 }

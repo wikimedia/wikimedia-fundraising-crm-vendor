@@ -32,5 +32,6 @@
 	"donate_interface-city-town": "градъ/сєлѥниѥ",
 	"donate_interface-town-city": "сєлѥниѥ/градъ",
 	"donate_interface-state-province": "дрьжава/область",
-	"donate_interface-country": "страна"
+	"donate_interface-country": "страна",
+	"donate_interface-language": "ѩꙁꙑкъ :"
 }

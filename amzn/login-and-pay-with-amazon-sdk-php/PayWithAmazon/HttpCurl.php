@@ -5,7 +5,7 @@ namespace PayWithAmazon;
  * Handles Curl POST function for all requests
  */
 
-require_once 'HttpCurlInterface.php';
+require_once 'Interface.php';
 
 class HttpCurl implements HttpCurlInterface
 {

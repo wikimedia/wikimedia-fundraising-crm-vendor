@@ -91,6 +91,7 @@ class DonationQueue {
 
 		// Create the message and associated properties
 		$properties = array(
+			'gateway' => $transaction['gateway'],
 			// TODO: Move 'persistent' to PHPQueue backend default.
 			'persistent' => 'true',
 			'source_enqueued_time' => time(),
@@ -100,18 +101,13 @@ class DonationQueue {
 			'source_type' => 'payments',
 			'source_version' => $sourceRevision,
 		);
-		if ( isset( $transaction['gateway'] ) ) {
-			$properties['gateway'] = $transaction['gateway'];
-		}
 		if ( isset( $transaction['correlation-id'] ) ) {
 			$properties['correlation-id'] = $transaction['correlation-id'];
-		} elseif ( isset( $transaction['gateway'] ) && isset( $transaction['gateway_txn_id'] ) ) {
+		} else {
 			$properties['correlation-id'] = $transaction['gateway'] . '-' . $transaction['gateway_txn_id'];
-		} elseif ( isset( $transaction['contribution_tracking_id'] ) ) {
-			$properties['correlation-id'] = $transaction['contribution_tracking_id'];
 		}
 		// FIXME: In a better world, we'd actually be using this class to
-		// determine what kind of normalization is required in buildTransactionMessage.
+		// determine what kind of normalization is required.
 		if ( isset( $transaction['php-message-class'] ) ) {
 			$properties['php-message-class'] = $transaction['php-message-class'];
 		}
@@ -229,7 +225,6 @@ class DonationQueue {
 			'state_province' => 'state',
 			'street_address' => 'street',
 			'supplemental_address_1' => 'street_supplemental',
-			'subscr_id' => 'subscr_id',
 			'utm_campaign' => 'utm_campaign',
 			'utm_medium' => 'utm_medium',
 			'postal_code' => 'zip',

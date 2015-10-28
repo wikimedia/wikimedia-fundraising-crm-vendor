@@ -2,11 +2,11 @@
 
 class WorldpayValidateApi extends ApiBase {
 	protected $allowedParams = array(
-		'fname', 'lname', 'email',
+		'fname', 'lname', 'emailAdd',
 		'email-opt',
 		'utm_source','utm_medium','utm_campaign','referrer',
-		'gateway','payment_method', 'payment_submethod', 'language','token',
-		'order_id','contribution_tracking_id', 'amount', 'ffname',
+		'gateway','payment_method','language','token',
+		'order_id','contribution_tracking_id',
 
 		// AVS Countries
 		'street','state','zip','country','city',
@@ -33,8 +33,7 @@ class WorldpayValidateApi extends ApiBase {
 			if ( $adapter->getTransactionStatus() ) {
 				$this->getResult()->addValue( null, 'ottResult', array(
 					'wp_one_time_token' => $adapter->getData_Unstaged_Escaped( 'wp_one_time_token' ),
-					'wp_process_url' => $adapter->getData_Unstaged_Escaped( 'wp_process_url' ),
-					'wp_redirect_url' => $adapter->getData_Unstaged_Escaped( 'wp_redirect_url' ),
+					'wp_process_url' => $adapter->getData_Unstaged_Escaped( 'wp_process_url' )
 				));
 			} else {
 				$this->getResult()->addValue( null, 'errors', $adapter->getTransactionErrors() );

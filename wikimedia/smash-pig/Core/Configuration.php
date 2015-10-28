@@ -71,9 +71,9 @@ class Configuration {
 			// Attempt to load the configuration files from disk
 			global $config_defaults, $config;
 
-			require( $defaultFile );
+			require_once( $defaultFile );
 			if ( $overrideFile && file_exists( $overrideFile ) ) {
-				include( $overrideFile );
+				include_once( $overrideFile );
 			}
 
 			// Now that we have the files we must merge four things in the following order:

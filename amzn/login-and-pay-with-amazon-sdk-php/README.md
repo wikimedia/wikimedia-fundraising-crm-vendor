@@ -3,62 +3,17 @@ Login and Pay with Amazon API Integration
 
 ## Requirements
 
-* Login and Pay With Amazon account - [Register here](https://payments.amazon.com/signup)
 * PHP 5.3 or higher
 * Curl 7.18 or higher
-
-## Documentation
-
-* The Integration steps can be found [here](https://payments.amazon.com/documentation)
-
-## Sample
-
-* View the sample integration demo [here](https://amzn.github.io/login-and-pay-with-amazon-sdk-samples/)
 
 ## Quick Start
 
 Instantiating the client:
-PaymentsClient Takes in parameters in the following format
+Client Takes in parameters in the following format
 
 1. Associative array
 2. Path to the JSON file containing configuration information.
 
-## Installing using Composer
-```
-composer create-project amzn/login-and-pay-with-amazon-sdk-php --prefer-dist
-```
-## Directory Tree
-```
-.
-├── composer.json - Configuration for composer
-├── LICENSE.txt
-├── NOTICE.txt
-├── PayWithAmazon
-│   ├── BaseClient.php - Abstract class with common functions used in PaymentsClient and ReportsClient
-│   ├── HttpCurl.php - Client classes use this file to execute the GET/POST
-│   ├── HttpCurlInterface.php - Shows the public function definitions in HttpCurl.php
-│   ├── IpnHandler.php - Class handles verification of the IPN
-│   ├── IpnHandlerInterface.php - Shows the public function definitions in IpnHandler.php
-│   ├── PaymentsClient.php - Main class with the OffAmazonPayments API calls
-│   ├── PaymentsClientInterface.php - Shows the public function definitions in PaymentsClient.php
-│   ├── Regions.php -  Defines the regions that is supported
-│   ├── ReportsClient.php - Class with the Reports API calls
-│   ├── ReportsClientInterface.php - Shows the public function definitions in ReportsClient.php
-│   ├── ResponseInterface.php - Shows the public function definitions in ResponseParser.php
-│   ├── ResponseParser.php -  Parses the API call response
-│   └── Mocks
-│       ├── MockBaseClient.php - Abstract class with common functions for client mocks
-│       ├── MockPaymentsClient.php - Fake payments client that does no API calls
-│       ├── MockReportsClient.php - Fake reports client that does no API calls
-│       └── MockResponseParser.php - Mock implementation of ResponseInterface
-├── README.md
-└── UnitTests
-    ├── PaymentsClientTest.php
-    ├── config.json
-    ├── coverage.txt
-    ├── IpnHandlerTest.php
-    └── Signature.php
-```
 ##Parameters List
 
 ####Mandatory Parameters
@@ -87,13 +42,13 @@ composer create-project amzn/login-and-pay-with-amazon-sdk-php --prefer-dist
 
 ## Setting Configuration
 
-Setting configuration while instantiating the Client objects
+Setting configuration while instantiating the Client object
 ```php
-<?php
-namespace PayWithAmazon;
+<?php namespace PayWithAmazon;
 
-require_once 'PaymentsClient.php';
-// Your Login and Pay with Amazon keys are available in your Seller Central account
+require_once 'Client.php'
+// Your Login and Pay with Amazon keys are
+// available in your Seller Central account
 
 // PHP Associative array
 $config = array('merchant_id' => 'YOUR_MERCHANT_ID',
@@ -102,18 +57,17 @@ $config = array('merchant_id' => 'YOUR_MERCHANT_ID',
                 'client_id'   => 'YOUR_LOGIN_WITH_AMAZON_CLIENT_ID',
                 'region'      => 'REGION');
 
-// JSON file path
+// JSON file path            
 $config = 'PATH_TO_JSON_FILE';
 
-// Instantiate the client class with the config type
-$client = new PaymentsClient($config);
+//Instantiate the client class with the config type
+$client = new Client($config);
 ```
 ### Testing in Sandbox Mode
 
 The sandbox parameter is defaulted to false if not specified:
 ```php
-<?php
-namespace PayWithAmazon;
+<?php namespace PayWithAmazon;
 
 $config = array('merchant_id'   => 'YOUR_MERCHANT_ID',
                 'access_key'    => 'YOUR_ACCESS_KEY',
@@ -122,20 +76,20 @@ $config = array('merchant_id'   => 'YOUR_MERCHANT_ID',
                 'region'     	=> 'REGION',
                 'sandbox'       => true );
 
-$client = new PaymentsClient($config);
+$client = new Client($config);
 
-// Also you can set the sandbox variable in the config() array of the Client classes by
+//Also you can set the sandbox variable in the config() array of the Client class by 
 
 $client->setSandbox(true);
 ```
 ### Setting Proxy values
-Proxy parameters can be set after instantiating the Client object with the following setter
+Proxy parameters can be set after Instantiating the Client Object with the following setter
 ```php
 $proxy =  array();
-$proxy['proxy_user_host'] // Hostname for the proxy
-$proxy['proxy_user_port'] // Hostname for the proxy
-$proxy['proxy_user_name'] // If your proxy requires a username
-$proxy['proxy_user_password'] // If your proxy requires a password
+$proxy['proxy_user_host'] // hostname for the proxy
+$proxy['proxy_user_port'] // hostname for the proxy
+$proxy['proxy_user_name'] // if your proxy requires a username
+$proxy['proxy_user_password'] // if your proxy requires a password
 
 $client->setProxy($proxy);
 ```
@@ -145,25 +99,23 @@ $client->setProxy($proxy);
 Below is an example on how to make the GetOrderReferenceDetails API call:
 
 ```php
-<?php
-namespace PayWithAmazon;
+<?php namespace PayWithAmazon;
 
 $requestParameters = array();
 
 // AMAZON_ORDER_REFERENCE_ID is obtained from the Pay with Amazon Address/Wallet widgets
 // ACCESS_TOKEN is obtained from the GET parameter from the URL.
 
-// Required Parameter
+//Required Parameter
 $requestParameters['amazon_order_reference_id'] = 'AMAZON_ORDER_REFERENCE_ID';
 
-// Optional Parameter
+//Optional Parameter
 $requestParameters['address_consent_token']     = 'ACCESS_TOKEN';
 $requestParameters['mws_auth_token']            = 'MWS_AUTH_TOKEN';
 
 $response = $client->getOrderReferenceDetails($requestParameters);
 
 ```
-See the [API Response](https://github.com/amzn/login-and-pay-with-amazon-sdk-php#api-response) section for information on parsing the API response.
 
 ### IPN Handling
 
@@ -174,80 +126,59 @@ See the [API Response](https://github.com/amzn/login-and-pay-with-amazon-sdk-php
 Add the below code into any file and set the URL to the file location in Merchant/Integrator URL by accessing Integration Settings page in the Settings tab.
 
 ```php
-<?php
-namespace PayWithAmazon;
+<?php namespace PayWithAmazon;
 
 require_once 'IpnHandler.php';
 
-// Get the IPN headers and Message body
+//get the IPN headers and Message body
 $headers    = getallheaders();
 $body       = file_get_contents('php://input');
 
-// Create an object($ipnHandler) of the IpnHandler class
+//create an  object($ipnHandler) of the IpnHandler class 
 $ipnHandler = new IpnHandler($headers, $body);
 
 ```
-See the [IPN Response](https://github.com/amzn/login-and-pay-with-amazon-sdk-php#ipn-response) section for information on parsing the IPN response.
-
 ### Convenience Methods
 
 #####Charge Method
 
-The charge method combines the following API calls:
+charge method combines the following API calls 
 
 **Standard Payments / Recurring Payments**
 
 1. SetOrderReferenceDetails / SetBillingAgreementDetails
 2. ConfirmOrderReference / ConfirmBillingAgreement
-3. Authorize / AuthorizeOnBillingAgreement
+3. Authorize (With capture) / AuthorizeOnBillingAgreement (With capture)
 
-For **Standard payments** the first `charge` call will make the SetOrderReferenceDetails, ConfirmOrderReference, Authorize API calls.
-Subsequent call to `charge` method for the same Order Reference ID will make the call only to Authorize.
+For Recurring payments the first `charge` call will make the SetBillingAgreementDetails, ConfirmBillingAgreement, AuthorizeOnBillingAgreement API calls.
+Subsequent call to `charge` method for the same Billing Agreement ID will make the call only to AuthorizeOnBillingAgreement (With capture).
 
-For **Recurring payments** the first `charge` call will make the SetBillingAgreementDetails, ConfirmBillingAgreement, AuthorizeOnBillingAgreement API calls.
-Subsequent call to `charge` method for the same Billing Agreement ID will make the call only to AuthorizeOnBillingAgreement.
-
-> **Capture Now** can be set to `true` for digital goods . For Physical goods it's highly recommended to set the Capture Now to `false`
-and the amount captured by making the `capture` API call after the shipment is complete.
-
-
-| Parameter                  | Variable Name                | Mandatory | Values                                                                                              	    |
-|----------------------------|------------------------------|-----------|-----------------------------------------------------------------------------------------------------------|
-| Amazon Reference ID 	     | `amazon_reference_id` 	    | yes       | OrderReference ID (`starts with P01 or S01`) or <br>Billing Agreement ID (`starts with B01 or C01`)       |
-| Amazon OrderReference ID   | `amazon_order_reference_id`  | no        | OrderReference ID (`starts with P01 or S01`) if no Amazon Reference ID is provided                        |
-| Amazon Billing Agreement ID| `amazon_billing_agreement_id`| no        | Billing Agreement ID (`starts with B01 or C01`) if no Amazon Reference ID is provided                     |
-| Merchant ID         	     | `merchant_id`         	    | no        | Value taken from config array in BaseClient.php                                                               |
-| Charge Amount       	     | `charge_amount`       	    | yes       | Amount that needs to be captured.<br>Maps to API call variables `amount` , `authorization_amount`         |
-| Currency code       	     | `currency_code`       	    | no        | If no value is provided, value is taken from the config array in BaseClient.php      		            |
-| Authorization Reference ID | `authorization_reference_id` | yes       | Unique string to be passed									            |
-| Transaction Timeout 	     | `transaction_timeout`        | no        | Timeout for Authorization - Defaults to 1440 minutes						            |
-| Capture Now	             | `capture_now`                | no        | Will capture the payment automatically when set to `true`. Defaults to `false`						                                            |
-| Charge Note         	     | `charge_note`         	    | no        | Note that is sent to the buyer. <br>Maps to API call variables `seller_note` , `seller_authorization_note`|
-| Charge Order ID     	     | `charge_order_id`     	    | no        | Custom order ID provided <br>Maps to API call variables `seller_order_id` , `seller_billing_agreement_id` |
-| Store Name          	     | `store_name`          	    | no        | Name of the store                                                                                         |
-| Platform ID         	     | `platform_id`         	    | no        | Platform ID of the Solution provider                                                                      |
-| Custom Information  	     | `custom_information`  	    | no        | Any custom string                                                                                         |
-| MWS Auth Token      	     | `mws_auth_token`      	    | no        | MWS Auth Token required if API call is made on behalf of the seller                                       |
+| Parameter                  | Variable Name               | Mandatory | Values                                                                                              	   |
+|----------------------------|-----------------------------|-----------|-----------------------------------------------------------------------------------------------------------|
+| Amazon Reference ID 	     | `amazon_reference_id` 	   | yes       | OrderReference ID (`starts with P01 or S01`) or <br>Billing Agreement ID (`starts with B01 or C01`)       |
+| Merchant ID         	     | `merchant_id`         	   | no        | value taken from config array in Client.php                                                              |
+| Charge Amount       	     | `charge_amount`       	   | yes       | Amount that needs to be captured.<br>Maps to API call variables `amount` , `authorization_amount`         |
+| Currency code       	     | `currency_code`       	   | no        | if no value is provided, value is taken from the config array in Client.php      		           |
+| Authorization Reference ID | `authorization_reference_id`| yes       | Unique string to be passed									           |
+| Transaction Timeout 	     | `transaction_timeout`       | no        | Timeout for Authorization - Defaults to 1440 minutes						           |
+| Charge Note         	     | `charge_note`         	   | no        | Note that is sent to the buyer. <br>Maps to API call variables `seller_note` , `seller_authorization_note`|
+| Charge Order ID     	     | `charge_order_id`     	   | no        | custom order ID provided <br>Maps to API call variables `seller_order_id` , `seller_billing_agreement_id` |
+| Store Name          	     | `store_name`          	   | no        | Name of the store                                                                                         |
+| Platform ID         	     | `platform_id`         	   | no        | Platform ID of the Solution provider                                                                      |
+| Custom Information  	     | `custom_information`  	   | no        | Any custom string                                                                                         |
+| MWS Auth Token      	     | `mws_auth_token`      	   | no        | MWS Auth Token required if API call is made on behalf of the seller                                       |
 
 ```php
-// Create an array that will contain the parameters for the charge API call
+//create an array that will contain the parameters for the charge API call
 $requestParameters = array();
 
-// Adding the parameters values to the respective keys in the array
+//Adding the parameters values to the respective keys in the array
 $requestParameters['amazon_reference_id'] = 'AMAZON_REFERENCE_ID';
-
-// Or
-// If $requestParameters['amazon_reference_id'] is not provided,
-// either one of the following ID input is needed
-$requestParameters['amazon_order_reference_id']   = 'AMAZON_ORDER_REFERENCE_ID';
-$requestParameters['amazon_billing_agreement_id'] = 'AMAZON_BILLING_AGREEMENT_ID';
-
 $requestParameters['seller_id'] = null;
 $requestParameters['charge_amount'] = '100.50';
 $requestParameters['currency_code'] = 'USD';
 $requestParameters['authorization_reference_id'] = 'UNIQUE STRING';
 $requestParameters['transaction_timeout'] = 0;
-$requestParameters['capture_now'] = false; //`true` for Digital goods
 $requestParameters['charge_note'] = 'Example item note';
 $requestParameters['charge_order_id'] = '1234-Example-Order';
 $requestParameters['store_name'] = 'Example Store';
@@ -255,15 +186,13 @@ $requestParameters['platform_Id'] = null;
 $requestParameters['custom_information'] = 'Any_Custom_String';
 $requestParameters['mws_auth_token'] = null;
 
-// Get the Authorization response from the charge method
+//get the Authorization response from the charge method
 $response = $client->charge($requestParameters);
 ```
-See the [API Response](https://github.com/amzn/login-and-pay-with-amazon-sdk-php#api-response) section for information on parsing the API response.
-
 #####Obtain profile information (getUserInfo method)
-1. obtains the user's profile information from Amazon using the access token returned by the Button widget.
-2. An access token is granted by the authorization server when a user logs in to a site.
-3. An access token is specific to a client, a user, and an access scope. A client must use an access token to retrieve customer profile data.
+1. obtains the user's profile information from Amazon using the access token returned by the Button widget. 
+2. An access token is granted by the authorization server when a user logs in to a site. 
+3. An access token is specific to a client, a user, and an access scope. A client must use an access token to retrieve customer profile data. 
 
 | Parameter           | Variable Name         | Mandatory | Values                                                                       	     |
 |---------------------|-----------------------|-----------|------------------------------------------------------------------------------------------|
@@ -274,25 +203,25 @@ See the [API Response](https://github.com/amzn/login-and-pay-with-amazon-sdk-php
 ```php
 <?php namespace PayWithAmazon;
 
-// config array parameters that need to be instantiated
+//config array parameters that need to be instantiated
 $config = array('client_id' => 'YOUR_LWA_CLIENT_ID',
                 'region'    => 'REGION' );
 
-$client = new PaymentsClient($config);
+$client = new Client($config);
 
-// Client ID can also be set using the setter function setClientId($client_id)
+//Client ID can also be set using the setter function setClientId($client_id)
 $client->setClientId(‘YOUR_LWA_CLIENT_ID’);
 
-// Get the Access Token from the URL
+//Get the Access Token from the URL
 $access_token = 'ACCESS_TOKEN';
-// Calling the function getUserInfo with the access token parameter returns object
+//calling the function getUserInfo with the access token parameter returns object
 $userInfo = $client->getUserInfo($access_token);
 
-// Buyer name
+//Buyer name
 $userInfo['name'];
-// Buyer Email
+//Buyer Email
 $userInfo['email'];
-// Buyer User Id
+//Buyer User Id
 $userInfo['user_id'];
 ```
 ### Response Parsing
@@ -305,16 +234,16 @@ Responses are provided in 3 formats
 
 #####API Response
 ```php
-// Returns an object($response) of the class ResponseParser.php
+//Returns an object($response) of the class ResponseParser.php
 $response = $client->getOrderReferenceDetails($requestParameters);
 
-// XML response
+//XML response
 $response->toXml();
 
-// Associative array response
+//Associative array response
 $response->toArray();
 
-// JSON response
+//JSON response
 $response->toJson();
 ```
 
@@ -322,12 +251,12 @@ $response->toJson();
 ```php
 $ipnHandler = new IpnHandler($headers, $body);
 
-// Raw message response
+//Raw message response
 $ipnHandler->returnMessage();
 
-// Associative array response
+//Associative array response
 $ipnHandler->toArray();
 
-// JSON response
+//JSON response
 $ipnHandler->toJson();
 ```

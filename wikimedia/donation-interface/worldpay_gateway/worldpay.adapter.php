@@ -30,60 +30,24 @@ class WorldpayAdapter extends GatewayAdapter {
 	public $redirect = FALSE;
 	public $log_outbound = TRUE;
 
-	protected $cdata = array(
-		'OTTResultURL'
-	);
-
-	// TODO we should store these keys in a config file
-	// TODO the way the cards are ordered on the page is the order of this
-	// array. make that a "weight" that could be controlled by a url param
-	static $CARD_INFO = array(
-		'cb' => array( // Carte Bleu
-			'api_name' => 'CB',
-			'countries' => array( 'FR' => true ),
-		),
-		'visa' => array(
-			'api_name' => 'VI',
-			'countries' => array( 'FR' => true ),
-		),
-		'mc' => array(
-			'api_name' => 'MC',
-			'countries' => array( 'FR' => true ),
-		),
-		'amex' => array(
-			'api_name' => 'AX',
-			'countries' => array( 'FR' => true ),
-		),
-		'visa-beneficial' => array(
-			'api_name' => 'BE',
-		),
-		'diners' => array(
-			'api_name' => 'DC',
-		),
-		'discover' => array(
-			'api_name' => 'DI',
-		),
-		'jcb' => array(
-			'api_name' => 'JC',
-		),
-		'maestro' => array(
-			'api_name' => 'MA',
-		),
-		'mc-debit' => array(
-			'api_name' => 'MD',
-		),
-		'solo' => array(
-			'api_name' => 'SW'
-		),
-		'visa-debit' => array(
-			'api_name' => 'VD',
-		),
-		'visa-electron' => array(
-			'api_name' => 'VE',
-		),
-		'' /* TODO wat */ => array(
-			'api_name' => 'XX',
-		),
+	/**
+	 * @var string[] Card types (as returned by WP) mapped to what we call them
+	 */
+	static $CARD_TYPES = array(
+		'VI' => 'visa',
+		'AX' => 'amex',
+		'BE' => 'visa-beneficial',
+		'CB' => 'cb',
+		'DC' => 'diners',
+		'DI' => 'discover',
+		'JC' => 'jcb',
+		'MC' => 'mc',
+		'SW' => 'solo',
+		'VE' => 'visa-electron',
+		'VD' => 'visa-debit',
+		'MA' => 'maestro',
+		'MD' => 'mc-debit',
+		'XX' => '',
 	);
 
 	/**
@@ -218,26 +182,6 @@ class WorldpayAdapter extends GatewayAdapter {
 		parent::__construct( $options );
 	}
 
-	public function getRequiredFields() {
-		$fields = parent::getRequiredFields();
-		$fields[] = 'payment_submethod';
-		return $fields;
-	}
-
-	/**
-	 * Enhanced Silent Order Post AKA iframe
-	 */
-	public function isESOP() {
-		return $this->dataObj->getVal_Escaped( 'ffname' ) === 'wp-if';
-	}
-
-	public function getFormClass() {
-		if ( $this->isESOP() ) {
-			return 'Gateway_Form_Mustache';
-		}
-		return parent::getFormClass();
-	}
-
 	public function getCommunicationType() {
 		return 'xml';
 	}
@@ -330,32 +274,22 @@ class WorldpayAdapter extends GatewayAdapter {
 
 	function definePaymentMethods() {
 		$this->payment_methods = array();
+		$this->payment_submethods = array();
+
 		$this->payment_methods['cc'] = array(
 			'label'	=> 'Credit Cards',
-			'validation' => array(
-				'name' => true,
-				'email' => true
-			),
 		);
 
 		$this->payment_submethods = array();
-
-		foreach( self::$CARD_INFO as $name => $info ) {
-
-			$countries = array();
-			if ( isset( $info['countries'] ) ) {
-				$countries = $info['countries'];
-			}
-			$this->payment_submethods[$name] = array(
-				'countries' => $countries,
-				'group' => 'cc',
+		foreach( self::$CARD_TYPES as $wpName => $ourName ) {
+			$this->payment_submethods[$ourName] = array(
+				'group'	=> 'cc',
 				'validation' => array(
-					'name' => true,
-					'email' => true,
 					'address' => false,
 					'amount' => true,
+					'email' => true,
+					'name' => true,
 				),
-				'logo' => "card-{$name}.png",
 			);
 		}
 	}
@@ -441,9 +375,6 @@ class WorldpayAdapter extends GatewayAdapter {
 		// AVS and CVV check details. If fraud checks pass we will simultaneously
 		// authorize and deposit the payment using the 'Sale' aka AuthorizeAndDepositPayment
 		// transaction.
-
-		// ADDITIONAL NOTE: ESOP needs this value unset, so I've removed it and
-		// added logic in do_transaction to set it if the transaction is not ESOP.
 		$this->transactions['AuthorizePaymentForFraud'] = array(
 			'request' => array(
 				'VersionUsed',
@@ -452,6 +383,7 @@ class WorldpayAdapter extends GatewayAdapter {
 				'RequestType',
 				'TRXSource',
 				'MOP',
+				'IsVerify',
 
 				'IsTest',
 				'MerchantId',
@@ -485,6 +417,7 @@ class WorldpayAdapter extends GatewayAdapter {
 				'RequestType' => 'A',       // Authorize a payment
 				'TRXSource' => 4,           // Card not present (web order) transaction
 				'MOP' => 'CC',              // Credit card transaction
+				'IsVerify' => 1,            // Perform CVV and AVS verification for account (deposit not allowed)
 				'Amount' => '0.10',			// Perform a small amount authorization (just enough to trigger it)
 			),
 			'never_log' => array (
@@ -785,7 +718,6 @@ class WorldpayAdapter extends GatewayAdapter {
 			'StateCode'         => 'state',
 			'ZipCode'           => 'zip',
 			'CountryCode'       => 'country',
-			'LAN'               => 'language',
 			'Email'             => 'email',
 			'REMOTE_ADDR'       => 'user_ip',
 			'StoreID'           => 'wp_storeid',
@@ -799,15 +731,6 @@ class WorldpayAdapter extends GatewayAdapter {
 			'MerchantReference2'=> 'merchant_reference_2',
 			'NarrativeStatement1'=> 'narrative_statement_1',
 		);
-	}
-
-	private function get_payment_method_name_from_api_name ( $api_name ) {
-		foreach ( self::$CARD_INFO as $name => $info ) {
-			if ( $api_name === $info['api_name'] ) {
-				return $name;
-			}
-		}
-		return null;
 	}
 
 	/**
@@ -840,23 +763,8 @@ class WorldpayAdapter extends GatewayAdapter {
 
 		$this->loadRoutingInfo( $transaction );
 
-		if ( $this->isESOP() ) {
-			// This needs to go in every ESOP request because otherwise
-			// they return "Transaction NOT Authorized"
-			$this->transactions[$transaction]['request'][] = 'IsCVNMEM';
-			$this->transactions[$transaction]['values']['IsCVNMEM'] = 1;
-		}
-
 		switch ( $transaction ) {
 			case 'GenerateToken':
-				if ( $this->isESOP() ) {
-					// This parameter will cause WP to use the iframe code path.
-					$this->transactions[$transaction]['request'][] = 'IsHosted';
-					$this->transactions[$transaction]['values']['IsHosted'] = 1;
-					// Translate the iframe to our language.
-					$this->transactions[$transaction]['request'][] = 'LAN';
-				}
-
 				$result = parent::do_transaction( $transaction );
 				if ( !$result->getErrors() ) {
 					// Save the OTT to the session for later
@@ -954,20 +862,11 @@ class WorldpayAdapter extends GatewayAdapter {
 		$this->transaction_response->setData( $data );
 		switch ( $this->getCurrentTransaction() ) {
 			case 'GenerateToken':
-				$required = null;
-				if ( $this->isESOP() ) {
-					$required = array(
-						'OTTRedirectURL' => 'wp_redirect_url',
-						'RDID' => 'wp_rdid',
-					);
-				} else {
-					$required = array(
-						'OTT' => 'wp_one_time_token',
-						'OTTProcessURL' => 'wp_process_url',
-						'RDID' => 'wp_rdid',
-					);
-				}
-				$this->addRequiredData( $data, $required );
+				$this->addRequiredData( $data, array(
+					'OTT' => 'wp_one_time_token',
+					'OTTProcessURL' => 'wp_process_url',
+					'RDID' => 'wp_rdid',
+				) );
 				break;
 
 			case 'QueryTokenData':
@@ -1069,80 +968,13 @@ class WorldpayAdapter extends GatewayAdapter {
 		return $headers;
 	}
 
-	/**
-	 * WorldPay requires different OrderNumbers for each transaction within a donation.
-	 * This will add suffixes to order_id for token generation, token querying, and fraud test.
-	 * The real authorization and sale transaction keeps the old order ID format
-	 * @param string $order_id - the base order_id for this donation attempt
-	 */
-	protected function set_transaction_order_ids( $order_id ) {
-		if ( empty( $order_id ) ) {
-			return;
-		}
-		$this->transactions['GenerateToken']['values']['OrderNumber'] = $order_id . '.0';
-		$this->transactions['QueryTokenData']['values']['OrderNumber'] = $order_id . '.1';
-		$this->transactions['AuthorizePaymentForFraud']['values']['OrderNumber'] = $order_id . '.2';
-	}
-
-	/**
-	 * Can't add order_id to staged_vars without nasty side effects, so we have
-	 * to override this to catch changes
-	 */
-	public function normalizeOrderID( $override = null, $dataObj = null ) {
-		$value = parent::normalizeOrderID( $override, $dataObj );
-		$this->set_transaction_order_ids( $value );
-		return $value;
-	}
-
-	/**
-	 * Can't add order_id to staged_vars without nasty side effects, so we have
-	 * to override this to catch changes
-	 */
-	public function regenerateOrderID() {
-		parent::regenerateOrderID();
-		$order_id = $this->getData_Unstaged_Escaped( 'order_id' );
-		$this->set_transaction_order_ids( $order_id );
-	}
-
 	protected function stage_returnto() {
 		global $wgServer, $wgArticlePath;
 
-		// Rebuild the url with the token param.
-
-		$arr_url = parse_url(
-			$wgServer . str_replace(
-				'$1',
-				'Special:WorldpayGatewayResult',
-				$wgArticlePath
-			)
-		);
-
-		$query = '';
-		$first = true;
-		if ( isset( $arr_url['query'] ) ) {
-			parse_str( $arr_url['query'], $arr_query );
-		}
-		// Worldpay decodes encoded URL unsafe characters in XML before storage,
-		// and sends them back that way in the return header.  So anything you
-		// want to be returned encoded must be double-encoded[1], for example
-		// %2526 will get returned as %26 and decoded to &, while %26 will get
-		// returned as & and treated as a query string separator.
-
-		// Additionally a properly encoded & will make their server respond
-		// MessageCode 302 (which means 'unavailable') unless it is wrapped in
-		// CDATA tags because godonlyknows
-		$arr_query['token'] = rawurlencode( $this->token_getSaltedSessionToken() );
-		$arr_query['ffname'] = rawurlencode( $this->getData_Unstaged_Escaped( 'ffname' ) );
-		foreach ( $arr_query as $key => $val ) {
-			$query .= ( $first ? '?' : '&' ) . $key . '=' . $val;
-			$first = false;
-		}
-
-		$this->staged_data['returnto'] = rawurlencode( // [1]
-			$arr_url['scheme'] .  '://' .
-			$arr_url['host'] .
-			$arr_url['path'] .
-			$query
+		$this->staged_data['returnto'] = str_replace(
+			'$1',
+			'Special:WorldpayGateway?token=' . rawurlencode( $this->token_getSaltedSessionToken() ),
+			$wgServer . $wgArticlePath
 		);
 	}
 
@@ -1164,8 +996,9 @@ class WorldpayAdapter extends GatewayAdapter {
 		$paymentMethod = $this->getData_Staged( 'payment_method' );
 		$paymentSubmethod = $this->getData_Staged( 'payment_submethod' );
 		if ( $paymentMethod == 'cc' ) {
-			$this->unstaged_data['payment_submethod'] =
-				$this->get_payment_method_name_from_api_name( $paymentSubmethod );
+			if ( array_key_exists( $paymentSubmethod, self::$CARD_TYPES ) ) {
+				$this->unstaged_data['payment_submethod'] = self::$CARD_TYPES[$paymentSubmethod];
+			}
 		}
 	}
 
@@ -1188,6 +1021,7 @@ class WorldpayAdapter extends GatewayAdapter {
 	protected function loadRoutingInfo( $transaction ) {
 		switch ( $transaction ) {
 			case 'QueryAuthorizeDeposit':
+				break;
 			case 'GenerateToken':
 			case 'QueryTokenData':
 				$mid = $this->account_config['TokenizingMerchantID'];

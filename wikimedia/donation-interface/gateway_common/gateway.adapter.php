@@ -57,7 +57,7 @@ interface GatewayType {
 	/**
 	 * Define the message keys used to display errors to the user.  Should set
 	 * @see $this->error_map to an array whose keys are error codes and whose
-	 * values are i18n keys or callables that return a translated error message.
+	 * values are i18n keys.
 	 * Any unmapped error code will use 'donate_interface-processing-error'
 	 */
 	function defineErrorMap();
@@ -91,9 +91,6 @@ interface GatewayType {
 	 * Sets up the $payment_methods array.
 	 * Keys = unique name for this method
 	 * Values = metadata about the method
-	 *   'validation' should be an array whose keys are field names and
-	 *                whose values indicate whether the field is required
-	 *   FIXME: 'label' is often set (untranslated) but never used
 	 */
 	function definePaymentMethods();
 
@@ -200,19 +197,13 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	protected $dataConstraints = array();
 
 	/**
-	 * $cdata lists fields which require CDATA tags
-	 */
-	protected $cdata = array();
-
-	/**
 	 * $error_map maps gateway errors to client errors
 	 *
-	 * The key of each error should map to a i18n message key or a callable
+	 * The key of each error should map to a i18n message key.
 	 * By convention, the following three keys have these meanings:
 	 *   'internal-0000' => 'message-key-1', // Failed failed pre-process checks.
 	 *   'internal-0001' => 'message-key-2', // Transaction could not be processed due to an internal error.
 	 *   'internal-0002' => 'message-key-3', // Communication failure
-	 * A callable should return the translated error message.
 	 * Any undefined key will map to 'donate_interface-processing-error'
 	 *
 	 * @var	array	$error_map
@@ -685,20 +676,6 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
-	 * Gets a global variable according to @see getGlobal rules, then replaces
-	 * $country and $language with values from gateway instance data.
-	 * @param string $varname
-	 */
-	public function localizeGlobal( $varname ) {
-		$value = self::getGlobal( $varname );
-		$language = $this->getData_Unstaged_Escaped( 'language' );
-		$country = $this->getData_Unstaged_Escaped( 'country' );
-		$value = str_replace( '$language', $language, $value );
-		$value = str_replace( '$country', $country, $value );
-		return $value;
-	}
-
-	/**
 	 * getErrorMap
 	 *
 	 * This will also return an error message if a $code is passed.
@@ -737,15 +714,10 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 			$translatedMessage = '';
 		}
 
+		// If the $code does not exist, use the default message
 		if ( isset( $this->error_map[ $code ] ) ) {
-			$mapped = $this->error_map[ $code ];
-			// Errors with complicated formatting can map to a function
-			if ( is_callable( $mapped ) ) {
-				return $mapped();
-			}
-			$messageKey = $mapped;
+			$messageKey = $this->error_map[ $code ];
 		} else {
-			// If the $code does not exist, use the default message
 			$messageKey = 'donate_interface-processing-error';
 		}
 
@@ -1012,16 +984,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	protected function appendNodeIfValue( $value, &$node, $js = false ) {
 		$nodevalue = $this->getTransactionSpecificValue( $value, $js );
 		if ( $nodevalue !== '' && $nodevalue !== false ) {
-			$temp = $this->xmlDoc->createElement( $value );
-
-			$data = null;
-			if ( in_array( $value, $this->cdata ) ) {
-				$data = $this->xmlDoc->createCDATASection( $nodevalue );
-			} else {
-				$data = $this->xmlDoc->createTextNode( $nodevalue );
-			}
-
-			$temp->appendChild( $data );
+			$temp = $this->xmlDoc->createElement( $value, $nodevalue );
 			$node->appendChild( $temp );
 		}
 	}
@@ -3967,7 +3930,6 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 */
 	public function getLogDebugJSON() {
 		$logObj = array (
-			'amount',
 			'ffname',
 			'country',
 			'currency_code',

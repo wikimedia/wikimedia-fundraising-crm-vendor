@@ -457,7 +457,6 @@ class AstropayAdapter extends GatewayAdapter {
 	public function getRequiredFields() {
 		$fields = parent::getRequiredFields();
 		$fields[] = 'fiscal_number';
-		$fields[] = 'payment_submethod';
 		return $fields;
 	}
 	/**
@@ -598,12 +597,6 @@ class AstropayAdapter extends GatewayAdapter {
 					ResponseCodes::MISSING_TRANSACTION_ID
 				);
 			}
-			// Make sure we record the right amount, even if the donor has opened
-			// a new window and messed with their session data.
-			// Unfortunately, we don't get the currency code back.
-			$this->addResponseData( array(
-				'amount' => $response['x_amount'],
-			) );
 			$this->transaction_response->setGatewayTransactionId( $response['x_document'] );
 			$status = $this->findCodeAction( 'PaymentStatus', 'result', $response['result'] );
 			$this->logger->info( "Payment status $status coming back to ResultSwitcher" );
@@ -770,11 +763,5 @@ class AstropayAdapter extends GatewayAdapter {
 	protected function logPaymentDetails() {
 		$details = $this->getStompTransaction();
 		$this->logger->info( 'Redirecting for transaction: ' . json_encode( $details ) );
-	}
-
-	protected function unstage_amount() {
-		// FIXME: if GlobalCollect is the only processor who needs amount in
-		// cents, move its stage and unstage functions out of base adapter
-		$this->unstaged_data['amount'] = $this->getData_Staged( 'amount' );
 	}
 }

@@ -7,6 +7,8 @@ use SmashPig\Core\Listeners\ListenerDataException;
 use SmashPig\Core\Listeners\RestListener;
 use SmashPig\Core\Logging\Logger;
 
+use PayWithAmazon\IpnHandler;
+
 /**
  * Uses the Amazon SDK to parse incoming IPN messages
  */
@@ -32,7 +34,7 @@ class AmazonListener extends RestListener {
 				throw new ListenerDataException( "header '$header' should have a single value" );
 			}
 			$headers[$header] = $annoyingArray[0];
-		}
+		};
 		$json = $request->getRawRequest();
 
 		$secureLog = Logger::getTaggedLogger( 'RawData' );
@@ -46,7 +48,7 @@ class AmazonListener extends RestListener {
 
 		$messages = array();
 		try{
-			$amazonHandlerMessage = AmazonApi::createIpnHandler(
+			$amazonHandlerMessage = new IpnHandler(
 				$headers,
 				$json
 			);

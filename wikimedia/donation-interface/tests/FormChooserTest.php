@@ -57,6 +57,7 @@ class DonationInterface_FormChooserTest extends DonationInterfaceTestCase {
 		$moreForms = array ( );
 
 		$moreForms['amazon'] = array(
+			'file' => $form_dirs['amazon'] . '/amazon.html',
 			'gateway' => 'amazon',
 			'payment_methods' => array( 'amazon' => 'ALL' ),
 			'redirect',

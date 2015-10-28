@@ -14,11 +14,6 @@ $config_defaults = array(
 				'inst-args' => array( 'pending' ),
 			),
 
-			'refund' => array(
-				'class' => 'SmashPig\Core\DataStores\StompDataStore',
-				'inst-args' => array( 'refund' ),
-			),
-
 			'limbo' => array(
 				'class' => 'SmashPig\Core\DataStores\StompDataStore',
 				'inst-args' => array( 'limbo' ),
@@ -46,7 +41,6 @@ $config_defaults = array(
 					'verified' => '/queue/donations',
 					'failed' => '/queue/failed',
 					'pending' => '/queue/pending',
-					'refund' => '/queue/refund',
 					'jobs' => '/queue/job-requests',
 				),
 			),
@@ -122,9 +116,7 @@ $config_defaults = array(
 
 	'amazon' => array(
 		'actions' => array(
-			'SmashPig\PaymentProviders\Amazon\Actions\CloseOrderReference',
-			'SmashPig\PaymentProviders\Amazon\Actions\AssociateRefundParent',
-			'SmashPig\PaymentProviders\Amazon\Actions\AddMessageToQueue',
+			'SmashPig\PaymentProviders\Amazon\Actions\IncomingMessage',
 		),
 
 		'endpoints' => array(
@@ -132,37 +124,6 @@ $config_defaults = array(
 				'class' => 'SmashPig\PaymentProviders\Amazon\AmazonListener',
 				'inst-args' => array(),
 			)
-		),
-
-		// need an array within an array to give clients get a single
-		// constructor argument
-		'credentials' => array( array(
-			'merchant_id' => '', // 13 or so uppercase letters
-			'client_id' => '', // app or site-specific, starts with amznX.application
-			'access_key' => '', // 20 alphanumeric characters
-			'secret_key' => '', // 40 base-64 encoded chars
-			'region' => '', // 'de', 'jp', 'uk', or 'us'
-			'sandbox' => false,
-		) ),
-
-		// Override these to mock the Amazon SDK classes
-		'payments-client' => array(
-			'class' => 'PayWithAmazon\PaymentsClient',
-			'inst-args@' => 'credentials'
-		),
-		'reports-client' => array(
-			'class' => 'PayWithAmazon\ReportsClient',
-			'inst-args@' => 'credentials'
-		),
-		'ipn-handler-class' => 'PayWithAmazon\IpnHandler',
-
-		'audit' => array (
-			'download-path' => '',
-			'archive-path' => '',
-			'file-types' => array(
-				'SmashPig\PaymentProviders\Amazon\Audit\RefundReport',
-				'SmashPig\PaymentProviders\Amazon\Audit\SettlementReport',
-			),
 		),
 	),
 

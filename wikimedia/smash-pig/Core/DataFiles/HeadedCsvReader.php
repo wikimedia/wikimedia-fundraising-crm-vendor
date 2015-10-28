@@ -8,23 +8,12 @@
 class HeadedCsvReader extends CsvReader {
 	/** @var string[] */
 	protected $colNames;
-	protected $colIndexes;
 
-	public function __construct( $file, $delimiter = ',', $maxRowLength = 4098, $skipRows = 0 ) {
+	public function __construct( $file, $delimiter = ',', $maxRowLength = 4098 ) {
 		parent::__construct( $file, $delimiter, $maxRowLength );
 
-		while ( $skipRows > 0 ) {
-			parent::next();
-			$skipRows--;
-		}
 		// Extract the header information
 		$this->colNames = parent::current();
-		foreach( $this->colNames as $index => $name ) {
-			if ( isset( $this->colIndexes[$name] ) ) {
-				throw new DataFileException( "Duplicate column name {$name}!" );
-			}
-			$this->colIndexes[$name] = $index;
-		}
 		parent::next();
 	}
 
@@ -41,23 +30,11 @@ class HeadedCsvReader extends CsvReader {
 	 * @return string Contents of the column
 	 */
 	public function extractCol( $colName, &$row ) {
-		if ( !isset( $this->colIndexes[$colName] ) ) {
-			throw new DataFileException( "Column name {$colName} not found!" );
+		$col = array_search( $colName, $this->colNames );
+		if ( $col === false ) {
+			throw new DataFileException( "Column name {$this->colNames} not found!" );
 		}
-		$index = $this->colIndexes[$colName];
-		return $row[$index];
-	}
-
-	/**
-	 * Convenience function to extract a column's value from the current row
-	 *
-	 * @param string $colName Name of the column to extract
-	 *
-	 * @throws DataFileException if the column name does not exist.
-	 * @return string Contents of the column
-	 */
-	public function currentCol( $colName ) {
-		return $this->extractCol( $colName, $this->currentElement );
+		return $row[$col];
 	}
 
 	/**

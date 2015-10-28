@@ -755,18 +755,24 @@
     },
     {
         "name": "amzn/login-and-pay-with-amazon-sdk-php",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
+        "version": "v1.0.0",
+        "version_normalized": "1.0.0.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php",
-            "reference": "8d4bb3131acf6f9842372619b7147852bc349574"
+            "url": "https://github.com/amzn/login-and-pay-with-amazon-sdk-php.git",
+            "reference": "3bf17e802dc6913aa97f1afdaf26a08480f670d0"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/amzn/login-and-pay-with-amazon-sdk-php/zipball/3bf17e802dc6913aa97f1afdaf26a08480f670d0",
+            "reference": "3bf17e802dc6913aa97f1afdaf26a08480f670d0",
+            "shasum": ""
         },
         "require": {
             "ext-curl": "*",
             "php": ">=5.3.0"
         },
-        "time": "2015-10-07 15:01:25",
+        "time": "2015-04-16 21:14:01",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -774,6 +780,7 @@
                 "PayWithAmazon\\": "PayWithAmazon/"
             }
         },
+        "notification-url": "https://packagist.org/downloads/",
         "license": [
             "Apache OSL-2"
         ],
@@ -795,23 +802,61 @@
         ]
     },
     {
+        "name": "wikimedia/donation-interface",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
+            "reference": "1971cbbc12b967ff776399e57f5098de04785637"
+        },
+        "require": {
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "2.1.*",
+            "monolog/monolog": "1.12.0",
+            "psr/log": "1.0.0",
+            "zordius/lightncandy": "0.18"
+        },
+        "time": "2015-07-17 19:58:45",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "classmap": [
+                "adyen_gateway",
+                "amazon_gateway",
+                "gateway_common",
+                "globalcollect_gateway",
+                "paypal_gateway",
+                "worldpay_gateway"
+            ],
+            "files": [
+                "gateway_common/WmfFramework.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0"
+        ],
+        "description": "Wikimedia Foundation payment processing library"
+    },
+    {
         "name": "wikimedia/smash-pig",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "60c9f5e68784e077b04f73757d12682020df1a72"
+            "reference": "1f370943983373b2aaa3c89e8262c8790b51703b"
         },
         "require": {
-            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+            "amzn/login-and-pay-with-amazon-sdk-php": "^1.0",
             "fusesource/stomp-php": "2.*",
             "php": ">=5.3.3",
             "phpmailer/phpmailer": "5.2.6",
             "symfony/event-dispatcher": ">=2.1,<2.4-dev",
             "symfony/http-foundation": ">=2.1,<2.4-dev"
         },
-        "time": "2015-10-14 20:28:15",
+        "time": "2015-09-16 18:38:04",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -843,45 +888,5 @@
             "donations",
             "payments"
         ]
-    },
-    {
-        "name": "wikimedia/donation-interface",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "e9c479de7594f9e1d011fa344792cb1cca987aad"
-        },
-        "require": {
-            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-            "coderkungfu/php-queue": "dev-master",
-            "fusesource/stomp-php": "2.1.*",
-            "monolog/monolog": "1.12.0",
-            "predis/predis": "1.*",
-            "psr/log": "1.0.0",
-            "zordius/lightncandy": "0.18"
-        },
-        "time": "2015-10-21 13:44:26",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "classmap": [
-                "adyen_gateway",
-                "amazon_gateway",
-                "gateway_common",
-                "globalcollect_gateway",
-                "paypal_gateway",
-                "worldpay_gateway"
-            ],
-            "files": [
-                "gateway_common/WmfFramework.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "description": "Wikimedia Foundation payment processing library"
     }
 ]

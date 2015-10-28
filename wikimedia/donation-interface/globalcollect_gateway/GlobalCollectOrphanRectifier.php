@@ -60,7 +60,7 @@ class GlobalCollectOrphanRectifier {
 	    DonationQueue::instance()->delete( $correlation_id, $queue );
 	}
 
-	public function processOrphans() {
+	protected function processOrphans() {
 		// TODO: Make this configurable.
 		// 20 minutes: this is exactly equal to something on Globalcollect's side.
 		$time_buffer = 60*20;

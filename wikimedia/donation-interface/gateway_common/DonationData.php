@@ -95,7 +95,6 @@ class DonationData implements LogPrefixProvider {
 				'submethod', //same as above. Ideally, the newer banners would stop using these vars and go back to the old ones...
 				'issuer_id',
 				'order_id',
-				'subscr_id',
 				'referrer',
 				'utm_source',
 				'utm_source_id',
@@ -916,7 +915,6 @@ class DonationData implements LogPrefixProvider {
 			'gateway',
 			'gateway_account',
 			'gateway_txn_id',
-			'subscr_id',
 			'recurring',
 			'payment_method',
 			'payment_submethod',

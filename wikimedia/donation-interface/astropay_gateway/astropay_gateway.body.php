@@ -31,7 +31,6 @@ class AstropayGateway extends GatewayPage {
 	}
 
 	protected function handleRequest() {
-		$this->getOutput()->addModules( 'ext.donationinterface.astropay.scripts' );
 		$this->handleDonationRequest();
 	}
 }
