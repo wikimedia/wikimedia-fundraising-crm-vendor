@@ -9,6 +9,11 @@ $config_defaults = array(
 				'inst-args' => array( '/tmp/' ),
 			),
 
+			'antifraud' => array(
+				'class' => 'SmashPig\Core\DataStores\StompDataStore',
+				'inst-args' => array( 'antifraud' ),
+			),
+
 			'pending' => array(
 				'class' => 'SmashPig\Core\DataStores\StompDataStore',
 				'inst-args' => array( 'pending' ),
@@ -22,6 +27,11 @@ $config_defaults = array(
 			'limbo' => array(
 				'class' => 'SmashPig\Core\DataStores\StompDataStore',
 				'inst-args' => array( 'limbo' ),
+			),
+
+			'jobs-damaged' => array(
+				'class' => 'SmashPig\Core\DataStores\StompDataStore',
+				'inst-args' => array( 'jobs-damaged' ),
 			),
 
 			'jobs' => array(
@@ -42,18 +52,20 @@ $config_defaults = array(
 				'convert-string-expressions' => false,
 
 				'queues' => array(
+					'antifraud' => '/queue/payments-antifraud',
 					'limbo' => '/queue/limbo',
 					'verified' => '/queue/donations',
 					'failed' => '/queue/failed',
 					'pending' => '/queue/pending',
 					'refund' => '/queue/refund',
 					'jobs' => '/queue/job-requests',
+					'jobs-damaged' => '/queue/jobs-damaged',
 				),
 			),
 		),
 
 		'logging' => array(
-            'root-context' => 'SmashPig',
+			'root-context' => 'SmashPig',
 			'log-level' => LOG_INFO,
 			'enabled-log-streams' => array(
 				'syslog',
@@ -67,20 +79,20 @@ $config_defaults = array(
 		),
 
 		'security' => array(
-            'ip-header-name' => '',
+			'ip-header-name' => '',
 			'ip-trusted-proxies' => array(),
 			'ip-whitelist' => array(),
 		),
 
-        'endpoints' => array(),
+		'endpoints' => array(),
 
-        'namespaces' => array(),
+		'namespaces' => array(),
 
 		'include-files' => array(),
 
 		'include-paths' => array(),
 
-        'payment-provider' => array(),
+		'payment-provider' => array(),
 
 		'actions' => array(),
 
@@ -91,34 +103,77 @@ $config_defaults = array(
 		),
 	),
 
-    'adyen' => array(
-        'logging' => array(
-            'root-context' => 'SmashPig-Adyen'
-        ),
+	'adyen' => array(
+		'logging' => array(
+			'root-context' => 'SmashPig-Adyen'
+		),
 
-        'endpoints' => array(
-            'listener' => array(
-                'class' => 'SmashPig\PaymentProviders\Adyen\AdyenListener',
-                'inst-args' => array(),
-            )
-        ),
+		'endpoints' => array(
+			'listener' => array(
+				'class' => 'SmashPig\PaymentProviders\Adyen\AdyenListener',
+				'inst-args' => array(),
+			)
+		),
 
-        'payment-provider' => array(
-            'adyen' => array(
-                'payments-wsdl' => 'https://pal-live.adyen.com/pal/Payment.wsdl',
+		'payment-provider' => array(
+			'adyen' => array(
+				'payments-wsdl' => 'https://pal-live.adyen.com/pal/Payment.wsdl',
 
-                'accounts' => array(
-                    /* 'account-name' => array(
-                        'ws-username' => '',
-                        'ws-passowrd' => '',
-                    )
-                    */
-                ),
-            ),
-        ),
+				'accounts' => array(
+					/**
+					 * For each Adyen merchant account, add an entry like the
+					 * following with the merchant account name as the key.
+					 * The ws- credentials should be a user authorized to make
+					 * API calls, and the report- credentials should be a user
+					 * authorized to download reports. Reports will be
+					 * downloaded to the location specified in report-location.
+					 *
+					 * At least one account and all subkeys are required.
+					 *
+					 * 'example-account-name' => array(
+					 *   'ws-username' => '',
+					 *   'ws-password' => '',
+					 *   'report-username' => '',
+					 *   'report-password' => '',
+					 *   'report-location' => '/tmp',
+					 * )
+					 **/
+				),
+			),
+		),
+
+		'fraud-filters' => array(
+			'risk-threshold' => 75,
+			/**
+			 * Authorization notifications include AVS and CVV result codes.
+			 * The following maps set a risk score for each result code, which
+			 * we combine with any risk score computed on the payment site to
+			 * decide whether to capture the payment or leave it for review.
+			 * https://docs.adyen.com/manuals/api-manual/payment-responses/additionaldata-payment-responses
+			 */
+			'avs-map' => array(
+				'0' => 100,
+				'1' => 75,
+				'2' => 100,
+				'3' => 50,
+				'4' => 50,
+				'5' => 50,
+				'6' => 75,
+				'7' => 0,
+			),
+			'cvv-map' => array(
+				'0' => 100,
+				'1' => 0,
+				'2' => 100,
+				'3' => 50,
+				'4' => 100,
+				'5' => 50,
+				'6' => 50,
+			),
+		),
 
 		'actions' => array( ),
-    ),
+	),
 
 	'amazon' => array(
 		'actions' => array(

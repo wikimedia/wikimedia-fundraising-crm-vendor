@@ -1,5 +1,6 @@
 <?php namespace SmashPig\Core\Logging;
 
+use SmashPig\Core\DataStores\DataSerializationException;
 use SmashPig\Core\DataStores\JsonSerializableObject;
 
 class LogEvent {
@@ -48,8 +49,12 @@ class LogEvent {
 		$this->exception = $exception;
 
 		if ( !is_null( $data ) ) {
+			$jdata = false;
 			if ( $data instanceof JsonSerializableObject ) {
-				$jdata = $data->toJson();
+				try {
+					$jdata = $data->toJson();
+				}
+				catch( DataSerializationException $ex ) {}
 			} else {
 				$jdata = json_encode( $data );
 			}

@@ -6,6 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    $vendorDir . '/phpseclib/phpseclib/phpseclib/Crypt/Random.php',
-    $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
+    '3919eeb97e98d4648304477f8ef734ba' => $vendorDir . '/phpseclib/phpseclib/phpseclib/Crypt/Random.php',
+    'bf34263f834e2781b79cae4d55a1d350' => $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
 );

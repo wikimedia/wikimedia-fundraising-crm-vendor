@@ -4,6 +4,7 @@ require( 'MaintenanceBase.php' );
 
 use SmashPig\Core\Logging\Logger;
 use SmashPig\Core\DataStores\StompDataStore;
+use SmashPig\Core\SmashPigException;
 
 $maintClass = '\SmashPig\Maintenance\StompJobRunner';
 
@@ -15,10 +16,12 @@ $maintClass = '\SmashPig\Maintenance\StompJobRunner';
 class StompJobRunner extends MaintenanceBase {
 
 	protected $datastore = null;
+	protected $damagedDatastore = null;
 
 	public function __construct() {
 		parent::__construct();
 		$this->addOption( 'queue', 'queue name to consume from', 'jobs' );
+		$this->addOption( 'damaged-queue', 'name of queue to hold failed job messages', 'jobs-damaged' );
 		$this->addOption( 'time-limit', 'Try to keep execution under <n> seconds', 60, 't' );
 		$this->addOption( 'max-messages', 'At most consume <n> messages', 10, 'm' );
 	}
@@ -28,6 +31,7 @@ class StompJobRunner extends MaintenanceBase {
 	 */
 	public function execute() {
 		$this->datastore = new StompDataStore( $this->getOption( 'queue' ) );
+		$this->damagedDatastore = new StompDataStore( $this->getOption( 'damaged-queue' ) );
 
 		$startTime = time();
 		$messageCount = 0;
@@ -41,20 +45,30 @@ class StompJobRunner extends MaintenanceBase {
 				break;
 			}
 
+			$success = false;
+
 			if ( $jobObj instanceof \SmashPig\Core\Jobs\RunnableJob ) {
-				if ( $jobObj->execute() ) {
-					$successCount += 1;
-					$this->datastore->queueAckObject();
-				} else {
-					Logger::info( "Job tells us that it did not successfully execute. Re-queueing for later.", $jobObj );
-					$this->datastore->queueIgnoreObject();
+				try {
+					if ( $jobObj->execute() ) {
+						$success = true;
+					} else {
+						Logger::info( "Job tells us that it did not successfully execute. Sending to damaged message queue." );
+					}
+				} catch ( SmashPigException $ex ) {
+					Logger::error( "Job threw exception. Sending to damaged message queue.", null, $ex );
 				}
 			} else {
-				$this->datastore->queueIgnoreObject();
 				Logger::warning(
-					get_class( $jobObj ) . " is not an instance of RunnableJob. Could not execute and re-queueing."
+					get_class( $jobObj ) . " is not an instance of RunnableJob. Could not execute and sending to damaged message queue."
 				);
 			}
+			if ( $success ) {
+				$successCount += 1;
+			} else {
+				$this->damagedDatastore->addObject( $jobObj );
+			}
+
+			$this->datastore->queueAckObject();
 
 		} while (
 			( ( time() - $startTime ) < $this->getOption( 'time-limit' ) ) &&

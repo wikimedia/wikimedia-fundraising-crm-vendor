@@ -4,11 +4,17 @@
     bootstrap="Tests/bootstrap-phpunit.php">
 
     <testsuites>
+      <testsuite name="Adyen tests">
+        <directory>PaymentProviders/Adyen/Tests/phpunit</directory>
+      </testsuite>
       <testsuite name="Amazon tests">
         <directory>PaymentProviders/Amazon/Tests/phpunit</directory>
       </testsuite>
       <testsuite name="AstroPay tests">
         <directory>PaymentProviders/AstroPay/Tests/phpunit</directory>
+      </testsuite>
+      <testsuite name="Worldpay tests">
+        <directory>PaymentProviders/Worldpay/Tests/phpunit</directory>
       </testsuite>
     </testsuites>
 </phpunit>
