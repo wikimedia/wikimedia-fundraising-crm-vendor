@@ -21,6 +21,7 @@ class DownloadReportJob extends RunnableJob {
 	protected $reportUrl;
 
 	protected $downloadLoc;
+	protected $propertiesExcludedFromExport = array( 'logger' );
 
 	public static function factory( $account, $url ) {
 		$obj = new DownloadReportJob();
@@ -80,5 +81,6 @@ class DownloadReportJob extends RunnableJob {
 			$this->logger->error( "Report downloaded(?), but with incorrect HTTP code: {$httpCode}" );
 			throw new SmashPigException( "Could not download report." );
 		}
+		return true;
 	}
 }

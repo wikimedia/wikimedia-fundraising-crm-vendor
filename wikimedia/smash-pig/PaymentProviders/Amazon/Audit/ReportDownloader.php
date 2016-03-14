@@ -55,7 +55,7 @@ class ReportDownloader {
 		$this->ensureAndScanFolder( $this->downloadPath );
 
 		$this->reportsClient =
-			Context::get()->getConfiguration()->obj( 'reports-client', true );
+			Context::get()->getConfiguration()->object( 'reports-client', true );
 
 		Logger::info( 'Getting report list' );
 		$startDate = new DateTime( "-{$this->days} days", new DateTimeZone( 'UTC' ) );
@@ -84,7 +84,7 @@ class ReportDownloader {
 			$reportInfo['ReportType']
 		);
 		if ( array_search( $id, $this->downloadedIds ) === false ) {
-			Logger::debug( "Downloading report with id: $id" );
+			Logger::debug( "Downloading report dated {$reportInfo['AvailableDate']} with id: $id" );
 			$report = $this->reportsClient->getReport( array(
 				'report_id' => $id,
 			) );
