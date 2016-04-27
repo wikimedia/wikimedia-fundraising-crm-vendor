@@ -7,10 +7,10 @@ use SmashPig\Core\Logging\Logger;
 
 class WpgReconciliationFile {
 
-	const filenamePattern = '/WPG_AUDIT/';
+	const FILENAME_PATTERN = '/WPG_AUDIT/';
 
 	protected $recordTypes;
-	protected $fileData = array( );
+	protected $fileData = array();
 
 	function __construct() {
 		$this->columnHeaders = array(
@@ -27,7 +27,7 @@ class WpgReconciliationFile {
 
 	static function isMine( $path ) {
 		$filename = basename( $path );
-		return preg_match( self::filenamePattern, $filename );
+		return preg_match( self::FILENAME_PATTERN, $filename );
 	}
 
 	function parse( $path ) {
@@ -105,13 +105,21 @@ class WpgReconciliationFile {
 			$msg['gross_currency'] = $record['CurrencyCode'];
 			$msg['gateway_parent_id'] = $record['OrderCode'];
 			$msg['gateway_refund_id'] = $record['OrderCode'];
+
 			$msg['type'] = 'refund';
+			if ( $record['Status'] == 'CHARGED_BACK' ) {
+				$msg['type'] = 'chargeback';
+			} elseif ( $record['Status'] == 'CANCELLED' ) {
+				$msg['type'] = 'cancel';
+			}
+
 			return $msg;
 		}
 
 		$msg['gateway_txn_id'] = $record['OrderCode'];
 		$msg['currency'] = $record['CurrencyCode'];
-		$msg['payment_method'] = 'cc'; //this one is okay, because WP only does cc at this point. Maybe forever?
+		// this one is okay, because WP only does cc at this point. Maybe forever?
+		$msg['payment_method'] = 'cc';
 		$msg['payment_submethod'] = $this->lookupCardType( $record['PaymentMethod'] );
 
 		return $msg;
@@ -133,4 +141,5 @@ class WpgReconciliationFile {
 	}
 }
 
-class JunkRowException extends Exception {}
+class JunkRowException extends Exception {
+}

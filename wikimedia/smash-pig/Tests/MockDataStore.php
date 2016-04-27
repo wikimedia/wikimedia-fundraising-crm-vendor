@@ -1,4 +1,6 @@
 <?php
+namespace SmashPig\Tests;
+
 use SmashPig\Core\DataStores\DataStoreException;
 use SmashPig\Core\DataStores\DataStoreTransactionException;
 use SmashPig\Core\DataStores\KeyedOpaqueDataStore;
@@ -16,7 +18,8 @@ class MockDataStore extends KeyedOpaqueDataStore {
 
 	protected $currentQueue = null;
 
-	public function __construct() {}
+	public function __construct() {
+	}
 
 	/**
 	 * Adds an object to the persistent data store.

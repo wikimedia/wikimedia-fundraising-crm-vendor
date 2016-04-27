@@ -71,9 +71,9 @@ class Configuration {
 			// Attempt to load the configuration files from disk
 			global $config_defaults, $config;
 
-			require( $defaultFile );
+			require ( $defaultFile );
 			if ( $overrideFile && file_exists( $overrideFile ) ) {
-				include( $overrideFile );
+				include ( $overrideFile );
 			}
 
 			// Now that we have the files we must merge four things in the following order:
@@ -123,12 +123,16 @@ class Configuration {
 		$cacheObj = apc_fetch( "smashpig-settings-{$view}-time", $success );
 
 		if ( $success ) {
-			$defaultCacheTime = $cacheObj[ 'default-time' ];
-			$overrideCacheTime = $cacheObj[ 'override-time' ];
+			$defaultCacheTime = $cacheObj['default-time'];
+			$overrideCacheTime = $cacheObj['override-time'];
+			$cacheDefaultPath = $cacheObj['default-path'];
+			$cacheOverridePath = $cacheObj['override-path'];
 
-			if ( ( $defaultFileTime == $defaultCacheTime ) && ( $overrideFileTime == $overrideCacheTime ) ) {
+			if ( ( $defaultFileTime == $defaultCacheTime ) && ( $overrideFileTime == $overrideCacheTime )
+				&& ( $cacheDefaultPath == $defaultFile ) && ( $cacheOverridePath == $overrideFile )
+			) {
 				// The cached values are valid
-				$this->options = $cacheObj[ 'values' ];
+				$this->options = $cacheObj['values'];
 				return true;
 			}
 		}
@@ -152,6 +156,8 @@ class Configuration {
 			array(
 				 'default-time'  => $defaultFileTime,
 				 'override-time' => $overrideFileTime,
+				 'default-path'  => $defaultFile,
+				 'override-path' => $overrideFile,
 				 'values'        => $this->options,
 			)
 		);
