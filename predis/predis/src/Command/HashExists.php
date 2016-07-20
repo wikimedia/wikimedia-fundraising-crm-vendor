@@ -13,6 +13,7 @@ namespace Predis\Command;
 
 /**
  * @link http://redis.io/commands/hexists
+ *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
 class HashExists extends Command
@@ -23,13 +24,5 @@ class HashExists extends Command
     public function getId()
     {
         return 'HEXISTS';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function parseResponse($data)
-    {
-        return (bool) $data;
     }
 }

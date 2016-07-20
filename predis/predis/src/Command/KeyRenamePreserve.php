@@ -13,6 +13,7 @@ namespace Predis\Command;
 
 /**
  * @link http://redis.io/commands/renamenx
+ *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
 class KeyRenamePreserve extends KeyRename
@@ -23,13 +24,5 @@ class KeyRenamePreserve extends KeyRename
     public function getId()
     {
         return 'RENAMENX';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function parseResponse($data)
-    {
-        return (bool) $data;
     }
 }

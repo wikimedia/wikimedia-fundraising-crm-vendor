@@ -11,9 +11,8 @@
 
 namespace Predis\Connection;
 
-use InvalidArgumentException;
-use Predis\NotSupportedException;
 use Predis\Command\CommandInterface;
+use Predis\NotSupportedException;
 use Predis\Protocol\ProtocolException;
 use Predis\Response\Error as ErrorResponse;
 use Predis\Response\Status as StatusResponse;
@@ -34,13 +33,14 @@ use Predis\Response\Status as StatusResponse;
  *  - scheme: must be 'http'.
  *  - host: hostname or IP address of the server.
  *  - port: TCP port of the server.
- *  - timeout: timeout to perform the connection.
+ *  - timeout: timeout to perform the connection (default is 5 seconds).
  *  - user: username for authentication.
  *  - pass: password for authentication.
  *
  * @link http://webd.is
  * @link http://github.com/nicolasff/webdis
  * @link http://github.com/seppo0010/phpiredis
+ *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
 class WebdisConnection implements NodeConnectionInterface
@@ -59,7 +59,7 @@ class WebdisConnection implements NodeConnectionInterface
         $this->assertExtensions();
 
         if ($parameters->scheme !== 'http') {
-            throw new InvalidArgumentException("Invalid scheme: '{$parameters->scheme}'.");
+            throw new \InvalidArgumentException("Invalid scheme: '{$parameters->scheme}'.");
         }
 
         $this->parameters = $parameters;
@@ -117,11 +117,16 @@ class WebdisConnection implements NodeConnectionInterface
     private function createCurl()
     {
         $parameters = $this->getParameters();
+        $timeout = (isset($parameters->timeout) ? (float) $parameters->timeout : 5.0) * 1000;
+
+        if (filter_var($host = $parameters->host, FILTER_VALIDATE_IP)) {
+            $host = "[$host]";
+        }
 
         $options = array(
             CURLOPT_FAILONERROR => true,
-            CURLOPT_CONNECTTIMEOUT_MS => $parameters->timeout * 1000,
-            CURLOPT_URL => "{$parameters->scheme}://{$parameters->host}:{$parameters->port}",
+            CURLOPT_CONNECTTIMEOUT_MS => $timeout,
+            CURLOPT_URL => "$parameters->scheme://$host:$parameters->port",
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_POST => true,
             CURLOPT_WRITEFUNCTION => array($this, 'feedReader'),
@@ -158,9 +163,15 @@ class WebdisConnection implements NodeConnectionInterface
      */
     protected function getStatusHandler()
     {
-        return function ($payload) {
-            return StatusResponse::get($payload);
-        };
+        static $statusHandler;
+
+        if (!$statusHandler) {
+            $statusHandler = function ($payload) {
+                return StatusResponse::get($payload);
+            };
+        }
+
+        return $statusHandler;
     }
 
     /**
@@ -170,9 +181,15 @@ class WebdisConnection implements NodeConnectionInterface
      */
     protected function getErrorHandler()
     {
-        return function ($payload) {
-            return new ErrorResponse($payload);
-        };
+        static $errorHandler;
+
+        if (!$errorHandler) {
+            $errorHandler = function ($errorMessage) {
+                return new ErrorResponse($errorMessage);
+            };
+        }
+
+        return $errorHandler;
     }
 
     /**
@@ -219,9 +236,9 @@ class WebdisConnection implements NodeConnectionInterface
      *
      * @param CommandInterface $command Command instance.
      *
-     * @return string
-     *
      * @throws NotSupportedException
+     *
+     * @return string
      */
     protected function getCommandId(CommandInterface $command)
     {

@@ -531,58 +531,6 @@
         ]
     },
     {
-        "name": "predis/predis",
-        "version": "v1.0.1",
-        "version_normalized": "1.0.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/nrk/predis.git",
-            "reference": "7a170b3d8123c556597b4fbdb88631f99de180c2"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/nrk/predis/zipball/7a170b3d8123c556597b4fbdb88631f99de180c2",
-            "reference": "7a170b3d8123c556597b4fbdb88631f99de180c2",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.3.2"
-        },
-        "require-dev": {
-            "phpunit/phpunit": "~4.0"
-        },
-        "suggest": {
-            "ext-curl": "Allows access to Webdis when paired with phpiredis",
-            "ext-phpiredis": "Allows faster serialization and deserialization of the Redis protocol"
-        },
-        "time": "2015-01-02 12:51:34",
-        "type": "library",
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Predis\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Daniele Alessandri",
-                "email": "suppakilla@gmail.com",
-                "homepage": "http://clorophilla.net"
-            }
-        ],
-        "description": "Flexible and feature-complete PHP client library for Redis",
-        "homepage": "http://github.com/nrk/predis",
-        "keywords": [
-            "nosql",
-            "predis",
-            "redis"
-        ]
-    },
-    {
         "name": "symfony/event-dispatcher",
         "version": "v2.3.30",
         "version_normalized": "2.3.30.0",
@@ -835,23 +783,133 @@
         "description": "Wikimedia Foundation payment processing library"
     },
     {
+        "name": "predis/predis",
+        "version": "v1.1.1",
+        "version_normalized": "1.1.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/nrk/predis.git",
+            "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/nrk/predis/zipball/f0210e38881631afeafb56ab43405a92cafd9fd1",
+            "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.9"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "~4.8"
+        },
+        "suggest": {
+            "ext-curl": "Allows access to Webdis when paired with phpiredis",
+            "ext-phpiredis": "Allows faster serialization and deserialization of the Redis protocol"
+        },
+        "time": "2016-06-16 16:22:20",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Predis\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Daniele Alessandri",
+                "email": "suppakilla@gmail.com",
+                "homepage": "http://clorophilla.net"
+            }
+        ],
+        "description": "Flexible and feature-complete Redis client for PHP and HHVM",
+        "homepage": "http://github.com/nrk/predis",
+        "keywords": [
+            "nosql",
+            "predis",
+            "redis"
+        ]
+    },
+    {
+        "name": "symfony/yaml",
+        "version": "v2.8.8",
+        "version_normalized": "2.8.8.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/yaml.git",
+            "reference": "dba4bb5846798cd12f32e2d8f3f35d77045773c8"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/yaml/zipball/dba4bb5846798cd12f32e2d8f3f35d77045773c8",
+            "reference": "dba4bb5846798cd12f32e2d8f3f35d77045773c8",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.9"
+        },
+        "time": "2016-06-29 05:29:29",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.8-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Symfony\\Component\\Yaml\\": ""
+            },
+            "exclude-from-classmap": [
+                "/Tests/"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony Yaml Component",
+        "homepage": "https://symfony.com"
+    },
+    {
         "name": "wikimedia/smash-pig",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "bc16fd9c319c8ca7e8795883f1e45ba51c0bd9e5"
+            "reference": "743aff6dd9ae168d1d02c7de1e25d9e8af5c5531"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-            "fusesource/stomp-php": "2.*",
-            "php": ">=5.3.3",
-            "phpmailer/phpmailer": "5.2.6",
-            "symfony/event-dispatcher": ">=2.1,<2.4-dev",
-            "symfony/http-foundation": ">=2.1,<2.4-dev"
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "^2.1.1",
+            "php": "^5.3.3",
+            "phpmailer/phpmailer": "^5.2",
+            "predis/predis": "^1.1",
+            "symfony/event-dispatcher": "^2.1",
+            "symfony/http-foundation": "^2.1",
+            "symfony/yaml": "^2.8"
         },
-        "time": "2016-03-11 23:11:37",
+        "require-dev": {
+            "jakub-onderka/php-parallel-lint": "^0.9",
+            "phpunit/phpunit": "^4.8"
+        },
+        "time": "2016-07-20 18:33:16",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -861,7 +919,7 @@
         },
         "notification-url": "https://packagist.org/downloads/",
         "license": [
-            "GPLv2"
+            "GPL-2.0"
         ],
         "authors": [
             {

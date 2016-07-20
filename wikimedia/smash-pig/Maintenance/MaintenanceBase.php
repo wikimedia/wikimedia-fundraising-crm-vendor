@@ -130,23 +130,17 @@ abstract class MaintenanceBase {
 		$this->adjustMemoryLimit();
 
 		// --- Initialize core services ---
-		$configFile = $this->getOption( 'config-file' );
 		$configNode = $this->getOption( 'config-node' );
-		$config = new Configuration(
-			__DIR__ . '/../config_defaults.php',
-			$configFile,
-			$configNode,
-			true
-		);
+		$configFile = $this->getOption( 'config-file' );
+		$config = new Configuration( $configNode, $configFile );
 		Context::init( $config );
 		Logger::init(
 			$config->val( 'logging/root-context' ) . '-' . end( explode( "\\", $maintClass ) ),
 			$config->val( 'logging/log-level' ),
-			$config
+			$config,
+			Context::get()->getContextId()
 		);
 		Logger::getContext()->addLogStream( new ConsoleLogStream() );
-
-		Logger::enterContext( Context::get()->getContextId() );
 
 		set_error_handler( '\SmashPig\Maintenance\MaintenanceBase::lastChanceErrorHandler' );
 		set_exception_handler( '\SmashPig\Maintenance\MaintenanceBase::lastChanceExceptionHandler' );
@@ -164,11 +158,12 @@ abstract class MaintenanceBase {
 	 */
 	protected function addDefaultParams() {
 		$this->addOption( 'help', 'Display this help message', null, 'h' );
-		$this->addOption( 'config-file', 'Path to additional configuration file', false );
+		# FIXME: default to null, not magic empty string to trigger bad argv code.
+		$this->addOption( 'config-file', 'Path to additional configuration file', '' );
 		$this->addOption( 'config-node',
 			'Specific configuration node to load, if not default', 'default' );
 		$this->addOption( 'memory-limit',
-			'Set a specific memory limit for the script, "max" for no limit', 'default' );
+			'Set a specific memory limit for the script, "max" for no limit', 'max' );
 	}
 
 	/**
@@ -207,7 +202,7 @@ abstract class MaintenanceBase {
 	/**
 	 * Checks to see if a particular option was explicitly provided.
 	 *
-	 * @param $name Name of option
+	 * @param string $name Name of option
 	 *
 	 * @return bool True if explicitly provided
 	 */
@@ -220,7 +215,7 @@ abstract class MaintenanceBase {
 	 * not explicitly set, else will return the default set when the option was created.
 	 *
 	 * @param string $name		Name of the option to retrieve
-	 * @param null 	 $default	Optional default override for the option
+	 * @param mixed	 $default	Optional default override for the option
 	 *
 	 * @return mixed Value of the option or null if no default was provided
 	 */
@@ -236,6 +231,26 @@ abstract class MaintenanceBase {
 		}
 
 		return trim( $value, "\" '\t\n\r\0\x0B" ); // The response from everything unfriendly
+	}
+
+	/**
+	 * Get the value of a given option. Will return the value at configuration node
+	 * $defaultNode if the node exists and the option was not explicitly set, else
+	 * will return the default set when the option was created.
+	 *
+	 * @param string $name			Name of the option to retrieve
+	 * @param string $defaultNode	Config node holding override for the option
+	 *
+	 * @return mixed Value of the option or null if no default was provided
+	 */
+	protected function getOptionOrConfig( $name, $defaultNode ) {
+		$config = Context::get()->getConfiguration();
+		if ( $config->nodeExists( $defaultNode ) ) {
+			$default = $config->val( $defaultNode );
+		} else {
+			$default = null;
+		}
+		return $this->getOption( $name, $default );
 	}
 
 	/**
@@ -345,6 +360,9 @@ abstract class MaintenanceBase {
 				if ( array_key_exists( $option, $this->desiredOptions ) ) {
 					if ( $this->desiredOptions[$option]['default'] !== null ) {
 						// Expecting parameter
+						// FIXME: This is a crappy way to signal flag vs.
+						// freeform parameter.  In fact, just don't reinvent
+						// all the argv parsing and use a standard instead.
 						$param = next( $argv_local );
 						if ( $param === false ) {
 							print ( "\nERROR: $option parameter requires a value\n" );

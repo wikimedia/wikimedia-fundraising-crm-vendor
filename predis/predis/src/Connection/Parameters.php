@@ -11,8 +11,6 @@
 
 namespace Predis\Connection;
 
-use InvalidArgumentException;
-
 /**
  * Container for connection parameters used to initialize connections to Redis.
  *
@@ -28,7 +26,6 @@ class Parameters implements ParametersInterface
         'scheme' => 'tcp',
         'host' => '127.0.0.1',
         'port' => 6379,
-        'timeout' => 5.0,
     );
 
     /**
@@ -69,21 +66,39 @@ class Parameters implements ParametersInterface
     /**
      * Parses an URI string returning an array of connection parameters.
      *
+     * When using the "redis" and "rediss" schemes the URI is parsed according
+     * to the rules defined by the provisional registration documents approved
+     * by IANA. If the URI has a password in its "user-information" part or a
+     * database number in the "path" part these values override the values of
+     * "password" and "database" if they are present in the "query" part.
+     *
+     * @link http://www.iana.org/assignments/uri-schemes/prov/redis
+     * @link http://www.iana.org/assignments/uri-schemes/prov/rediss
+     *
      * @param string $uri URI string.
      *
-     * @return array
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return array
      */
     public static function parse($uri)
     {
-        if (stripos($uri, 'unix') === 0) {
-            // Hack to support URIs for UNIX sockets with minimal effort.
-            $uri = str_ireplace('unix:///', 'unix://localhost/', $uri);
+        if (stripos($uri, 'unix://') === 0) {
+            // parse_url() can parse unix:/path/to/sock so we do not need the
+            // unix:///path/to/sock hack, we will support it anyway until 2.0.
+            $uri = str_ireplace('unix://', 'unix:', $uri);
         }
 
-        if (!($parsed = parse_url($uri)) || !isset($parsed['host'])) {
-            throw new InvalidArgumentException("Invalid parameters URI: $uri");
+        if (!$parsed = parse_url($uri)) {
+            throw new \InvalidArgumentException("Invalid parameters URI: $uri");
+        }
+
+        if (
+            isset($parsed['host'])
+            && false !== strpos($parsed['host'], '[')
+            && false !== strpos($parsed['host'], ']')
+        ) {
+            $parsed['host'] = substr($parsed['host'], 1, -1);
         }
 
         if (isset($parsed['query'])) {
@@ -91,6 +106,23 @@ class Parameters implements ParametersInterface
             unset($parsed['query']);
 
             $parsed = array_merge($parsed, $queryarray);
+        }
+
+        if (stripos($uri, 'redis') === 0) {
+            if (isset($parsed['pass'])) {
+                $parsed['password'] = $parsed['pass'];
+                unset($parsed['pass']);
+            }
+
+            if (isset($parsed['path']) && preg_match('/^\/(\d+)(\/.*)?/', $parsed['path'], $path)) {
+                $parsed['database'] = $path[1];
+
+                if (isset($path[2])) {
+                    $parsed['path'] = $path[2];
+                } else {
+                    unset($parsed['path']);
+                }
+            }
         }
 
         return $parsed;

@@ -16,14 +16,14 @@ namespace Predis\Profile;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class RedisUnstable extends RedisVersion300
+class RedisUnstable extends RedisVersion320
 {
     /**
      * {@inheritdoc}
      */
     public function getVersion()
     {
-        return '3.0';
+        return '3.2';
     }
 
     /**
@@ -31,6 +31,8 @@ class RedisUnstable extends RedisVersion300
      */
     public function getSupportedCommands()
     {
-        return array_merge(parent::getSupportedCommands(), array());
+        return array_merge(parent::getSupportedCommands(), array(
+            // EMPTY
+        ));
     }
 }

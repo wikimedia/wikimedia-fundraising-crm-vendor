@@ -6,6 +6,7 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Symfony\\Component\\Yaml\\' => array($vendorDir . '/symfony/yaml'),
     'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
     'Predis\\' => array($vendorDir . '/predis/predis/src'),
     'PayWithAmazon\\' => array($vendorDir . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon'),

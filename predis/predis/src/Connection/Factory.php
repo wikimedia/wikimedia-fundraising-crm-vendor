@@ -11,9 +11,6 @@
 
 namespace Predis\Connection;
 
-use InvalidArgumentException;
-use UnexpectedValueException;
-use ReflectionClass;
 use Predis\Command\RawCommand;
 
 /**
@@ -23,9 +20,14 @@ use Predis\Command\RawCommand;
  */
 class Factory implements FactoryInterface
 {
+    private $defaults = array();
+
     protected $schemes = array(
-        'tcp'  => 'Predis\Connection\StreamConnection',
+        'tcp' => 'Predis\Connection\StreamConnection',
         'unix' => 'Predis\Connection\StreamConnection',
+        'tls' => 'Predis\Connection\StreamConnection',
+        'redis' => 'Predis\Connection\StreamConnection',
+        'rediss' => 'Predis\Connection\StreamConnection',
         'http' => 'Predis\Connection\WebdisConnection',
     );
 
@@ -36,9 +38,9 @@ class Factory implements FactoryInterface
      *
      * @param mixed $initializer FQN of a connection class or a callable for lazy initialization.
      *
-     * @return mixed
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return mixed
      */
     protected function checkInitializer($initializer)
     {
@@ -46,10 +48,10 @@ class Factory implements FactoryInterface
             return $initializer;
         }
 
-        $class = new ReflectionClass($initializer);
+        $class = new \ReflectionClass($initializer);
 
         if (!$class->isSubclassOf('Predis\Connection\NodeConnectionInterface')) {
-            throw new InvalidArgumentException(
+            throw new \InvalidArgumentException(
                 'A connection initializer must be a valid connection class or a callable object.'
             );
         }
@@ -85,7 +87,7 @@ class Factory implements FactoryInterface
         $scheme = $parameters->scheme;
 
         if (!isset($this->schemes[$scheme])) {
-            throw new InvalidArgumentException("Unknown connection scheme: '$scheme'.");
+            throw new \InvalidArgumentException("Unknown connection scheme: '$scheme'.");
         }
 
         $initializer = $this->schemes[$scheme];
@@ -98,8 +100,8 @@ class Factory implements FactoryInterface
         }
 
         if (!$connection instanceof NodeConnectionInterface) {
-            throw new UnexpectedValueException(
-                "Objects returned by connection initializers must implement ".
+            throw new \UnexpectedValueException(
+                'Objects returned by connection initializers must implement '.
                 "'Predis\Connection\NodeConnectionInterface'."
             );
         }
@@ -118,6 +120,29 @@ class Factory implements FactoryInterface
     }
 
     /**
+     * Assigns a default set of parameters applied to new connections.
+     *
+     * The set of parameters passed to create a new connection have precedence
+     * over the default values set for the connection factory.
+     *
+     * @param array $parameters Set of connection parameters.
+     */
+    public function setDefaultParameters(array $parameters)
+    {
+        $this->defaults = $parameters;
+    }
+
+    /**
+     * Returns the default set of parameters applied to new connections.
+     *
+     * @return array
+     */
+    public function getDefaultParameters()
+    {
+        return $this->defaults;
+    }
+
+    /**
      * Creates a connection parameters instance from the supplied argument.
      *
      * @param mixed $parameters Original connection parameters.
@@ -126,7 +151,17 @@ class Factory implements FactoryInterface
      */
     protected function createParameters($parameters)
     {
-        return Parameters::create($parameters);
+        if (is_string($parameters)) {
+            $parameters = Parameters::parse($parameters);
+        } else {
+            $parameters = $parameters ?: array();
+        }
+
+        if ($this->defaults) {
+            $parameters += $this->defaults;
+        }
+
+        return new Parameters($parameters);
     }
 
     /**

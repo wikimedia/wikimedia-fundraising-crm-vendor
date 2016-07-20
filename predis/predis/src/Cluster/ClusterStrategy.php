@@ -11,7 +11,6 @@
 
 namespace Predis\Cluster;
 
-use InvalidArgumentException;
 use Predis\Command\CommandInterface;
 use Predis\Command\ScriptCommand;
 
@@ -44,125 +43,136 @@ abstract class ClusterStrategy implements StrategyInterface
 
         return array(
             /* commands operating on the key space */
-            'EXISTS'                => $getKeyFromFirstArgument,
-            'DEL'                   => $getKeyFromAllArguments,
-            'TYPE'                  => $getKeyFromFirstArgument,
-            'EXPIRE'                => $getKeyFromFirstArgument,
-            'EXPIREAT'              => $getKeyFromFirstArgument,
-            'PERSIST'               => $getKeyFromFirstArgument,
-            'PEXPIRE'               => $getKeyFromFirstArgument,
-            'PEXPIREAT'             => $getKeyFromFirstArgument,
-            'TTL'                   => $getKeyFromFirstArgument,
-            'PTTL'                  => $getKeyFromFirstArgument,
-            'SORT'                  => $getKeyFromFirstArgument, // TODO
-            'DUMP'                  => $getKeyFromFirstArgument,
-            'RESTORE'               => $getKeyFromFirstArgument,
+            'EXISTS' => $getKeyFromAllArguments,
+            'DEL' => $getKeyFromAllArguments,
+            'TYPE' => $getKeyFromFirstArgument,
+            'EXPIRE' => $getKeyFromFirstArgument,
+            'EXPIREAT' => $getKeyFromFirstArgument,
+            'PERSIST' => $getKeyFromFirstArgument,
+            'PEXPIRE' => $getKeyFromFirstArgument,
+            'PEXPIREAT' => $getKeyFromFirstArgument,
+            'TTL' => $getKeyFromFirstArgument,
+            'PTTL' => $getKeyFromFirstArgument,
+            'SORT' => array($this, 'getKeyFromSortCommand'),
+            'DUMP' => $getKeyFromFirstArgument,
+            'RESTORE' => $getKeyFromFirstArgument,
 
             /* commands operating on string values */
-            'APPEND'                => $getKeyFromFirstArgument,
-            'DECR'                  => $getKeyFromFirstArgument,
-            'DECRBY'                => $getKeyFromFirstArgument,
-            'GET'                   => $getKeyFromFirstArgument,
-            'GETBIT'                => $getKeyFromFirstArgument,
-            'MGET'                  => $getKeyFromAllArguments,
-            'SET'                   => $getKeyFromFirstArgument,
-            'GETRANGE'              => $getKeyFromFirstArgument,
-            'GETSET'                => $getKeyFromFirstArgument,
-            'INCR'                  => $getKeyFromFirstArgument,
-            'INCRBY'                => $getKeyFromFirstArgument,
-            'INCRBYFLOAT'           => $getKeyFromFirstArgument,
-            'SETBIT'                => $getKeyFromFirstArgument,
-            'SETEX'                 => $getKeyFromFirstArgument,
-            'MSET'                  => array($this, 'getKeyFromInterleavedArguments'),
-            'MSETNX'                => array($this, 'getKeyFromInterleavedArguments'),
-            'SETNX'                 => $getKeyFromFirstArgument,
-            'SETRANGE'              => $getKeyFromFirstArgument,
-            'STRLEN'                => $getKeyFromFirstArgument,
-            'SUBSTR'                => $getKeyFromFirstArgument,
-            'BITOP'                 => array($this, 'getKeyFromBitOp'),
-            'BITCOUNT'              => $getKeyFromFirstArgument,
+            'APPEND' => $getKeyFromFirstArgument,
+            'DECR' => $getKeyFromFirstArgument,
+            'DECRBY' => $getKeyFromFirstArgument,
+            'GET' => $getKeyFromFirstArgument,
+            'GETBIT' => $getKeyFromFirstArgument,
+            'MGET' => $getKeyFromAllArguments,
+            'SET' => $getKeyFromFirstArgument,
+            'GETRANGE' => $getKeyFromFirstArgument,
+            'GETSET' => $getKeyFromFirstArgument,
+            'INCR' => $getKeyFromFirstArgument,
+            'INCRBY' => $getKeyFromFirstArgument,
+            'INCRBYFLOAT' => $getKeyFromFirstArgument,
+            'SETBIT' => $getKeyFromFirstArgument,
+            'SETEX' => $getKeyFromFirstArgument,
+            'MSET' => array($this, 'getKeyFromInterleavedArguments'),
+            'MSETNX' => array($this, 'getKeyFromInterleavedArguments'),
+            'SETNX' => $getKeyFromFirstArgument,
+            'SETRANGE' => $getKeyFromFirstArgument,
+            'STRLEN' => $getKeyFromFirstArgument,
+            'SUBSTR' => $getKeyFromFirstArgument,
+            'BITOP' => array($this, 'getKeyFromBitOp'),
+            'BITCOUNT' => $getKeyFromFirstArgument,
+            'BITFIELD' => $getKeyFromFirstArgument,
 
             /* commands operating on lists */
-            'LINSERT'               => $getKeyFromFirstArgument,
-            'LINDEX'                => $getKeyFromFirstArgument,
-            'LLEN'                  => $getKeyFromFirstArgument,
-            'LPOP'                  => $getKeyFromFirstArgument,
-            'RPOP'                  => $getKeyFromFirstArgument,
-            'RPOPLPUSH'             => $getKeyFromAllArguments,
-            'BLPOP'                 => array($this, 'getKeyFromBlockingListCommands'),
-            'BRPOP'                 => array($this, 'getKeyFromBlockingListCommands'),
-            'BRPOPLPUSH'            => array($this, 'getKeyFromBlockingListCommands'),
-            'LPUSH'                 => $getKeyFromFirstArgument,
-            'LPUSHX'                => $getKeyFromFirstArgument,
-            'RPUSH'                 => $getKeyFromFirstArgument,
-            'RPUSHX'                => $getKeyFromFirstArgument,
-            'LRANGE'                => $getKeyFromFirstArgument,
-            'LREM'                  => $getKeyFromFirstArgument,
-            'LSET'                  => $getKeyFromFirstArgument,
-            'LTRIM'                 => $getKeyFromFirstArgument,
+            'LINSERT' => $getKeyFromFirstArgument,
+            'LINDEX' => $getKeyFromFirstArgument,
+            'LLEN' => $getKeyFromFirstArgument,
+            'LPOP' => $getKeyFromFirstArgument,
+            'RPOP' => $getKeyFromFirstArgument,
+            'RPOPLPUSH' => $getKeyFromAllArguments,
+            'BLPOP' => array($this, 'getKeyFromBlockingListCommands'),
+            'BRPOP' => array($this, 'getKeyFromBlockingListCommands'),
+            'BRPOPLPUSH' => array($this, 'getKeyFromBlockingListCommands'),
+            'LPUSH' => $getKeyFromFirstArgument,
+            'LPUSHX' => $getKeyFromFirstArgument,
+            'RPUSH' => $getKeyFromFirstArgument,
+            'RPUSHX' => $getKeyFromFirstArgument,
+            'LRANGE' => $getKeyFromFirstArgument,
+            'LREM' => $getKeyFromFirstArgument,
+            'LSET' => $getKeyFromFirstArgument,
+            'LTRIM' => $getKeyFromFirstArgument,
 
             /* commands operating on sets */
-            'SADD'                  => $getKeyFromFirstArgument,
-            'SCARD'                 => $getKeyFromFirstArgument,
-            'SDIFF'                 => $getKeyFromAllArguments,
-            'SDIFFSTORE'            => $getKeyFromAllArguments,
-            'SINTER'                => $getKeyFromAllArguments,
-            'SINTERSTORE'           => $getKeyFromAllArguments,
-            'SUNION'                => $getKeyFromAllArguments,
-            'SUNIONSTORE'           => $getKeyFromAllArguments,
-            'SISMEMBER'             => $getKeyFromFirstArgument,
-            'SMEMBERS'              => $getKeyFromFirstArgument,
-            'SSCAN'                 => $getKeyFromFirstArgument,
-            'SPOP'                  => $getKeyFromFirstArgument,
-            'SRANDMEMBER'           => $getKeyFromFirstArgument,
-            'SREM'                  => $getKeyFromFirstArgument,
+            'SADD' => $getKeyFromFirstArgument,
+            'SCARD' => $getKeyFromFirstArgument,
+            'SDIFF' => $getKeyFromAllArguments,
+            'SDIFFSTORE' => $getKeyFromAllArguments,
+            'SINTER' => $getKeyFromAllArguments,
+            'SINTERSTORE' => $getKeyFromAllArguments,
+            'SUNION' => $getKeyFromAllArguments,
+            'SUNIONSTORE' => $getKeyFromAllArguments,
+            'SISMEMBER' => $getKeyFromFirstArgument,
+            'SMEMBERS' => $getKeyFromFirstArgument,
+            'SSCAN' => $getKeyFromFirstArgument,
+            'SPOP' => $getKeyFromFirstArgument,
+            'SRANDMEMBER' => $getKeyFromFirstArgument,
+            'SREM' => $getKeyFromFirstArgument,
 
             /* commands operating on sorted sets */
-            'ZADD'                  => $getKeyFromFirstArgument,
-            'ZCARD'                 => $getKeyFromFirstArgument,
-            'ZCOUNT'                => $getKeyFromFirstArgument,
-            'ZINCRBY'               => $getKeyFromFirstArgument,
-            'ZINTERSTORE'           => array($this, 'getKeyFromZsetAggregationCommands'),
-            'ZRANGE'                => $getKeyFromFirstArgument,
-            'ZRANGEBYSCORE'         => $getKeyFromFirstArgument,
-            'ZRANK'                 => $getKeyFromFirstArgument,
-            'ZREM'                  => $getKeyFromFirstArgument,
-            'ZREMRANGEBYRANK'       => $getKeyFromFirstArgument,
-            'ZREMRANGEBYSCORE'      => $getKeyFromFirstArgument,
-            'ZREVRANGE'             => $getKeyFromFirstArgument,
-            'ZREVRANGEBYSCORE'      => $getKeyFromFirstArgument,
-            'ZREVRANK'              => $getKeyFromFirstArgument,
-            'ZSCORE'                => $getKeyFromFirstArgument,
-            'ZUNIONSTORE'           => array($this, 'getKeyFromZsetAggregationCommands'),
-            'ZSCAN'                 => $getKeyFromFirstArgument,
-            'ZLEXCOUNT'             => $getKeyFromFirstArgument,
-            'ZRANGEBYLEX'           => $getKeyFromFirstArgument,
-            'ZREMRANGEBYLEX'        => $getKeyFromFirstArgument,
+            'ZADD' => $getKeyFromFirstArgument,
+            'ZCARD' => $getKeyFromFirstArgument,
+            'ZCOUNT' => $getKeyFromFirstArgument,
+            'ZINCRBY' => $getKeyFromFirstArgument,
+            'ZINTERSTORE' => array($this, 'getKeyFromZsetAggregationCommands'),
+            'ZRANGE' => $getKeyFromFirstArgument,
+            'ZRANGEBYSCORE' => $getKeyFromFirstArgument,
+            'ZRANK' => $getKeyFromFirstArgument,
+            'ZREM' => $getKeyFromFirstArgument,
+            'ZREMRANGEBYRANK' => $getKeyFromFirstArgument,
+            'ZREMRANGEBYSCORE' => $getKeyFromFirstArgument,
+            'ZREVRANGE' => $getKeyFromFirstArgument,
+            'ZREVRANGEBYSCORE' => $getKeyFromFirstArgument,
+            'ZREVRANK' => $getKeyFromFirstArgument,
+            'ZSCORE' => $getKeyFromFirstArgument,
+            'ZUNIONSTORE' => array($this, 'getKeyFromZsetAggregationCommands'),
+            'ZSCAN' => $getKeyFromFirstArgument,
+            'ZLEXCOUNT' => $getKeyFromFirstArgument,
+            'ZRANGEBYLEX' => $getKeyFromFirstArgument,
+            'ZREMRANGEBYLEX' => $getKeyFromFirstArgument,
+            'ZREVRANGEBYLEX' => $getKeyFromFirstArgument,
 
             /* commands operating on hashes */
-            'HDEL'                  => $getKeyFromFirstArgument,
-            'HEXISTS'               => $getKeyFromFirstArgument,
-            'HGET'                  => $getKeyFromFirstArgument,
-            'HGETALL'               => $getKeyFromFirstArgument,
-            'HMGET'                 => $getKeyFromFirstArgument,
-            'HMSET'                 => $getKeyFromFirstArgument,
-            'HINCRBY'               => $getKeyFromFirstArgument,
-            'HINCRBYFLOAT'          => $getKeyFromFirstArgument,
-            'HKEYS'                 => $getKeyFromFirstArgument,
-            'HLEN'                  => $getKeyFromFirstArgument,
-            'HSET'                  => $getKeyFromFirstArgument,
-            'HSETNX'                => $getKeyFromFirstArgument,
-            'HVALS'                 => $getKeyFromFirstArgument,
-            'HSCAN'                 => $getKeyFromFirstArgument,
+            'HDEL' => $getKeyFromFirstArgument,
+            'HEXISTS' => $getKeyFromFirstArgument,
+            'HGET' => $getKeyFromFirstArgument,
+            'HGETALL' => $getKeyFromFirstArgument,
+            'HMGET' => $getKeyFromFirstArgument,
+            'HMSET' => $getKeyFromFirstArgument,
+            'HINCRBY' => $getKeyFromFirstArgument,
+            'HINCRBYFLOAT' => $getKeyFromFirstArgument,
+            'HKEYS' => $getKeyFromFirstArgument,
+            'HLEN' => $getKeyFromFirstArgument,
+            'HSET' => $getKeyFromFirstArgument,
+            'HSETNX' => $getKeyFromFirstArgument,
+            'HVALS' => $getKeyFromFirstArgument,
+            'HSCAN' => $getKeyFromFirstArgument,
+            'HSTRLEN' => $getKeyFromFirstArgument,
 
             /* commands operating on HyperLogLog */
-            'PFADD'                 => $getKeyFromFirstArgument,
-            'PFCOUNT'               => $getKeyFromAllArguments,
-            'PFMERGE'               => $getKeyFromAllArguments,
+            'PFADD' => $getKeyFromFirstArgument,
+            'PFCOUNT' => $getKeyFromAllArguments,
+            'PFMERGE' => $getKeyFromAllArguments,
 
             /* scripting */
-            'EVAL'                  => array($this, 'getKeyFromScriptingCommands'),
-            'EVALSHA'               => array($this, 'getKeyFromScriptingCommands'),
+            'EVAL' => array($this, 'getKeyFromScriptingCommands'),
+            'EVALSHA' => array($this, 'getKeyFromScriptingCommands'),
+
+            /* commands performing geospatial operations */
+            'GEOADD' => $getKeyFromFirstArgument,
+            'GEOHASH' => $getKeyFromFirstArgument,
+            'GEOPOS' => $getKeyFromFirstArgument,
+            'GEODIST' => $getKeyFromFirstArgument,
+            'GEORADIUS' => array($this, 'getKeyFromGeoradiusCommands'),
+            'GEORADIUSBYMEMBER' => array($this, 'getKeyFromGeoradiusCommands'),
         );
     }
 
@@ -201,8 +211,8 @@ abstract class ClusterStrategy implements StrategyInterface
         }
 
         if (!is_callable($callback)) {
-            throw new InvalidArgumentException(
-                "The argument must be a callable object or NULL."
+            throw new \InvalidArgumentException(
+                'The argument must be a callable object or NULL.'
             );
         }
 
@@ -261,6 +271,35 @@ abstract class ClusterStrategy implements StrategyInterface
     }
 
     /**
+     * Extracts the key from SORT command.
+     *
+     * @param CommandInterface $command Command instance.
+     *
+     * @return string|null
+     */
+    protected function getKeyFromSortCommand(CommandInterface $command)
+    {
+        $arguments = $command->getArguments();
+        $firstKey = $arguments[0];
+
+        if (1 === $argc = count($arguments)) {
+            return $firstKey;
+        }
+
+        $keys = array($firstKey);
+
+        for ($i = 1; $i < $argc; ++$i) {
+            if (strtoupper($arguments[$i]) === 'STORE') {
+                $keys[] = $arguments[++$i];
+            }
+        }
+
+        if ($this->checkSameSlotForKeys($keys)) {
+            return $firstKey;
+        }
+    }
+
+    /**
      * Extracts the key from BLPOP and BRPOP commands.
      *
      * @param CommandInterface $command Command instance.
@@ -290,6 +329,39 @@ abstract class ClusterStrategy implements StrategyInterface
         if ($this->checkSameSlotForKeys(array_slice($arguments, 1, count($arguments)))) {
             return $arguments[1];
         }
+    }
+
+    /**
+     * Extracts the key from GEORADIUS and GEORADIUSBYMEMBER commands.
+     *
+     * @param CommandInterface $command Command instance.
+     *
+     * @return string|null
+     */
+    protected function getKeyFromGeoradiusCommands(CommandInterface $command)
+    {
+        $arguments = $command->getArguments();
+        $argc = count($arguments);
+        $startIndex = $command->getId() === 'GEORADIUS' ? 5 : 4;
+
+        if ($argc > $startIndex) {
+            $keys = array($arguments[0]);
+
+            for ($i = $startIndex; $i < $argc; ++$i) {
+                $argument = strtoupper($arguments[$i]);
+                if ($argument === 'STORE' || $argument === 'STOREDIST') {
+                    $keys[] = $arguments[++$i];
+                }
+            }
+
+            if ($this->checkSameSlotForKeys($keys)) {
+                return $arguments[0];
+            } else {
+                return;
+            }
+        }
+
+        return $arguments[0];
     }
 
     /**
@@ -363,7 +435,7 @@ abstract class ClusterStrategy implements StrategyInterface
 
         $currentSlot = $this->getSlotByKey($keys[0]);
 
-        for ($i = 1; $i < $count; $i++) {
+        for ($i = 1; $i < $count; ++$i) {
             $nextSlot = $this->getSlotByKey($keys[$i]);
 
             if ($currentSlot !== $nextSlot) {

@@ -46,16 +46,14 @@ class RequestHandler {
 		$action = array_shift( $parts );
 
 		// --- Initialize core services ---
-		$configPath = __DIR__ . '/../../';
-		$config = new Configuration(
-			$configPath . 'config_defaults.php',
-			$configPath . 'config.php',
-			$view,
-			true
-		);
-		Logger::init( $config->val( 'logging/root-context' ), $config->val( 'logging/log-level' ), $config );
+		$config = new Configuration( $view );
 		Context::init( $config );
-		Logger::enterContext( Context::get()->getContextId() );
+		Logger::init(
+			$config->val( 'logging/root-context' ),
+			$config->val( 'logging/log-level' ),
+			$config,
+			Context::get()->getContextId()
+		);
 
 		if ( $config->nodeExists( 'disabled' ) && $config->val( 'disabled' ) ) {
 			Logger::debug( '403 will be given for disabled view.', $uri );

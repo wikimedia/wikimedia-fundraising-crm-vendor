@@ -11,15 +11,13 @@
 
 namespace Predis;
 
-use InvalidArgumentException;
-use UnexpectedValueException;
 use Predis\Command\CommandInterface;
 use Predis\Command\RawCommand;
 use Predis\Command\ScriptCommand;
 use Predis\Configuration\Options;
 use Predis\Configuration\OptionsInterface;
-use Predis\Connection\ConnectionInterface;
 use Predis\Connection\AggregateConnectionInterface;
+use Predis\Connection\ConnectionInterface;
 use Predis\Connection\ParametersInterface;
 use Predis\Monitor\Consumer as MonitorConsumer;
 use Predis\Pipeline\Pipeline;
@@ -40,9 +38,9 @@ use Predis\Transaction\MultiExec as MultiExecTransaction;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class Client implements ClientInterface
+class Client implements ClientInterface, \IteratorAggregate
 {
-    const VERSION = '1.0.1';
+    const VERSION = '1.1.1';
 
     protected $connection;
     protected $options;
@@ -66,9 +64,9 @@ class Client implements ClientInterface
      *
      * @param mixed $options Client options.
      *
-     * @return OptionsInterface
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return OptionsInterface
      */
     protected function createOptions($options)
     {
@@ -80,7 +78,7 @@ class Client implements ClientInterface
             return $options;
         }
 
-        throw new InvalidArgumentException("Invalid type for client options.");
+        throw new \InvalidArgumentException('Invalid type for client options.');
     }
 
     /**
@@ -98,9 +96,9 @@ class Client implements ClientInterface
      *
      * @param mixed $parameters Connection parameters or connection instance.
      *
-     * @return ConnectionInterface
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return ConnectionInterface
      */
     protected function createConnection($parameters)
     {
@@ -122,13 +120,18 @@ class Client implements ClientInterface
             if ($options->defined('aggregate')) {
                 $initializer = $this->getConnectionInitializerWrapper($options->aggregate);
                 $connection = $initializer($parameters, $options);
-            } else {
-                if ($options->defined('replication') && $replication = $options->replication) {
-                    $connection = $replication;
-                } else {
-                    $connection = $options->cluster;
-                }
+            } elseif ($options->defined('replication')) {
+                $replication = $options->replication;
 
+                if ($replication instanceof AggregateConnectionInterface) {
+                    $connection = $replication;
+                    $options->connections->aggregate($connection, $parameters);
+                } else {
+                    $initializer = $this->getConnectionInitializerWrapper($replication);
+                    $connection = $initializer($parameters, $options);
+                }
+            } else {
+                $connection = $options->cluster;
                 $options->connections->aggregate($connection, $parameters);
             }
 
@@ -142,7 +145,7 @@ class Client implements ClientInterface
             return $connection;
         }
 
-        throw new InvalidArgumentException('Invalid type for connection parameters.');
+        throw new \InvalidArgumentException('Invalid type for connection parameters.');
     }
 
     /**
@@ -159,7 +162,7 @@ class Client implements ClientInterface
             $connection = call_user_func_array($callable, func_get_args());
 
             if (!$connection instanceof ConnectionInterface) {
-                throw new UnexpectedValueException(
+                throw new \UnexpectedValueException(
                     'The callable connection initializer returned an invalid type.'
                 );
             }
@@ -191,14 +194,14 @@ class Client implements ClientInterface
      *
      * @param string $connectionID Identifier of a connection.
      *
-     * @return Client
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return Client
      */
     public function getClientFor($connectionID)
     {
         if (!$connection = $this->getConnectionById($connectionID)) {
-            throw new InvalidArgumentException("Invalid connection ID: $connectionID.");
+            throw new \InvalidArgumentException("Invalid connection ID: $connectionID.");
         }
 
         return new static($connection, $this->options);
@@ -255,9 +258,9 @@ class Client implements ClientInterface
      *
      * @param string $connectionID Index or alias of the single connection.
      *
-     * @return Connection\NodeConnectionInterface
-     *
      * @throws NotSupportedException
+     *
+     * @return Connection\NodeConnectionInterface
      */
     public function getConnectionById($connectionID)
     {
@@ -275,7 +278,7 @@ class Client implements ClientInterface
      * applying any prefix to keys or throwing exceptions on Redis errors even
      * regardless of client options.
      *
-     * It is possibile to indentify Redis error responses from normal responses
+     * It is possible to identify Redis error responses from normal responses
      * using the second optional argument which is populated by reference.
      *
      * @param array $arguments Command arguments as defined by the command signature.
@@ -344,9 +347,9 @@ class Client implements ClientInterface
      * @param CommandInterface       $command  Redis command that generated the error.
      * @param ErrorResponseInterface $response Instance of the error response.
      *
-     * @return mixed
-     *
      * @throws ServerException
+     *
+     * @return mixed
      */
     protected function onErrorResponse(CommandInterface $command, ErrorResponseInterface $response)
     {
@@ -478,7 +481,7 @@ class Client implements ClientInterface
     }
 
     /**
-     * Creates a new publis/subscribe context and returns it, or starts its loop
+     * Creates a new publish/subscribe context and returns it, or starts its loop
      * inside the optionally provided callable object.
      *
      * @param mixed ... Array of options, a callable for execution, or both.
@@ -521,5 +524,24 @@ class Client implements ClientInterface
     public function monitor()
     {
         return new MonitorConsumer($this);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIterator()
+    {
+        $clients = array();
+        $connection = $this->getConnection();
+
+        if (!$connection instanceof \Traversable) {
+            throw new ClientException('The underlying connection is not traversable');
+        }
+
+        foreach ($connection as $node) {
+            $clients[(string) $node] = new static($node, $this->getOptions());
+        }
+
+        return new \ArrayIterator($clients);
     }
 }

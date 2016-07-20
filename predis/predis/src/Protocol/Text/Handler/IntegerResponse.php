@@ -20,6 +20,7 @@ use Predis\Protocol\ProtocolException;
  * It translates the payload an integer or NULL.
  *
  * @link http://redis.io/topics/protocol
+ *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
 class IntegerResponse implements ResponseHandlerInterface
@@ -30,7 +31,8 @@ class IntegerResponse implements ResponseHandlerInterface
     public function handle(CompositeConnectionInterface $connection, $payload)
     {
         if (is_numeric($payload)) {
-            return (int) $payload;
+            $integer = (int) $payload;
+            return $integer == $payload ? $integer : $payload;
         }
 
         if ($payload !== 'nil') {
@@ -39,6 +41,6 @@ class IntegerResponse implements ResponseHandlerInterface
             ));
         }
 
-        return null;
+        return;
     }
 }

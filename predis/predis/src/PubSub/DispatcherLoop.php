@@ -11,8 +11,6 @@
 
 namespace Predis\PubSub;
 
-use InvalidArgumentException;
-
 /**
  * Method-dispatcher loop built around the client-side abstraction of a Redis
  * PUB / SUB context.
@@ -46,7 +44,7 @@ class DispatcherLoop
     protected function assertCallback($callable)
     {
         if (!is_callable($callable)) {
-            throw new InvalidArgumentException('The given argument must be a callable object.');
+            throw new \InvalidArgumentException('The given argument must be a callable object.');
         }
     }
 
@@ -93,11 +91,11 @@ class DispatcherLoop
      * Binds a callback to a channel.
      *
      * @param string   $channel  Channel name.
-     * @param Callable $callback A callback.
+     * @param callable $callback A callback.
      */
     public function attachCallback($channel, $callback)
     {
-        $callbackName = $this->getPrefixKeys() . $channel;
+        $callbackName = $this->getPrefixKeys().$channel;
 
         $this->assertCallback($callback);
         $this->callbacks[$callbackName] = $callback;
@@ -111,7 +109,7 @@ class DispatcherLoop
      */
     public function detachCallback($channel)
     {
-        $callbackName = $this->getPrefixKeys() . $channel;
+        $callbackName = $this->getPrefixKeys().$channel;
 
         if (isset($this->callbacks[$callbackName])) {
             unset($this->callbacks[$callbackName]);
@@ -155,7 +153,7 @@ class DispatcherLoop
     }
 
     /**
-     * Return the prefix used for keys
+     * Return the prefix used for keys.
      *
      * @return string
      */

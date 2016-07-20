@@ -13,6 +13,7 @@ namespace Predis\Command;
 
 /**
  * @link http://redis.io/commands/msetnx
+ *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
 class StringSetMultiplePreserve extends StringSetMultiple
@@ -23,13 +24,5 @@ class StringSetMultiplePreserve extends StringSetMultiple
     public function getId()
     {
         return 'MSETNX';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function parseResponse($data)
-    {
-        return (bool) $data;
     }
 }

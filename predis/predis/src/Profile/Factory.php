@@ -11,8 +11,6 @@
 
 namespace Predis\Profile;
 
-use InvalidArgumentException;
-use ReflectionClass;
 use Predis\ClientException;
 
 /**
@@ -23,14 +21,15 @@ use Predis\ClientException;
 final class Factory
 {
     private static $profiles = array(
-        '2.0'     => 'Predis\Profile\RedisVersion200',
-        '2.2'     => 'Predis\Profile\RedisVersion220',
-        '2.4'     => 'Predis\Profile\RedisVersion240',
-        '2.6'     => 'Predis\Profile\RedisVersion260',
-        '2.8'     => 'Predis\Profile\RedisVersion280',
-        '3.0'     => 'Predis\Profile\RedisVersion300',
-        'default' => 'Predis\Profile\RedisVersion300',
-        'dev'     => 'Predis\Profile\RedisUnstable',
+        '2.0' => 'Predis\Profile\RedisVersion200',
+        '2.2' => 'Predis\Profile\RedisVersion220',
+        '2.4' => 'Predis\Profile\RedisVersion240',
+        '2.6' => 'Predis\Profile\RedisVersion260',
+        '2.8' => 'Predis\Profile\RedisVersion280',
+        '3.0' => 'Predis\Profile\RedisVersion300',
+        '3.2' => 'Predis\Profile\RedisVersion320',
+        'dev' => 'Predis\Profile\RedisUnstable',
+        'default' => 'Predis\Profile\RedisVersion320',
     );
 
     /**
@@ -71,10 +70,10 @@ final class Factory
      */
     public static function define($alias, $class)
     {
-        $reflection = new ReflectionClass($class);
+        $reflection = new \ReflectionClass($class);
 
         if (!$reflection->isSubclassOf('Predis\Profile\ProfileInterface')) {
-            throw new InvalidArgumentException("The class '$class' is not a valid profile class.");
+            throw new \InvalidArgumentException("The class '$class' is not a valid profile class.");
         }
 
         self::$profiles[$alias] = $class;
@@ -85,9 +84,9 @@ final class Factory
      *
      * @param string $version Profile version or alias.
      *
-     * @return ProfileInterface
-     *
      * @throws ClientException
+     *
+     * @return ProfileInterface
      */
     public static function get($version)
     {
