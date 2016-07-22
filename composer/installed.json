@@ -892,7 +892,7 @@
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "743aff6dd9ae168d1d02c7de1e25d9e8af5c5531"
+            "reference": "0167d3b50665550823bf701af580741e0e08cd4b"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -909,7 +909,7 @@
             "jakub-onderka/php-parallel-lint": "^0.9",
             "phpunit/phpunit": "^4.8"
         },
-        "time": "2016-07-20 18:33:16",
+        "time": "2016-07-22 20:31:15",
         "type": "library",
         "installation-source": "source",
         "autoload": {
