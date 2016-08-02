@@ -4,13 +4,16 @@ adyen:
             class: SmashPig\Tests\MockDataStore
             inst-args: []
 
-        antifraud:
+        antifraud-stomp:
             class: SmashPig\Tests\MockDataStore
             inst-args: []
+
+        pending-db:
+            class: PDO
+            inst-args:
+                - 'sqlite::memory:'
 
     payment-provider:
         adyen:
             api:
                 class: SmashPig\PaymentProviders\Adyen\Tests\MockAdyenPaymentsAPI
-                inst-args:
-                    - Success!
