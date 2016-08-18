@@ -1,5 +1,9 @@
 {
-	"@metadata": [],
-	"astropaygateway": "{{Identical|Make your donation now}}",
+	"@metadata": {
+		"authors": [
+			"Tusca",
+			"Macofe"
+		]
+	},
 	"astropay_gateway-desc": "{{desc}}"
 }

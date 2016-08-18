@@ -6,25 +6,38 @@ class Gateway_Extras_CustomFilters_Functions extends Gateway_Extras {
 	 * Container for an instance of self
 	 * @var Gateway_Extras_CustomFilters_Functions
 	 */
-	static $instance;
+	protected static $instance;
 
 	/**
 	 * Custom filter object holder
 	 * @var Gateway_Extras_CustomFilters
 	 */
-	public $cfo;
+	protected $cfo;
 
-	public function __construct( &$gateway_adapter, &$custom_filter_object ) {
+	protected function __construct(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object
+	) {
+
 		parent::__construct( $gateway_adapter );
-		$this->cfo = & $custom_filter_object;
+		$this->cfo = $custom_filter_object;
 	}
 
 	/**
-	 * @throws UnexpectedValueException
+	 * @param string $filterListGlobal Run filters listed in a DonationInterface
+	 *                                 global variable with name
+	 * @return bool
 	 */
-	public function filter() {
+	protected function filter( $filterListGlobal ) {
+		$functions = $this->gateway_adapter->getGlobal( $filterListGlobal );
 
-		$functions = $this->gateway_adapter->getGlobal( 'CustomFiltersFunctions' );
+		if (
+			!$this->gateway_adapter->getGlobal( 'EnableFunctionsFilter' ) ||
+			!count( $functions )
+		) {
+			return true;
+		}
+
 		foreach ( $functions as $function_name => $risk_score_modifier ) {
 			//run the function specified, if it exists. 
 			if ( method_exists( $this->gateway_adapter, $function_name ) ) {
@@ -47,16 +60,31 @@ class Gateway_Extras_CustomFilters_Functions extends Gateway_Extras {
 		return TRUE;
 	}
 
-	static function onFilter( &$gateway_adapter, &$custom_filter_object ) {
-		if ( !$gateway_adapter->getGlobal( 'EnableFunctionsFilter' ) ||
-			!count( $gateway_adapter->getGlobal( 'CustomFiltersFunctions' ) ) ){
-			return true;
-		}
+	public static function onFilter(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object
+	) {
 		$gateway_adapter->debugarray[] = 'functions onFilter hook!';
-		return self::singleton( $gateway_adapter, $custom_filter_object )->filter();
+		return self::singleton( $gateway_adapter, $custom_filter_object )->filter(
+			'CustomFiltersFunctions'
+		);
 	}
 
-	static function singleton( &$gateway_adapter, &$custom_filter_object ) {
+	public static function onInitialFilter(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object
+	) {
+		$gateway_adapter->debugarray[] = 'functions onInitialFilter hook!';
+		return self::singleton( $gateway_adapter, $custom_filter_object )->filter(
+			'CustomFiltersInitialFunctions'
+		);
+	}
+
+	protected static function singleton(
+		GatewayType $gateway_adapter,
+		$custom_filter_object
+	) {
+
 		if ( !self::$instance || $gateway_adapter->isBatchProcessor() ) {
 			self::$instance = new self( $gateway_adapter, $custom_filter_object );
 		}

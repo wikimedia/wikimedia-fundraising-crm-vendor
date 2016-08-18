@@ -2,10 +2,7 @@
 
 class AdyenGatewayResult extends GatewayPage {
 
-	public function __construct() {
-		$this->adapter = new AdyenAdapter();
-		parent::__construct();
-	}
+	protected $gatewayName = 'adyen';
 
 	protected function handleRequest() {
 		$this->handleResultRequest();

@@ -163,7 +163,7 @@ body.rtl input {
 	/* @noflip */
 	direction: rtl;
 }
-input#emailAdd {
+input#email {
 	/* @noflip */
 	direction: ltr;
 }
@@ -180,6 +180,10 @@ input#emailAdd {
 .thirdwidth:not(:first-child) {
 	margin-left: 2%;
 	width: 31%;
+}
+
+.halfwidth, .thirdwidth {
+	float: left;
 }
 
 .collapsingCity {
@@ -213,6 +217,20 @@ a[href^="https://"], .link-https {
 
 div#content {
  border: none;
+}
+
+/* extra-specific to take precedence */
+html body #donate .errorHighlight {
+    border: 2px solid red !important;
+}
+
+.errorMsg {
+    color: red;
+    display: inherit;
+}
+
+.errorMsgHide {
+    display: none;
 }
 
 /* Respond to small viewport */
@@ -269,6 +287,9 @@ div#content {
         margin:  5px 0;
         padding: 10px 3%;
     }
+    td#donate form input.hidden {
+        display: none;
+    }
 
     .options-h li {
         margin-right: 1em;
@@ -285,7 +306,15 @@ div#content {
 		display: inline-block;
 		width: 100%;
 		float: left;
-	} 
+	}
+
+    ul#cards li.has_sub_text {
+        padding-bottom: 0.6em;
+    }
+
+    ul#cards li.has_sub_text input {
+        margin-bottom: 0.3em !important;
+    }
 
     #cards img {
         height: 30px;

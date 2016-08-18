@@ -1,0 +1,319 @@
+@import url('logo-gloss.css');
+
+/* Everything what needs hidin' */
+#logoheader, .imgB, #displayAmount, #stageheader, #foot, #card\.cclogo, #card\.cardNumberTr + tr {
+	display: none;
+}
+
+html {
+	height: 100%;
+	max-height: 100%;
+	font-size: 13px;
+	font-family: 'PT Sans',Helvetica,Arial,sans-serif;
+}
+
+html[data-shopperlocale^="he"] *, html[data-shopperlocale^="ar"] *,
+html[data-shopperlocale^="fa"] *, html[data-shopperlocale^="ur"] * {
+	direction: rtl;
+	text-align: right;
+}
+
+html[data-shopperlocale^="he"] .fieldDiv,
+html[data-shopperlocale^="ar"] .fieldDiv,
+html[data-shopperlocale^="fa"] .fieldDiv,
+html[data-shopperlocale^="ur"] .fieldDiv {
+	padding-right: 0;
+	padding-left: 20px;
+}
+
+html[data-shopperlocale^="he"] .paySubmit,
+html[data-shopperlocale^="ar"] .paySubmit,
+html[data-shopperlocale^="fa"] .paySubmit,
+html[data-shopperlocale^="ur"] .paySubmit {
+	float:right !important;
+}
+
+/* some inputs must always be ltr */
+input[name="card.cardNumber"], input[name="card.cvcCode"] {
+	direction: ltr;
+	text-align: left;
+}
+
+/* ensure the cvc hint doesn't wrap under the input box */
+input[name="card.cvcCode"] ~ a {
+	display: inline-block;
+}
+
+/* We hide the cardholder name for all but Hebrew speakers */
+html[data-shopperlocale^="he"] #card\.cardNumberTr + tr {
+	display: table-row;
+}
+
+body {
+	color: #333;
+}
+
+/* If this element does not have a height set this wild and crazy
+   script from 2007 will set a bad one that truncates content:
+     https://test.adyen.com/hpp/js/animatedcollapse.js?v=7a9b */
+#pmmdetails-card {
+	height: 400px;
+}
+
+/* Main Elements */
+#container {
+	margin: 0 auto;
+	width: 700px;
+}
+
+#pmcontent {
+	margin-top: 10px;
+}
+
+.popupMsg {
+	display: none;
+	border: 1px solid #666;
+	background-color: #eee;
+	margin-bottom: 5px;
+	margin-right: 10px;
+	margin-left: 10px;
+	padding: 6px;
+}
+
+.popupMsgOPP {
+	position: relative;
+	top: -155px;
+	margin-left: 0px;
+	z-index: 10;
+}
+
+/* Common HTML Elements in #content */
+
+#content p,#content ul,#content pre {
+	padding: 5px;
+}
+
+
+#content pre {
+	font-family: courier, monospace;
+	font-size: 1em;
+}
+
+.pmmdetails {
+	padding-left: 80px;
+}
+
+.fieldSub {
+	font-weight:bold;
+	margin-bottom:0.5em;
+	margin-top:0.5em;
+}
+
+/* Table */
+table.basetable {
+	margin-left: 5px;
+	width: 500px;
+}
+
+table.basetable td {
+	padding-bottom: 0.6em;
+	padding-right: 0.6em;
+}
+
+/* Image Buttons (Payment Methods) */
+
+.paySubmit {
+	background-color: #367FB4;
+	display: inline-block;
+	color: white !important;
+	text-decoration: none;
+	position: relative;
+	cursor: pointer;
+	font-size: 1em;
+	font-weight: bold;
+	text-transform:uppercase;
+	padding: 0.6em !important;
+	-moz-border-radius:4px;
+	-webkit-border-radius:4px;
+	border-radius:4px;
+	-moz-box-shadow:inset 0 1px 4px rgba(0,0,1,.5);
+	-webkit-box-shadow:inset 0 1px 4px rgba(0,0,1,.5);
+	box-shadow:inset 0 1px 4px rgba(0,0,1,.5);
+}
+
+.paySubmit:hover {
+	background-color: #1d5278;
+}
+
+.backB {
+	background: #696969 !important;
+}
+
+/* Links */
+
+a {
+	text-decoration: none;
+	color: #3d892e;
+}
+
+a:visited {
+	text-decoration: none;
+	color: #3d892e;
+}
+
+/* Form elements */
+
+input,select {
+  background-color: #f6f6f6;
+  padding: 1em !important;
+  -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2), inset 0 0 0 1px rgba(0, 0, 0, .1);
+  -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2), inset 0 0 0 1px rgba(0, 0, 0, .1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .2), inset 0 0 0 1px rgba(0, 0, 0, .1);
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  border: 0 !important;
+  color: #006699;
+  cursor: pointer;
+  margin-bottom: .2em;
+  -webkit-transition: all .3s ease-in-out;
+  -moz-transition:    all .3s ease-in-out;
+  -o-transition:      all .3s ease-in-out;
+  -ms-transition:     all .3s ease-in-out;
+  transition:         all .3s ease-in-out;
+}
+
+table.basetable div:not(.fieldDiv) {
+	font-size: 125%;
+}
+
+/* Validation */
+
+table.basetable .errorField {
+	border: 2px solid #f33;
+	background-color: #fff3f3;
+	padding: 1px 1px 1px 1px;
+}
+
+.fieldDiv {
+	padding-right: 20px;
+	background: transparent;
+}
+
+.errorDiv {
+	background: transparent url("/hpp/img/icons/error.png") no-repeat right 3px;
+	padding-right: 20px;
+}
+
+.errorFrame {
+	background-color: #fff3f3;
+}
+
+.cardNumberTitle {
+	width:	200px;
+}
+
+/* Number input hide buttons */
+input[type='number'] {
+	-moz-appearance:textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+/* Spinner */
+@keyframes hpp-spinner {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@-webkit-keyframes hpp-spinner {
+	to {
+		-webkit-transform: rotate(360deg);
+	}
+}
+
+.hpp-spinner {
+	position: relative;
+	top: -1px;
+	left: -20px;
+
+	min-width: 24px;
+	min-height: 24px;
+}
+
+.hpp-spinner:before {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+
+	height: 16px;
+	margin-top: -10px;
+	margin-left: -10px;
+	width: 16px;
+
+	content: '';
+}
+
+.hpp-spinner:not(:required):before {
+	border-radius: 50%;
+	border: 2px solid #cdcdd3;
+	border-top-color: #3c8a2e;
+
+	animation: hpp-spinner 1.2s linear infinite;
+	-webkit-animation: hpp-spinner 1.2s linear infinite;
+	content: '';
+}
+
+/* Helpers */
+.hpp-clearfix:before,
+.hpp-clearfix:after {
+	content: " ";
+	display: table;
+}
+
+.hpp-clearfix:after {
+	clear: both;
+}
+
+/* Responsive classes */
+@media only screen and (max-width: 700px) {
+
+	/* Default */
+	html,
+	body {
+		min-width: 320px;
+	}
+
+	html,
+	body,
+	#container {
+		width: 100%;
+	}
+
+	#logoheader {
+		background-position: center 15px;
+	}
+
+	table.basetable,
+	table.basetable td,
+	.imgB {
+		width: auto;
+	}
+
+	#pageform {
+		padding: 10px;
+	}
+
+	table.basetable td {
+		display: block;
+	}
+
+	.paySubmit {
+		float: left;
+	}
+
+}

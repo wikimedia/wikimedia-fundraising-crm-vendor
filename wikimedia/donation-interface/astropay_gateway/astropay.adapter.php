@@ -18,21 +18,13 @@
 use Psr\Log\LogLevel;
 
 /**
- * AstropayAdapter
- * Implementation of GatewayAdapter for processing payments via Astropay
+ * AstroPayAdapter
+ * Implementation of GatewayAdapter for processing payments via AstroPay
  */
-class AstropayAdapter extends GatewayAdapter {
-	const GATEWAY_NAME = 'Astropay';
+class AstroPayAdapter extends GatewayAdapter {
+	const GATEWAY_NAME = 'AstroPay';
 	const IDENTIFIER = 'astropay';
-	const GLOBAL_PREFIX = 'wgAstropayGateway';
-
-	public function getFormClass() {
-		if ( strpos( $this->dataObj->getVal_Escaped( 'ffname' ), 'error') === 0 ) {
-			// TODO: make a mustache error form
-			return parent::getFormClass();
-		}
-		return 'Gateway_Form_Mustache';
-	}
+	const GLOBAL_PREFIX = 'wgAstroPayGateway';
 
 	public function getCommunicationType() {
 		return 'namevalue';
@@ -50,70 +42,11 @@ class AstropayAdapter extends GatewayAdapter {
 		$this->accountInfo = $this->account_config;
 	}
 
-	function defineDataConstraints() {
-		$this->dataConstraints = array(
-			'x_login'		=> array( 'type' => 'alphanumeric',	'length' => 10, ),
-			'x_trans_key'	=> array( 'type' => 'alphanumeric',	'length' => 10, ),
-			'x_invoice'		=> array( 'type' => 'alphanumeric',	'length' => 20, ),
-			'x_amount'		=> array( 'type' => 'numeric', ),
-			'x_currency'	=> array( 'type' => 'alphanumeric',	'length' => 3, ),
-			'x_bank'		=> array( 'type' => 'alphanumeric',	'length' => 3, ),
-			'x_country'		=> array( 'type' => 'alphanumeric',	'length' => 2, ),
-			'x_description'	=> array( 'type' => 'alphanumeric',	'length' => 200, ),
-			'x_iduser'		=> array( 'type' => 'alphanumeric',	'length' => 20, ),
-			'x_cpf'			=> array( 'type' => 'alphanumeric',	'length' => 30, ),
-			'x_name'		=> array( 'type' => 'alphanumeric', ),
-			'x_email'		=> array( 'type' => 'alphanumeric', ),
-			'x_bdate'		=> array( 'type' => 'date',	'length' => 8, ),
-			'x_address'		=> array( 'type' => 'alphanumeric', ),
-			'x_zip'			=> array( 'type' => 'alphanumeric',	'length' => 10, ),
-			'x_city'		=> array( 'type' => 'alphanumeric', ),
-			'x_state'		=> array( 'type' => 'alphanumeric',	'length' => 2, ),
-			'country_code'	=> array( 'type' => 'alphanumeric',	'length' => 2, ),
-		);
-	}
-
+	// TODO: How to DRYly configurify?
 	function defineErrorMap() {
 		$this->error_map = array(
 			'internal-0000' => 'donate_interface-processing-error', // Failed pre-process checks.
 			ResponseCodes::DUPLICATE_ORDER_ID => 'donate_interface-processing-error', // Order ID already used in a previous transaction
-		);
-	}
-
-	function defineStagedVars() {
-		$this->staged_vars = array(
-			'bank_code',
-			'donor_id',
-			'fiscal_number',
-			'full_name',
-		);
-	}
-
-	/**
-	 * Define var_map
-	 */
-	function defineVarMap() {
-		$this->var_map = array(
-			'x_login'		=> 'merchant_id',
-			'x_trans_key'	=> 'merchant_password',
-			'x_invoice'		=> 'order_id',
-			'x_amount'		=> 'amount',
-			'x_currency'	=> 'currency_code',
-			'x_bank'		=> 'bank_code',
-			'x_country'		=> 'country',
-			'x_description'	=> 'description',
-			'x_iduser'		=> 'donor_id',
-			'x_cpf'			=> 'fiscal_number',
-			'x_name'		=> 'full_name',
-			'x_email'		=> 'email',
-			// We've been told bdate is non-mandatory, despite the docs
-			'x_bdate'		=> 'birth_date',
-			'x_address'		=> 'street',
-			'x_zip'			=> 'zip',
-			'x_city'		=> 'city',
-			'x_state'		=> 'state',
-			'x_document'	=> 'gateway_txn_id',
-			'country_code'	=> 'country',
 		);
 	}
 
@@ -131,7 +64,7 @@ class AstropayAdapter extends GatewayAdapter {
 
 	/**
 	 * Sets up the $order_id_meta array.
-	 * For Astropay, we use the ct_id.sequence format because we don't get
+	 * For AstroPay, we use the ct_id.sequence format because we don't get
 	 * a gateway transaction ID until the user has actually paid.  If the user
 	 * doesn't return to the result switcher, we will need to use the order_id
 	 * to find a pending queue message with donor details to flesh out the
@@ -139,7 +72,7 @@ class AstropayAdapter extends GatewayAdapter {
 	 */
 	public function defineOrderIDMeta() {
 		$this->order_id_meta = array (
-			'alt_locations' => array ( '_POST' => 'x_invoice' ),
+			'alt_locations' => array ( 'request' => 'x_invoice' ),
 			'generate' => TRUE,
 			'ct_id' => TRUE,
 			'length' => 20,
@@ -220,7 +153,7 @@ class AstropayAdapter extends GatewayAdapter {
 				'x_control', // signature, calculated like control string
 							// called 'Sign' in docs, but renamed here for consistency
 							// with parameter POSTed to resultswitcher.
-				'x_document', // unique id at Astropay
+				'x_document', // unique id at AstroPay
 				'x_bank',
 				'x_payment_type',
 				'x_bank_name',
@@ -243,28 +176,12 @@ class AstropayAdapter extends GatewayAdapter {
 		);
 	}
 
+	function getBasedir() {
+		return __DIR__;
+	}
+
 	public function definePaymentMethods() {
-		$this->payment_methods = array();
-
-		// TODO if we add countries where fiscal number is not required:
-		// make fiscal_number validation depend on country
-		$this->payment_methods['cc'] = array(
-			'validation' => array(
-				'name' => true,
-				'email' => true,
-				'fiscal_number' => true,
-			),
-		);
-
-		$this->payment_methods['bt'] = array(
-			'validation' => array(
-				'name' => true,
-				'email' => true,
-				'fiscal_number' => true,
-			),
-		);
-
-		$this->payment_submethods = array();
+		parent::definePaymentMethods();
 
 		if ( self::getGlobal( 'Test' ) ) {
 			// Test bank labelled 'GNB' on their site
@@ -279,150 +196,6 @@ class AstropayAdapter extends GatewayAdapter {
 				'group' => 'cc',
 			);
 		}
-
-		// Visa
-		$this->payment_submethods['visa'] = array(
-			'bank_code' => 'VI',
-			'label' => 'Visa',
-			'group' => 'cc',
-			'countries' => array(
-				'AR' => true,
-				'BR' => true,
-			),
-			'logo' => 'card-visa-lg.png',
-		);
-
-		// MasterCard
-		$this->payment_submethods['mc'] = array(
-			'bank_code' => 'MC',
-			'label' => 'MasterCard',
-			'group' => 'cc',
-			'countries' => array(
-				'AR' => true,
-				'BR' => true,
-			),
-			'logo' => 'card-mc-lg.png',
-		);
-
-		// American Express
-		$this->payment_submethods['amex'] = array(
-			'bank_code' => 'AE',
-			'label' => 'American Express',
-			'group' => 'cc',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'card-amex-lg.png',
-		);
-
-		// Visa Debit
-		$this->payment_submethods['visa_debit'] = array(
-			'bank_code' => 'VD',
-			'label' => 'Visa Debit',
-			'group' => 'cc',
-			'countries' => array(
-				'MX' => true,
-			),
-		);
-
-		// MasterCard debit
-		$this->payment_submethods['mc_debit'] = array(
-			'bank_code' => 'MD',
-			'label' => 'Mastercard Debit',
-			'group' => 'cc',
-			'countries' => array(
-				'MX' => true,
-			),
-		);
-
-		// Elo (Brazil-only)
-		$this->payment_submethods['elo'] = array(
-			'bank_code' => 'EL',
-			'label' => 'Elo',
-			'group' => 'cc',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'card-elo.png',
-		);
-
-		// Diners Club
-		$this->payment_submethods['dc'] = array(
-			'bank_code' => 'DC',
-			'label' => 'Diners Club',
-			'group' => 'cc',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'card-dinersclub-lg.png',
-		);
-
-		// Hipercard
-		$this->payment_submethods['hiper'] = array(
-			'bank_code' => 'HI',
-			'label' => 'Hipercard',
-			'group' => 'cc',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'card-hiper.png',
-		);
-
-		// Argencard
-		$this->payment_submethods['argen'] = array(
-			'bank_code' => 'AG',
-			'label' => 'Argencard',
-			'group' => 'cc',
-			'countries' => array( 'AR' => true, ),
-			'logo' => 'card-argencard.png',
-		);
-
-		// Banco do Brasil
-		$this->payment_submethods['banco_do_brasil'] = array(
-			'bank_code' => 'BB',
-			'label' => 'Banco do Brasil',
-			'group' => 'bt',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'bank-banco_do_brasil.png',
-		);
-
-		// Itau
-		$this->payment_submethods['itau'] = array(
-			'bank_code' => 'I',
-			'label' => 'Itau',
-			'group' => 'bt',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'bank-itau.png',
-		);
-
-		// Bradesco
-		$this->payment_submethods['bradesco'] = array(
-			'bank_code' => 'B',
-			'label' => 'Bradesco',
-			'group' => 'bt',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'bank-bradesco.png',
-		);
-
-		// Caixa (disabled by AstroPay)
-		/*$this->payment_submethods['caixa'] = array(
-			'bank_code' => 'CA',
-			'label' => 'Caixa',
-			'group' => 'bt',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'bank-caixa.png',
-		);*/
-
-		// HSBC (disabled by AstroPay)
-		/*$this->payment_submethods['hsbc'] = array(
-			'bank_code' => 'H',
-			'label' => 'HSBC',
-			'group' => 'bt',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'bank-hsbc.png',
-		);*/
-
-		// Santander (Brazil)
-		$this->payment_submethods['santander'] = array(
-			'bank_code' => 'SB',
-			'label' => 'Santander',
-			'group' => 'bt',
-			'countries' => array( 'BR' => true, ),
-			'logo' => 'bank-santander.png',
-		);
-
 	}
 
 	function doPayment() {
@@ -445,7 +218,9 @@ class AstropayAdapter extends GatewayAdapter {
 			$this->logPaymentDetails();
 			// Feed the message into the pending queue, so the CRM queue consumer
 			// can read it to fill in donor details when it gets a partial message
-			$this->setLimboMessage( 'pending' );
+			$this->setLimboMessage();
+			// Avoid 'bad ffname' logspam on return and try again links.
+			$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
 		}
 		return $result;
 	}
@@ -456,117 +231,31 @@ class AstropayAdapter extends GatewayAdapter {
 	 */
 	public function getRequiredFields() {
 		$fields = parent::getRequiredFields();
-		$fields[] = 'fiscal_number';
+		$noFiscalRequired = array( 'MX', 'PE' );
+		$country = $this->getData_Unstaged_Escaped( 'country' );
+		if ( !in_array( $country, $noFiscalRequired ) ) {
+			$fields[] = 'fiscal_number';
+		}
 		$fields[] = 'payment_submethod';
 		return $fields;
 	}
-	/**
-	 * Overriding @see GatewayAdapter::getTransactionSpecificValue to add a
-	 * calculated signature.
-	 * @param string $gateway_field_name
-	 * @param boolean $token
-	 * @return mixed
-	 */
-	protected function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
-		if ( $gateway_field_name === 'control' ) {
-			$message = $this->getMessageToSign();
-			return $this->calculateSignature( $message );
-		}
-		return parent::getTransactionSpecificValue( $gateway_field_name, $token );
-	}
 
-	protected function getMessageToSign() {
-		return str_replace( '+', ' ',
-			$this->getData_Staged( 'order_id' ) . 'V'
-			. $this->getData_Staged( 'amount' ) . 'I'
-			. $this->getData_Staged( 'donor_id' ) . '2'
-			. $this->getData_Staged( 'bank_code' ) . '1'
-			. $this->getData_Staged( 'fiscal_number' ) . 'H'
-			. /* bdate omitted */ 'G'
-			. $this->getData_Staged( 'email' ) .'Y'
-			. /* zip omitted */ 'A'
-			. /* street omitted */ 'P'
-			. /* city omitted */ 'S'
-			. /* state omitted */ 'P' );
-	}
+	public function getCurrencies( $options = array() ) {
+		$country = isset( $options['country'] ) ?
+					$options['country'] :
+					$this->getData_Unstaged_Escaped( 'country' );
 
-	/*
-	 * Seems more sane to do it this way than provide a single input box
-	 * and try to parse out fname and lname.
-	 */
-	protected function stage_full_name() {
-		$name_parts = array();
-		if ( isset( $this->unstaged_data['fname'] ) ) {
-			$name_parts[] = $this->unstaged_data['fname'];
+		if ( !$country ) {
+			throw new InvalidArgumentException( 'Need to specify country if not yet set in unstaged data' );
 		}
-		if ( isset( $this->unstaged_data['lname'] ) ) {
-			$name_parts[] = $this->unstaged_data['lname'];
+		if ( !isset( $this->config['currencies'][$country] ) ) {
+			throw new OutOfBoundsException( "No supported currencies for $country" );
 		}
-		$this->staged_data['full_name'] = implode( ' ', $name_parts );
+		return (array)$this->config['currencies'][$country];
 	}
 
 	/**
-	 * They need a 20 char string for a customer ID - give them the first 20
-	 * characters of the email address for easy lookup
-	 */
-	protected function stage_donor_id() {
-		// We use these to look up donations by email, so strip out the trailing
-		// spam-tracking sub-address to get the email we'd see complaints from.
-		$email = preg_replace( '/\+[^@]*/', '', $this->getData_Staged( 'email' ) );
-		$this->staged_data['donor_id'] = substr( $email, 0, 20 );
-	}
-
-	protected function stage_bank_code() {
-		$submethod = $this->getPaymentSubmethod();
-		if ( $submethod ) {
-			$meta = $this->getPaymentSubmethodMeta( $submethod );
-			if ( isset( $meta['bank_code'] ) ) {
-				$this->staged_data['bank_code'] = $meta['bank_code'];
-			}
-		}
-	}
-
-	/**
-	 * Strip any punctuation from fiscal number before submitting
-	 */
-	protected function stage_fiscal_number() {
-		$value = $this->getData_Unstaged_Escaped( 'fiscal_number' );
-		if ( $value ) {
-			$this->staged_data['fiscal_number'] = preg_replace( '/[^a-zA-Z0-9]/', '', $value );
-		}
-	}
-
-	protected function unstage_payment_submethod() {
-		$method = $this->getData_Staged( 'payment_method' );
-		$bank = $this->getData_Staged( 'bank_code' );
-		$filter = function( $submethod ) use ( $method, $bank ) {
-			return $submethod['group'] === $method && $submethod['bank_code'] === $bank;
-		};
-		$candidates = array_filter( $this->payment_submethods, $filter );
-		if ( count( $candidates ) !== 1 ) {
-			throw new UnexpectedValueException( "No unique payment submethod defined for payment method $method and bank code $bank." );
-		}
-		$keys = array_keys( $candidates );
-		$this->unstaged_data['payment_submethod'] = $keys[0];
-	}
-
-	static function getCurrencies() {
-		$currencies = array(
-			'ARS', // Argentinian peso
-			'BOB', // Bolivian Boliviano
-			'BRL', // Brazilian Real
-			'BZD', // Belize Dollar
-			'CLP', // Chilean Peso
-			'COP', // Colombian Peso
-			'MXN', // Mexican Peso
-			'PEN', // Peruvian Nuevo Sol
-			'USD', // U.S. dollar
-		);
-		return $currencies;
-	}
-
-	/**
-	 * Processes JSON data from Astropay API, and also processes GET/POST params
+	 * Processes JSON data from AstroPay API, and also processes GET/POST params
 	 * on donor's return to ResultSwitcher
 	 * @param array $response JSON response decoded to array, or GET/POST
 	 *        params from request
@@ -592,9 +281,9 @@ class AstropayAdapter extends GatewayAdapter {
 		case 'ProcessReturn':
 			$this->processStatusResponse( $response );
 			if ( !isset( $response['x_document'] ) ) {
-				$this->logger->error( 'Astropay did not post back their transaction ID in x_document' );
+				$this->logger->error( 'AstroPay did not post back their transaction ID in x_document' );
 				throw new ResponseProcessingException(
-					'Astropay did not post back their transaction ID in x_document',
+					'AstroPay did not post back their transaction ID in x_document',
 					ResponseCodes::MISSING_TRANSACTION_ID
 				);
 			}
@@ -629,23 +318,23 @@ class AstropayAdapter extends GatewayAdapter {
 		$this->incrementSequenceNumber();
 		if ( !isset( $response['status'] ) ) {
 			$this->transaction_response->setCommunicationStatus( false );
-			$this->logger->error( 'Astropay response does not have a status code' );
+			$this->logger->error( 'AstroPay response does not have a status code' );
 			throw new ResponseProcessingException(
-				'Astropay response does not have a status code',
+				'AstroPay response does not have a status code',
 				ResponseCodes::MISSING_REQUIRED_DATA
 			);
 		}
 		$this->transaction_response->setCommunicationStatus( true );
 		if ( $response['status'] === '0' ) {
 			if ( !isset( $response['link'] ) ) {
-				$this->logger->error( 'Astropay NewInvoice success has no link' );
+				$this->logger->error( 'AstroPay NewInvoice success has no link' );
 				throw new ResponseProcessingException(
-					'Astropay NewInvoice success has no link',
+					'AstroPay NewInvoice success has no link',
 					ResponseCodes::MISSING_REQUIRED_DATA
 				);
 			}
 		} else {
-			$logme = 'Astropay response has non-zero status.  Full response: '
+			$logme = 'AstroPay response has non-zero status.  Full response: '
 				. print_r( $response, true );
 			$this->logger->warning( $logme );
 
@@ -666,7 +355,7 @@ class AstropayAdapter extends GatewayAdapter {
 					// AstroPay is overwhelmed.  Tell the donor to try again soon.
 					$message = WmfFramework::formatMessage( 'donate_interface-try-again' );
 				} else if ( preg_match( '/^user (unauthorized|blacklisted)/i', $response['desc'] ) ) {
-					// They are blacklisted by Astropay for shady doings,
+					// They are blacklisted by AstroPay for shady doings,
 					// or listed delinquent by their government.
 					// Either way, we can't process 'em through AstroPay
 					$this->finalizeInternalStatus( FinalStatus::FAILED );
@@ -684,8 +373,10 @@ class AstropayAdapter extends GatewayAdapter {
 					$message = DataValidator::getErrorMessage( 'fiscal_number', 'calculated', $language, $country );
 				} else if ( preg_match( '/invalid control/i', $response['desc'] ) ) {
 					// They think we screwed up the signature.  Log what we signed.
-					$signed = $this->getMessageToSign();
-					$signature = $this->getTransactionSpecificValue( 'control' );
+					$signed = AstroPaySignature::getNewInvoiceMessage(
+						$this->getData_Staged()
+					);
+					$signature = $this->getData_Staged( 'control' );
 					$this->logger->error( "$logme Signed message: '$signed' Signature: '$signature'" );
 				} else {
 					// Some less common error.  Also log message at 'error' level
@@ -714,14 +405,14 @@ class AstropayAdapter extends GatewayAdapter {
 			 !isset( $response['x_invoice'] ) ||
 			 !isset( $response['x_control'] ) ) {
 			$this->transaction_response->setCommunicationStatus( false );
-			$message = 'Astropay response missing one or more required keys.  Full response: '
+			$message = 'AstroPay response missing one or more required keys.  Full response: '
 				. print_r( $response, true );
 			$this->logger->error( $message );
 			throw new ResponseProcessingException( $message, ResponseCodes::MISSING_REQUIRED_DATA );
 		}
 		$this->verifyStatusSignature( $response );
 		if ( $response['result'] === '6' ) {
-			$logme = 'Astropay reports they cannot find the transaction for order ID ' .
+			$logme = 'AstroPay reports they cannot find the transaction for order ID ' .
 				$this->getData_Unstaged_Escaped( 'order_id' );
 			$this->logger->error( $logme );
 			$this->transaction_response->setErrors( array(
@@ -751,30 +442,12 @@ class AstropayAdapter extends GatewayAdapter {
 			$data['result'] .
 			$data['x_amount'] .
 			$data['x_invoice'];
-		$signature = $this->calculateSignature( $message );
+		$signature = AstroPaySignature::calculateSignature( $this, $message );
 
 		if ( $signature !== $data['x_control'] ) {
 			$message = 'Bad signature in transaction ' . $this->getCurrentTransaction();
 			$this->logger->error( $message );
 			throw new ResponseProcessingException( $message, ResponseCodes::BAD_SIGNATURE );
 		}
-	}
-
-	protected function calculateSignature( $message ) {
-		$key = $this->accountInfo['SecretKey'];
-		return strtoupper(
-			hash_hmac( 'sha256', pack( 'A*', $message ), pack( 'A*', $key ) )
-		);
-	}
-
-	protected function logPaymentDetails() {
-		$details = $this->getStompTransaction();
-		$this->logger->info( 'Redirecting for transaction: ' . json_encode( $details ) );
-	}
-
-	protected function unstage_amount() {
-		// FIXME: if GlobalCollect is the only processor who needs amount in
-		// cents, move its stage and unstage functions out of base adapter
-		$this->unstaged_data['amount'] = $this->getData_Staged( 'amount' );
 	}
 }

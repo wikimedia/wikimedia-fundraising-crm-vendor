@@ -40,43 +40,43 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * Instance of minFraud CreditCardFraudDetection
 	 * @var CreditCardFraudDetection $ccfd
 	 */
-	public $ccfd;
+	protected $ccfd;
 
 	/**
 	 * Instance of Custom filter object
 	 * @var Gateway_Extras_CustomFilters $cfo
 	 */
-	public $cfo;
+	protected $cfo;
 
 	/**
 	 * The query to send to minFraud
 	 * @var array $minfraudQuery
 	 */
-	public $minfraudQuery = array();
+	protected $minfraudQuery = array();
 
 	/**
 	 * Full response from minFraud
 	 * @var array $minfraudResponse
 	 */
-	public $minfraudResponse = array();
+	protected $minfraudResponse = array();
 
 	/**
 	 * An array of minFraud API servers
 	 * @var array $minFraudServers
 	 */
-	public $minFraudServers = array();
+	protected $minFraudServers = array();
 
 	/**
 	 * License key for minfraud
 	 * @var string $minfraudLicenseKey
 	 */
-	public $minfraudLicenseKey = '';
+	protected $minfraudLicenseKey = '';
 	
 	/**
 	 * Instance of Gateway_Extras_CustomFilters_MinFraud
 	 * @var Gateway_Extras_CustomFilters_MinFraud $instance
 	 */
-	public static $instance;
+	protected static $instance;
 
 	/**
 	 * Sends messages to the blah_gateway_fraud log
@@ -85,21 +85,29 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	protected $fraud_logger;
 
 	/**
+	 * Determines which action to take for a given score
+	 * @var array @see $wgDonationInterfaceMinFraudActionRanges
+	 */
+	protected $action_ranges;
+
+	/**
 	 * Constructor
 	 *
-	 * @param GatewayAdapter    $gateway_adapter    Gateway adapter instance
+	 * @param GatewayType    $gateway_adapter    Gateway adapter instance
 	 * @param Gateway_Extras_CustomFilters    $custom_filter_object    Instance of Custom filter object
 	 * @param string            $license_key        The license key. May also be set in $wgMinFraudLicenseKey
 	 * @throws RuntimeException
 	 */
-	public function __construct( &$gateway_adapter, &$custom_filter_object, $license_key = NULL ) {
+	protected function __construct(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object,
+		$license_key = NULL
+	) {
 
 		parent::__construct( $gateway_adapter );
 		$this->fraud_logger = DonationLoggerFactory::getLogger( $gateway_adapter, '_fraud' );
 
-		$this->cfo = &$custom_filter_object;
-
-		require_once( dirname( __FILE__ ) . "/ccfd/src/CreditCardFraudDetection.php" );
+		$this->cfo = $custom_filter_object;
 
 		global $wgMinFraudLicenseKey;
 
@@ -142,7 +150,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * @param array $data
 	 * @return array containing hash for minfraud query
 	 */
-	public function build_query( array $data ) {
+	protected function build_query( array $data ) {
 		// mapping of data keys -> minfraud array keys
 		$map = array(
 			"city" => "city",
@@ -161,15 +169,17 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		$this->minfraudQuery["license_key"] = $this->minfraudLicenseKey;
 
 		// user's IP address
-		//TODO: GET THIS FROM THE ADAPTER. 
 		$this->minfraudQuery["i"] = ( $this->gateway_adapter->getData_Unstaged_Escaped( 'user_ip' ) );
 
-		// user's user agent
-		global $wgRequest;
-		$this->minfraudQuery["user_agent"] = $wgRequest->getHeader( 'user-agent' );
+		// We only have access to these fields when the user's request is still
+		// present, but not when in batch mode.
+		if ( !$this->gateway_adapter->isBatchProcessor() ) {
+			// user's user agent
+			$this->minfraudQuery['user_agent'] = WmfFramework::getRequestHeader( 'user-agent' );
 
-		// user's language
-		$this->minfraudQuery['accept_language'] = $wgRequest->getHeader( 'accept-language' );
+			// user's language
+			$this->minfraudQuery['accept_language'] = WmfFramework::getRequestHeader( 'accept-language' );
+		}
 
 		// fetch the array of country codes
 		$country_codes = GatewayPage::getCountries();
@@ -216,7 +226,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 *
 	 * @return boolean
 	 */
-	public function can_bypass_minfraud() {
+	protected function can_bypass_minfraud() {
 		// if the data bits data_hash and action are not set, we need to hit minFraud
 		$localdata = $this->gateway_adapter->getData_Unstaged_Escaped();
 		if ( !isset($localdata['data_hash']) || !strlen( $localdata['data_hash'] ) || !isset($localdata['action']) || !strlen( $localdata['action'] ) ) {
@@ -254,7 +264,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 *
 	 * @return bool true
 	 */
-	public function filter() {
+	protected function filter() {
 		// see if we can bypass minfraud
 		if ( $this->can_bypass_minfraud() ){
 			return TRUE;
@@ -288,7 +298,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * Get instance of CreditCardFraudDetection
 	 * @return CreditCardFraudDetection
 	 */
-	public function get_ccfd() {
+	protected function get_ccfd() {
 		if ( !$this->ccfd ) {
 			$this->ccfd = new CreditCardFraudDetection();
 			
@@ -309,7 +319,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 *
 	 * @see http://svn.wikimedia.org/viewvc/wikimedia/trunk/fundraising-misc/minfraud_log_mailer/
 	 */
-	public function log_query() {
+	protected function log_query() {
 
 		$encoded_response = array();
 		foreach ($this->minfraudResponse as $key => $value) {
@@ -327,15 +337,18 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	}
 
 	/**
-	 * Get an instance of Gateway_Extras_CustomFilters_MinFraud
+	 * Run the Minfraud filter if it is enabled
 	 *
-	 * @param GlobalCollectAdapter $gateway_adapter
+	 * @param GatewayType $gateway_adapter
 	 * @param Gateway_Extras_CustomFilters $custom_filter_object
 	 *
 	 * @return true
 	 */
-	public static function onFilter( &$gateway_adapter, &$custom_filter_object ) {
-		
+	public static function onFilter(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object
+	) {
+
 		if ( !$gateway_adapter->getGlobal( 'EnableMinfraud' ) ){
 			return true;
 		}
@@ -348,7 +361,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 *
 	 * @param array $minfraud_query The array you would pass to minfraud in a query
 	 */
-	public function query_minfraud( array $minfraud_query ) {
+	protected function query_minfraud( array $minfraud_query ) {
 		global $wgMinFraudTimeout;
 		$ccfd = $this->get_ccfd();
 		$ccfd->timeout = $wgMinFraudTimeout;
@@ -367,12 +380,16 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	/**
 	 * Get an instance of Gateway_Extras_CustomFilters_MinFraud
 	 *
-	 * @param GlobalCollectAdapter $gateway_adapter
+	 * @param GatewayType $gateway_adapter
 	 * @param Gateway_Extras_CustomFilters $custom_filter_object
 	 *
 	 * @return Gateway_Extras_CustomFilters_MinFraud
 	 */
-	public static function singleton( &$gateway_adapter, &$custom_filter_object ) {
+	protected static function singleton(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object
+	) {
+
 		if ( !self::$instance || $gateway_adapter->isBatchProcessor() ) {
 			self::$instance = new self( $gateway_adapter, $custom_filter_object );
 		}
@@ -385,7 +402,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * Right now this only checks the number of queries remaining.
 	 */
 	protected function health_check() {
-		global $wgEmergencyContact, $wgServerName, $wgMemc;
+		global $wgEmergencyContact, $wgMemc;
 
 		if ( array_key_exists( 'queriesRemaining', $this->minfraudResponse ) ) {
 			$queries = intval( $this->minfraudResponse['queriesRemaining'] );

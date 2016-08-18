@@ -1,11 +1,8 @@
 <?php
 
-class AstropayGatewayResult extends GatewayPage {
+class AstroPayGatewayResult extends GatewayPage {
 
-	public function __construct() {
-		$this->adapter = new AstropayAdapter();
-		parent::__construct();
-	}
+	protected $gatewayName = 'astropay';
 
 	protected function handleRequest() {
 		$this->adapter->setCurrentTransaction( 'ProcessReturn' );

@@ -2,48 +2,36 @@
 
 /**
  * DataValidator
- * This class is responsible for performing all kinds of data validation, 
- * wherever we may need it. 
- * 
- * All functions should be static, so we don't have to construct anything in 
- * order to use it any/everywhere. 
- * 
+ * This class is responsible for performing all kinds of data validation,
+ * wherever we may need it.
+ *
+ * All functions should be static, so we don't have to construct anything in
+ * order to use it any/everywhere.
+ *
  * @author khorn
  * @author awight
  */
 class DataValidator {
 
-	// because of the hacky way we test for translation existence in getErrorMessage,
-	// we need to explicitly specify which fields we want to try to get country-
-	// specific names for.
-	protected static $countrySpecificFields = array(
-		'fiscal_number',
-	);
 
 	/**
-	 * getErrorToken, intended to be used by classes that exist relatively close 
-	 * to the form classes, returns the error token (defined on the forms) that 
-	 * specifies *where* the error will appear within the form output. 
-	 * @param string $field The field that ostensibly has an error that needs to 
-	 * be displayed to the user. 
-	 * @return string The error token corresponding to a field, probably in 
-	 * RapidHTML. 
+	 * getErrorToken, intended to be used by classes that exist relatively close
+	 * to the form classes, returns the error token (defined on the forms) that
+	 * specifies *where* the error will appear within the form output.
+	 * @param string $field The field that ostensibly has an error that needs to
+	 * be displayed to the user.
+	 * @return string The error token corresponding to a field
 	 */
 	public static function getErrorToken( $field ){
 		switch ( $field ) {
-			case 'amountGiven' :
-			case 'amountOther' :
-				$error_token = 'amount';
-				break;
 			case 'email' :
-				$error_token = 'emailAdd';
-				break;
 			case 'amount' :
 			case 'currency_code' :
+			case 'fiscal_number' :
+			case 'issuer_id' :
 			case 'card_num':
 			case 'card_type':
 			case 'cvv':
-			case 'fiscal_number':
 			case 'fname':
 			case 'lname':
 			case 'city':
@@ -59,13 +47,14 @@ class DataValidator {
 		}
 		return $error_token;
 	}
-	
+
 	/**
 	 * getEmptyErrorArray
+	 * @deprecated
 	 * This only exists anymore, to make badly-coded forms happy when they start
 	 * pulling keys all over the place without checking to see if they're set or
-	 * not. 
-	 * @return array All the possible error tokens as keys, with blank errors. 
+	 * not.
+	 * @return array All the possible error tokens as keys, with blank errors.
 	 */
 	public static function getEmptyErrorArray() {
 		return array(
@@ -83,7 +72,7 @@ class DataValidator {
 			'street' => '',
 			'state' => '',
 			'zip' => '',
-			'emailAdd' => '',
+			'email' => '',
 		);
 	}
 
@@ -104,76 +93,68 @@ class DataValidator {
 	 * @return String
 	 */
 	public static function getErrorMessage( $field, $type, $language, $country = null ){
-		//this is gonna get ugly up in here. 
+		//this is gonna get ugly up in here.
 		//error_log( __FUNCTION__ . " $field, $type, $value " );
 
-		//NOTE: We are just using the next bit because it's convenient. 
-		//getErrorToken is actually for something entirely different: 
-		//Figuring out where on the form the error should land.  
+		//NOTE: We are just using the next bit because it's convenient.
+		//getErrorToken is actually for something entirely different:
+		//Figuring out where on the form the error should land.
 		$message_field = self::getErrorToken( $field );
 		if ( $field === 'expiration' ){
 			///the inevitable special case.
 			$message_field = $field;
 		}
-		//postal code is a weird one. More L10n than I18n. 
+		//postal code is a weird one. More L10n than I18n.
 		//'donate_interface-error-msg-postal' => 'postal code',
 
 		$error_message_field_key = 'donate_interface-error-msg-' . $message_field;
 
-		if ( $country !== null && in_array( $message_field, self::$countrySpecificFields ) ) {
+		if ( $country !== null ) {
 			$translated_field_name = MessageUtils::getCountrySpecificMessage( $error_message_field_key, $country, $language );
-		} else if ( MessageUtils::messageExists( $error_message_field_key, $language ) ) {
+		} else if ( WmfFramework::messageExists( $error_message_field_key, $language ) ) {
 			$translated_field_name = WmfFramework::formatMessage( $error_message_field_key );
 		} else {
 			$translated_field_name = false;
 		}
 
-		//Empty messages should get: 
+		//Empty messages should get:
 		//'donate_interface-error-msg' => 'Please enter your $1';
-		//If they have no defined error message, give 'em the default. 
+		//If they have no defined error message, give 'em the default.
 		if ($type === 'not_empty'){
 			if ( $message_field != 'general' && $translated_field_name ) {
 				return WmfFramework::formatMessage(
 					'donate_interface-error-msg',
 					$translated_field_name
 				);
-			} 
-		}
-		
-		if ( $type === 'valid_type' || $type === 'calculated' ) {
-			//NOTE: We are just using the next bit because it's convenient. 
-			//getErrorToken is actually for something entirely different: 
-			//Figuring out where on the form the error should land.  
-			$token = self::getErrorToken( $field );
-			$suffix = $token; //defaultness
-			switch ($token){
-				case 'amount': 
-					$suffix = 'invalid-amount';
-					break;
 			}
+		}
 
-			$error_key_calc = 'donate_interface-error-msg-' . $suffix . '-calc';
+		if ( $type === 'valid_type' || $type === 'calculated' ) {
+			//NOTE: We are just using the next bit because it's convenient.
+			//getErrorToken is actually for something entirely different:
+			//Figuring out where on the form the error should land.
+			$token = self::getErrorToken( $field );
+			$error_key_calc = 'donate_interface-error-msg-' . $token . '-calc';
 
-			if ( $type === 'calculated'){
+			if ( $type === 'calculated' ){
 				// try for the special "calculated" error message.
-				// Note: currently only used for country
-				if ( MessageUtils::messageExists( $error_key_calc, $language ) ) {
+				if ( WmfFramework::messageExists( $error_key_calc, $language ) ) {
 					return WmfFramework::formatMessage( $error_key_calc );
 				}
 			}
 
 			//try for new more specific default correction message
-			if ( $message_field != 'general' 
+			if ( $message_field != 'general'
 				&& $translated_field_name
-				&& MessageUtils::messageExists( 'donate_interface-error-msg-field-correction', $language ) ) {
+				&& WmfFramework::messageExists( 'donate_interface-error-msg-field-correction', $language ) ) {
 				return WmfFramework::formatMessage(
 					'donate_interface-error-msg-field-correction',
 					$translated_field_name
 				);
 			}
 		}
-		
-		//ultimate defaultness. 
+
+		//ultimate defaultness.
 		return WmfFramework::formatMessage( 'donate_interface-error-msg-general' );
 	}
 
@@ -181,43 +162,37 @@ class DataValidator {
 	 * validate
 	 * Run all the validation rules we have defined against a (hopefully
 	 * normalized) DonationInterface data set.
-	 * @param GatewayAdapter $gateway
-	 * @param array $data The DonationInterface data set, or a subset thereof.
+	 * @param GatewayType $gateway
+	 * @param array $data Normalized donation data.
 	 * @param array $check_not_empty An array of fields to do empty validation
 	 * on. If this is not populated, no fields will throw errors for being empty,
 	 * UNLESS they are required for a field that uses them for more complex
 	 * validation (the 'calculated' phase).
 	 * @throws BadMethodCallException
-	 * @return array An array of errors in a format ready for any derivitive of
+	 * @return array An array of errors in a format ready for any derivative of
 	 * the main DonationInterface Form class to display. The array will be empty
 	 * if no errors were generated and everything passed OK.
 	 */
-	public static function validate( GatewayAdapter $gateway, $data, $check_not_empty = array()  ){
+	public static function validate( GatewayType $gateway, $data, $check_not_empty = array()  ){
 		//return the array of errors that should be generated on validate.
-		//just the same way you'd do it if you were a form passing the error array around. 
-		
+		//just the same way you'd do it if you were a form passing the error array around.
+
 		/**
-		 * We need to run the validation in an order that makes sense. 
-		 * 
-		 * First: If we need to validate that some things are not empty, do that. 
+		 * We need to run the validation in an order that makes sense.
+		 *
+		 * First: If we need to validate that some things are not empty, do that.
 		 * Second: Do regular data type validation on things that are not empty.
-		 * Third: Do validation that depends on multiple fields (making sure you 
-		 * validated that all the required fields exist on step 1, regardless of 
-		 * $check_not_empty)
-		 * 
-		 * $check_not_empty should contain an array of values that need to be populated. 
-		 * One likely candidate for a source there, is the required stomp fields as defined in DonationData. 
-		 * Although, a lot of those don't have to have any data in them either. Boo.
-		 * 
-		 * How about we build an array of shit to do, 
+		 * Third: Do validation that depends on multiple fields (making sure you
+		 * validated that all the required fields exist on step 1).
+		 *
+		 * How about we build an array of shit to do,
 		 * look at it to make sure it's complete, and in order...
-		 * ...and do it. 
+		 * ...and do it.
 		 */
 
 		// Define all default validations.
 		$validations = array(
 			'not_empty' => array(
-				'amount' => 'validate_non_zero',
 				'country',
 				'currency_code',
 				'gateway',
@@ -225,9 +200,6 @@ class DataValidator {
 			'valid_type' => array(
 				'_cache_' => 'validate_boolean',
 				'account_number' => 'validate_numeric',
-				'amount' => 'validate_numeric',
-				'amountGiven' => 'validate_numeric',
-				'amountOther' => 'validate_numeric',
 				'anonymous' => 'validate_boolean',
 				'contribution_tracking_id' => 'validate_numeric',
 				'currency_code' => 'validate_alphanumeric',
@@ -249,12 +221,6 @@ class DataValidator {
 				'fname' => 'validate_name',
 				'lname' => 'validate_name',
 				'name' => 'validate_name',
-
-				// Depends on currency_code and gateway.
-				'amount' => 'validate_amount',
-
-				// Depends on country
-				'fiscal_number' => 'validate_fiscal_number',
 			),
 		);
 
@@ -266,6 +232,7 @@ class DataValidator {
 		}
 
 		$errors = array();
+		$results = array();
 
 		$language = DataValidator::guessLanguage( $data );
 		if ( empty( $data['country'] ) ) {
@@ -309,18 +276,8 @@ class DataValidator {
 				$result = null;
 				// Handle special cases.
 				switch ( $validation_function ) {
-					case 'validate_amount':
-						if ( self::checkValidationPassed( array( 'currency_code', 'gateway' ), $results ) ){
-							$priceFloor = $gateway->getGlobal( 'PriceFloor' );
-							$priceCeiling = $gateway->getGlobal( 'PriceCeiling' );
-							$result = call_user_func( $callable, $data[$field], $data['currency_code'], $priceFloor, $priceCeiling );
-						} //otherwise, just don't do the validation. The other stuff will be complaining already. 
-						break;
 					case 'validate_currency_code':
-						$result = call_user_func( $callable, $data[$field], $gateway->getCurrencies() );
-						break;
-					case 'validate_fiscal_number':
-						$result = call_user_func( $callable, $data[$field], $data['country'] );
+						$result = call_user_func( $callable, $data[$field], $gateway->getCurrencies( $data ) );
 						break;
 					default:
 						$result = call_user_func( $callable, $data[$field] );
@@ -338,17 +295,17 @@ class DataValidator {
 
 		return $errors;
 	}
-	
-	
+
+
 	/**
-	 * checkValidationPassed is a validate helper function. 
-	 * In order to determine that we are ready to do the third stage of data 
-	 * validation (calculated) for any given field, we need to determine that 
-	 * all fields required to validate the original have, themselves, passed 
-	 * validation. 
+	 * checkValidationPassed is a validate helper function.
+	 * In order to determine that we are ready to do the third stage of data
+	 * validation (calculated) for any given field, we need to determine that
+	 * all fields required to validate the original have, themselves, passed
+	 * validation.
 	 * @param array $fields An array of field names to check.
 	 * @param array $results Intermediate result of validation.
-	 * @return boolean true if all fields specified in $fields passed their 
+	 * @return boolean true if all fields specified in $fields passed their
 	 * not_empty and valid_type validation. Otherwise, false.
 	 */
 	protected static function checkValidationPassed( $fields, $results ){
@@ -366,39 +323,14 @@ class DataValidator {
 
 	/**
 	 * validate_email
-	 * Determines if the $value passed in is a valid email address. 
-	 * @param string $value The piece of data that is supposed to be an email 
-	 * address. 
-	 * @return boolean True if $value is a valid email address, otherwise false.  
+	 * Determines if the $value passed in is a valid email address.
+	 * @param string $value The piece of data that is supposed to be an email
+	 * address.
+	 * @return boolean True if $value is a valid email address, otherwise false.
 	 */
 	protected static function validate_email( $value ) {
 		return WmfFramework::validateEmail( $value )
 			&& !DataValidator::cc_number_exists_in_str( $value );
-	}
-
-	/**
-	 * validate_amount
-	 *
-	 * Determines if the $value passed in is a valid amount. 
-	 * @param string $value The piece of data that is supposed to be an amount. 
-	 * @param string $currency_code The amount was given in this currency.
-	 * @param float $priceFloor Minimum valid amount (USD).
-	 * @param float $priceCeiling Maximum valid amount (USD).
-	 *
-	 * @return boolean True if $value is a valid amount, otherwise false.  
-	 */
-	protected static function validate_amount( $value, $currency_code, $priceFloor, $priceCeiling ) {
-		if ( !$value || !$currency_code || !is_numeric( $value ) ) {
-			return false;
-		}
-
-		if ( !preg_match( '/^\d+(\.(\d+)?)?$/', $value ) ||
-			( ( float ) self::convert_to_usd( $currency_code, $value ) < ( float ) $priceFloor ||
-			( float ) self::convert_to_usd( $currency_code, $value ) > ( float ) $priceCeiling ) ) {
-			return false;
-		}
-		
-		return true;
 	}
 
 	protected static function validate_currency_code( $value, $acceptedCurrencies ) {
@@ -408,13 +340,13 @@ class DataValidator {
 
 		return in_array( $value, $acceptedCurrencies );
 	}
-	
+
 	/**
 	 * validate_card_type
 	 * Determines if the $value passed in is (possibly) a valid credit card type.
 	 * @param string $value The piece of data that is supposed to be a credit card type.
 	 * @param string $card_number The card number associated with this card type. Optional.
-	 * @return boolean True if $value is a reasonable credit card type, otherwise false.  
+	 * @return boolean True if $value is a reasonable credit card type, otherwise false.
 	 */
 	protected static function validate_card_type( $value, $card_number = '' ) {
 		//@TODO: Find a better way to stop making assumptions about what payment
@@ -428,32 +360,32 @@ class DataValidator {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
-	
-	
+
+
 	/**
 	 * validate_credit_card
 	 * Determines if the $value passed in is (possibly) a valid credit card number.
 	 * @param string $value The piece of data that is supposed to be a credit card number.
-	 * @return boolean True if $value is a reasonable credit card number, otherwise false.  
+	 * @return boolean True if $value is a reasonable credit card number, otherwise false.
 	 */
 	protected static function validate_credit_card( $value ) {
 		$calculated_card_type = self::getCardType( $value );
 		if ( !$calculated_card_type ){
 			return false;
 		}
-		
+
 		return true;
 	}
-	
-	
+
+
 	/**
 	 * validate_boolean
-	 * Determines if the $value passed in is a valid boolean. 
+	 * Determines if the $value passed in is a valid boolean.
 	 * @param string $value The piece of data that is supposed to be a boolean.
-	 * @return boolean True if $value is a valid boolean, otherwise false.  
+	 * @return boolean True if $value is a valid boolean, otherwise false.
 	 */
 	protected static function validate_boolean( $value ){
 		// FIXME: this doesn't do the strict comparison we intended.  'hello' would match the "case true" statement.
@@ -471,17 +403,17 @@ class DataValidator {
 		}
 		return false;
 	}
-	
-	
+
+
 	/**
 	 * validate_numeric
-	 * Determines if the $value passed in is numeric. 
+	 * Determines if the $value passed in is numeric.
 	 * @param string $value The piece of data that is supposed to be numeric.
-	 * @return boolean True if $value is numeric, otherwise false.  
+	 * @return boolean True if $value is numeric, otherwise false.
 	 */
 	protected static function validate_numeric( $value ){
-		//instead of validating here, we should probably be doing something else entirely. 
-		if ( is_numeric( $value ) ) { 
+		//instead of validating here, we should probably be doing something else entirely.
+		if ( is_numeric( $value ) ) {
 			return true;
 		}
 		return false;
@@ -489,27 +421,22 @@ class DataValidator {
 
 	/**
 	 * validate_gateway
-	 * Checks to make sure the gateway is populated with a valid and enabled 
-	 * gateway. 
-	 * @param string $value The value that is meant to be a gateway. 
+	 * Checks to make sure the gateway is populated with a valid and enabled
+	 * gateway.
+	 * @param string $value The value that is meant to be a gateway.
 	 * @return boolean True if $value is a valid gateway, otherwise false
 	 */
 	protected static function validate_gateway( $value ){
 		global $wgDonationInterfaceGatewayAdapters;
 
-		foreach ( $wgDonationInterfaceGatewayAdapters as $adapterClass ) {
-			if ( $adapterClass::getIdentifier() === $value ) {
-				return true;
-			}
-		}
-		return false;
+		return key_exists( $value, $wgDonationInterfaceGatewayAdapters );
 	}
 
 	/**
 	 * validate_not_empty
-	 * Checks to make sure that the $value is present in the $data array, and not null or an empty string. 
-	 * Anything else that is 'falseish' is still perfectly valid to have as a data point. 
-	 * TODO: Consider doing this in a batch. 
+	 * Checks to make sure that the $value is present in the $data array, and not null or an empty string.
+	 * Anything else that is 'falseish' is still perfectly valid to have as a data point.
+	 * TODO: Consider doing this in a batch.
 	 * @param string $value The value to check for non-emptyness.
 	 * @return boolean True if the $value is not missing or empty, otherwise false.
 	 */
@@ -520,23 +447,23 @@ class DataValidator {
 	/**
 	 * validate_alphanumeric
 	 * Checks to make sure the value is populated with an alphanumeric value...
-	 * ...which would be great, if it made sense at all. 
+	 * ...which would be great, if it made sense at all.
 	 * TODO: This is duuuuumb. Make it do something good, or get rid of it.
-	 * If we can think of a way to make this useful, we should do something here. 
+	 * If we can think of a way to make this useful, we should do something here.
 	 * @param string $value The value that is meant to be alphanumeric
 	 * @return boolean True if $value is ANYTHING. Or not. :[
 	 */
 	protected static function validate_alphanumeric( $value ){
 		return true;
 	}
-	
+
 	/**
 	 * Validates that somebody didn't just punch in a bunch of punctuation, and
 	 * nothing else. Doing so for certain fields can short-circuit AVS checking
 	 * at some banks, and so we want to treat data like this as empty in the
-	 * adapter staging phase. 
+	 * adapter staging phase.
 	 * @param string $value The value to check
-	 * @return bool true if it's more than just punctuation, false if it is. 
+	 * @return bool true if it's more than just punctuation, false if it is.
 	 */
 	public static function validate_not_just_punctuation( $value ){
 		$value = html_entity_decode( $value ); //Just making sure.
@@ -546,13 +473,13 @@ class DataValidator {
 		}
 		return true;
 	}
-	
+
 	/**
-	 * Validate that the country is legally allowed to give us a donation. 
-	 * Failure here should halt everything, all the time. 
+	 * Validate that the country is legally allowed to give us a donation.
+	 * Failure here should halt everything, all the time.
 	 * @param string $value The value to check
 	 * @return boolean true if we are allowed to accept donations from this
-	 * country, false if not. 
+	 * country, false if not.
 	 */
 	public static function validate_country_allowed( $value ){
 		global $wgDonationInterfaceForbiddenCountries;
@@ -581,85 +508,6 @@ class DataValidator {
 	 */
 	public static function validate_address( $value ) {
 		return !DataValidator::cc_number_exists_in_str( $value );
-	}
-
-	/**
-	 * Checks to make sure that the $value is present in the $data array, and not equivalent to zero.
-	 * @param string $value The value to check for non-zeroness.
-	 * @param array $data The whole data set.
-	 * @return boolean True if the $value is not missing or zero, otherwise false.
-	 */
-	public static function validate_non_zero( $value ) {
-		if ( $value === null || $value === ''
-			|| preg_match( '/^0+(\.0+)?$/', $value )
-		) {
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * Rudimentary tests of fiscal number format for different countries
-	 * @param string $value The alleged fiscal number
-	 * @param array $country The country whose format we care about
-	 * @return boolean True if the $value is a valid fiscal number, false otherwise
-	 */
-	public static function validate_fiscal_number( $value, $country ) {
-		$countryRules = array(
-			'AR' => array(
-				'numeric' => true,
-				'min' => 8,
-				'max' => 8,
-			),
-			'BR' => array(
-				'numeric' => true,
-				'min' => 11,
-				'max' => 14,
-			),
-			'CO' => array(
-				'numeric' => true,
-				'min' => 11,
-				'max' => 14,
-			),
-			'CL' => array(
-				'min' => 8,
-				'max' => 9,
-			),
-			'MX' => array(
-				'min' => 10,
-				'max' => 18,
-			),
-			'PE' => array(
-				'numeric' => true,
-				'min' => 8,
-				'max' => 9,
-			),
-			'UY' => array(
-				'numeric' => true,
-				'min' => 6,
-				'max' => 8,
-			),
-		);
-
-		if ( !isset( $countryRules[$country] ) ) {
-			return true;
-		}
-
-		$rules = $countryRules[$country];
-		$unpunctuated = preg_replace( '/[^A-Za-z0-9]/', '', $value );
-
-		if ( !empty( $rules['numeric'] ) ) {
-			if ( !is_numeric( $unpunctuated ) ) {
-				return false;
-			}
-		}
-
-		$length = strlen( $unpunctuated );
-		if ( $length < $rules['min'] || $length > $rules['max'] ) {
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -753,39 +601,9 @@ EOT;
 	}
 
 	/**
-	 * Convert an amount for a particular currency to an amount in USD
-	 *
-	 * This is grosley rudimentary and likely wildly inaccurate.
-	 * This mimicks the hard-coded values used by the WMF to convert currencies
-	 * for validatoin on the front-end on the first step landing pages of their
-	 * donation process - the idea being that we can get a close approximation
-	 * of converted currencies to ensure that contributors are not going above
-	 * or below the price ceiling/floor, even if they are using a non-US currency.
-	 *
-	 * In reality, this probably ought to use some sort of webservice to get real-time
-	 * conversion rates.
-	 *
-	 * @param string $currency_code
-	 * @param float $amount
-	 * @return float
-	 * @throws UnexpectedValueException
-	 */
-	public static function convert_to_usd( $currency_code, $amount ) {
-		$rates = CurrencyRates::getCurrencyRates();
-		$code = strtoupper( $currency_code );
-		if ( array_key_exists( $code, $rates ) ) {
-			$usd_amount = $amount / $rates[$code];
-		} else {
-			throw new UnexpectedValueException( 'Bad programmer!  Bad currency made it too far through the portcullis' );
-		}
-		return $usd_amount;
-	}
-	
-	
-	/**
-	 * Calculates and returns the card type for a given credit card number. 
+	 * Calculates and returns the card type for a given credit card number.
 	 * @param numeric $card_num A credit card number.
-	 * @return string|bool 'amex', 'mc', 'visa', 'discover', or false. 
+	 * @return string|bool 'amex', 'mc', 'visa', 'discover', or false.
 	 */
 	public static function getCardType( $card_num ) {
 		// validate that credit card number entered is correct and set the card type
@@ -801,15 +619,15 @@ EOT;
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Returns a valid mediawiki language code to use for all the DonationInterface translations.
 	 *
-	 * Will only look at the currently configured language if the 'language' key 
-	 * doesn't exist in the data set: Users may not have a language preference 
+	 * Will only look at the currently configured language if the 'language' key
+	 * doesn't exist in the data set: Users may not have a language preference
 	 * set if we're bouncing between mediawiki instances for payments.
-	 * @param array $data A normalized DonationInterface data set. 
-	 * @return string A valid mediawiki language code. 
+	 * @param array $data A normalized DonationInterface data set.
+	 * @return string A valid mediawiki language code.
 	 */
 	public static function guessLanguage( $data ) {
 		if ( array_key_exists( 'language', $data )
@@ -817,15 +635,15 @@ EOT;
 			return $data['language'];
 		} else {
 			return WmfFramework::getLanguageCode();
-		}		
+		}
 	}
-	
+
 	/**
-	 * Takes either an IP address, or an IP address with a CIDR block, and 
-	 * expands it to an array containing all the relevent addresses so we can do 
-	 * things like save the expanded list to memcache, and use in_array(). 
-	 * @param string $ip Either a single address, or a block. 
-	 * @return array An expanded list of IP addresses denoted by $ip. 
+	 * Takes either an IP address, or an IP address with a CIDR block, and
+	 * expands it to an array containing all the relevent addresses so we can do
+	 * things like save the expanded list to memcache, and use in_array().
+	 * @param string $ip Either a single address, or a block.
+	 * @return array An expanded list of IP addresses denoted by $ip.
 	 */
 	public static function expandIPBlockToArray( $ip ){
 		$parts = explode('/', $ip);
@@ -862,7 +680,7 @@ EOT;
 
 		return in_array( $ip, $expanded, true );
 	}
-	
+
 	/**
 	 * Test to determine if a value appears in a haystack. The haystack may have
 	 * explicit +/- rules (a - will take precedence over a +; if there is no
@@ -912,23 +730,6 @@ EOT;
 		} else {
 			return false;
 		}
-	}
-	
-	/**
-	 * More of a validation helper function. If an amount is ever expressed for 
-	 * the fractional currencies defined in this function,
-	 * they should not have an associated fractional amount (so: full integers only).
-	 * @param string $currency_code The three-digit currency code.
-	 * @return boolean
-	 */
-	public static function is_fractional_currency( $currency_code ){
-		// these currencies cannot have cents.
-		$non_fractional_currencies = array( 'CLP', 'DJF', 'IDR', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'VND', 'XAF', 'XOF', 'XPF' );
-		
-		if ( in_array( strtoupper( $currency_code ), $non_fractional_currencies ) ) {
-			return false;
-		}
-		return true;
 	}
 
 	/**

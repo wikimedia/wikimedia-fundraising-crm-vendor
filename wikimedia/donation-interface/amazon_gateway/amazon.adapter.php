@@ -1,7 +1,7 @@
 <?php
 
-use PayWithAmazon\Client as PwaClient;
-use PayWithAmazon\ClientInterface as PwaClientInterface;
+use PayWithAmazon\PaymentsClient as PwaClient;
+use PayWithAmazon\PaymentsClientInterface as PwaClientInterface;
 
 /**
  * Wikimedia Foundation
@@ -21,9 +21,11 @@ use PayWithAmazon\ClientInterface as PwaClientInterface;
  */
 
 /**
- * Uses Login and Pay with Amazon widgets and the associated SDK to charge donors
+ * Uses Login and Pay with Amazon widgets and a fork of the associated
+ * SDK to charge donors.
+ *
  * See https://payments.amazon.com/documentation
- * and https://github.com/amzn/login-and-pay-with-amazon-sdk-php
+ * and https://github.com/ejegg/login-and-pay-with-amazon-sdk-php
  */
 class AmazonAdapter extends GatewayAdapter {
 
@@ -61,30 +63,15 @@ class AmazonAdapter extends GatewayAdapter {
 				array( 'payment_method' => 'amazon' )
 			);
 		}
-		$this->session_addDonorData();
-	}
-
-	public function getFormClass() {
-		if ( strpos( $this->dataObj->getVal_Escaped( 'ffname' ), 'error' ) === 0 ) {
-			// TODO: make a mustache error form
-			return parent::getFormClass();
+		if ( !$this->isApiRequest() ) {
+			// Avoid missing ffname issues on return from Amazon login
+			$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
 		}
-		return 'Gateway_Form_Mustache';
+		$this->session_addDonorData();
 	}
 
 	public function getCommunicationType() {
 		return 'xml';
-	}
-
-	function defineStagedVars() {
-		$this->staged_vars = array(
-			'order_id',
-		);
-	}
-
-	function defineVarMap() {
-		// TODO: maybe use this for mapping gatway data to API call parameters
-		$this->var_map = array();
 	}
 
 	function defineAccountInfo() {
@@ -93,8 +80,6 @@ class AmazonAdapter extends GatewayAdapter {
 	}
 
 	function defineReturnValueMap() {}
-
-	function defineDataConstraints() {}
 
 	function defineOrderIDMeta() {
 		$this->order_id_meta = array(
@@ -106,6 +91,8 @@ class AmazonAdapter extends GatewayAdapter {
 	function setGatewayDefaults() {}
 
 	public function defineErrorMap() {
+		parent::defineErrorMap();
+
 		$self = $this;
 		$differentCard = function() use ( $self ) {
 			$otherWays = $self->localizeGlobal( 'OtherWaysURL' );
@@ -115,30 +102,16 @@ class AmazonAdapter extends GatewayAdapter {
 				$self->getGlobal( 'ProblemsEmail' )
 			);
 		};
-		$this->error_map = array(
-			// These might be transient - tell donor to try again soon
-			'InternalServerError' => 'donate_interface-try-again',
-			'RequestThrottled' => 'donate_interface-try-again',
-			'ServiceUnavailable' => 'donate_interface-try-again',
-			'ProcessingFailure' => 'donate_interface-try-again',
-			// Donor needs to select a different card
-			'InvalidPaymentMethod' => $differentCard,
-		);
+		// Donor needs to select a different card.
+		$this->error_map['InvalidPaymentMethod'] = $differentCard;
 	}
 
 	function defineTransactions() {
 		$this->transactions = array();
 	}
 
-	public function definePaymentMethods() {
-		$this->payment_methods = array(
-			'amazon' => array(),
-		);
-
-		$this->payment_submethods = array(
-			'amazon_cc' => array(),
-			'amazon_wallet' => array(),
-		);
+	function getBasedir() {
+		return __DIR__;
 	}
 
 	/**
@@ -186,7 +159,7 @@ class AmazonAdapter extends GatewayAdapter {
 			'secret_key' => $this->account_config['MWSSecretKey'],
 			'client_id' => $this->account_config['ClientID'],
 			'region' => $this->account_config['Region'],
-			'sandbox' => $this->getGlobal( 'TestMode' ),
+			'sandbox' => $this->getGlobal( 'Test' ),
 		) );
 	}
 
@@ -200,9 +173,9 @@ class AmazonAdapter extends GatewayAdapter {
 	protected function callPwaClient( $functionName, $parameters ) {
 		$callMe = array( $this->client, $functionName );
 		try {
-			$this->getStopwatch( $functionName, true );
+			$this->profiler->getStopwatch( $functionName, true );
 			$result = call_user_func( $callMe, $parameters )->toArray();
-			$this->saveCommunicationStats(
+			$this->profiler->saveCommunicationStats(
 				'callPwaClient',
 				$functionName,
 				'Response: ' . print_r( $result, true )
@@ -233,7 +206,7 @@ class AmazonAdapter extends GatewayAdapter {
 		// audit and IPN messages
 		$details = $this->getStompTransaction();
 		$this->logger->info( 'Got info for Amazon donation: ' . json_encode( $details ) );
-		$this->setLimboMessage( 'pending' );
+		$this->setLimboMessage();
 	}
 
 	/**
@@ -328,8 +301,9 @@ class AmazonAdapter extends GatewayAdapter {
 			'seller_note' => WmfFramework::formatMessage( 'donate_interface-donation-description' ),
 			'seller_order_reference_id' => $this->getData_Staged( 'order_id' ),
 		) );
-		// TODO: session_setData wrapper?
-		$_SESSION['order_refs'][$orderReferenceId] = true;
+		$orderRefs = WmfFramework::getSessionValue( 'order_refs' );
+		$orderRefs[$orderReferenceId] = true;
+		WmfFramework::setSessionValue( 'order_refs', $orderRefs );
 	}
 
 	protected function authorizeOnOrderReference() {
@@ -381,7 +355,9 @@ class AmazonAdapter extends GatewayAdapter {
 			'seller_note' => WmfFramework::formatMessage( 'donate_interface-monthly-donation-description' ),
 			'seller_billing_agreement_id' => $this->getData_Staged( 'order_id' ),
 		) );
-		$_SESSION['billing_agreements'][$billingAgreementId] = true;
+		$billingAgreements = WmfFramework::getSessionValue( 'billing_agreements' );
+		$billingAgreements[$billingAgreementId] = true;
+		WmfFramework::setSessionValue( 'billing_agreements', $billingAgreements );
 	}
 
 	protected function authorizeOnBillingAgreement() {
@@ -424,13 +400,6 @@ class AmazonAdapter extends GatewayAdapter {
 		}
 	}
 
-	static function getCurrencies() {
-		// See https://payments.amazon.com/sdui/sdui/about?nodeId=73479#feat_countries
-		return array(
-			'USD',
-		);
-	}
-
 	/**
 	 * Override default behavior
 	 */
@@ -448,9 +417,10 @@ class AmazonAdapter extends GatewayAdapter {
 	 * @param array $vars
 	 */
 	public function setClientVariables( &$vars ) {
+		parent::setClientVariables( $vars );
 		$vars['wgAmazonGatewayClientID'] = $this->account_config['ClientID'];
 		$vars['wgAmazonGatewaySellerID'] = $this->account_config['SellerID'];
-		$vars['wgAmazonGatewaySandbox'] = $this->getGlobal( 'TestMode' ) ? true : false;
+		$vars['wgAmazonGatewaySandbox'] = $this->getGlobal( 'Test' ) ? true : false;
 		$vars['wgAmazonGatewayReturnURL'] = $this->account_config['ReturnURL'];
 		$vars['wgAmazonGatewayWidgetScript'] = $this->account_config['WidgetScriptURL'];
 		$vars['wgAmazonGatewayLoginScript'] = $this->getGlobal( 'LoginScript' );

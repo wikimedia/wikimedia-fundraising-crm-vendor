@@ -1,0 +1,7 @@
+# Core
+- Amount
+- DonorEmail
+
+# PayPal
+- CleanupRecurringLength
+- PaypalLegacyLocale

@@ -12,7 +12,7 @@
 			"gateway_common",
 			"globalcollect_gateway",
 			"paypal_gateway",
-			"worldpay_gateway"
+			"DonationInterface.class.php"
 		],
 		"files": [
 			"gateway_common/WmfFramework.php"
@@ -20,12 +20,16 @@
 	},
 	"require": {
 		"coderkungfu/php-queue": "dev-master",
-		"fusesource/stomp-php": "2.1.*",
-		"monolog/monolog": "1.12.0",
-		"predis/predis": "1.*",
-		"psr/log": "1.0.0",
-		"zordius/lightncandy": "0.18",
-		"amzn/login-and-pay-with-amazon-sdk-php": "dev-master"
+		"fusesource/stomp-php": "^2.1",
+		"minfraud/http": "^1.70",
+		"monolog/monolog": "~1.18.2",
+		"neitanod/forceutf8": "^2.0",
+		"predis/predis": "^1.1",
+		"psr/log": "^1.0",
+		"zordius/lightncandy": "0.23",
+		"amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+		"symfony/yaml": "^2.8",
+		"wikimedia/smash-pig": "dev-master"
 	},
 	"repositories": [
 		{
@@ -36,5 +40,12 @@
 			"type": "git",
 			"url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php"
 		}
-	]
+	],
+	"config": {
+		"optimize-autoloader": true,
+		"prepend-autoloader": false
+	},
+	"scripts": {
+		"test": "php tests/LintYaml.php"
+	}
 }

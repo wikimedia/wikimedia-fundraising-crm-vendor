@@ -17,26 +17,16 @@
  */
 
 class AmazonGateway extends GatewayPage {
-	/**
-	 * Constructor - set up the new special page
-	 */
-	public function __construct() {
-		$this->adapter = new AmazonAdapter();
-		parent::__construct(); //the next layer up will know who we are.
-	}
+
+	protected $gatewayName = 'amazon';
 
 	/**
 	 * Show the special page
 	 */
 	protected function handleRequest() {
-		Hooks::register( 'MakeGlobalVariablesScript', array( $this->adapter, 'setClientVariables' ) );
-		$this->getOutput()->allowClickjacking();
-
-		$this->setHeaders();
-		$this->getOutput()->addModules( 'ext.donationinterface.amazon.styles' );
+		$this->getOutput()->addModuleStyles( 'ext.donationinterface.amazon.styles' );
 		$this->getOutput()->addModules( 'ext.donationinterface.amazon.scripts' );
 
-		$this->validateForm();
-		$this->displayForm();
+		$this->handleDonationRequest();
 	}
 }

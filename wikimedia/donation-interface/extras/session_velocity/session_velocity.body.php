@@ -13,7 +13,7 @@
  * each new request.
  */
 
-class Gateway_Extras_SessionVelocityFilter extends Gateway_Extras {
+class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 
 	/**
 	 * Container for an instance of self
@@ -26,18 +26,21 @@ class Gateway_Extras_SessionVelocityFilter extends Gateway_Extras {
 	// This then has the following keys:
 	//  SESS_SCORE  - The last known score for this gateway/transaction
 	//  SESS_TIME   - The last time the filter was run for this gateway/transaction
+	//  SESS_MULTIPLIER - The factor by which to multiply hit score for the next call
+	//                    This allows for a logarithmically increasing penalty
 	const SESS_ROOT = "DonationInterface_SessVelocity";
 	const SESS_SCORE = "score";
 	const SESS_TIME = "time";
+	const SESS_MULTIPLIER = "multiplier";
 
 	/**
 	 * @static Construct the singleton instance of this class.
 	 *
-	 * @param $gateway_adapter
+	 * @param GatewayType $gateway_adapter
 	 *
 	 * @return Gateway_Extras_SessionVelocityFilter
 	 */
-	private static function singleton( &$gateway_adapter ) {
+	private static function singleton( GatewayType $gateway_adapter ) {
 		if ( !self::$instance || $gateway_adapter->isBatchProcessor() ) {
 			self::$instance = new self( $gateway_adapter );
 		}
@@ -47,12 +50,12 @@ class Gateway_Extras_SessionVelocityFilter extends Gateway_Extras {
 	/**
 	 * @static Filter hook chain gateway function
 	 *
-	 * @param $gateway_adapter  The adapter context to log under
+	 * @param GatewayType $gateway_adapter The adapter context to log under
 	 *
 	 * @return bool Filter chain termination on FALSE. Also indicates that the cURL transaction
 	 *  should not be performed.
 	 */
-	public static function onCurlInit( &$gateway_adapter ) {
+	public static function onProcessorApiCall( GatewayType $gateway_adapter ) {
 		if ( !$gateway_adapter->getGlobal( 'EnableSessionVelocityFilter' ) ){
 			return true;
 		}
@@ -63,8 +66,6 @@ class Gateway_Extras_SessionVelocityFilter extends Gateway_Extras {
 	/**
 	 * Although this function actually does the filtering, as this is a singleton pattern
 	 * we only want one instance actually using it.
-	 *
-	 * @param $gateway_adapter  A reference to the current gateway adapter
 	 *
 	 * @return bool Hook return, false stops processing of the hook chain
 	 */
@@ -86,9 +87,7 @@ class Gateway_Extras_SessionVelocityFilter extends Gateway_Extras {
 		}
 
 		// Open a session if it doesn't already exist
-		if ( session_id() == null ) {
-			wfSetupSession();
-		}
+		$this->gateway_adapter->session_ensure();
 
 		// Obtain some useful information
 		$gateway = $this->gateway_adapter->getIdentifier();
@@ -97,44 +96,56 @@ class Gateway_Extras_SessionVelocityFilter extends Gateway_Extras {
 
 		$decayRate = $this->getVar( 'DecayRate', $transaction );
 		$threshold = $this->getVar( 'Threshold', $transaction );
+		$multiplier = $this->getVar( 'Multiplier', $transaction );
 
 		// Initialize the filter
-		if ( !array_key_exists( self::SESS_ROOT, $_SESSION ) ) {
-			$_SESSION[self::SESS_ROOT] = array();
+		$sessionData = $this->gateway_adapter->getRequest()->getSessionData( self::SESS_ROOT );
+		if ( !is_array( $sessionData ) ) {
+			$sessionData = array();
 		}
-		if ( !array_key_exists( $gateway, $_SESSION[self::SESS_ROOT] ) ) {
-			$_SESSION[self::SESS_ROOT][$gateway] = array();
+		if ( !array_key_exists( $gateway, $sessionData ) ) {
+			$sessionData[$gateway] = array();
 		}
-		if ( !array_key_exists( $transaction, $_SESSION[self::SESS_ROOT][$gateway] ) ) {
-			$_SESSION[self::SESS_ROOT][$gateway][$transaction] = array(
+		if ( !array_key_exists( $transaction, $sessionData[$gateway] ) ) {
+			$sessionData[$gateway][$transaction] = array(
 				$this::SESS_SCORE => 0,
 				$this::SESS_TIME => $cRequestTime,
+				$this::SESS_MULTIPLIER => 1,
 			);
 		}
 
-		$lastTime = $_SESSION[self::SESS_ROOT][$gateway][$transaction][self::SESS_TIME];
-		$score = $_SESSION[self::SESS_ROOT][$gateway][$transaction][self::SESS_SCORE];
+		$lastTime = $sessionData[$gateway][$transaction][self::SESS_TIME];
+		$score = $sessionData[$gateway][$transaction][self::SESS_SCORE];
+		$lastMultiplier = $sessionData[$gateway][$transaction][self::SESS_MULTIPLIER];
 
 		// Update the filter if it's stale
 		if ( $cRequestTime != $lastTime ) {
 			$score = max( 0, $score - ( ( $cRequestTime - $lastTime ) * $decayRate ) );
-			$score += $this->getVar( 'HitScore', $transaction );
+			$score += $this->getVar( 'HitScore', $transaction ) * $lastMultiplier;
 
-			// Store the results
-			$_SESSION[self::SESS_ROOT][$gateway][$transaction][$this::SESS_SCORE] = $score;
-			$_SESSION[self::SESS_ROOT][$gateway][$transaction][$this::SESS_TIME] = $cRequestTime;
+			$sessionData[$gateway][$transaction][$this::SESS_SCORE] = $score;
+			$sessionData[$gateway][$transaction][$this::SESS_TIME] = $cRequestTime;
+			$sessionData[$gateway][$transaction][$this::SESS_MULTIPLIER] = $lastMultiplier * $multiplier;
 		}
+
+		// Store the results
+		$this->gateway_adapter->getRequest()->setSessionData( self::SESS_ROOT, $sessionData );
 
 		// Analyze the filter results
 		if ( $score >= $threshold ) {
 			// Ahh!!! Failure!!! Sloooooooow doooowwwwnnnn
-			$this->gateway_logger->alert( "SessionVelocity: Rejecting request due to of " . $score );
+			$this->fraud_logger->alert( "SessionVelocity: Rejecting request due to score of $score" );
+			$this->sendAntifraudMessage( 'reject', $score, array( 'SessionVelocity' => $score ) );
 			$retval = false;
 		} else {
 			$retval = true;
 		}
 
-		$this->gateway_logger->debug( "SessionVelocity: ($gateway, $transaction) Score: $score, AllowAction: $retval, DecayRate: $decayRate, Threshold: $threshold" );
+		$this->fraud_logger->debug(
+			"SessionVelocity: ($gateway, $transaction) Score: $score, " .
+				"AllowAction: $retval, DecayRate: $decayRate, " .
+			    "Threshold: $threshold, Multiplier: $lastMultiplier"
+		);
 
 		return $retval;
 	}

@@ -25,6 +25,14 @@
  *
  */
 abstract class GatewayPage extends UnlistedSpecialPage {
+
+	/**
+	 * Derived classes must override this with the name of the gateway
+	 * as set in GatewayAdapter::IDENTIFIER
+	 * @var string
+	 */
+	protected $gatewayName;
+
 	/**
 	 * An array of form errors
 	 * @var array $errors
@@ -47,9 +55,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->logger = DonationLoggerFactory::getLogger( $this->adapter );
-		$this->getOutput()->addModules( 'donationInterface.skinOverride' );
-		
 		$me = get_called_class();
 		parent::__construct( $me );
 	}
@@ -65,12 +70,36 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		// FIXME: Deprecate "language" param.
 		$language = $this->getRequest()->getVal( 'language' );
 		if ( $language ) {
-			RequestContext::getMain()->setLanguage( $language );
+			$this->getContext()->setLanguage( $language );
 			global $wgLang;
-			$wgLang = RequestContext::getMain()->getLanguage();
+			$wgLang = $this->getContext()->getLanguage(); // BackCompat
+		}
+
+		$gatewayName = $this->getGatewayName();
+		$className = DonationInterface::getAdapterClassForGateway( $gatewayName );
+		try {
+			$this->adapter = new $className();
+			$this->logger = DonationLoggerFactory::getLogger( $this->adapter );
+			$this->getOutput()->addModuleStyles( 'donationInterface.styles' );
+			$this->getOutput()->addModules( 'donationInterface.skinOverride' );
+		} catch ( Exception $ex ) {
+			if ( !$this->logger ) {
+				$this->logger = DonationLoggerFactory::getLoggerForType(
+					$className,
+					$this->getLogPrefix()
+				);
+			}
+			$this->logger->error(
+				"Exception setting up GatewayPage with adapter class $className: " .
+				    "{$ex->getMessage()}\n{$ex->getTraceAsString()}"
+			);
+			// Setup scrambled, no point in continuing
+			$this->displayFailPage();
+			return;
 		}
 
 		if ( $this->adapter->getGlobal( 'Enabled' ) !== true ) {
+			$this->logger->info( 'Displaying fail page for disabled gateway' );
 			$this->displayFailPage();
 			return;
 		}
@@ -81,11 +110,20 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			return;
 		}
 
+		if ( $this->adapter->getFinalStatus() === FinalStatus::FAILED ) {
+			$this->logger->info( 'Displaying fail page for failed GatewayReady checks' );
+			$this->displayFailPage();
+			return;
+		}
+
+		Hooks::register( 'MakeGlobalVariablesScript', array( $this->adapter, 'setClientVariables' ) );
+
 		try {
 			$this->handleRequest();
 		} catch ( Exception $ex ) {
-			$this->logger->error( "Gateway page errored out due to: " . $ex->getMessage() );
+			$this->logger->error( "Displaying fail page for exception: " . $ex->getMessage() );
 			$this->displayFailPage();
+			return;
 		}
 	}
 
@@ -110,21 +148,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		$validated_ok = $this->adapter->revalidate();
 
-		if ( !$validated_ok ) {
-			if ( $this->fallbackToDefaultCurrency() ) {
-				$validated_ok = $this->adapter->revalidate();
-				$notify = $this->adapter->getGlobal( 'NotifyOnConvert' );
-
-				if ( $notify || !$validated_ok ) {
-					$this->adapter->addManualError( array(
-						'general' => $this->msg( 'donate_interface-fallback-currency-notice', 
-												 $this->adapter->getGlobal( 'FallbackCurrency' ) )->text()
-					) );
-					$validated_ok = false;
-				}
-			}
-		}
-
 		return !$validated_ok;
 	}
 
@@ -132,40 +155,65 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * Build and display form to user
 	 */
 	public function displayForm() {
-		global $wgOut;
+		$output = $this->getOutput();
 
-		$form_class = $this->getFormClass();
+		$form_class = $this->adapter->getFormClass();
 		// TODO: use interface.  static ctor.
 		if ( $form_class && class_exists( $form_class ) ){
-			$form_obj = new $form_class( $this->adapter );
+			$form_obj = new $form_class();
+			$form_obj->setGateway( $this->adapter );
+			$form_obj->setGatewayPage( $this );
 			$form = $form_obj->getForm();
-			$wgOut->addModules( $form_obj->getResources() );
-			$wgOut->addHTML( $form );
+			$output->addModules( $form_obj->getResources() );
+			$output->addModuleStyles( $form_obj->getStyleModules() );
+			$output->addHTML( $form );
 		} else {
-			$this->displayFailPage();
+			$this->logger->error( "Displaying fail page for bad form class '$form_class'" );
+			$this->displayFailPage( false );
 		}
 	}
 
 	/**
-	 * Display a generic failure page
+	 * Display a failure page
+	 *
+	 * @param bool $allowRapid Whether to allow rendering a RapidFail form
+	 *  renderForm sets this to false on failure to avoid an infinite loop
 	 */
-	public function displayFailPage() {
-		global $wgOut;
+	public function displayFailPage( $allowRapid = true ) {
+		$output = $this->getOutput();
 
-		$page = $this->adapter->getFailPage();
-
+		if ( $this->adapter && $allowRapid ) {
+			$page = ResultPages::getFailPage( $this->adapter );
+			if ( !filter_var( $page, FILTER_VALIDATE_URL ) ) {
+				// If it's not a URL, we're rendering a RapidFail form
+				$this->logger->info( "Displaying fail form $page" );
+				$this->adapter->addRequestData( array( 'ffname' => $page ) );
+				$this->displayForm();
+				return;
+			}
+		} else {
+			$gatewayName = $this->getGatewayName();
+			$className = DonationInterface::getAdapterClassForGateway( $gatewayName );
+			$page = ResultPages::getFailPageForType(
+				$className,
+				$this->getLogPrefix()
+			);
+		}
 		$log_message = "Redirecting to [{$page}]";
 		$this->logger->info( $log_message );
 
-		$wgOut->redirect( $page );
+		$output->redirect( $page );
 	}
 
 	/**
-	 * Get the currently set form class
-	 * @return mixed string containing the valid and enabled form class, otherwise false. 
+	 * Get the current adapter class
+	 * @return string containing the chosen adapter class name
+	 *
+	 * Override if your page selects between multiple adapters based on
+	 * context.
 	 */
-	public function getFormClass() {
-		return $this->adapter->getFormClass();
+	protected function getGatewayName() {
+		return $this->gatewayName;
 	}
 
 	/**
@@ -177,60 +225,63 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * @return null
 	 */
 	protected function displayResultsForDebug( PaymentTransactionResponse $results = null ) {
-		global $wgOut;
-		
+
 		$results = empty( $results ) ? $this->adapter->getTransactionResponse() : $results;
 		
 		if ( $this->adapter->getGlobal( 'DisplayDebug' ) !== true ){
 			return;
 		}
-		$wgOut->addHTML( HTML::element( 'span', null, $results->getMessage() ) );
+
+		$output = $this->getOutput();
+
+		$output->addHTML( Html::element( 'span', null, $results->getMessage() ) );
 
 		$errors = $results->getErrors();
 		if ( !empty( $errors ) ) {
-			$wgOut->addHTML( HTML::openElement( 'ul' ) );
+			$output->addHTML( Html::openElement( 'ul' ) );
 			foreach ( $errors as $code => $value ) {
-				$wgOut->addHTML( HTML::element('li', null, "Error $code: " . print_r( $value, true ) ) );
+				$output->addHTML( Html::element('li', null, "Error $code: " . print_r( $value, true ) ) );
 			}
-			$wgOut->addHTML( HTML::closeElement( 'ul' ) );
+			$output->addHTML( Html::closeElement( 'ul' ) );
 		}
 
 		$data = $results->getData();
 		if ( !empty( $data ) ) {
-			$wgOut->addHTML( HTML::openElement( 'ul' ) );
+			$output->addHTML( Html::openElement( 'ul' ) );
 			foreach ( $data as $key => $value ) {
 				if ( is_array( $value ) ) {
-					$wgOut->addHTML( HTML::openElement('li', null, $key ) . HTML::openElement( 'ul' ) );
+					$output->addHTML( Html::openElement('li', null, $key ) . Html::openElement( 'ul' ) );
 					foreach ( $value as $key2 => $val2 ) {
-						$wgOut->addHTML( HTML::element('li', null, "$key2: $val2" ) );
+						$output->addHTML( Html::element('li', null, "$key2: $val2" ) );
 					}
-					$wgOut->addHTML( HTML::closeElement( 'ul' ) . HTML::closeElement( 'li' ) );
+					$output->addHTML( Html::closeElement( 'ul' ) . Html::closeElement( 'li' ) );
 				} else {
-					$wgOut->addHTML( HTML::element('li', null, "$key: $value" ) );
+					$output->addHTML( Html::element('li', null, "$key: $value" ) );
 				}
 			}
-			$wgOut->addHTML( HTML::closeElement( 'ul' ) );
+			$output->addHTML( Html::closeElement( 'ul' ) );
 		} else {
-			$wgOut->addHTML( "Empty Results" );
+			$output->addHTML( "Empty Results" );
 		}
-		if ( array_key_exists( 'Donor', $_SESSION ) ) {
-			$wgOut->addHTML( "Session Donor Vars:" . HTML::openElement( 'ul' ));
-			foreach ( $_SESSION['Donor'] as $key => $val ) {
-				$wgOut->addHTML( HTML::element('li', null, "$key: $val" ) );
+		$donorData = $this->getRequest()->getSessionData( 'Donor' );
+		if ( is_array( $donorData ) ) {
+			$output->addHTML( "Session Donor Vars:" . Html::openElement( 'ul' ));
+			foreach ( $donorData as $key => $val ) {
+				$output->addHTML( Html::element('li', null, "$key: $val" ) );
 			}
-			$wgOut->addHTML( HTML::closeElement( 'ul' ) );
+			$output->addHTML( Html::closeElement( 'ul' ) );
 		} else {
-			$wgOut->addHTML( "No Session Donor Vars:" );
+			$output->addHTML( "No Session Donor Vars:" );
 		}
 
 		if ( is_array( $this->adapter->debugarray ) ) {
-			$wgOut->addHTML( "Debug Array:" . HTML::openElement( 'ul' ) );
+			$output->addHTML( "Debug Array:" . Html::openElement( 'ul' ) );
 			foreach ( $this->adapter->debugarray as $val ) {
-				$wgOut->addHTML( HTML::element('li', null, $val ) );
+				$output->addHTML( Html::element('li', null, $val ) );
 			}
-			$wgOut->addHTML( HTML::closeElement( 'ul' ) );
+			$output->addHTML( Html::closeElement( 'ul' ) );
 		} else {
-			$wgOut->addHTML( "No Debug Array" );
+			$output->addHTML( "No Debug Array" );
 		}
 	}
 
@@ -240,62 +291,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 */
 	public static function getCountries() {
 		return CountryCodes::getCountryCodes();
-	}
-
-	/**
-	 * If a currency code error exists and fallback currency conversion is 
-	 * enabled for this adapter, convert intended amount to default currency.
-	 *
-	 * @return boolean whether currency conversion was performed
-	 * @throws DomainException
-	 */
-	protected function fallbackToDefaultCurrency() {
-		$defaultCurrency = $this->adapter->getGlobal( 'FallbackCurrency' );
-		if ( !$defaultCurrency ) {
-			return false;
-		}
-		$form_errors = $this->adapter->getValidationErrors();
-		if ( !$form_errors || !array_key_exists( 'currency_code', $form_errors ) ) {
-			return false;
-		}
-		// If the currency is invalid, fallback to default.
-		// Our conversion rates are all relative to USD, so use that as an
-		// intermediate currency if converting between two others.
-		$oldCurrency = $this->adapter->getData_Unstaged_Escaped( 'currency_code' );
-		if ( $oldCurrency === $defaultCurrency ) {
-			$adapterClass = $this->adapter->getGatewayAdapterClass();
-			throw new DomainException( __FUNCTION__ . " Unsupported currency $defaultCurrency set as fallback for $adapterClass." );
-		}
-		$oldAmount = $this->adapter->getData_Unstaged_Escaped( 'amount' );
-		$usdAmount = 0.0;
-		$newAmount = 0;
-
-		$conversionRates = CurrencyRates::getCurrencyRates();
-		if ( $oldCurrency === 'USD' ) {
-			$usdAmount = $oldAmount;
-		}
-		elseif ( array_key_exists( $oldCurrency, $conversionRates ) ) {
-			$usdAmount = $oldAmount / $conversionRates[$oldCurrency];
-		}
-		else {
-			// We can't convert from this unknown currency.
-			return false;
-		}
-
-		if ( $defaultCurrency === 'USD' ) {
-			$newAmount = floor( $usdAmount );
-		}
-		elseif ( array_key_exists( $defaultCurrency, $conversionRates ) ) {
-			$newAmount = floor( $usdAmount * $conversionRates[$defaultCurrency] );
-		}
-
-		$this->adapter->addRequestData( array(
-			'amount' => $newAmount,
-			'currency_code' => $defaultCurrency
-		) );
-
-		$this->logger->info( "Unsupported currency $oldCurrency forced to $defaultCurrency" );
-		return true;
 	}
 
 	/**
@@ -378,7 +373,8 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		}
 		$oid = $this->adapter->getData_Unstaged_Escaped( 'order_id' );
 
-		$referrer = $this->getRequest()->getHeader( 'referer' );
+		$request = $this->getRequest();
+		$referrer = $request->getHeader( 'referer' );
 		$liberated = false;
 		if ( $this->adapter->session_getData( 'order_status', $oid ) === 'liberated' ) {
 			$liberated = true;
@@ -387,7 +383,9 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		// XXX need to know whether we were in an iframe or not.
 		global $wgServer;
 		if ( $this->isReturnFramed() && ( strpos( $referrer, $wgServer ) === false ) && !$liberated ) {
-			$_SESSION[ 'order_status' ][ $oid ] = 'liberated';
+			$sessionOrderStatus = $request->getSessionData( 'order_status' );
+			$sessionOrderStatus[$oid] = 'liberated';
+			$request->setSessionData( 'order_status', $sessionOrderStatus );
 			$this->logger->info( "Resultswitcher: Popping out of iframe for Order ID " . $oid );
 			//TODO: Move the $forbidden check back to the beginning of this if block, once we know this doesn't happen a lot.
 			//TODO: If we get a lot of these messages, we need to redirect to something more friendly than FORBIDDEN, RAR RAR RAR.
@@ -418,12 +416,16 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			// communication_type of 'incoming' and a way to provide the
 			// adapter the GET/POST params harvested here.
 			$this->adapter->processResponse( $response );
-			switch ( $this->adapter->getFinalStatus() ) {
+			$status = $this->adapter->getFinalStatus();
+			switch ( $status ) {
 			case FinalStatus::COMPLETE:
 			case FinalStatus::PENDING:
-				$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
+				$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
+				$this->logger->info( "Displaying thank you page $thankYouPage for status $status." );
+				$this->getOutput()->redirect( $thankYouPage );
 				return;
 			}
+			$this->logger->info( "Displaying fail page for final status $status" );
 		} else {
 			$this->logger->error( "Resultswitcher: Token Check Failed. Order ID: $oid" );
 		}
@@ -444,6 +446,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 */
 	protected function renderResponse( PaymentResult $result ) {
 		if ( $result->isFailed() ) {
+			$this->logger->info( 'Displaying fail page for failed PaymentResult' );
 			$this->displayFailPage();
 		} elseif ( $url = $result->getRedirect() ) {
 			$this->getOutput()->redirect( $url );
@@ -482,7 +485,9 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$this->displayForm();
 		} else {
 			// Success.
-			$this->getOutput()->redirect( $this->adapter->getThankYouPage() );
+			$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
+			$this->logger->info( "Displaying thank you page $thankYouPage for successful PaymentResult." );
+			$this->getOutput()->redirect( $thankYouPage );
 		}
 	}
 
@@ -508,5 +513,31 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		$paymentFrame .= Xml::closeElement( 'iframe' );
 
 		$this->getOutput()->addHTML( $paymentFrame );
+	}
+
+	/**
+	 * Try to get donor information to tag log entries in case we don't
+	 * have an adapter instance.
+	 */
+	protected function getLogPrefix() {
+		$info = array();
+		$donorData = $this->getRequest()->getSessionData( 'Donor' );
+		if ( is_array( $donorData ) ) {
+			if ( isset( $donorData['contribution_tracking_id'] ) ) {
+				$info[] = $donorData['contribution_tracking_id'];
+			}
+			if ( isset( $donorData['order_id'] ) ) {
+				$info[] = $donorData['order_id'];
+			}
+		}
+		return implode( ':', $info ) . ' ';
+	}
+
+	public function setHeaders() {
+		parent::setHeaders();
+
+		// TODO: Switch title according to failiness.
+		// Maybe ask $form_obj for a title so different errors can show different titles
+		$this->getOutput()->setPageTitle( wfMessage( 'donate_interface-make-your-donation' ) );
 	}
 }

@@ -7,8 +7,6 @@
 class DonationApi extends ApiBase {
 	public $donationData, $gateway;
 	public function execute() {
-		global $wgDonationInterfaceTestMode;
-
 		$this->donationData = $this->extractRequestParams();
 
 		$this->gateway = $this->donationData['gateway'];
@@ -17,19 +15,23 @@ class DonationApi extends ApiBase {
 		// @todo FIXME: Unused local variable.
 		$submethod = $this->donationData['payment_submethod'];
 
-		$gateway_opts = array (
-			'api_request' => 'true'
-		);
+		$gatewayObj = $this->getGatewayObject();
+
+		if ( !$gatewayObj ) {
+			return; // already failed with a dieUsage call
+		}
+
+		$gatewayObj->revalidate();
+		if ( $gatewayObj->getAllErrors() ) {
+			$outputResult['errors'] = $gatewayObj->getAllErrors();
+			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
+			$this->getResult()->addValue( null, 'result', $outputResult );
+			return;
+		}
 
 		if ( $this->gateway == 'globalcollect' ) {
-			// FIXME: no test code path in prod
-			if ( $wgDonationInterfaceTestMode === true ) {
-				$gatewayObj = new TestingGlobalCollectAdapter( $gateway_opts );
-			} else {
-				$gatewayObj = new GlobalCollectAdapter( $gateway_opts );
-			}
 			switch ( $method ) {
-				// TODO: add other payment methods
+				// TODO: add other iframe payment methods
 				case 'cc':
 					$result = $gatewayObj->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
 					break;
@@ -37,13 +39,10 @@ class DonationApi extends ApiBase {
 					$result = $gatewayObj->do_transaction( 'TEST_CONNECTION' );
 			}
 		} elseif ( $this->gateway == 'adyen' ) {
-			$gatewayObj = new AdyenAdapter( $gateway_opts );
 			$result = $gatewayObj->do_transaction( 'donate' );
-		} else {
-			$this->dieUsage( "Invalid gateway <<<{$this->gateway}>>> passed to Donation API.", 'unknown_gateway' );
 		}
 
-		//$normalizedData = $gatewayObj->getData_Unstaged_Escaped();
+		// $normalizedData = $gatewayObj->getData_Unstaged_Escaped();
 		$outputResult = array();
 		if ( $result->getMessage() !== null ) {
 			$outputResult['message'] = $result->getMessage();
@@ -64,9 +63,6 @@ class DonationApi extends ApiBase {
 			}
 			if ( array_key_exists( 'gateway_params', $data ) ) {
 				$outputResult['gateway_params'] = $data['gateway_params'];
-			}
-			if ( $gatewayObj->getMerchantID() === 'test' ) {
-				$outputResult['testform'] = true;
 			}
 			if ( array_key_exists( 'RESPMSG', $data ) ) {
 				$outputResult['responsemsg'] = $data['RESPMSG'];
@@ -107,20 +103,20 @@ class DonationApi extends ApiBase {
 			'city' => $this->defineParam( false ),
 			'state' => $this->defineParam( false ),
 			'zip' => $this->defineParam( false ),
-			'emailAdd' => $this->defineParam( false ),
+			'email' => $this->defineParam( false ),
 			'country' => $this->defineParam( false ),
-			'card_num' => $this->defineParam( false  ),
-			'card_type' => $this->defineParam( false  ),
-			'expiration' => $this->defineParam( false  ),
-			'cvv' => $this->defineParam( false  ),
-			'payment_method' => $this->defineParam( false  ),
-			'payment_submethod' => $this->defineParam( false  ),
-			'language' => $this->defineParam( false  ),
-			'order_id' => $this->defineParam( false  ),
-			'contribution_tracking_id' => $this->defineParam( false  ),
-			'utm_source' => $this->defineParam( false  ),
-			'utm_campaign' => $this->defineParam( false  ),
-			'utm_medium' => $this->defineParam( false  ),
+			'card_num' => $this->defineParam( false ),
+			'card_type' => $this->defineParam( false ),
+			'expiration' => $this->defineParam( false ),
+			'cvv' => $this->defineParam( false ),
+			'payment_method' => $this->defineParam( false ),
+			'payment_submethod' => $this->defineParam( false ),
+			'language' => $this->defineParam( false ),
+			'order_id' => $this->defineParam( false ),
+			'wmf_token' => $this->defineParam( false ),
+			'utm_source' => $this->defineParam( false ),
+			'utm_campaign' => $this->defineParam( false ),
+			'utm_medium' => $this->defineParam( false ),
 			'referrer' => $this->defineParam( false ),
 			'recurring' => $this->defineParam( false ),
 		);
@@ -150,7 +146,7 @@ class DonationApi extends ApiBase {
 			'city' => 'City',
 			'state' => 'State abbreviation',
 			'zip' => 'Postal code',
-			'emailAdd' => 'Email address',
+			'email' => 'Email address',
 			'country' => 'Country code',
 			'card_num' => 'Credit card number',
 			'card_type' => 'Credit card type',
@@ -160,7 +156,7 @@ class DonationApi extends ApiBase {
 			'payment_submethod' => 'Payment submethod to use',
 			'language' => 'Language code',
 			'order_id' => 'Order ID (if a donation has already been started)',
-			'contribution_tracking_id' => 'ID for contribution tracking table',
+			'wmf_token' => 'Mediawiki edit token',
 			'utm_source' => 'Tracking variable',
 			'utm_campaign' => 'Tracking variable',
 			'utm_medium' => 'Tracking variable',
@@ -196,5 +192,14 @@ class DonationApi extends ApiBase {
 			'action=donate&gateway=globalcollect&amount=2.00&currency_code=USD'
 				=> 'apihelp-donate-example-1',
 		);
+	}
+
+	private function getGatewayObject() {
+		$gateway_opts = array(
+			'api_request' => 'true'
+		);
+
+		$className = DonationInterface::getAdapterClassForGateway( $this->gateway );
+		return new $className( $gateway_opts );
 	}
 }

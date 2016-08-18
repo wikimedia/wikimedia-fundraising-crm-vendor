@@ -2,39 +2,46 @@
 
 class Gateway_Extras_ConversionLog extends Gateway_Extras {
 
-	static $instance;
+	protected static $instance;
 
 	/**
 	 * Logs the response from a transaction
 	 */
-	public function post_process() {
+	protected function post_process() {
 		// if the trxn has been outright rejected, log it
 		if ( $this->gateway_adapter->getValidationAction() == 'reject' ) {
 			$this->log(
 				$this->gateway_adapter->getData_Unstaged_Escaped( 'contribution_tracking_id' ), 'Rejected'
 			);
-			return TRUE;
+			return true;
 		}
 
+		$response = $this->gateway_adapter->getTransactionResponse();
 		// make sure the response property has been set (signifying a transaction has been made)
-		if ( !$this->gateway_adapter->getTransactionResponse() )
-			return FALSE;
+		if ( !$response ) {
+			return false;
+		}
 
 		$this->log(
-			$this->gateway_adapter->getData_Unstaged_Escaped( 'contribution_tracking_id' ), "Gateway response: " . addslashes( $this->gateway_adapter->getTransactionMessage() ), '"' . addslashes( json_encode( $this->gateway_adapter->getTransactionData() ) ) . '"'
+			$this->gateway_adapter->getData_Unstaged_Escaped(
+				'contribution_tracking_id'
+			),
+			"Gateway response: " . addslashes(
+				$response->getTxnMessage()
+			), '"' . addslashes( json_encode( $response->getData() ) ) . '"'
 		);
-		return TRUE;
+		return true;
 	}
 
-	static function onPostProcess( &$gateway_adapter ) {
-		if ( !$gateway_adapter->getGlobal( 'EnableConversionLog' ) ){
+	public static function onPostProcess( GatewayType $gateway_adapter ) {
+		if ( !$gateway_adapter->getGlobal( 'EnableConversionLog' ) ) {
 			return true;
 		}
 		$gateway_adapter->debugarray[] = 'conversion log onPostProcess hook!';
 		return self::singleton( $gateway_adapter )->post_process();
 	}
 
-	static function singleton( &$gateway_adapter ) {
+	protected static function singleton( GatewayType $gateway_adapter ) {
 		if ( !self::$instance ) {
 			self::$instance = new self( $gateway_adapter );
 		}

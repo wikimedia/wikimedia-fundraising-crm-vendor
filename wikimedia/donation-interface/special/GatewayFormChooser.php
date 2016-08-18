@@ -17,7 +17,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	protected $logger;
 
 	function __construct() {
-		$this->logger = DonationLoggerFactory::getLogger();
+		$this->logger = DonationLoggerFactory::getLoggerForType( 'GatewayAdapter', 'FormChooser' );
 		parent::__construct( 'GatewayFormChooser' );
 	}
 
@@ -36,14 +36,23 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 			$this->getOutput()->redirect( Title::newFromText('Special:FundraiserMaintenance')->getFullURL(), '302' );
 			return;
 		}
-		// Set the country parameter
-		$coerceNull = function( $val ) { return ( $val === '' ) ? null : $val; };
-		$country = $coerceNull( $this->getRequest()->getVal( 'country', null ) );
-		$currency = $coerceNull( $this->getRequest()->getVal( 'currency', null ) );
-		$paymentMethod = $coerceNull( $this->getRequest()->getVal( 'paymentmethod', null ) );
-		$paymentSubMethod = $coerceNull( $this->getRequest()->getVal( 'submethod', null ) );
+
+		$request = $this->getRequest();
+		// Get a query string parameter or null if blank
+		$getValOrNull = function( $paramName ) use ( $request ) {
+			$val = $request->getVal( $paramName, null );
+			if ( $val === '' ) {
+				$val = null;
+			}
+			return $val;
+		};
+
+		$country = $getValOrNull( 'country' );
+		$currency = $getValOrNull( 'currency_code' );
+		$paymentMethod = $getValOrNull( 'payment_method' );
+		$paymentSubMethod = $getValOrNull( 'payment_submethod' );
+		$gateway = $getValOrNull( 'gateway' );
 		$recurring = $this->getRequest()->getVal( 'recurring', false );
-		$gateway = $coerceNull( $this->getRequest()->getVal( 'gateway', null ) );
 
 		// FIXME: This is clearly going to go away before we deploy this bizniss.
 		$testNewGetAll = $this->getRequest()->getVal( 'testGetAll', false );
@@ -56,6 +65,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 			die();
 		}
 
+		// FIXME: here we should check for ffname, and if that's a valid form skip the choosing
 		$form = self::getOneValidForm( $country, $currency, $paymentMethod, $paymentSubMethod, $recurring, $gateway );
 
 		if ( $form === null ) {
@@ -74,7 +84,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 
 		// Pass any other params that are set. We do not skip ffname or form_name because
 		// we wish to retain the query string override.
-		$excludeKeys = array( 'paymentmethod', 'submethod', 'title', 'recurring' );
+		$excludeKeys = array( 'title', 'recurring' );
 		foreach ( $this->getRequest()->getValues() as $key => $value ) {
 			// Skip the required variables
 			if ( !in_array( $key, $excludeKeys ) ) {
@@ -102,9 +112,11 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	 * @throw UnexpectedValueException
 	 */
 	static function buildPaymentsFormURL( $form_key, $other_params = array ( ) ) {
+		global $wgDonationInterfaceDefaultAppeal;
+
 		// And... construct the URL
 		$params = array (
-			'appeal' => "JimmyQuote",
+			'appeal' => $wgDonationInterfaceDefaultAppeal,
 			'ffname' => $form_key,
 		);
 
@@ -145,11 +157,17 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 
 			// FIXME: We aren't doing ucfirst, more like camlcase.  Kludge like hell:
 			switch ( $gateway ) {
+				case 'astropay':
+					$specialpage = 'AstroPayGateway';
+					break;
 				case 'globalcollect':
 					$specialpage = 'GlobalCollectGateway';
 					break;
-				case 'worldpay':
-					$specialpage = 'WorldpayGateway';
+				case 'paypal':
+					$specialpage = 'PaypalLegacyGateway';
+					break;
+				case 'paypal_ec':
+					$specialpage = 'PaypalExpressGateway';
 					break;
 				default:
 					$specialpage = ucfirst( $gateway ) . "Gateway";
@@ -157,7 +175,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		}
 
 		// set the default redirect
-		return self::getTitleFor( $specialpage )->getLocalUrl( $params );
+		return self::getTitleFor( $specialpage )->getLocalURL( $params );
 	}
 
 	/**
@@ -237,13 +255,6 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 				unset( $forms[$name] );
 				continue;
 			}
-
-			// Filter on currency; and if it's too generic we add what the adapter thinks it can support
-			/*if ( $meta['currencies'] === 'ALL' ) {
-				$meta['currencies'] = array( '+' => $adapterName::getCurrencies() );
-			} elseif( array_key_exists( '-', $meta['currencies'] ) && !array_key_exists( '+', $meta['currencies'] ) ) {
-				$meta['currencies']['+'] = $adapterName::getCurrencies();
-			}*/
 
 			if ( !is_null( $currency ) && !DataValidator::value_appears_in( $currency, $meta['currencies'] )
 			) {
@@ -354,22 +365,92 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	}
 
 	/**
-	 * Checks to see if the ffname supplied is a valid form for the rest of the supplied params.
-	 * @param type $ffname The form name to check.
-	 * @param string $country Optional country code filter
-	 * @param string $currency Optional currency code filter
-	 * @param string $payment_method Optional payment method filter
-	 * @param string $payment_submethod Optional payment submethod filter. THIS WILL ONLY WORK IF YOU ALSO SEND THE PAYMENT METHOD.
-	 * @param boolean $recurring Whether or not we should return recurring forms. Default = false.
-	 * @param string $gateway Optional gateway to force.
-	 * @return bool True if the supplied form matches the requirements, otherwise false
+	 * Checks to see if the ffname supplied is a valid form matching
+	 * the donor's country and payment preferences.
+	 *
+	 * @param string $ffname The form name to check
+	 * @param array $prefs country and payment preferences, including:
+	 *  country Optional country code filter
+	 *  currency Optional currency code filter
+	 *  payment_method Optional payment method filter
+	 *  payment_submethod Optional payment submethod filter
+	 *   THIS WILL ONLY WORK IF YOU ALSO SEND THE PAYMENT METHOD
+	 *  recurring Whether we should return recurring forms (default false)
+	 *  gateway Optional gateway to force
+	 * @return bool True if the named form matches the requirements
 	 */
-	static function isValidForm( $ffname, $country = null, $currency = null, $payment_method = null, $payment_submethod = null, $recurring = false, $gateway = null ) {
-		$forms = self::getAllValidForms( $country, $currency, $payment_method, $payment_submethod, $recurring, $gateway );
-		if ( is_array( $forms ) && array_key_exists( $ffname, $forms ) ) {
+	public static function isValidForm( $ffname, $prefs = array() ) {
+		$form = self::getFormDefinition( $ffname );
+		if ( !$form ) {
+			return false;
+		}
+
+		// First make sure these match if present
+		$keyMap = array(
+			'country' => 'countries',
+			'gateway' => 'gateway',
+			'currency' => 'currencies',
+		);
+		foreach ( $keyMap as $prefKey => $formKey ) {
+			if (
+				!self::prefAllowedBySpec( $prefs, $prefKey, $form, $formKey )
+			) {
+				return false;
+			}
+		}
+
+		// Filter by method if supplied
+		if (
+			!empty( $prefs['payment_method'] ) &&
+			!empty( $form['payment_methods'] )
+		) {
+			$requestedMethod = $prefs['payment_method'];
+			$formMethods = $form['payment_methods'];
+			if ( !array_key_exists( $requestedMethod, $formMethods ) ) {
+				return false;
+			}
+			// Filter by submethod if we have enough info
+			if ( !empty( $prefs['payment_submethod'] ) ) {
+				$formSubmethods = $formMethods[$requestedMethod];
+				$submethod = $prefs['payment_submethod'];
+				if (
+				!DataValidator::value_appears_in( $submethod, $formSubmethods )
+				) {
+					return false;
+				}
+			}
+		}
+
+		// Any special form is valid if it got past those checks
+		if ( array_key_exists( 'special_type', $form ) ) {
 			return true;
 		}
-		return false;
+
+		// Make sure the form supports recurring if requested
+		$formIsRecurring = in_array( 'recurring', $form );
+		$wantRecurring = (
+			!empty( $prefs['recurring'] ) &&
+			$prefs['recurring'] !== '0' &&
+			$prefs['recurring'] !== 'false'
+		);
+		if ( $wantRecurring != $formIsRecurring ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	protected static function prefAllowedBySpec(
+		$prefs, $prefKey, $form, $formKey
+	) {
+		// we only filter on keys that exist
+		if ( empty( $prefs[$prefKey] ) || empty( $form[$formKey] ) ) {
+			return true;
+		}
+		$prefValue = $prefs[$prefKey];
+		$formSetting = $form[$formKey];
+
+		return DataValidator::value_appears_in( $prefValue, $formSetting );
 	}
 
 	/**
@@ -381,9 +462,9 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		global $wgDonationInterfaceGatewayAdapters;
 
 		$enabledGateways = array();
-		foreach ( $wgDonationInterfaceGatewayAdapters as $gatewayClass ) {
+		foreach ( $wgDonationInterfaceGatewayAdapters as $identifier => $gatewayClass ) {
 			if ( $gatewayClass::getGlobal( 'Enabled' ) ) {
-				$enabledGateways[] = $gatewayClass::getIdentifier();
+				$enabledGateways[] = $identifier;
 			}
 		}
 		return $enabledGateways;
@@ -408,7 +489,25 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 			reset( $valid_forms );
 			return key ( $valid_forms );
 		}
-		
+
+		// We know there are multiple options for the donor at this point.
+		// selection_weight = 0 is interpreted as meaning "don't pick this
+		// form unless we asked for it by name", so remove those forms before
+		// we apply any other criteria.
+		// FIXME: once other FIXMEs are complete, use a more explicit settings
+		// key like 'onlyOnRequest' => true and filter in getAllValidForms
+		$failforms = array();
+		foreach ( $valid_forms as $form_name => $meta ) {
+			if (
+				isset( $meta['selection_weight'] ) &&
+				$meta['selection_weight'] === 0
+			) {
+				$failforms[] = $form_name;
+			}
+		}
+		foreach ( $failforms as $failform ) {
+			unset( $valid_forms[$failform] );
+		}
 		//general idea: If one form has constraints for the following ordered
 		//keys, and some forms do not have that constraint, prefer the one with 
 		//the explicit constraints. 
@@ -463,28 +562,23 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 			return key ( $valid_forms );
 		}
 		
-		//Hell: we're still here. Throw a freaking dart
-		$total_weight = 0;
-		foreach ( array_keys( $valid_forms ) as $form_name ) {
-			if ( !array_key_exists( 'selection_weight', $valid_forms[$form_name] ) ) {
-				$valid_forms[$form_name]['selection_weight'] = 100;
+		// Choose the form with the highest selection weight.
+		$greatest_weight = 0;
+		$heaviest_form = null;
+		foreach ( $valid_forms as $form_name => &$meta ) {
+			// Assume a default weight of 100.
+			if ( !array_key_exists( 'selection_weight', $meta ) ) {
+				$meta['selection_weight'] = 100;
 			}
-			$form_weight = $valid_forms[$form_name]['selection_weight'];
-			if ( $form_weight === 0 ) {
-				unset( $valid_forms[$form_name] );
-				continue;
-			}
-			$total_weight += $form_weight;
-		}
-		$count = 0;
-		$randN = rand( 1, $total_weight );
-		foreach ( $valid_forms as $form_name => $meta ) {
-			$count += $meta['selection_weight'];
-			if ( $randN <= $count ) {
-				return $form_name;
+
+			// Note that we'll never choose a weightless form.
+			if ( $meta['selection_weight'] > $greatest_weight ) {
+				$heaviest_form = $form_name;
+				$greatest_weight = $meta['selection_weight'];
 			}
 		}
-		return null;
+
+		return $heaviest_form;
 	}
 
 	/**

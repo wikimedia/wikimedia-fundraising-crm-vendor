@@ -17,21 +17,15 @@
  */
 
 /**
- * AstropayGateway
+ * AstroPayGateway
  *
  */
-class AstropayGateway extends GatewayPage {
+class AstroPayGateway extends GatewayPage {
 
-	/**
-	 * Constructor - set up the new special page
-	 */
-	public function __construct() {
-		$this->adapter = new AstropayAdapter();
-		parent::__construct(); //the next layer up will know who we are.
-	}
+	protected $gatewayName = 'astropay';
 
 	protected function handleRequest() {
-		$this->getOutput()->addModules( 'ext.donationinterface.astropay.scripts' );
+		$this->getOutput()->addModules( 'ext.donationInterface.forms' );
 		$this->handleDonationRequest();
 	}
 }

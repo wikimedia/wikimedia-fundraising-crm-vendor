@@ -1,7 +1,11 @@
 <?php
 namespace PHPQueue\Backend;
 
+use Predis\Response\ResponseInterface;
+use Predis\Transaction\MultiExec;
+
 use PHPQueue\Exception\BackendException;
+use PHPQueue\Interfaces\AtomicReadBuffer;
 use PHPQueue\Interfaces\KeyValueStore;
 use PHPQueue\Interfaces\FifoQueueStore;
 
@@ -25,7 +29,10 @@ use PHPQueue\Interfaces\FifoQueueStore;
  */
 class Predis
     extends Base
-    implements FifoQueueStore, KeyValueStore
+    implements
+        AtomicReadBuffer,
+        FifoQueueStore,
+        KeyValueStore
 {
     const TYPE_STRING='string';
     const TYPE_HASH='hash';
@@ -101,14 +108,51 @@ class Predis
                 throw new BackendException("Cannot push to indexed fifo queue without correlation data.");
             }
             $status = $this->addToIndexedFifoQueue($key, $data);
-            if (!$status) {
-                throw new BackendException("Couldn't push to indexed fifo queue.");
+            if (!self::boolStatus($status)) {
+                throw new BackendException('Couldn\'t push to indexed fifo queue: ' . $status->getMessage());
             }
         } else {
             // Note that we're ignoring the "new length" return value, cos I don't
             // see how to make it useful.
             $this->getConnection()->rpush($this->queue_name, $encoded_data);
         }
+    }
+
+    /**
+     * Remove stale elements at the top of the queue and return the first real entry
+     *
+     * When data expires, it still leaves a queue entry linking to its
+     * correlation ID.  Clear any of these stale entries at the head of
+     * the queue.
+     *
+     * Note that we run this from inside a transaction, to make it less
+     * likely that we'll hit a race condition.
+     *
+     * @param MultiExec $tx transaction we're working within.
+     *
+     * @return string|null Top element's key, or null if the queue is empty.
+     */
+    public function peekWithCleanup(MultiExec $tx)
+    {
+        for (;;) {
+            // Look up the first element in the FIFO ordering.
+            $values = $tx->zrange(Predis::FIFO_INDEX, 0, 0);
+            if ($values) {
+                // Use that value as a key into the key-value block.
+                $key = $values[0];
+                $exists = $tx->exists($key);
+
+                if (!$exists) {
+                    // If the data is missing, then remove from the FIFO index.
+                    $tx->zrem(Predis::FIFO_INDEX, $key);
+                } else {
+                    return $key;
+                }
+            } else {
+                break;
+            }
+        }
+        return null;
     }
 
     /**
@@ -123,32 +167,111 @@ class Predis
         }
         if ($this->order_key) {
             // Pop the first element.
-            //
             // Adapted from https://github.com/nrk/predis/blob/v1.0/examples/transaction_using_cas.php
             $options = array(
                 'cas' => true,
                 'watch' => self::FIFO_INDEX,
                 'retry' => 3,
             );
-            $order_key = $this->order_key;
-            $this->getConnection()->transaction($options, function ($tx) use ($order_key, &$data) {
-                // Look up the first element in the FIFO ordering.
-                $values = $tx->zrange(self::FIFO_INDEX, 0, 0);
-                if ($values) {
-                    // Use that value as a key into the key-value block, to get the data.
-                    $key = $values[0];
+            $self = $this;
+            $this->getConnection()->transaction($options, function ($tx) use (&$data, &$self) {
+                // Begin transaction.
+                $tx->multi();
+
+                $key = $self->peekWithCleanup($tx);
+
+                if ($key) {
+                    // Use that value as a key into the key-value block.
                     $data = $tx->get($key);
 
-                    // Begin transaction.
-                    $tx->multi();
-
                     // Remove from both indexes.
-                    $tx->zrem(self::FIFO_INDEX, $key);
+                    $tx->zrem(Predis::FIFO_INDEX, $key);
                     $tx->del($key);
                 }
             });
         } else {
             $data = $this->getConnection()->lpop($this->queue_name);
+        }
+        if (!$data) {
+            return null;
+        }
+        $this->last_job = $data;
+        $this->last_job_id = time();
+        $this->afterGet();
+
+        return json_decode($data, true);
+    }
+
+    public function popAtomic($callback) {
+        if (!$this->hasQueue()) {
+            throw new BackendException("No queue specified.");
+        }
+        if ($this->order_key) {
+            throw new BackendException("atomicPop not yet supported for zsets");
+        }
+
+        // Pop and process the first element, erring on the side of
+        // at-least-once processing where the callback might get the same
+        // element before it's popped in the case of a race.
+        $options = array(
+            'cas' => true,
+            'watch' => $this->queue_name,
+            'retry' => 3,
+        );
+        $data = null;
+        $self = $this;
+        $this->getConnection()->transaction($options, function ($tx) use (&$data, $callback, $self) {
+            // Begin transaction.
+            $tx->multi();
+
+            $data = $tx->lpop($self->queue_name);
+            $data = json_decode($data, true);
+            if ($data !== null) {
+                call_user_func($callback, $data);
+            }
+        });
+        return $data;
+    }
+
+    /**
+     * Return the top element in the queue.
+     *
+     * @return array|null
+     */
+    public function peek()
+    {
+        $data = null;
+        $this->beforeGet();
+        if (!$this->hasQueue()) {
+            throw new BackendException("No queue specified.");
+        }
+        if ($this->order_key) {
+            // Adapted from https://github.com/nrk/predis/blob/v1.0/examples/transaction_using_cas.php
+            $options = array(
+                'cas' => true,
+                'watch' => self::FIFO_INDEX,
+                'retry' => 3,
+            );
+            $self = $this;
+            $this->getConnection()->transaction($options, function ($tx) use (&$data, &$self) {
+                // Begin transaction.
+                $tx->multi();
+
+                $key = $self->peekWithCleanup($tx);
+
+                if ($key) {
+                    // Use that value as a key into the key-value block.
+                    $data = $tx->get($key);
+                }
+            });
+        } else {
+            $data_range = $this->getConnection()->lrange($this->queue_name, 0, 0);
+            if (!$data_range) {
+                return null;
+            } else {
+                // Unpack list.
+                $data = $data_range[0];
+            }
         }
         if (!$data) {
             return null;
@@ -168,8 +291,8 @@ class Predis
         }
         $job_data = $this->open_items[$jobId];
         $status = $this->getConnection()->rpush($this->queue_name, $job_data);
-        if (!$status) {
-            throw new BackendException("Unable to save data.");
+        if (!is_int($status)) {
+            throw new BackendException('Unable to save data: ' . $status->getMessage());
         }
         $this->last_job_id = $jobId;
         $this->afterClearRelease();
@@ -211,8 +334,8 @@ class Predis
                     $status = $this->getConnection()->set($key, $data);
                 }
             }
-            if (!$status) {
-                throw new BackendException("Unable to save data.");
+            if (!self::boolStatus($status)) {
+                throw new BackendException('Unable to save data.: ' . $status->getMessage());
             }
         } catch (\Exception $ex) {
             throw new BackendException($ex->getMessage(), $ex->getCode());
@@ -224,6 +347,7 @@ class Predis
      *
      * @param string $key
      * @param array $data
+     * @return Predis\Response\ResponseInterface
      */
     protected function addToIndexedFifoQueue($key, $data)
     {
@@ -238,7 +362,7 @@ class Predis
         $expiry = $this->expiry;
         $this->getConnection()->transaction($options, function ($tx) use ($key, $score, $encoded_data, $expiry, &$status) {
             $tx->multi();
-            $tx->zadd(self::FIFO_INDEX, $score, $key);
+            $tx->zadd(Predis::FIFO_INDEX, $score, $key);
             if ($expiry) {
                 $status = $tx->setex($key, $expiry, $encoded_data);
             } else {
@@ -335,7 +459,7 @@ class Predis
             $status = $this->getConnection()->incrby($key, $count);
         }
 
-        return $status;
+        return is_int($status);
     }
 
     public function decrKey($key, $count=1)
@@ -349,7 +473,7 @@ class Predis
             $status = $this->getConnection()->decrby($key, $count);
         }
 
-        return $status;
+        return is_int($status);
     }
 
     public function keyExists($key)
@@ -361,5 +485,9 @@ class Predis
     public function hasQueue()
     {
         return !empty($this->queue_name);
+    }
+
+    protected static function boolStatus(ResponseInterface $status) {
+        return ($status == 'OK' || $status == 'QUEUED');
     }
 }

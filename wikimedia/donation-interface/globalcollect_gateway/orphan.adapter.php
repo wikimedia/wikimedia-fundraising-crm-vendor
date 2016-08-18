@@ -11,7 +11,16 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 
 	public function __construct() {
 		$this->batch = true; //always batch if we're using this object.
-		parent::__construct( $options = array ( ) );
+
+		// FIXME: This is just to trigger batch code paths within DonationData.
+		// Do so explicitly instead.
+		$options = array(
+			'external_data' => array(
+				'wheeee' => 'yes'
+			),
+		);
+
+		parent::__construct( $options );
 	}
 
 	// FIXME: Get rid of this.
@@ -107,10 +116,19 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 	}
 
 	public function getUTMInfoFromDB() {
+		if ( $this->getData_Unstaged_Escaped( 'utm_source' ) ) {
+			// We already have the info.
+			return array();
+		}
+		if ( !class_exists( 'ContributionTrackingProcessor' ) ) {
+			$this->logger->error( 'We needed to get contribution_tracking data but cannot on this platform!' );
+			return array();
+		}
 		$db = ContributionTrackingProcessor::contributionTrackingConnection();
 
 		if ( !$db ) {
-			die( "There is something terribly wrong with your Contribution Tracking database. fixit." );
+			$this->logger->error( 'There is something terribly wrong with your Contribution Tracking database. fixit.' );
+			throw new RuntimeException( 'Might as well fall over.' );
 		}
 
 		$ctid = $this->getData_Unstaged_Escaped( 'contribution_tracking_id' );
@@ -139,7 +157,6 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 					$msg .= "$key = $val ";
 				}
 				$this->logger->info( "$ctid: Found UTM Data. $msg" );
-				echo "$msg\n";
 				return $data;
 			}
 		}
@@ -167,9 +184,29 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 		return $transaction;
 	}
 
+	public function setGatewayDefaults( $options = array ( ) ) {
+		// Prevent MediaWiki code paths.
+		parent::setGatewayDefaults( array(
+			'returnTo' => '',
+		) );
+	}
+
 	/**
 	 * Override live adapter with a no-op since orphan doesn't have any new info
 	 * before GET_ORDERSTATUS
 	 */
 	protected function pre_process_get_orderstatus() { }
+
+	/**
+	 * Do the antifraud checks here instead.
+	 */
+	protected function post_process_get_orderstatus() {
+		// TODO: Let's parse this into a "not so final status" attribute.
+		$status_response = $this->transaction_response->getData();
+		$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $status_response['STATUSID'] );
+
+		if ( $action === FinalStatus::PENDING_POKE ) {
+			$this->runAntifraudHooks();
+		}
+	}
 }

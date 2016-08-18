@@ -540,26 +540,22 @@ abstract class BaseClient
                     $this->constructUserAgentHeader();
 
                     $httpCurlRequest = new HttpCurl($this->config);
-		    $response = $httpCurlRequest->httpPost($this->mwsServiceUrl, $this->userAgent, $parameters);
+                    $response = $httpCurlRequest->httpPost($this->mwsServiceUrl, $this->userAgent, $parameters);
+                    $curlResponseInfo = $httpCurlRequest->getCurlResponseInfo();
 
-		    // Split the API response into Response Body and the other parts of the response into other
-                    list($other, $responseBody) = explode("\r\n\r\n", $response, 2);
-                    $other = preg_split("/\r\n|\n|\r/", $other);
+                    $statusCode = $curlResponseInfo["http_code"];
 
-                    list($protocol, $code, $text) = explode(' ', trim(array_shift($other)), 3);
                     $response = array(
-                        'Status' => (int) $code,
-                        'ResponseBody' => $responseBody
+                        'Status' => $statusCode,
+                        'ResponseBody' => $response
                     );
 
-		    $statusCode = $response['Status'];
-
-		    if ($statusCode == 200) {
-                        $shouldRetry    = false;
+                    if ($statusCode == 200) {
+                        $shouldRetry = false;
                         $this->success = true;
                     } elseif ($statusCode == 500 || $statusCode == 503) {
 
-			$shouldRetry = true;
+                        $shouldRetry = true;
                         if ($shouldRetry && strtolower($this->config['handle_throttle'])) {
                             $this->pauseOnRetry(++$retries, $statusCode);
                         }

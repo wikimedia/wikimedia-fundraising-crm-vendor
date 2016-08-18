@@ -1,3 +1,6 @@
+img.submethod-logo {
+	max-width: 100px;
+}
 div#payment_gateway-donate-addl-info-text {
 	font-size: 90%;
 	line-height: 120%;
@@ -6,6 +9,10 @@ div#payment_gateway-donate-addl-info-text {
 div#payment_gateway-donate-submessage {
 	font-size: 90%;
 	line-height: 120%;
+}
+div#payment_gateway-donate-submessage img {
+    vertical-align:baseline;
+    margin-right:4px;
 }
 #payment-table-donor td.label,
 #payment-table-comment td.label,
@@ -16,6 +23,7 @@ div#payment_gateway-donate-submessage {
     text-align: right;
     width: 94px;
 }
+
 .payment-cc-form-section {
     float: none;
     margin-right: 0;
@@ -193,9 +201,12 @@ textarea::-moz-placeholder {
 }
 
 .amount_header span {
-  font-size: 1.8em;
   display: block;
   color: #006699;
+}
+
+span#selected-amount {
+  font-size: 1.8em;
 }
 
 .cc_header {
@@ -206,6 +217,10 @@ textarea::-moz-placeholder {
   margin-bottom: 1em;
   padding-bottom: 0;
   font-weight: normal;
+}
+.cc_header img {
+    vertical-align: baseline;
+    margin-left: 8px;
 }
 
 div.donor { width: auto !important; }
@@ -253,6 +268,10 @@ div.donor { width: 100% !important; }
 }
 
 #payment-table-donor select { padding: .9em 1em !important; line-height: 40px; }
+
+#amount_input * {
+    vertical-align: top;
+}
 
 #topError {
 	max-width: 481px;
@@ -304,7 +323,9 @@ div.donor { width: 100% !important; }
 }
 #cards.four-per-line > li:nth-child(4),
 #cards.four-per-line > li:nth-child(8) { margin-right: 0; }
-
+#cards li.has_sub_text {
+    padding-bottom: 0.1em;
+}
 #cards.enabled li:hover {
     background: #bcbcbc;
 }
@@ -329,11 +350,22 @@ div.donor { width: 100% !important; }
     margin: 0 auto !important;
     height: auto !important;
 }
-
+#cards li.has_sub_text label {
+    margin-top: 0;
+}
+#cards li.has_sub_text input {
+    margin-bottom: 0.1em !important;
+}
+#cards li label p.card_sub_text {
+    margin: -0.5em auto;
+}
 #paymentContinue, #paymentSubmit {
   margin-top: 1em !important;
   clear: both;
   display: none;
+}
+#paymentContinue.force, #paymentSubmit.force {
+    display:block;
 }
 .btn {
   background-color: #757575 !important;
@@ -356,8 +388,8 @@ div.donor { width: 100% !important; }
   -webkit-box-shadow: inset 0 1px 4px rgba(0,0,1,.5);
   box-shadow: inset 0 1px 4px rgba(0,0,1,.5);
 }
-.amount_header span.hidden {
-	display: none;
+.hidden {
+	display: none !important;
 }
 #overlay {
 	z-index: 999;
@@ -374,4 +406,20 @@ div.donor { width: 100% !important; }
 	top: 50%;
 	left: 50%;
 	margin: -26px 0 0 -28px;
+}
+
+dd.field {
+    margin-bottom: 0;
+    margin-left: 0;
+}
+div.error-box {
+    margin: auto;
+    width: 70%;
+    border: solid black 2px;
+    padding: 20px;
+    text-align:center;
+    font-size: 1.5em;
+}
+div.error-box h2 {
+    color: red;
 }

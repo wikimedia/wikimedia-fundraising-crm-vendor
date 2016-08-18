@@ -7,30 +7,32 @@ class AmazonBillingApi extends ApiBase {
 		'currency_code',
 		'orderReferenceId',
 		'recurring',
-		'token',
+		'wmf_token',
 	);
 
 	public function execute() {
 		$output = $this->getResult();
 		$recurring = $this->getParameter( 'recurring');
+		$token = $this->getParameter( 'wmf_token' );
 		$adapterParams = array(
 			'api_request' => true,
 			'external_data' => array(
 				'amount' => $this->getParameter( 'amount' ),
 				'currency_code' => $this->getParameter( 'currency_code' ),
-				'recurring' => $this->getParameter( 'recurring' ),
+				'recurring' => $recurring,
+				'wmf_token' => $token,
 			),
 		);
 
 		$adapter = new AmazonAdapter( $adapterParams );
 
-		if ( !$adapter->validatedOK() ) {
+		if ( $adapter->getAllErrors() ) {
 			$output->addValue(
 				null,
 				'errors',
-				$adapter->getValidationErrors()
+				$adapter->getAllErrors()
 			);
-		} else if ( $adapter->checkTokens() ) {
+		} else if ( $token && $adapter->checkTokens() ) {
 			if ( $recurring ) {
 				$adapter->addRequestData( array(
 					'subscr_id' => $this->getParameter( 'billingAgreementId' ),
@@ -45,7 +47,7 @@ class AmazonBillingApi extends ApiBase {
 				$output->addvalue(
 					null,
 					'redirect',
-					$adapter->getFailPage()
+					ResultPages::getFailPage( $adapter )
 				);
 			} else if ( $result->getRefresh() ) {
 				$output->addValue(
@@ -57,7 +59,7 @@ class AmazonBillingApi extends ApiBase {
 				$output->addValue(
 					null,
 					'redirect',
-					$adapter->getThankYouPage()
+					ResultPages::getThankYouPage( $adapter )
 				);
 			}
 		} else {
@@ -65,7 +67,7 @@ class AmazonBillingApi extends ApiBase {
 			$output->addValue(
 				null,
 				'errors',
-				array( 'token-mismatch' => $this->msg( 'donate_interface-token-mismatch' )->text() )
+				array( 'token-mismatch' => $this->msg( 'donate_interface-cc-token-expired' )->text() )
 			);
 		}
 	}

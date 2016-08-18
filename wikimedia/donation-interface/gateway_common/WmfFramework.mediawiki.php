@@ -1,5 +1,7 @@
 <?php
 
+use MediaWiki\Session\SessionManager;
+
 class WmfFramework_Mediawiki {
 	static function debugLog( $identifier, $msg, $level = 'DEBUG' ) {
 		// TODO: call different wf*Log functions depending on $level
@@ -7,25 +9,43 @@ class WmfFramework_Mediawiki {
 	}
 
 	static function getIP() {
-		global $wgRequest;
-		return $wgRequest->getIP();
+		$request = RequestContext::getMain()->getRequest();
+		return $request->getIP();
+	}
+
+	static function getRequestValue( $key, $default ) {
+		//all strings is just fine.
+		$ret = RequestContext::getMain()->getRequest()->getText( $key, $default );
+		//getText never returns null: It just casts do an empty string. Soooo...
+		if ( $ret === '' && !array_key_exists( $key, $_POST ) && !array_key_exists( $key, $_GET ) ) {
+			$ret = $default; //not really there, so stop pretending.
+		}
+		return $ret;
+	}
+
+	static function getRequestHeader( $key ) {
+		return RequestContext::getMain()->getRequest()->getHeader( $key );
 	}
 
 	static function getHostname() {
 		return wfHostname();
 	}
 
-	static function formatMessage($message_identifier /*, ... */ ) {
+	static function formatMessage( $message_identifier /*, ... */ ) {
 		return call_user_func_array( 'wfMessage', func_get_args() )->text();
 	}
 
-	static function runHooks($func, $args) {
-		return Hooks::run($func, $args);
+	static function runHooks( $func, $args ) {
+		return Hooks::run( $func, $args );
 	}
 
 	static function getLanguageCode() {
-		global $wgLang;
-		return $wgLang->getCode();
+		$lang = RequestContext::getMain()->getLanguage();
+		return $lang->getCode();
+	}
+
+	static function getLanguageFallbacks( $language ) {
+		return Language::getFallbacksFor( $language );
 	}
 
 	static function isUseSquid() {
@@ -33,11 +53,19 @@ class WmfFramework_Mediawiki {
 		return $wgUseSquid;
 	}
 
-	static function setupSession($sessionId=false) {
-		wfSetupSession();
+	static function setupSession( $sessionId = false ) {
+		SessionManager::getGlobalSession()->persist();
 	}
 
-	static function validateIP($ip) {
+	static function getSessionValue( $key ) {
+		return RequestContext::getMain()->getRequest()->getSessionData( $key );
+	}
+
+	static function setSessionValue( $key, $value ) {
+		RequestContext::getMain()->getRequest()->setSessionData( $key, $value );
+	}
+
+	static function validateIP( $ip ) {
 		return IP::isValid( $ip );
 	}
 
@@ -52,13 +80,16 @@ class WmfFramework_Mediawiki {
 	/**
 	 * wmfMessageExists returns true if a translatable message has been defined
 	 * for the string and language that have been passed in, false if none is
-	 * present.
+	 * present. If no language is passed in, defaults to self::getLanguageCode()
 	 * @param string $msg_key The message string to look up.
-	 * @param string $language A valid mediawiki language code.
+	 * @param string $language A valid mediawiki language code, or null.
 	 * @return boolean - true if message exists, otherwise false.
 	 */
-	public static function messageExists( $msg_key, $language ) {
-		return wfMessage( $msg_key )->inLanguage( $language )->exists();
+	public static function messageExists( $msg_key, $language = null ) {
+		if ( $language === null ) {
+			$language = self::getLanguageCode();
+		}
+		return Language::getMessageFor( $msg_key, $language ) !== null;
 	}
 
 	static function getUserAgent() {
@@ -66,7 +97,11 @@ class WmfFramework_Mediawiki {
 	}
 
 	static function isPosted() {
-		global $wgRequest;
-		return $wgRequest->wasPosted();
+		$request = RequestContext::getMain()->getRequest();
+		return $request->wasPosted();
+	}
+
+	static function sanitize( $text ) {
+		return wfEscapeWikiText( $text );
 	}
 }

@@ -21,13 +21,8 @@
  *
  */
 class GlobalCollectGateway extends GatewayPage {
-	/**
-	 * Constructor - set up the new special page
-	 */
-	public function __construct() {
-		$this->adapter = new GlobalCollectAdapter();
-		parent::__construct(); //the next layer up will know who we are.
-	}
+
+	protected $gatewayName = 'globalcollect';
 
 	/**
 	 * Show the special page
@@ -37,7 +32,11 @@ class GlobalCollectGateway extends GatewayPage {
 	 */
 	protected function handleRequest() {
 		$this->getOutput()->allowClickjacking();
-
+		// TODO: remove conditional when we have a dedicated error render
+		// page and move addModule to Mustache#getResources
+		if( $this->adapter->getFormClass() === 'Gateway_Form_Mustache' ) {
+			$this->getOutput()->addModules( 'ext.donationinterface.ingenico.scripts' );
+		}
 		$this->handleDonationRequest();
 	}
 
@@ -95,11 +94,16 @@ class GlobalCollectGateway extends GatewayPage {
 
 		$return .= Xml::closeElement( 'table' ); // close $id . '_table'
 
-		$queryString = '?payment_method=' . $this->adapter->getPaymentMethod() . '&payment_submethod=' . $this->adapter->getPaymentSubmethod();
+		$queryParams = array(
+			'payment_method' => $this->adapter->getPaymentMethod(),
+			'payment_submethod' => $this->adapter->getPaymentSubmethod(),
+		);
 
-		$encUrl = Xml::encodeJsVar( $this->adapter->getThankYouPage() . $queryString );
+		$encUrl = Xml::encodeJsVar(
+			ResultPages::getThankYouPage( $this->adapter, $queryParams )
+		);
 
-		$link = HTML::input('MyButton', $this->msg( 'donate_interface-bt-finished')->text(), 'button', array( 'onclick' => "window.location = $encUrl" ) );
+		$link = Html::input('MyButton', $this->msg( 'donate_interface-bt-finished')->text(), 'button', array( 'onclick' => "window.location = $encUrl" ) );
 
 		$return .= Xml::tags( 'p', array( 'style' => 'text-align:center;' ), $link );
 		$return .= Xml::closeElement( 'div' );  // $id
@@ -113,8 +117,6 @@ class GlobalCollectGateway extends GatewayPage {
 	 * @deprecated
 	 */
 	protected function displayOnlineBankTransferInformation() {
-		global $wgScriptPath;
-		
 		$data = $this->adapter->getTransactionData();
 
 		$return = '';
@@ -127,6 +129,7 @@ class GlobalCollectGateway extends GatewayPage {
 
 		$return .= Xml::openElement( 'div', array( 'id' => $id ) ); // $id
 		$return .= Xml::tags( 'h2', array(), $this->msg( 'donate_interface-obt-information' )->escaped() );
+		$return .= Xml::tags( 'p', array(), $this->msg( 'donate_interface-obt-customer_payment_reference_note' )->escaped() );
 		$return .= Xml::openElement( 'table', array( 'id' => $id . '_table' ) );
 
 		foreach ( $fields as $field => $meta ) {
@@ -148,7 +151,8 @@ class GlobalCollectGateway extends GatewayPage {
 		$return .= Xml::closeElement ( 'tr' );
 		$return .= Xml::openElement ( 'tr' );
 		$return .= Xml::openElement( 'td' );
-		$return .= Xml::element( 'img', array( 'src' => $wgScriptPath . "/extensions/DonationInterface/gateway_forms/includes/BPAY_Landscape_MONO.gif", 'style' => 'vertical-align:center; width:100px; margin-right: 1em;' ) );
+		$scriptPath = $this->getConfig()->get( 'ScriptPath' );
+		$return .= Xml::element( 'img', array( 'src' => $scriptPath . "/extensions/DonationInterface/gateway_forms/includes/BPAY_Landscape_MONO.gif", 'style' => 'vertical-align:center; width:100px; margin-right: 1em;' ) );
 		$return .= Xml::closeElement ( 'td' );
 		$return .= Xml::openElement ( 'td' );
 		$return .= Xml::tags( 'p',  array(), 'Contact your bank or financial institution <br /> to make this payment from your cheque, <br /> debit, or transaction account. <br /> More info: www.bpay.com.au ' );
@@ -161,11 +165,16 @@ class GlobalCollectGateway extends GatewayPage {
 		$return .= Xml::closeElement ( 'tr' );
 		$return .= Xml::closeElement ( 'table' ); //close info table
 
-		$queryString = '?payment_method=' . $this->adapter->getPaymentMethod() . '&payment_submethod=' . $this->adapter->getPaymentSubmethod();
+		$queryParams = array(
+			'payment_method' => $this->adapter->getPaymentMethod(),
+			'payment_submethod' => $this->adapter->getPaymentSubmethod(),
+		);
 
-		$encUrl = Xml::encodeJsVar( $this->adapter->getThankYouPage() . $queryString );
+		$encUrl = Xml::encodeJsVar(
+			ResultPages::getThankYouPage( $this->adapter, $queryParams )
+		);
 
-		$link = HTML::input('MyButton', 'finished', 'button', array( 'onclick' => "window.location = $encUrl" ) );
+		$link = Html::input('MyButton', 'finished', 'button', array( 'onclick' => "window.location = $encUrl" ) );
 
 		$return .= Xml::tags( 'p', array(), $link );
 		$return .= Xml::closeElement( 'div' );  // $id

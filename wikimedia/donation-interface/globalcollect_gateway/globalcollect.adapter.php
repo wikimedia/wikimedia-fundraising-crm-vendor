@@ -25,6 +25,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	const GATEWAY_NAME = 'Global Collect';
 	const IDENTIFIER = 'globalcollect';
 	const GLOBAL_PREFIX = 'wgGlobalCollectGateway';
+	// @deprecated
 	const GC_CC_LIMBO_QUEUE = 'globalcollect-cc-limbo';
 
 	public function getCommunicationType() {
@@ -34,12 +35,12 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	/**
 	 * Add a key to the transaction INSERT_ORDERWITHPAYMENT.
 	 *
-	 * $this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS'][ $key ][] = $value
+	 * $this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS'][$section][] = $value
 	 */
-	protected function addKeyToTransaction( $value, $type = 'PAYMENT' ) {
+	protected function addKeyToTransaction( $value, $section = 'PAYMENT' ) {
 
-		if ( !in_array( $value, $this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS'][ $type ] ) ) {
-			$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS'][ $type ][] = $value;
+		if ( !in_array( $value, $this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS'][$section] ) ) {
+			$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS'][$section][] = $value;
 		}
 	}
 
@@ -55,300 +56,20 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	}
 
 	/**
-	 * Define dataConstraints
-	 */
-	public function defineDataConstraints() {
-
-		$this->dataConstraints = array(
-
-			// General fields
-
-			//'ACCOUNTHOLDER'		=> 'account_holder',		AN50
-			'account_holder'		=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'ACCOUNTNAME'			=> 'account_name'			AN35
-			'account_name'			=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'ACCOUNTNUMBER'		=> 'account_number'			AN30
-			'account_number'		=> array( 'type' => 'alphanumeric',		'length' => 30, ),
-
-			//'ADDRESSLINE1E'		=> 'address_line_1e'		AN35
-			'address_line_1e'		=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'ADDRESSLINE2'		=> 'address_line_2'			AN35
-			'address_line_2'		=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'ADDRESSLINE3'		=> 'address_line_3'			AN35
-			'address_line_3'		=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'ADDRESSLINE4'		=> 'address_line_4'			AN35
-			'address_line_4'		=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'ATTEMPTID'			=> 'attempt_id'				N5
-			'attempt_id'			=> array( 'type' => 'numeric',			'length' => 5, ),
-
-			// Did not find this one
-			//'AUTHORISATIONID'		=> 'authorization_id'		AN18
-			'authorization_id'		=> array( 'type' => 'alphanumeric',		'length' => 18, ),
-
-			//'AMOUNT'				=> 'amount'					N12
-			'amount'				=> array( 'type' => 'numeric',			'length' => 12, ),
-
-			//'BANKACCOUNTNUMBER'	=> 'bank_account_number'	AN50
-			'bank_account_number'	=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'BANKAGENZIA'			=> 'bank_agenzia'			AN30
-			'bank_agenzia'			=> array( 'type' => 'alphanumeric',		'length' => 30, ),
-
-			//'BANKCHECKDIGIT'		=> 'bank_check_digit'		AN2
-			'bank_check_digit'		=> array( 'type' => 'alphanumeric',		'length' => 2, ),
-
-			//'BANKCODE'			=> 'bank_code'				N5
-			'bank_code'				=> array( 'type' => 'numeric',			'length' => 5, ),
-
-			//'BANKFILIALE'			=> 'bank_filiale'			AN30
-			'bank_filiale'			=> array( 'type' => 'alphanumeric',		'length' => 30, ),
-
-			//'BANKNAME'			=> 'bank_name'				AN40
-			'bank_name'				=> array( 'type' => 'alphanumeric',		'length' => 40, ),
-
-			//'BRANCHCODE'			=> 'branch_code'			N5
-			'branch_code'			=> array( 'type' => 'numeric',			'length' => 5, ),
-
-			//'CITY'				=> 'city'					AN40
-			'city'					=> array( 'type' => 'alphanumeric',		'length' => 40, ),
-
-			//'COUNTRYCODE'			=> 'country'				AN2
-			'country'				=> array( 'type' => 'alphanumeric',		'length' => 2, ),
-
-			//'COUNTRYCODEBANK'		=> 'country_code_bank'		AN2
-			'country_code_bank'		=> array( 'type' => 'alphanumeric',		'length' => 2, ),
-
-			//'COUNTRYDESCRIPTION'	=> 'country_description'	AN50
-			'country_description'	=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'CUSTOMERBANKCITY'	=> 'customer_bank_city'		AN50
-			'customer_bank_city'	=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'CUSTOMERBANKSTREET'	=> 'customer_bank_street'	AN30
-			'customer_bank_street'	=> array( 'type' => 'alphanumeric',		'length' => 30, ),
-
-			//'CUSTOMERBANKNUMBER'	=> 'customer_bank_number'	N5
-			'customer_bank_number'	=> array( 'type' => 'numeric',			'length' => 5, ),
-
-			//'CUSTOMERBANKZIP'		=> 'customer_bank_zip'		AN10
-			'customer_bank_zip'		=> array( 'type' => 'alphanumeric',		'length' => 10, ),
-
-			//'CREDITCARDNUMBER'	=> 'card_num'				N19
-			'card_num'				=> array( 'type' => 'numeric',			'length' => 19, ),
-
-			//'CURRENCYCODE'		=> 'currency_code'			AN3
-			'currency_code'			=> array( 'type' => 'alphanumeric',		'length' => 3, ),
-
-			//'CVV'					=> 'cvv'					N4
-			'cvv'					=> array( 'type' => 'numeric',			'length' => 4, ),
-
-			//'DATECOLLECT'			=> 'date_collect'			D8	YYYYMMDD
-			'date_collect'			=> array( 'type' => 'date',				'length' => 8, ),
-
-			//'DIRECTDEBITTEXT'		=> 'direct_debit_text'		AN50
-			'direct_debit_text'		=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'DOMICILIO'			=> 'domicilio'				AN30
-			'domicilio'				=> array( 'type' => 'alphanumeric',		'length' => 30, ),
-
-			//'EFFORTID'			=> 'effort_id'				N5
-			'effort_id'				=> array( 'type' => 'numeric',			'length' => 5, ),
-
-			//'EMAIL'				=> 'email'					AN70
-			'email'					=> array( 'type' => 'alphanumeric',		'length' => 70, ),
-
-			//'EXPIRYDATE'			=> 'expiration'				N4	MMYY
-			'expiration'			=> array( 'type' => 'numeric',			'length' => 4, ),
-
-			//'FIRSTNAME'			=> 'fname'					AN15
-			'fname'					=> array( 'type' => 'alphanumeric',		'length' => 15, ),
-
-			//'IBAN'				=> 'iban'					AN50
-			// IBAN is AN21 on direct debit
-			'iban'					=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'IPADDRESS'			=> 'user_ip'				AN32
-			'user_ip'				=> array( 'type' => 'alphanumeric',		'length' => 32, ),
-
-			//'ISSUERID'			=> 'issuer_id'				N4
-			'issuer_id'				=> array( 'type' => 'numeric',			'length' => 4, ),
-
-			//'LANGUAGECODE'		=> 'language'				AN2
-			'language'				=> array( 'type' => 'alphanumeric',		'length' => 2, ),
-
-			//'ORDERID'				=> 'order_id'				N10
-			'order_id'				=> array( 'type' => 'numeric',			'length' => 10, ),
-
-			//PAYMENTPRODUCTID
-			'payment_product'		=> array( 'type' => 'numeric',			'length' => 5, ),
-
-			//'PAYMENTREFERENCE'	=> 'payment_reference'		AN20
-			'payment_reference'		=> array( 'type' => 'alphanumeric',		'length' => 20, ),
-
-			//'PROVINCIA'			=> 'provincia'				AN30
-			'provincia'				=> array( 'type' => 'alphanumeric',		'length' => 30, ),
-
-			//'RETURNURL'			=> 'returnto'				AN512
-			'returnto'				=> array( 'type' => 'alphanumeric',		'length' => 512, ),
-
-			//'SPECIALID'			=> 'special_id'				AN255
-			'special_id'			=> array( 'type' => 'alphanumeric',		'length' => 255, ),
-
-			//'STATE'				=> 'state'					AN35
-			'state'					=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'STREET'				=> 'street'					AN50
-			'street'				=> array( 'type' => 'alphanumeric',		'length' => 50, ),
-
-			//'SURNAME'				=> 'lname'					AN35
-			'lname'					=> array( 'type' => 'alphanumeric',		'length' => 35, ),
-
-			//'SWIFTCODE'			=> 'swift_code'				AN255
-			// This is AN11 for several payment types we are not dealing with yet.
-			'swift_code'			=> array( 'type' => 'alphanumeric',		'length' => 255, ),
-
-			//'TRANSACTIONTYPE'		=> 'transaction_type'		AN2
-			'transaction_type'		=> array( 'type' => 'alphanumeric',		'length' => 2, ),
-
-			//'ZIP'					=> 'zip'					AN10
-			'zip'					=> array( 'type' => 'alphanumeric',		'length' => 10, ),
-		);
-	}
-
-	/**
-	 * Define error_map
-	 *
-	 * @todo
-	 * - Add: Error messages
-	 */
-	public function defineErrorMap() {
-
-		$this->error_map = array(
-			0		=> 'globalcollect_gateway-response-default',
-			300620  => 'donate_interface-processing-error',      // Order ID already used in a previous transaction
-			430452	=> 'globalcollect_gateway-response-default', // Not authorised :: This message was generated when trying to attempt a direct debit transaction from Belgium.
-			430900	=> 'globalcollect_gateway-response-default', // NO VALID PROVIDERS FOUND FOR COMBINATION MERCHANTID: NNNN, PAYMENTPRODUCT: NNN, COUNTRYCODE: XX, CURRENCYCODE: XXX
-
-			// Errors where the suggested action is to try again
-			20205	=> 'donate_interface-try-again', // COULD NOT START TRANSACTION
-			103000	=> 'donate_interface-try-again', // ANOTHER_ACTION_IS_IN_PROCESS
-			400850	=> 'donate_interface-try-again', // IDEAL_SYSTEM_MAINTENANCE
-			430150	=> 'donate_interface-try-again', // READ_REQUEST_EXCEPTION
-			430160	=> 'donate_interface-try-again', // Unable to authorize  ALL_TERMINAL_IDS_FOR_MERCHANT_CURRENCY_IN_USE
-			430215	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_101
-			430220	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_103
-			430225	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_111
-			430230	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_113
-			430235	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_183
-			430240	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_601
-			430245	=> 'donate_interface-try-again', // Unable to authorize  COMMS_FAIL_605
-			430430	=> 'donate_interface-try-again', // Unable to authorize  TIMEOUT
-			430433	=> 'donate_interface-try-again', // Unable to authorize  TOO_MUCH_USAGE
-			430581	=> 'donate_interface-try-again', // Not authorized  SOFT_DECLINE_BUYER_HAS_ALTERNATE_FUNDING_SOURCE
-			485000	=> 'donate_interface-try-again', // Unable to authorize  NEW_ACCOUNT_INFO_AVAILABLE
-			485010	=> 'donate_interface-try-again', // Unable to authorize  TRY_AGAIN_LATER
-			4311130	=> 'donate_interface-try-again', // PBS_SERVICE_NOT_AVAILABLE
-			4360025	=> 'donate_interface-try-again', // ECARD SYSTEM ERROR
-			4500600	=> 'donate_interface-try-again', // BOKU ERROR
-			4500700	=> 'donate_interface-try-again', // SUB1 ERROR
-			22000045	=> 'donate_interface-try-again', // COMMUNICATION ERROR
-			9999999999	=> 'donate_interface-try-again', // ERROR_IN_PROCESSING_THE_REQUEST
-
-			// Internal messages
-			'internal-0000' => 'donate_interface-processing-error', // Failed failed pre-process checks.
-			'internal-0001' => 'donate_interface-processing-error', // Transaction could not be processed due to an internal error.
-			'internal-0002' => 'donate_interface-processing-error', // Communication failure
-			'internal-0003' => 'donate_interface-processing-error', // Toxic card, don't retry on pain of $1000+ fine
-
-			// Do bank validation messages
-			//'dbv-50'	=> 'globalcollect_gateway-response-dbv-50', // Account number format incorrect
-			//'dbv-80'	=> 'globalcollect_gateway-response-dbv-80', // Account details missing
-			//'dbv-330'	=> 'globalcollect_gateway-response-dbv-330', // Check digit format is incorrect
-			//'dbv-340'	=> 'globalcollect_gateway-response-dbv-340', // Branch code not submitted
-
-		);
-	}
-
-	/**
-	 * Define var_map
-	 *
-	 * @todo
-	 * - RETURNURL: Find out where the returnto URL is supposed to be coming from.
-	 */
-	public function defineVarMap() {
-
-		$this->var_map = array(
-			'ACCOUNTHOLDER'		=> 'account_holder',
-			'ACCOUNTNAME'		=> 'account_name',
-			'ACCOUNTNUMBER'		=> 'account_number',
-			'ADDRESSLINE1E'		=> 'address_line_1e', //dd:CH
-			'ADDRESSLINE2'		=> 'address_line_2', //dd:CH
-			'ADDRESSLINE3'		=> 'address_line_3', //dd:CH
-			'ADDRESSLINE4'		=> 'address_line_4', //dd:CH
-			'ATTEMPTID'			=> 'attempt_id',
-			'AUTHORISATIONID'	=> 'authorization_id',
-			'AMOUNT'			=> 'amount',
-			'BANKACCOUNTNUMBER'	=> 'bank_account_number',
-			'BANKAGENZIA'		=> 'bank_agenzia', // dd:IT
-			'BANKCHECKDIGIT'	=> 'bank_check_digit',
-			'BANKCODE'			=> 'bank_code',
-			'BANKFILIALE'		=> 'bank_filiale', // dd:IT
-			'BANKNAME'			=> 'bank_name',
-			'BRANCHCODE'		=> 'branch_code',
-			'CITY'				=> 'city',
-			'COUNTRYCODE'		=> 'country',
-			'COUNTRYCODEBANK'	=> 'country_code_bank',
-			'COUNTRYDESCRIPTION'=> 'country_description',
-			'CUSTOMERBANKCITY'	=> 'customer_bank_city', // dd
-			'CUSTOMERBANKSTREET'=> 'customer_bank_street', // dd
-			'CUSTOMERBANKNUMBER'=> 'customer_bank_number', // dd
-			'CUSTOMERBANKZIP'	=> 'customer_bank_zip', // dd
-			'CREDITCARDNUMBER'	=> 'card_num',
-			'CURRENCYCODE'		=> 'currency_code',
-			'CVV'				=> 'cvv',
-			'DATECOLLECT'		=> 'date_collect',
-			'DESCRIPTOR'		=> 'descriptor', // eWallets
-			'DIRECTDEBITTEXT'	=> 'direct_debit_text',
-			'DOMICILIO'			=> 'domicilio', // dd:ES
-			'EFFORTID'			=> 'effort_id',
-			'EMAIL'				=> 'email',
-			'EXPIRYDATE'		=> 'expiration',
-			'FIRSTNAME'			=> 'fname',
-			'IBAN'				=> 'iban',
-			'IPADDRESS'			=> 'server_ip',
-			'IPADDRESSCUSTOMER'	=> 'user_ip',
-			'ISSUERID'			=> 'issuer_id',
-			'LANGUAGECODE'		=> 'language',
-			'MERCHANTREFERENCE' => 'contribution_tracking_id', //new as of Feb 2014. See also the staging function.
-			'ORDERID'			=> 'order_id',
-			'PAYMENTPRODUCTID' => 'payment_product',
-			'PAYMENTREFERENCE'	=> 'payment_reference',
-			'PROVINCIA'			=> 'provincia', // dd:ES
-			'RETURNURL'			=> 'returnto',
-			'SPECIALID'			=> 'special_id',
-			'STATE'				=> 'state',
-			'STREET'			=> 'street',
-			'SURNAME'			=> 'lname',
-			'SWIFTCODE'			=> 'swift_code',
-			'TRANSACTIONTYPE'	=> 'transaction_type', // dd:GB,NL
-			'ZIP'				=> 'zip',
-			'FISCALNUMBER'		=> 'fiscal_number', //Boletos
-		);
-	}
-
-	/**
 	 * Setting some GC-specific defaults.
 	 * @param array $options These get extracted in the parent.
 	 */
 	function setGatewayDefaults( $options = array ( ) ) {
-		$returnTitle = isset( $options['returnTitle'] ) ? $options['returnTitle'] : Title::newFromText( 'Special:GlobalCollectGatewayResult' );
-		$returnTo = isset( $options['returnTo'] ) ? $options['returnTo'] : $returnTitle->getFullURL();
+		if ( isset( $options['returnTo'] ) ) {
+			$returnTo = $options['returnTo'];
+		} else {
+			if ( isset( $options['returnTitle'] ) ) {
+				$returnTitle = $options['returnTitle'];
+			} else {
+				$returnTitle = Title::newFromText( 'Special:GlobalCollectGatewayResult' );
+			}
+			$returnTo = $returnTitle->getFullURL( false, false, PROTO_CURRENT );
+		}
 
 		$defaults = array (
 			'returnto' => $returnTo,
@@ -401,7 +122,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 */
 	public function defineOrderIDMeta() {
 		$this->order_id_meta = array (
-			'alt_locations' => array ( '_GET' => 'order_id' ),
+			'alt_locations' => array ( 'request' => 'order_id' ),
 			'generate' => TRUE, //freaking FINALLY.
 			'disallow_decimals' => true, //hacky hack hack...
 		);
@@ -482,6 +203,29 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			),
 			'values' => array(
 				'ACTION' => 'DO_BANKVALIDATION',
+			),
+		);
+
+		$this->transactions['GET_DIRECTORY'] = array(
+			'request' => array(
+				'REQUEST' => array(
+					'ACTION',
+					'META' => array(
+						'MERCHANTID',
+						'IPADDRESS',
+						'VERSION',
+					),
+					'PARAMS' => array(
+						'GENERAL' => array(
+							'PAYMENTPRODUCTID',
+							'COUNTRYCODE',
+							'CURRENCYCODE',
+						),
+					),
+				),
+			),
+			'values' => array(
+				'ACTION' => 'GET_DIRECTORY',
 			),
 		);
 
@@ -776,424 +520,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		);
 	}
 
-	/**
-	 * Define payment methods
-	 *
-	 * The credit card group has a catchall for unspecified payment types.
-	 */
-	public function definePaymentMethods() {
-
-		$this->payment_methods = array();
-
-		// Bank Transfers
-		$this->payment_methods['bt'] = array(
-			'label'	=> 'Bank transfer',
-			'validation' => array( 'creditCard' => false, ),
-			'short_circuit_at' => 'first_iop',
-		);
-
-		// Credit Cards
-		$this->payment_methods['cc'] = array(
-			'label'	=> 'Credit Cards',
-		);
-
-		// Direct Debit
-		$this->payment_methods['dd'] = array(
-			'label'	=> 'Direct Debit',
-			'validation' => array( 'creditCard' => false, ),
-			'short_circuit_at' => 'first_iop',
-		);
-
-		// eWallets
-		$this->payment_methods['ew'] = array(
-			'label'	=> 'eWallets',
-			'validation' => array( 'address' => false, 'creditCard' => false, ),
-			'short_circuit_at' => 'first_iop',
-			'additional_success_status' => array( 20 ),
-		);
-
-		// Bank Transfers
-		$this->payment_methods['obt'] = array(
-			'label'	=> 'Online bank transfer',
-			'validation' => array( 'creditCard' => false, ),
-			'short_circuit_at' => 'first_iop',
-		);
-
-		// Real Time Bank Transfers
-		$this->payment_methods['rtbt'] = array(
-			'label'	=> 'Real time bank transfer',
-			'short_circuit_at' => 'first_iop',
-			'additional_success_status' => array( 20 ),
-		);
-
-		// Cash payments
-		$this->payment_methods['cash'] = array(
-			'label' => 'Cash payments',
-			'short_circuit_at' => 'first_iop',
-			'additional_success_status' => array( 55 ), //PENDING AT CUSTOMER - denotes they need to go to the bank, but we've done all we can.
-		);
-
-		// *** Define payment submethods ***
-		//TODO: deprecate submethod, everything is a first-class method.
-
-		$this->payment_submethods = array();
-
-		/*
-		 * Default => Credit Card
-		 *
-		 * Every payment_method should have a payment_submethod.
-		 * This is just a catch-all to ensure some validation happens.
-		 * FIXME: I don't think this clause gets used.
-		 */
-		$this->payment_submethods[''] = array(
-			'paymentproductid'	=> 0,
-			'label'	=> 'Any',
-			'group'	=> 'cc',
-			'validation' => array( 'address' => true, 'amount' => true, 'email' => true, 'name' => true, ),
-			'keys' => array(),
-		);
-
-		/*
-		 * Bank transfers
-		 */
-
-		// Bank Transfer
-		$this->payment_submethods['bt'] = array(
-			'paymentproductid'	=> 11,
-			'label'	=> 'Bank Transfer',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		/*
-		 * Credit Card
-		 */
-
-		// Visa
-		$this->payment_submethods['visa'] = array(
-			'paymentproductid'	=> 1,
-			'label'	=> 'Visa',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// MasterCard
-		$this->payment_submethods['mc'] = array(
-			'paymentproductid'	=> 3,
-			'label'	=> 'MasterCard',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// American Express
-		$this->payment_submethods['amex'] = array(
-			'paymentproductid'	=> 2,
-			'label'	=> 'American Express',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// Maestro
-		$this->payment_submethods['maestro'] = array(
-			'paymentproductid'	=> 117,
-			'label'	=> 'Maestro',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// Solo
-		$this->payment_submethods['solo'] = array(
-			'paymentproductid'	=> 118,
-			'label'	=> 'Solo',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// Laser
-		$this->payment_submethods['laser'] = array(
-			'paymentproductid'	=> 124,
-			'label'	=> 'Laser',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// JCB
-		$this->payment_submethods['jcb'] = array(
-			'paymentproductid'	=> 125,
-			'label'	=> 'JCB',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// Discover
-		$this->payment_submethods['discover'] = array(
-			'paymentproductid'	=> 128,
-			'label'	=> 'Discover',
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// CB
-		$this->payment_submethods['cb'] = array(
-			'paymentproductid'	=> 130,
-			'label'	=> 'CB', // Carte Bancaire OR Carte Bleue
-			'group'	=> 'cc',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-
-		/*
-		 * Direct debit
-		 *
-		 * See: WebCollect 7.1 Technical guide: Appendix H Country-specific direct debit keys
-		 *
-		 * - keys: These values, which can be found in $this->var_map, will only be put in the request, if they are populated from the form or staging.
-		 */
-
-		// Direct debit: AT
-		$this->payment_submethods['dd_at'] = array(
-			'paymentproductid'	=> 703,
-			'label'	=> 'Direct debit: AT',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'BANKCODE', /*'BANKNAME',*/ 'DIRECTDEBITTEXT', ),
-		);
-
-		// Direct debit: BE
-		$this->payment_submethods['dd_be'] = array(
-			'paymentproductid'	=> 706,
-			'label'	=> 'Direct debit: BE',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'AUTHORISATIONID', 'BANKCHECKDIGIT', 'BANKCODE', 'BANKNAME', 'DIRECTDEBITTEXT', ),
-			//'keys' => array( /*'ACCOUNTNAME',*/ 'ACCOUNTNUMBER', 'AUTHORISATIONID', /*'BANKCHECKDIGIT',*/ 'BANKCODE', /*'BANKNAME',*/ 'DIRECTDEBITTEXT', ),
-		);
-
-		// Direct debit: CH
-		$this->payment_submethods['dd_ch'] = array(
-			'paymentproductid'	=> 707,
-			'label'	=> 'Direct debit: CH',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'ADDRESSLINE1E', 'ADDRESSLINE2', 'ADDRESSLINE3', 'ADDRESSLINE4', 'BANKCODE', /*'BANKNAME',*/ /*'CUSTOMERBANKCITY', 'CUSTOMERBANKNUMBER', 'CUSTOMERBANKSTREET', 'CUSTOMERBANKZIP',*/ 'DIRECTDEBITTEXT', 'IBAN', ),
-		);
-
-		// Direct debit: DE
-		$this->payment_submethods['dd_de'] = array(
-			'paymentproductid'	=> 702,
-			'label'	=> 'Direct debit: DE',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'BANKCODE', /*'BANKNAME',*/ 'DIRECTDEBITTEXT', ),
-		);
-
-		// Direct debit: ES
-		$this->payment_submethods['dd_es'] = array(
-			'paymentproductid'	=> 709,
-			'label'	=> 'Direct debit: ES',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'BANKCODE', /*'BANKNAME',*/ 'BRANCHCODE', 'BANKCHECKDIGIT', /*'CUSTOMERBANKCITY', 'CUSTOMERBANKSTREET', 'CUSTOMERBANKZIP',*/ 'DIRECTDEBITTEXT', /*'DOMICILIO', 'PROVINCIA',*/ ),
-		);
-
-		// Direct debit: FR
-		$this->payment_submethods['dd_fr'] = array(
-			'paymentproductid'	=> 704,
-			'label'	=> 'Direct debit: FR',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'BANKCODE', /*'BANKNAME',*/ 'BRANCHCODE', 'BANKCHECKDIGIT', 'DIRECTDEBITTEXT', ),
-		);
-
-		// Direct debit: GB
-		$this->payment_submethods['dd_gb'] = array(
-			'paymentproductid'	=> 705,
-			'label'	=> 'Direct debit: GB',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'AUTHORISATIONID', 'BANKCODE', /*'BANKNAME',*/ 'DIRECTDEBITTEXT', 'TRANSACTIONTYPE', ),
-		);
-
-		// Direct debit: IT
-		$this->payment_submethods['dd_it'] = array(
-			'paymentproductid'	=> 708,
-			'label'	=> 'Direct debit: IT',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', 'BANKCODE', /*'BANKNAME',*/ 'BRANCHCODE', 'BANKAGENZIA', 'BANKCHECKDIGIT', /*'BANKFILIALE',*/ /*'CUSTOMERBANKCITY', 'CUSTOMERBANKNUMBER', 'CUSTOMERBANKSTREET', 'CUSTOMERBANKZIP',*/ 'DIRECTDEBITTEXT', ),
-		);
-
-		// Direct debit: NL
-		$this->payment_submethods['dd_nl'] = array(
-			'paymentproductid'	=> 701,
-			'label'	=> 'Direct debit: NL',
-			'group'	=> 'dd',
-			'validation' => array(),
-			'keys' => array( 'ACCOUNTNAME', 'ACCOUNTNUMBER', /*'BANKNAME',*/ 'DIRECTDEBITTEXT', 'TRANSACTIONTYPE', ),
-		);
-
-		/*
-		 * eWallets
-		 */
-
-		// eWallets PayPal
-		$this->payment_submethods['ew_paypal'] = array(
-			'paymentproductid'	=> 840,
-			'label'	=> 'eWallets: PayPal',
-			'group'	=> 'ew',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// eWallets WebMoney
-		$this->payment_submethods['ew_webmoney'] = array(
-			'paymentproductid'	=> 841,
-			'label'	=> 'eWallets: WebMoney',
-			'group'	=> 'ew',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// eWallets Yandex
-		$this->payment_submethods['ew_yandex'] = array(
-			'paymentproductid'	=> 849,
-			'label'	=> 'eWallets: Yandex',
-			'group'	=> 'ew',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// eWallets Alipay
-		$this->payment_submethods['ew_alipay'] = array(
-			'paymentproductid'	=> 861,
-			'label'	=> 'eWallets: Alipay',
-			'group'	=> 'ew',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// eWallets Moneybookers
-		$this->payment_submethods['ew_moneybookers'] = array(
-			'paymentproductid'	=> 843,
-			'label'	=> 'eWallets: Moneybookers',
-			'group'	=> 'ew',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// eWallets cashU
-		$this->payment_submethods['ew_cashu'] = array(
-			'paymentproductid'	=> 845,
-			'label'	=> 'eWallets: cashU',
-			'group'	=> 'ew',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		/*
-		 * Online bank transfers
-		 */
-
-		// Online Bank Transfer Bpay
-		$this->payment_submethods['bpay'] = array(
-			'paymentproductid'	=> 500,
-			'label'	=> 'Online Bank Transfer: Bpay',
-			'group'	=> 'obt',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		/*
-		 * Real time bank transfers
-		 */
-
-		// Nordea (Sweden)
-		$this->payment_submethods['rtbt_nordea_sweden'] = array(
-			'paymentproductid'	=> 805,
-			'label'	=> 'Nordea (Sweden)',
-			'group'	=> 'rtbt',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// Ideal
-		$this->payment_submethods['rtbt_ideal'] = array(
-			'paymentproductid'	=> 809,
-			'label'	=> 'Ideal',
-			'group'	=> 'rtbt',
-			'validation' => array(),
-			'keys' => array(),
-			'issuerids' => array(
-				771	=> 'SNS Regio Bank',
-				161	=> 'Van Lanschot Bankiers',
-				31	=> 'ABN AMRO',
-				761	=> 'ASN Bank',
-				21	=> 'Rabobank',
-				511	=> 'Triodos Bank',
-				721	=> 'ING',
-				751	=> 'SNS Bank',
-				91	=> 'Friesland Bank',
-				801 => 'Knab',
-			)
-		);
-
-		// eNETS
-		$this->payment_submethods['rtbt_enets'] = array(
-			'paymentproductid'	=> 810,
-			'label'	=> 'eNETS',
-			'group'	=> 'rtbt',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// Sofortuberweisung/DIRECTebanking
-		$this->payment_submethods['rtbt_sofortuberweisung'] = array(
-			'paymentproductid'	=> 836,
-			'label'	=> 'Sofortuberweisung/DIRECTebanking',
-			'group'	=> 'rtbt',
-			'validation' => array(),
-			'keys' => array(),
-		);
-
-		// eps Online-Überweisung
-		$this->payment_submethods['rtbt_eps'] = array(
-			'paymentproductid'	=> 856,
-			'label'	=> 'eps Online-Überweisung',
-			'group'	=> 'rtbt',
-			'validation' => array(),
-			'keys' => array(),
-			'issuerids' => array(
-				824	=> 'Bankhaus Spängler',
-				825	=> 'Hypo Tirol Bank',
-				822	=> 'NÖ HYPO',
-				823	=> 'Voralberger HYPO',
-				828	=> 'P.S.K.',
-				829	=> 'Easy',
-				826	=> 'Erste Bank und Sparkassen',
-				827	=> 'BAWAG',
-				820	=> 'Raifeissen',
-				821	=> 'Volksbanken Gruppe',
-				831	=> 'Sparda-Bank',
-			)
-		);
-
-		// Cash Payments - Boletos
-
-		$this->payment_submethods['cash_boleto'] = array(
-			'paymentproductid'	=> 1503,
-			'label' => 'Boleto Bancario Brazil',
-			'group' => 'cash',
-			'keys' => array(),
-		);
+	function getBasedir() {
+		return __DIR__;
 	}
 
 	public function doPayment() {
@@ -1212,7 +540,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		// Execute the proper transaction code:
 		switch ( $payment_method ) {
 			case 'cc': 
-				// FIXME: we don't actually use this code path, it's done from gc.cc.js instead.
+				// FIXME: we don't actually use this code path, it's done from
+				// the donation api instead.
 
 				$this->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
 
@@ -1264,14 +593,14 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		$this->session_addDonorData();
 		switch ( $transaction ){
 			case 'Confirm_CreditCard' :
-				$this->getStopwatch( 'Confirm_CreditCard', true );
+				$this->profiler->getStopwatch( 'Confirm_CreditCard', true );
 				$result = $this->transactionConfirm_CreditCard();
-				$this->saveCommunicationStats( 'Confirm_CreditCard', $transaction );
+				$this->profiler->saveCommunicationStats( 'Confirm_CreditCard', $transaction );
 				return $result;
 			case 'Direct_Debit' :
-				$this->getStopwatch( 'Direct_Debit', true );
+				$this->profiler->getStopwatch( 'Direct_Debit', true );
 				$result = $this->transactionDirect_Debit();
-				$this->saveCommunicationStats( 'Direct_Debit', $transaction );
+				$this->profiler->saveCommunicationStats( 'Direct_Debit', $transaction );
 				return $result;
 			case 'Recurring_Charge' :
 				return $this->transactionRecurring_Charge();
@@ -1285,21 +614,22 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 *
 	 * FIXME: This function is way too complex.  Unroll into new functions.
 	 *
-	 * @global WebRequest $wgRequest
 	 * @return PaymentTransactionResponse
 	 */
 	private function transactionConfirm_CreditCard(){
-		global $wgRequest; //this is for pulling vars straight from the querystring
+		// Pulling vars straight from the querystring
 		$pull_vars = array(
 			'CVVRESULT' => 'cvv_result',
 			'AVSRESULT' => 'avs_result',
 		);
-		// FIXME: Refactor as normal unstaging.
 		$qsResults = array();
-		foreach ( $pull_vars as $theirkey => $ourkey) {
-			$tmp = $wgRequest->getVal( $theirkey, null );
-			if ( !is_null( $tmp ) ) {
-				$qsResults[$ourkey] = $tmp;
+		if ( !$this->isBatchProcessor() ) {
+			// FIXME: Refactor as normal unstaging.
+			foreach ( $pull_vars as $theirkey => $ourkey) {
+				$tmp = WmfFramework::getRequestValue( $theirkey, null );
+				if ( !is_null( $tmp ) ) {
+					$qsResults[$ourkey] = $tmp;
+				}
 			}
 		}
 
@@ -1315,15 +645,15 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 			// If we have a querystring, this means we're processing a live donor
 			// coming back from GlobalCollect, and the transaction is not orphaned
+			// @deprecated We should be able to skip any deletion.
 			$this->logger->info( 'Donor returned, deleting limbo message' );
 			$this->deleteLimboMessage( self::GC_CC_LIMBO_QUEUE );
-		} else { //this is an orphan transaction.
+		} else {
+			// We're in orphan processing mode, so instead of waiting around for
+			// the user to add more data and complete pending transactions,
+			// interpret this pending code range as "failed".
+
 			$is_orphan = true;
-			//have to change this code range: All these are usually "pending" and
-			//that would still be true...
-			//...aside from the fact that if the user has gotten this far, they left
-			//the part where they could add more data.
-			//By now, "incomplete" definitely means "failed" for 0-70.
 			$this->addCodeRange( 'GET_ORDERSTATUS', 'STATUSID', FinalStatus::FAILED, 0, 70 );
 		}
 
@@ -1332,7 +662,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		$problemmessage = ''; //to be used in conjunction with the flag.
 		$problemseverity = LogLevel::ERROR; //to be used also in conjunction with the flag, to route the message to the appropriate log. Urf.
 		$original_status_code = NULL;
-		$ran_hooks = false;
 
 		$loopcount = $this->getGlobal( 'RetryLoopCount' );
 		$loops = 0;
@@ -1341,23 +670,19 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$gotCVV = false;
 			$status_result = $this->do_transaction( 'GET_ORDERSTATUS' );
 			$validationAction = $this->getValidationAction();
-			if ( !$is_orphan ) {
-				// live users get antifraud hooks run in this txn's pre-process
-				$ran_hooks = true;
-			}
 			// FIXME: Refactor as normal unstaging.
 			$xmlResults = array(
 				'cvv_result' => '',
 				'avs_result' => ''
 			);
-			$data = $status_result->getData();
-			if ( !empty( $data ) ) {
+			$status_response = $status_result->getData();
+			if ( !empty( $status_response ) ) {
 				foreach ( $pull_vars as $theirkey => $ourkey) {
-					if ( !array_key_exists( $theirkey, $data ) ) {
+					if ( !array_key_exists( $theirkey, $status_response ) ) {
 						continue;
 					}
 					$gotCVV = true;
-					$xmlResults[$ourkey] = $data[$theirkey];
+					$xmlResults[$ourkey] = $status_response[$theirkey];
 					if ( array_key_exists( $ourkey, $qsResults ) && $qsResults[$ourkey] != $xmlResults[$ourkey] ) {
 						$problemflag = true;
 						$problemmessage = "$theirkey value '$qsResults[$ourkey]' from querystring does not match value '$xmlResults[$ourkey]' from GET_ORDERSTATUS XML";
@@ -1372,24 +697,21 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				// divided by 100 in unstaging.
 				// FIXME: need a general solution - anything with a resultswitcher
 				// is vulnerable to this kind of thing.
-				$xmlResults['amount'] = $data['AMOUNT'];
-				$xmlResults['currency_code'] = $data['CURRENCYCODE'];
+				$xmlResults['amount'] = $status_response['AMOUNT'];
+				$xmlResults['currency_code'] = $status_response['CURRENCYCODE'];
 			}
 			$this->addResponseData( $xmlResults );
 			$logmsg = 'CVV Result from XML: ' . $this->getData_Unstaged_Escaped( 'cvv_result' );
 			$logmsg .= ', AVS Result from XML: ' . $this->getData_Unstaged_Escaped( 'avs_result' );
 			$this->logger->info( $logmsg );
 
+			// FIXME: "isForceCancel"?
 			if ( $status_result->getForceCancel() ) {
 				$cancelflag = true; //don't retry or MasterCard will fine us
 			}
 
-			if ( $is_orphan && !$cancelflag && !empty( $data ) ) {
-				$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
-				if ( $action === FinalStatus::PENDING_POKE && !$ran_hooks ){ //only want to do this once - it's not going to change.
-					$this->runAntifraudHooks();
-					$ran_hooks = true;
-				}
+			if ( $is_orphan && !$cancelflag && !empty( $status_response ) ) {
+				$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $status_response['STATUSID'] );
 				$validationAction = $this->getValidationAction();
 			}
 
@@ -1440,12 +762,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 							$problemflag = true;
 							$problemmessage = "Unable to retrieve orphan cvv/avs results (Communication problem?).";
 						}
-						if ( !$ran_hooks ) {
-							$problemflag = true;
-							$problemmessage = 'On the brink of payment confirmation without running antifraud hooks';
-							$problemseverity = LogLevel::ERROR;
-							break 2;
-						}
 
 						//none of this should ever execute for a transaction that doesn't use 3d secure...
 						if ( $txn_data['STATUSID'] === '200' && ( $loops < $loopcount-1 ) ){
@@ -1471,6 +787,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 						if ( $txn_data['STATUSID'] !== '200' ) {
 							break 2; //no need to loop.
 						}
+						// FIXME: explicit that we want to fall through?
 
 					case FinalStatus::PENDING :
 						//if it's really pending at this point, we need to...
@@ -1483,15 +800,15 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		//if we got here with no problemflag,
 		//confirm or cancel the payment based on $cancelflag
 		if ( !$problemflag ){
-			if ( is_array( $data ) ){
+			if ( isset( $status_response ) && is_array( $status_response ) ) {
 				// FIXME: Refactor as normal unstaging.
 				//if they're set, get CVVRESULT && AVSRESULT
 				$pull_vars['EFFORTID'] = 'effort_id';
 				$pull_vars['ATTEMPTID'] = 'attempt_id';
 				$addme = array();
 				foreach ( $pull_vars as $theirkey => $ourkey) {
-					if ( array_key_exists( $theirkey, $data ) ){
-						$addme[$ourkey] = $data[$theirkey];
+					if ( array_key_exists( $theirkey, $status_response ) ){
+						$addme[$ourkey] = $status_response[$theirkey];
 					}
 				}
 
@@ -1633,6 +950,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					}
 
 					// We won't need the limbo message again, either way, so cancel it.
+					// @deprecated
 					$this->deleteLimboMessage();
 				}
             }
@@ -1769,7 +1087,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	/**
 	 * Parse the response to get the status. Not sure if this should return a bool, or something more... telling.
 	 *
-	 * @param DomDocument	$response	The response XML loaded into a DomDocument
+	 * @param DOMDocument	$response	The response XML loaded into a DOMDocument
 	 * @return bool
 	 */
 	public function parseResponseCommunicationStatus( $response ) {
@@ -1793,7 +1111,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * messages will be sent to the client. Messages will not be translated or
 	 * obfuscated.
 	 *
-	 * @param array	$response	The response array
+	 * @param DOMDocument	$response	The response XML as a DOMDocument
 	 * @return array
 	 */
 	public function parseResponseErrors( $response ) {
@@ -1833,7 +1151,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * When we set lookup error code ranges, we use GET_ORDERSTATUS as the key for search
 	 * because they are only defined for that transaction type.
 	 *
-	 * @param DOMDocument	$response	The response object
+	 * @param DOMDocument	$response	The response XML as a DOMDocument
 	 * @return array
 	 */
 	public function parseResponseData( $response ) {
@@ -2026,105 +1344,9 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	}
 
 	/**
-	 * Gets all the currency codes appropriate for this gateway
-	 * @return array of currency codes
-	 */
-	static function getCurrencies() {
-		// If you update this list, also update the list in the exchange_rates drupal module.
-		$currencies = array(
-			'AED', // UAE dirham
-			'ARS', // Argentinian peso
-			'AUD', // Australian dollar
-			'BBD', // Barbadian dollar
-			'BDT', // Bagladesh taka
-			'BGN', // Bulgarian lev
-			'BHD', // Bahraini dinar
-			'BMD', // Bermudian dollar
-			'BND', // Brunei dollar
-			'BOB', // Bolivia boliviano
-			'BRL', // Brazilian real
-// - Removed temporarily for WellsFargo (28/06/13)			'BSD', // Bahamian dollar
-			'BZD', // Belize dollar
-			'CAD', // Canadian dollar
-			'CHF', // Swiss franc
-			'CLP', // Chilean deso
-			'CNY', // Chinese yuan renminbi
-			'COP', // Colombia columb
-			'CRC', // Costa Rican colon
-			'CZK', // Czech koruna
-			'DKK', // Danish krone
-			'DOP', // Dominican peso
-			'DZD', // Algerian dinar
-			'EEK', // Estonian kroon
-			'EGP', // Egyptian pound
-			'EUR', // Euro
-			'GBP', // British pound
-			'GTQ', // Guatemala quetzal
-			'HKD', // Hong Kong dollar
-			'HNL', // Honduras lempira
-			'HRK', // Croatian kuna
-			'HUF', // Hungarian forint
-			'IDR', // Indonesian rupiah
-			'ILS', // Israeli shekel
-			'INR', // Indian rupee
-			'JMD', // Jamaican dollar
-			'JOD', // Jordanian dinar
-			'JPY', // Japanese yen
-			'KES', // Kenyan shilling
-			'KRW', // South Korean won
-// - Removed temporarily for WellsFargo (28/06/13)			'KYD', // Cayman Islands dollar
-			'KZT', // Kazakhstani tenge
-			'LBP', // Lebanese pound
-			'LKR', // Sri Lankan rupee
-			'LTL', // Lithuanian litas
-			'LVL', // Latvian lats
-			'MAD', // Moroccan dirham
-			'MKD', // Macedonia denar
-			'MUR', // Mauritius rupee
-			'MVR', // Maldives rufiyaa
-			'MXN', // Mexican peso
-			'MYR', // Malaysian ringgit
-			'NIO', // Nicaragua Cordoba
-			'NOK', // Norwegian krone
-			'NZD', // New Zealand dollar
-			'OMR', // Omani rial
-			'PAB', // Panamanian balboa
-			'PEN', // Peru nuevo sol
-			'PHP', // Philippine peso
-			'PKR', // Pakistani rupee
-			'PLN', // Polish złoty
-// - Removed temporarily for WellsFargo (23/05/13)			'PYG', // Paraguayan guaraní
-			'QAR', // Qatari rial
-			'RON', // Romanian leu
-			'RUB', // Russian ruble
-			'SAR', // Saudi riyal
-			'SEK', // Swedish krona
-			'SGD', // Singapore dollar
-			'SVC', // Salvadoran colón
-			'THB', // Thai baht
-			'TJS', // Tajikistani Somoni
-			'TND', // Tunisan dinar
-			'TRY', // Turkish lira
-			'TTD', // Trinidad and Tobago dollar
-			'TWD', // New Taiwan dollar
-			'UAH', // Ukrainian hryvnia
-			'UYU', // Uruguayan peso
-			'USD', // U.S. dollar
-// - Removed temporarily for WellsFargo (28/06/13)			'UZS', // Uzbekistani som
-// - removed temporarily (Worldpay)			'VND', // Vietnamese dong
-			'VEF', // Venezuelan bolívar
-			'XAF', // Central African CFA franc
-			'XCD', // East Caribbean dollar
-// - Removed temporarily for WellsFargo (28/06/13)			'XOF', // West African CFA franc
-			'ZAR', // South African rand
-		);
-		return $currencies;
-	}
-
-	/**
 	 * Process the response and set transaction_response properties
 	 *
-	 * @param DomDocument $response Cleaned-up XML from the GlobalCollect API
+	 * @param DOMDocument $response Cleaned-up XML from the GlobalCollect API
 	 *
 	 * @throws ResponseProcessingException with code and potentially retry vars.
 	 */
@@ -2149,25 +1371,50 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		foreach ( $errors as $errCode => $errObj ) {
 			$errMsg = $errObj['message'];
 			$messageFromProcessor = $errObj['debugInfo'];
+			$retryOrderId = false;
 			switch ( $errCode ) {
-				case 300620:
-				// Oh no! We've already used this order # somewhere else! Restart!
-					$this->logger->error( 'Order ID collission! Starting again.' );
-					$retryVars[] = 'order_id';
-					$retErrCode = $errCode;
-					$retErrMsg = $errMsg;
+				case 400120: // INSERTATTEMPT PAYMENT FOR ORDER ALREADY FINAL FOR COMBINATION.
+					$transaction = $this->getCurrentTransaction();
+					if ( $transaction !== 'INSERT_ORDERWITHPAYMENT' ) {
+						// Don't regenerate order ID if it's too late, just steam
+						// right through and let regular error handling deal
+						// with it.
+						$this->logger->error( 'Order ID already processed, remain calm.' );
+						$retErrCode = $errCode;
+						$retErrMsg = $errMsg;
+						break;
+					}
+					$this->logger->error( 'InsertAttempt on a finalized order! Starting again.' );
+					$retryOrderId = true;
 					break;
-				case 430260: //wow: If we were a point of sale, we'd be calling security.
-				case 430357: //lost or stolen card
-					// These two get all the cancel treatment below, plus some extra
+				case 400490: // INSERTATTEMPT_MAX_NR_OF_ATTEMPTS_REACHED
+					$this->logger->error( 'InsertAttempt - max attempts reached! Starting again.' );
+					$retryOrderId = true;
+					break;
+				case 300620: // Oh no! We've already used this order # somewhere else! Restart!
+					$this->logger->error( 'Order ID collision! Starting again.' );
+					$retryOrderId = true;
+					break;
+				case 430260: // wow: If we were a point of sale, we'd be calling security.
+				case 430349: // TRANSACTION_CANNOT_BE_COMPLETED_VIOLATION_OF_LAW (EXTERMINATE!)
+				case 430357: // lost or stolen card
+				case 430410: // CHALLENGED (GC docs say fraud)
+				case 430415: // Security violation
+				case 430418: // Stolen card
+				case 430421: // Suspected fraud
+				case 430697: // Suspected fraud
+				case 485020: // DO_NOT_TRY_AGAIN (or else EXTERMINATE!)
+				case 4360022: // ECARD_FRAUD
+				case 4360023: // ECARD_ONLINE_FRAUD
+					// These naughty codes get all the cancel treatment below, plus some extra
 					// IP velocity spanking.
 					if ( $this->getGlobal( 'EnableIPVelocityFilter' ) ) {
 						Gateway_Extras_CustomFilters_IP_Velocity::penalize( $this );
 					}
-				case 430306: //Expired card.
-				case 430330: //invalid card number
-				case 430354: //issuer unknown
-					// All five these should stop us from retrying at all
+				case 430306: // Expired card.
+				case 430330: // invalid card number
+				case 430354: // issuer unknown
+					// All of these should stop us from retrying at all
 					// Null out the retry vars and throw error immediately
 					$retryVars = null;
 					$this->logger->info( "Got error code $errCode, not retrying to avoid MasterCard fines." );
@@ -2185,8 +1432,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					);
 				case 430285: //most common declined cc code.
 				case 430396: //not authorized to cardholder, whatever that means.
-				case 430409: //Declined, because "referred". wth does that even.
-				case 430415: //Declined for "security violation"
+				case 430409: //Declined, because "referred". We're not going to call the bank to push it through.
 				case 430424: //Declined, because "SYSTEM_MALFUNCTION". I have no words.
 				case 430692: //cvv2 declined
 					break; //don't need to hear about these at all.
@@ -2211,24 +1457,18 @@ class GlobalCollectAdapter extends GatewayAdapter {
 						}
 					}
 
-
 				case 21000050 : //REQUEST {0} VALUE {2} OF FIELD {1} IS NOT A NUMBER WITH MINLENGTH {3}, MAXLENGTH {4} AND PRECISION {5}  : More validation pain.
 					//say something painful here.
 					$errMsg = 'Blocking validation problems with this payment. Investigation required! '
 								. "Original error: '$messageFromProcessor'.  Our data: " . $this->getLogDebugJSON();
-				case 400120:
-					/* INSERTATTEMPT PAYMENT FOR ORDER ALREADY FINAL FOR COMBINATION.
-					 * They already gave us money or failed...
-					 * but have probably been forbidden from resultswitcher due to session weirdness.
-					 * What should we actually do with these people, other than the default error log?
-					 * Special error page saying that they may already have donated?
-					 * @TODO: This absolutely happens IRL. Attempt to handle gracefully once we figure out what that means.
-					 *
-					 * I think we can just SET_PAYMENT at this point. -AW
-					 */
 				default:
 					$this->logger->error( __FUNCTION__ . " Error $errCode : $errMsg" );
 					break;
+			}
+			if ( $retryOrderId ) {
+				$retryVars[] = 'order_id';
+				$retErrCode = $errCode;
+				$retErrMsg = $errMsg;
 			}
 		}
 		if ( $retErrCode ) {
@@ -2240,71 +1480,60 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		}
 	}
 
-	/**
-	 * The default section of the switch will be hit on first time forms. This
-	 * should be okay, because we are only concerned with staged_vars that have
-	 * been posted.
-	 *
-	 * Credit cards staged_vars are set to ensure form failures on validation in
-	 * the default case. This should prevent accidental form submission with
-	 * unknown transaction types.
-	 */
-	public function defineStagedVars() {
-		//OUR field names.
-		$this->staged_vars = array(
-			'amount',
-			//'card_num',
-			'returnto',
-			'payment_method',
-			'payment_submethod',
-			'payment_product',
-			'issuer_id',
-			'order_id', //This may or may not oughta-be-here...
-			'contribution_tracking_id',
-			'language',
-			'recurring',
-			'country',
-			//Street address and zip need to be staged, to provide dummy data in
-			//the event that they are sent blank, which will short-circuit all
-			//AVS checking for accounts that have AVS data tied to them.
-			'street',
-			'zip',
-			'fiscal_number',
-			'branch_code', //Direct Debit
-			'account_number', //Direct Debit
-			'bank_code', //Direct Debit
-		);
+	public function stageData() {
+		// Must run first because staging relies on constraints.
+		$this->tuneConstraints();
+
+		parent::stageData();
+
+		// FIXME: Move to a more specific point in the workflow, in the related do_transaction handler.
+		$this->set3dsFlag();
+
+		// FIXME: Move to a post-staging hook, and push most of it into the declarative block.
+		$this->tuneForMethod();
+		$this->tuneForRecurring();
+		$this->tuneForCountry();
 	}
 
-	protected function stage_language() {
-		$language = strtolower( $this->getData_Unstaged_Escaped( 'language' ) );
+	protected function set3dsFlag() {
+		// This array contains all the card types that can use AUTHENTICATIONINDICATOR
+		$authenticationIndicatorTypes = array (
+			'1', // visa
+			'3', // mc
+		);
 
-		if ( !in_array( $language, $this->getAvailableLanguages() ) ) {
-			$fallbacks = Language::getFallbacksFor( $language );
-			foreach ( $fallbacks as $fallback ) {
-				if ( in_array( $fallback, $this->getAvailableLanguages() ) ) {
-					$language = $fallback;
-					break;
+		$enable3ds = false;
+		$currency = $this->getData_Unstaged_Escaped( 'currency_code' );
+		$country = strtoupper( $this->getData_Unstaged_Escaped( 'country' ) );
+		if ( isset( $this->staged_data['payment_product'] )
+		  && in_array( $this->staged_data['payment_product'], $authenticationIndicatorTypes )
+		) {
+			$ThreeDSecureRules = $this->getGlobal( '3DSRules' ); //ha
+			if ( array_key_exists( $currency, $ThreeDSecureRules ) ) {
+				if ( !is_array( $ThreeDSecureRules[$currency] ) ) {
+					if ( $ThreeDSecureRules[$currency] === $country ) {
+						$enable3ds = true;
+					}
+				} else {
+					if ( empty( $ThreeDSecureRules[$currency] ) || in_array( $country, $ThreeDSecureRules[$currency] ) ) {
+						$enable3ds = true;
+					}
 				}
 			}
 		}
 
-		if ( !in_array( $language, $this->getAvailableLanguages() ) ){
-			$language = 'en';
+		if ( $enable3ds ) {
+			$this->logger->info( "3dSecure enabled for $currency in $country" );
+			// Do the business--set our flag.
+			$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['AUTHENTICATIONINDICATOR'] = '1';
 		}
-
-		if ( $language === 'zh' ) { //Handles GC's mutant Chinese code.
-			$language = 'sc';
-		}
-
-		$this->staged_data['language'] = $language;
 	}
 
 	/**
 	 * OUR language codes which are available to use in GlobalCollect.
 	 * @return string
 	 */
-	function getAvailableLanguages(){
+	public function getAvailableLanguages(){
 		$languages = array(
 			'ar', //Arabic
 			'cs', //Czech
@@ -2340,169 +1569,74 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	}
 
 	/**
-	 * Stage: card_num
+	 * Set up method-specific constraints
 	 */
-	protected function stage_card_num() {
-		if ( array_key_exists( 'card_num', $this->unstaged_data ) ) {
-			$this->staged_data['card_num'] = str_replace( ' ', '', $this->unstaged_data['card_num'] );
+	protected function tuneConstraints() {
+
+		// TODO: pull from declarative table
+
+		if ( empty( $this->unstaged_data['payment_method'] ) ) {
+			return;
+		}
+
+		switch ( $this->unstaged_data['payment_method'] ) {
+
+		/* Bank transfer */
+		case 'bt':
+
+			// Brazil
+			if ( $this->unstaged_data['country'] == 'BR' ) {
+				$this->dataConstraints['direct_debit_text']['city'] = 50;
+			}
+
+			// Korea - Manual does not specify North or South
+			if ( $this->unstaged_data['country'] == 'KR' ) {
+				$this->dataConstraints['direct_debit_text']['city'] = 50;
+			}
+			break;
+
+		/* Direct Debit */
+		case 'dd':
+			$this->dataConstraints['iban']['length'] = 21;
+
+			switch ( $this->unstaged_data['country'] ) {
+			case 'DE':
+				$this->dataConstraints['account_number']['length'] = 10;
+				$this->dataConstraints['bank_code']['length'] = 8;
+				break;
+			case 'NL':
+				$this->dataConstraints['account_name']['length'] = 30;
+				$this->dataConstraints['account_number']['length'] = 10;
+				$this->dataConstraints['direct_debit_text']['length'] = 32;
+				break;
+			case 'AT':
+				$this->dataConstraints['account_name']['length'] = 30;
+				$this->dataConstraints['bank_code']['length'] = 5;
+				$this->dataConstraints['direct_debit_text']['length'] = 28;
+				break;
+			case 'ES':
+				$this->dataConstraints['account_name']['length'] = 30;
+				$this->dataConstraints['account_number']['length'] = 10;
+				$this->dataConstraints['bank_code']['length'] = 4;
+				$this->dataConstraints['branch_code']['length'] = 4;
+				$this->dataConstraints['direct_debit_text']['length'] = 40;
+				break;
+			case 'FR':
+				$this->dataConstraints['direct_debit_text']['length'] = 18;
+				break;
+			case 'IT':
+				$this->dataConstraints['account_name']['length'] = 30;
+				$this->dataConstraints['account_number']['length'] = 12;
+				$this->dataConstraints['bank_check_digit']['length'] = 1;
+				$this->dataConstraints['bank_code']['length'] = 5;
+				$this->dataConstraints['direct_debit_text']['length'] = 32;
+				break;
+			}
+			break;
 		}
 	}
 
 	/**
-	 * Stage: payment_product
-	 * Stages the payment product ID for GC.
-	 * Not what I had in mind to begin with, but this *completely* blew up.
-	 */
-	public function stage_payment_product() {
-		//cc used to look in card_type, but that's been an alias for payment_submethod for a while. DonationData takes care of it.
-		$payment_method = array_key_exists( 'payment_method', $this->staged_data ) ? $this->staged_data['payment_method'] : false;
-		$payment_submethod = array_key_exists( 'payment_submethod', $this->staged_data ) ? $this->staged_data['payment_submethod'] : false;
-
-		if ( $payment_method === 'cc' ) {
-			//basically do what used to be stage_card_type.
-			$types = array (
-				'visa' => '1',
-				'amex' => '2',
-				'mc' => '3',
-				'maestro' => '117',
-				'solo' => '118',
-				'laser' => '124',
-				'jcb' => '125',
-				'discover' => '128',
-				'cb' => '130',
-			);
-
-			if ( (!is_null( $payment_submethod ) ) && array_key_exists( $payment_submethod, $types ) ) {
-				$this->staged_data['payment_product'] = $types[$payment_submethod];
-			} else {
-				if ( !empty( $payment_submethod ) ) {
-					$this->logger->error( "Could not find a cc payment product for '$payment_submethod'" );
-				}
-			}
-
-			// This array contains all the card types that can use AUTHENTICATIONINDICATOR
-			$authenticationIndicatorTypes = array (
-				'1', // visa
-				'3', // mc
-			);
-
-			$enable3ds = false;
-			$currency = $this->getData_Unstaged_Escaped( 'currency_code' );
-			$country = strtoupper( $this->getData_Unstaged_Escaped( 'country' ) );
-			if ( isset( $this->staged_data['payment_product'] ) && in_array( $this->staged_data['payment_product'], $authenticationIndicatorTypes ) ) {
-				$ThreeDSecureRules = $this->getGlobal( '3DSRules' ); //ha
-				if ( array_key_exists( $currency, $ThreeDSecureRules ) ) {
-					if ( !is_array( $ThreeDSecureRules[$currency] ) ) {
-						if ( $ThreeDSecureRules[$currency] === $country ) {
-							$enable3ds = true;
-						}
-					} else {
-						if ( empty( $ThreeDSecureRules[$currency] ) || in_array( $country, $ThreeDSecureRules[$currency] ) ) {
-							$enable3ds = true;
-						}
-					}
-				}
-			}
-
-			// FIXME: that's one hell of a staging function.  Move this to a do_transaction helper.
-			if ( $enable3ds ) {
-				$this->logger->info( "3dSecure enabled for $currency in $country" );
-				$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['AUTHENTICATIONINDICATOR'] = '1';
-			}
-		} else {
-			if ( !empty( $payment_submethod ) ) {
-				//everything that isn't cc.
-				if ( array_key_exists( $payment_submethod, $this->payment_submethods ) && isset( $this->payment_submethods[$payment_submethod]['paymentproductid'] ) ) {
-					$this->staged_data['payment_product'] = $this->payment_submethods[$payment_submethod]['paymentproductid'];
-				} else {
-					$this->logger->error( "Could not find a payment product for '$payment_submethod' in payment_submethods array" );
-				}
-			} else {
-				$this->logger->debug( "payment_submethod found to be empty. Probably okay though." );
-			}
-		}
-	}
-
-	/**
-	 * Stage branch_code for Direct Debit.
-	 * Check the data constraints, and zero-pad out to that number where possible.
-	 * Exceptions for the defaults are set in stage_country so we can see them all in the same place
-	 */
-	protected function stage_branch_code() {
-		$this->stageAndZeroPad( 'branch_code' );
-	}
-
-	/**
-	 * Stage bank_code for Direct Debit.
-	 * Check the data constraints, and zero-pad out to that number where possible.
-	 * Exceptions for the defaults are set in stage_country so we can see them all in the same place
-	 */
-	protected function stage_bank_code() {
-		$this->stageAndZeroPad( 'bank_code' );
-	}
-
-	/**
-	 * Stage account_number for Direct Debit.
-	 * Check the data constraints, and zero-pad out to that number where possible.
-	 * Exceptions for the defaults are set in stage_country so we can see them all in the same place
-	 */
-	protected function stage_account_number() {
-		$this->stageAndZeroPad( 'account_number' );
-	}
-
-	/**
-	 * Helper to stage a zero-padded number
-	 */
-	protected function stageAndZeroPad( $key ) {
-		if ( isset( $this->unstaged_data[$key] ) ) {
-			$newval = DataValidator::getZeroPaddedValue( $this->unstaged_data[$key], $this->dataConstraints[$key]['length'] );
-			if ( $newval ) {
-				$this->staged_data[$key] = $newval;
-			}
-		}
-	}
-
-	/**
-	 * Stage: setupStagePaymentMethodForDirectDebit
-	 *
-	 * @param string	$payment_submethod
-	 */
-	protected function setupStagePaymentMethodForDirectDebit( $payment_submethod ) {
-
-		// DATECOLLECT is required on all Direct Debit
-		$this->addKeyToTransaction('DATECOLLECT');
-
-		$this->staged_data['date_collect'] = gmdate('Ymd');
-		$this->staged_data['direct_debit_text'] = 'Wikimedia Foundation';
-
-		$this->var_map['COUNTRYCODEBANK'] = 'country';
-
-		$this->dataConstraints['iban']['length'] = 21;
-
-		// Direct debit has different required fields for each paymentproductid.
-		$this->addKeysToTransactionForSubmethod( $payment_submethod );
-	}
-
-	/**
-	 * Stage: setupStagePaymentMethodForEWallets
-	 *
-	 * @param string	$payment_submethod
-	 */
-	protected function setupStagePaymentMethodForEWallets( $payment_submethod ) {
-
-		// DESCRIPTOR is required on WebMoney, assuming it is required for all.
-		$this->addKeyToTransaction('DESCRIPTOR');
-
-		$this->staged_data['descriptor'] = 'Wikimedia Foundation/Wikipedia';
-
-		$this->var_map['COUNTRYCODEBANK'] = 'country';
-
-		// eWallets custom keys
-		$this->addKeysToTransactionForSubmethod( $payment_submethod );
-	}
-
-	/**
-	 * Stage: payment_method
 	 *
 	 * @todo
 	 * - Need to implement this for credit card if necessary
@@ -2511,101 +1645,19 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * - DATECOLLECT is using gmdate('Ymd')
 	 * - DIRECTDEBITTEXT will need to be translated. This is what appears on the bank statement for donations for a client. This is hardcoded to: Wikimedia Foundation
 	 */
-	protected function stage_payment_method() {
-		$payment_method = array_key_exists( 'payment_method', $this->unstaged_data ) ? $this->unstaged_data['payment_method']: false;
-		$payment_submethod = array_key_exists( 'payment_submethod', $this->unstaged_data ) ? $this->unstaged_data['payment_submethod']: false;
+	protected function tuneForMethod() {
 
-		//Having to front-load the country in the payment submethod is pretty lame.
-		//If we don't have one deliberately set...
-		if (!$payment_submethod){
-			$trythis = $payment_method . '_' . strtolower( $this->getData_Unstaged_Escaped('country') );
-			if ( array_key_exists( $trythis, $this->payment_submethods ) ){
-				$payment_submethod = $trythis;
-				$this->staged_data['payment_submethod'] = $payment_submethod;
-			}
-		}
-
-		// These will be grouped and ordered by payment product id
-		switch ( $payment_submethod )  {
-
-			/* Bank transfer */
-			case 'bt':
-
-				// Brazil
-				if ( $this->unstaged_data['country'] == 'BR' ) {
-					$this->dataConstraints['direct_debit_text']['city'] = 50;
-				}
-
-				// Korea - Manual does not specify North or South
-				if ( $this->unstaged_data['country'] == 'KR' ) {
-					$this->dataConstraints['direct_debit_text']['city'] = 50;
-				}
-				break;
-
-			/* Direct Debit */
-			case 'dd_de':
-				$this->dataConstraints['account_number']['length'] = 10;
-				$this->dataConstraints['bank_code']['length'] = 8;
-				break;
-			case 'dd_nl':
-				$this->dataConstraints['account_name']['length'] = 30;
-				$this->dataConstraints['account_number']['length'] = 10;
-				$this->dataConstraints['direct_debit_text']['length'] = 32;
-				$this->staged_data['transaction_type'] = '01';
-				break;
-			case 'dd_gb':
-				$this->staged_data['transaction_type'] = '01';
-				break;
-			case 'dd_at':
-				$this->dataConstraints['account_name']['length'] = 30;
-				$this->dataConstraints['bank_code']['length'] = 5;
-				$this->dataConstraints['direct_debit_text']['length'] = 28;
-				break;
-			case 'dd_es':
-				$this->dataConstraints['account_name']['length'] = 30;
-				$this->dataConstraints['account_number']['length'] = 10;
-				$this->dataConstraints['bank_code']['length'] = 4;
-				$this->dataConstraints['branch_code']['length'] = 4;
-				$this->dataConstraints['direct_debit_text']['length'] = 40;
-				break;
-			case 'dd_fr':
-				$this->dataConstraints['direct_debit_text']['length'] = 18;
-				break;
-			case 'dd_it':
-				$this->dataConstraints['account_name']['length'] = 30;
-				$this->dataConstraints['account_number']['length'] = 12;
-				$this->dataConstraints['bank_check_digit']['length'] = 1;
-				$this->dataConstraints['bank_code']['length'] = 5;
-				$this->dataConstraints['direct_debit_text']['length'] = 32;
-				break;
-
-			/* Cash payments */
-			 case 'cash_boleto':
-				$this->addKeyToTransaction('FISCALNUMBER');
-				break;
-
-			case 'rtbt_eps':
-			case 'rtbt_ideal':
-
-				$this->addKeysToTransactionForSubmethod( $payment_submethod );
-
-				$this->addKeyToTransaction('ISSUERID');
-				break;
-
-			/* Default Case */
-			default:
-				// Nothing is done in the default case.
-				// It's worth noting that at this point, it might not be an error.
-				break;
-		}
-
-		switch ($payment_method) {
+		switch ( $this->getData_Unstaged_Escaped( 'payment_method' ) ) {
 		case 'dd':
-			$this->setupStagePaymentMethodForDirectDebit( $payment_submethod );
-			break;
 		case 'ew':
-			$this->setupStagePaymentMethodForEWallets( $payment_submethod );
+			// TODO: Review.  Why is this set to country_bank_code in other cases?
+			$this->var_map['COUNTRYCODEBANK'] = 'country';
 			break;
+		}
+
+		// Use staged data so we pick up tricksy -_country variants
+		if ( !empty( $this->staged_data['payment_submethod'] ) ) {
+			$this->addKeysToTransactionForSubmethod( $this->staged_data['payment_submethod'] );
 		}
 	}
 
@@ -2614,10 +1666,8 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * Adds the recurring payment pieces to the structure of
 	 * INSERT_ORDERWITHPAYMENT if the recurring field is populated.
 	 */
-	protected function stage_recurring(){
-		if ( !$this->getData_Unstaged_Escaped( 'recurring' ) ) {
-			return;
-		} else {
+	protected function tuneForRecurring(){
+		if ( $this->getData_Unstaged_Escaped( 'recurring' ) ) {
 			$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS']['ORDER'][] = 'ORDERTYPE';
 			$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['ORDERTYPE'] = '4';
 		}
@@ -2628,72 +1678,30 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 * This should be a catch-all for establishing weird country-based rules.
 	 * Right now, we only have the one, but there could be more here later.
 	 */
-	protected function stage_country() {
+	protected function tuneForCountry() {
 		switch ( $this->getData_Unstaged_Escaped( 'country' ) ){
-			case 'AR' :
-				$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS']['ORDER'][] = 'USAGETYPE';
-				$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS']['ORDER'][] = 'PURCHASETYPE';
-				$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['USAGETYPE'] = '0';
-				$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['PURCHASETYPE'] = '1';
-				break;
+		case 'AR' :
+			$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS']['ORDER'][] = 'USAGETYPE';
+			$this->transactions['INSERT_ORDERWITHPAYMENT']['request']['REQUEST']['PARAMS']['ORDER'][] = 'PURCHASETYPE';
+			$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['USAGETYPE'] = '0';
+			$this->transactions['INSERT_ORDERWITHPAYMENT']['values']['PURCHASETYPE'] = '1';
+			break;
 		}
-	}
-
-	protected function stage_contribution_tracking_id() {
-		$ctid = $this->unstaged_data['contribution_tracking_id'];
-		//append timestamp to ctid
-		$ctid .= '.' . (( microtime( true ) * 1000 ) % 100000); //least significant five
-		$this->staged_data['contribution_tracking_id'] = $ctid;
-	}
-
-	protected function unstage_contribution_tracking_id() {
-		$ctid = $this->staged_data['contribution_tracking_id'];
-		$ctid = explode( '.', $ctid );
-		$ctid = $ctid[0];
-		$this->unstaged_data['contribution_tracking_id'] = $ctid;
-	}
-
-	protected function stage_fiscal_number() {
-		$this->staged_data['fiscal_number'] = preg_replace( "/[\.\/\-]/", "", $this->getData_Unstaged_Escaped( 'fiscal_number' ) );
 	}
 
 	/**
 	 * Add keys to transaction for submethod
-	 *
+	 * TODO: Candidate for pushing to the base class.
 	 */
 	protected function addKeysToTransactionForSubmethod( $payment_submethod ) {
 
 		// If there are no keys to add, do not proceed.
-		if ( !is_array( $this->payment_submethods[ $payment_submethod ]['keys'] ) ) {
-
+		if ( empty( $this->payment_submethods[$payment_submethod]['keys'] ) ) {
 			return;
 		}
 
-		foreach ( $this->payment_submethods[ $payment_submethod ]['keys'] as $key ) {
-
+		foreach ( $this->payment_submethods[$payment_submethod]['keys'] as $key ) {
 			$this->addKeyToTransaction( $key );
-		}
-	}
-
-	/**
-	 * Stage: returnto
-	 */
-	protected function stage_returnto() {
-		// Get the default returnto
-		$returnto = $this->getData_Unstaged_Escaped( 'returnto' );
-
-		if ( $this->getData_Unstaged_Escaped( 'payment_method' ) === 'cc' ) {
-			// Add order ID to the returnto URL, only if it's not already there.
-			//TODO: This needs to be more robust (like actually pulling the
-			//qstring keys, resetting the values, and putting it all back)
-			//but for now it'll keep us alive.
-			if ( $this->getOrderIDMeta( 'generate' ) && !is_null( $returnto ) && !strpos( $returnto, 'order_id' ) ) {
-				$queryArray = array( 'order_id' => $this->unstaged_data['order_id'] );
-				$this->staged_data['returnto'] = wfAppendQuery( $returnto, $queryArray );
-			}
-		} else {
-			// FIXME: Do we want to set this here?
-			$this->staged_data['returnto'] = $this->getThankYouPage();
 		}
 	}
 
@@ -2707,16 +1715,17 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$data = $this->getTransactionData();
 			$action = $this->findCodeAction( 'GET_ORDERSTATUS', 'STATUSID', $data['STATUSID'] );
 			if ( $action != FinalStatus::FAILED ){
+				// TODO: if method_loses_control rather than hardcode cc.
 				if ( $this->getData_Unstaged_Escaped( 'payment_method' ) === 'cc' ) {
 					$this->setLimboMessage( self::GC_CC_LIMBO_QUEUE );
-				} else {
-					$this->setLimboMessage();
 				}
 			}
 		}
 	}
 
+	// hook pre_process for GET_ORDERSTATUS
 	protected function pre_process_get_orderstatus(){
+		// Run antifraud only once per request.
 		static $checked = array();
 		$oid = $this->getData_Unstaged_Escaped('order_id');
 		if  ( $this->getData_Unstaged_Escaped( 'payment_method' ) === 'cc' && !in_array( $oid, $checked ) ){

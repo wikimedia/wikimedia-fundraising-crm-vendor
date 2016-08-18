@@ -1,9 +1,20 @@
 <?php
 
 class DonationQueue {
+
 	protected static $instance;
 
+	// ActiveMQ header fields to be added to Redis messages for compatibility
+	private $source_fields;
+
 	protected function __construct() {
+		$this->source_fields = array(
+			'source_host' => WmfFramework::getHostname(),
+			'source_name' => 'DonationInterface',
+			'source_run_id' => getmypid(),
+			'source_type' => 'payments',
+			'source_version' => self::getVersionStamp(),
+		);
 	}
 
 	/**
@@ -18,6 +29,22 @@ class DonationQueue {
 		return self::$instance;
 	}
 
+	public static function getVersionStamp() {
+		// TODO: Core helper function.
+		global $IP;
+		// static to avoid duplicate fs reads
+		static $sourceRevision = null;
+		if ( !$sourceRevision ) {
+			$versionStampPath = "$IP/.version-stamp";
+			if ( file_exists( $versionStampPath ) ) {
+				$sourceRevision = trim( file_get_contents( $versionStampPath ) );
+			} else {
+				$sourceRevision = 'unknown';
+			}
+		}
+		return $sourceRevision;
+	}
+
 	public function push( $transaction, $queue ) {
 		// TODO: This should be checked once, at a higher level.
 		if ( !GatewayAdapter::getGlobal( 'EnableQueue' ) ) {
@@ -26,11 +53,14 @@ class DonationQueue {
 		$properties = $this->buildHeaders( $transaction );
 		$message = $this->buildBody( $transaction );
 		$this->newBackend( $queue )->push( $message, $properties );
+
+		// FIXME: hack for new queue, remove
+		$this->mirror( $message, $queue );
 	}
 
 	public function pop( $queue ) {
 		if ( !GatewayAdapter::getGlobal( 'EnableQueue' ) ) {
-			return;
+			return null;
 		}
 		$backend = $this->newBackend( $queue );
 
@@ -39,7 +69,7 @@ class DonationQueue {
 
 	public function peek( $queue ) {
 		if ( !GatewayAdapter::getGlobal( 'EnableQueue' ) ) {
-			return;
+			return null;
 		}
 		$backend = $this->newBackend( $queue );
 
@@ -53,11 +83,14 @@ class DonationQueue {
 		$properties = $this->buildHeaders( $transaction );
 		$message = $this->buildBody( $transaction );
 		$this->newBackend( $queue )->set( $correlationId, $message, $properties );
+
+		// FIXME: hack for new queue, remove
+		$this->mirror( $message, $queue );
 	}
 
 	public function get( $correlationId, $queue ) {
 		if ( !GatewayAdapter::getGlobal( 'EnableQueue' ) ) {
-			return;
+			return null;
 		}
 		return $this->newBackend( $queue )->get( $correlationId );
 	}
@@ -70,36 +103,37 @@ class DonationQueue {
 	}
 
 	/**
+	 * Temporary measure to transition from key/value ActiveMQ to pure FIFO
+	 * queues. Reads $wgDonationInterfaceQueueMirrors, where keys are original
+	 * queue names and values are the queues to mirror to.
+	 *
+	 * @param array $message
+	 * @param string $queue
+	 */
+	protected function mirror( $message, $queue ) {
+		global $wgDonationInterfaceQueueMirrors;
+		if ( array_key_exists( $queue, $wgDonationInterfaceQueueMirrors ) ) {
+			$mirrorQueue = $wgDonationInterfaceQueueMirrors[$queue];
+			try {
+				$this->newBackend( $mirrorQueue )->push( $message );
+			} catch ( Exception $ex ) {
+				// TODO: log.
+				// DonationLoggerFactory::getLogger()->warning( "Cannot mirror to {$mirrorQueue}: {$ex->getMessage()}" );
+			}
+		}
+	}
+
+	/**
 	 * Build message headers from given donation data array
 	 *
 	 * @param array $transaction
 	 * @return array
 	 */
 	protected function buildHeaders( $transaction ) {
-		global $IP;
-
-		// TODO: Core helper function.
-		static $sourceRevision = null;
-		if ( !$sourceRevision ) {
-			$versionStampPath = "$IP/.version-stamp";
-			if ( file_exists( $versionStampPath ) ) {
-				$sourceRevision = trim( file_get_contents( $versionStampPath ) );
-			} else {
-				$sourceRevision = 'unknown';
-			}
-		}
-
 		// Create the message and associated properties
-		$properties = array(
-			// TODO: Move 'persistent' to PHPQueue backend default.
-			'persistent' => 'true',
-			'source_enqueued_time' => time(),
-			'source_host' => WmfFramework::getHostname(),
-			'source_name' => 'DonationInterface',
-			'source_run_id' => getmypid(),
-			'source_type' => 'payments',
-			'source_version' => $sourceRevision,
-		);
+		$properties = $this->source_fields;
+		// TODO: Move 'persistent' to PHPQueue backend default.
+		$properties['persistent'] = true;
 		if ( isset( $transaction['gateway'] ) ) {
 			$properties['gateway'] = $transaction['gateway'];
 		}
@@ -134,6 +168,7 @@ class DonationQueue {
 			// Assume anything else is a regular donation.
 			$data = $this->buildTransactionMessage( $transaction );
 		}
+		$data = array_merge( $data, $this->source_fields );
 		return $data;
 	}
 
@@ -186,19 +221,24 @@ class DonationQueue {
 	 * Currency in receiving module has currency set to USD, should take passed variable for these
 	 * PAssed both ISO and country code, no need to look up
 	 * 'gateway' = globalcollect, e.g.
-	 * 'date' is sent as $date("r") so it can be translated with strtotime like Paypal transactions (correct?)
+	 * 'date' is sent as $date("r")
+	 *  so it can be translated with strtotime like Paypal transactions (correct?)
 	 * Processor txn ID sent in the transaction response is assigned to 'gateway_txn_id' (PNREF)
 	 * Order ID (generated with transaction) is assigned to 'contribution_tracking_id'?
 	 * Response from processor is assigned to 'response'
+	 *
+	 * @param array $transaction values from gateway adapter
+	 * @return array values normalized to wire format
 	 */
 	protected function buildTransactionMessage( $transaction ) {
 		// specifically designed to match the CiviCRM API that will handle it
 		// edit this array to include/ignore transaction data sent to the server
+
 		$message = array(
 			'contribution_tracking_id' => $transaction['contribution_tracking_id'],
 			'country' => $transaction['country'],
-			//the following int casting fixes an issue that is more in Drupal/CiviCRM than here.
-			//The code there should also be fixed.
+			// the following int casting fixes an issue that is more in Drupal/CiviCRM than here.
+			// The code there should also be fixed.
 			'date' => (int)$transaction['date'],
 			'email' => $transaction['email'],
 			'fee' => '0',
@@ -206,9 +246,9 @@ class DonationQueue {
 			'gateway' => $transaction['gateway'],
 			'gateway_txn_id' => $transaction['gateway_txn_id'],
 			'language' => $transaction['language'],
+			'order_id' => $transaction['order_id'],
 			'payment_method' => $transaction['payment_method'],
 			'payment_submethod' => $transaction['payment_submethod'],
-			'referrer' => $transaction['referrer'],
 			'response' => $transaction['response'],
 			'user_ip' => $transaction['user_ip'],
 			'utm_source' => $transaction['utm_source'],
@@ -226,6 +266,7 @@ class DonationQueue {
 			'last_name' => 'lname',
 			'optout' => 'optout',
 			'recurring' => 'recurring',
+			'risk_score' => 'risk_score',
 			'state_province' => 'state',
 			'street_address' => 'street',
 			'supplemental_address_1' => 'street_supplemental',
@@ -251,6 +292,7 @@ class DonationQueue {
 	 * transaction array, basically undoing the mappings from buildTransactionMessage.
 	 *
 	 * TODO: This shouldn't be necessary, see https://phabricator.wikimedia.org/T109819
+	 * @deprecated by T131275
 	 *
 	 * @param array $transaction Queue message
 	 *
@@ -273,7 +315,7 @@ class DonationQueue {
 		foreach ( $rekey as $wire => $normal ){
 			if ( isset( $transaction[$wire] ) ){
 				$transaction[$normal] = $transaction[$wire];
-				unset($transaction[$wire]);
+				unset( $transaction[$wire] );
 			};
 		}
 

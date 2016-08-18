@@ -19,6 +19,16 @@ abstract class Gateway_Form {
 	protected $gateway;
 
 	/**
+	 * @var GatewayPage
+	 */
+	protected $gatewayPage;
+
+	/**
+	 * @var string
+	 */
+	protected $scriptPath;
+
+	/**
 	 * Required method for returning the full HTML for a form.
 	 *
 	 * Code invoking forms will expect this method to be set.  Requiring only
@@ -29,8 +39,12 @@ abstract class Gateway_Form {
 	 */
 	abstract function getForm();
 
-	public function __construct( $gateway ) {
+	/**
+	 * Get these objects using "new" with no parameters.
+	 */
+	public function __construct() {}
 
+	public function setGateway( GatewayType $gateway ) {
 		$this->gateway = $gateway;
 		$this->logger = DonationLoggerFactory::getLogger( $gateway );
 		$gateway_errors = $this->gateway->getAllErrors();
@@ -44,12 +58,9 @@ abstract class Gateway_Form {
 		$this->form_errors = array_merge( DataValidator::getEmptyErrorArray(), $gateway_errors );
 	}
 
-	/**
-	 * Uses resource loader to load the form validation javascript.
-	 */
-	protected function loadValidateJs() {
-		global $wgOut;
-		$wgOut->addModules( 'di.form.core.validate' );
+	public function setGatewayPage( GatewayPage $gatewayPage ) {
+		$this->gatewayPage = $gatewayPage;
+		$this->scriptPath = $gatewayPage->getContext()->getConfig()->get( 'ScriptPath' );
 	}
 
 	/**
@@ -80,9 +91,8 @@ abstract class Gateway_Form {
 	 * @return string $url The full URL for the form to post to
 	 */
 	protected function getNoCacheAction() {
-		global $wgRequest, $wgTitle;
 
-		$url = $wgRequest->getFullRequestURL();
+		$url = $this->gatewayPage->getRequest()->getFullRequestURL();
 		$url_parts = wfParseUrl( $url );
 		if ( isset( $url_parts['query'] ) ) {
 			$query_array = wfCgiToArray( $url_parts['query'] );
@@ -116,7 +126,8 @@ abstract class Gateway_Form {
 		}
 
 		// construct the submission url
-		return wfAppendQuery( $wgTitle->getLocalURL(), $query_array );
+		$title = $this->gatewayPage->getPageTitle();
+		return wfAppendQuery( $title->getLocalURL(), $query_array );
 	}
 
 	/**
@@ -143,22 +154,17 @@ abstract class Gateway_Form {
 		return $this->gateway->getData_Unstaged_Escaped( $key );
 	}
 
-	/**
-	 * This function limits the possible characters passed as template keys and
-	 * values to letters, numbers, hyphens and underscores. The function also
-	 * performs standard escaping of the passed values.
-	 *
-	 * @param string $string The unsafe string to escape and check for invalid characters
-	 * @return string Sanitized version of input
-	 */
-	function make_safe( $string ) {
-		$stripped = preg_replace( '/[^-_\w]/', '', $string );
-
-		// theoretically this is overkill, but better safe than sorry
-		return wfEscapeWikiText( htmlspecialchars( $stripped ) );
+	public function getResources() {
+		return array();
 	}
 
-	public function getResources() {
+	/**
+	 * All the things that need to be loaded in the head with link tags for
+	 * styling server-rendered html
+	 *
+	 * @return array
+	 */
+	public function getStyleModules() {
 		return array();
 	}
 

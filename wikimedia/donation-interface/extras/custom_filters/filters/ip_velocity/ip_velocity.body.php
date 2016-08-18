@@ -2,24 +2,36 @@
 
 class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 
+	const RAN_INITIAL = 'initial_ip_velocity_has_run';
+
 	/**
 	 * Container for an instance of self
 	 * @var Gateway_Extras_CustomFilters_IP_Velocity
 	 */
-	static $instance;
+	protected static $instance;
 
 	/**
 	 * Custom filter object holder
 	 * @var Gateway_Extras_CustomFilters
 	 */
-	public $cfo;
+	protected $cfo;
 
-	public function __construct( &$gateway_adapter, &$custom_filter_object = null ) {
+	/**
+	 * Memcached instance we use to store and retrieve scores
+	 * @var Memcached
+	 */
+	protected $cache_obj;
+
+	protected function __construct(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object = null
+	) {
+
 		parent::__construct( $gateway_adapter );
-		$this->cfo = & $custom_filter_object;
+		$this->cfo = $custom_filter_object;
 	}
 
-	public function filter() {
+	protected function filter() {
 		$user_ip = $this->gateway_adapter->getData_Unstaged_Escaped( 'user_ip' );
 		
 		//first, handle the whitelist / blacklist before you do anything else. 
@@ -28,6 +40,7 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 			$this->cfo->addRiskScore( 0, 'IPWhitelist' );
 			return true;
 		}
+		// TODO: this blacklist business should happen elsewhere, and on every hit.
 		if ( DataValidator::ip_is_listed( $user_ip, $this->gateway_adapter->getGlobal( 'IPBlacklist' ) ) ) {
 			$this->gateway_adapter->debugarray[] = "IP present in blacklist.";
 			$this->cfo->addRiskScore( $this->gateway_adapter->getGlobal( 'IPVelocityFailScore' ), 'IPBlacklist' );
@@ -60,17 +73,17 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 		//fail open, in case memcached doesn't work.
 		return true;
 	}
-	
-	
-	public function postProcess(){
+
+
+	protected function postProcess(){
 		//after a successful transaction, add a record of it.
 		if ( $this->connectToMemcache() ){
 			$this->addNowToMemcachedValue();
 		}
 		return true;
 	}
-	
-	function connectToMemcache(){
+
+	protected function connectToMemcache(){
 		//this needs Memcached to work.
 		if ( !class_exists('Memcached') ){
 			$this->gateway_logger->alert( "IPVelocityFilter says Memcached class does not exist." );
@@ -87,8 +100,8 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 			return false;
 		}
 	}
-	
-	function getMemcachedValue(){		
+
+	protected function getMemcachedValue(){
 		//check to see if the user ip is in memcache
 		//need to be connected first. 
 		$user_ip = $this->gateway_adapter->getData_Unstaged_Escaped( 'user_ip' );
@@ -106,7 +119,7 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 	 * @param bool $fail If this entry was added on the filter being tripped
 	 * @param bool $toxic If we're adding this entry to penalize a toxic card
 	 */
-	function addNowToMemcachedValue( $oldvalue = null, $fail = false, $toxic = false ){
+	protected function addNowToMemcachedValue( $oldvalue = null, $fail = false, $toxic = false ){
 		//need to be connected first. 
 		if ( is_null( $oldvalue ) ){
 			$oldvalue = $this->getMemcachedValue();
@@ -129,9 +142,9 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 			$this->gateway_logger->alert( "IPVelocityFilter unable to set new memcache data." );
 		}
 	}
-	
-	
-	static function addNowToVelocityData( $stored = false, $timeout = false ){
+
+
+	protected static function addNowToVelocityData( $stored = false, $timeout = false ){
 		$new_velocity_records = array();
 		$nowstamp = time();
 		if ( is_array( $stored ) ){
@@ -144,26 +157,63 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 		$new_velocity_records[] = $nowstamp;
 		return $new_velocity_records;
 	}
-	
 
-	static function onFilter( &$gateway_adapter, &$custom_filter_object ) {
+
+	/**
+	 * This is called when we're actually talking to the processor.
+	 * We don't call on the first attempt in this session, since
+	 * onInitialFilter already struck once.
+	 * @param GatewayType $gateway_adapter
+	 * @param Gateway_Extras_CustomFilters $custom_filter_object
+	 * @return bool
+	 */
+	public static function onFilter( $gateway_adapter, $custom_filter_object ) {
 		if ( !$gateway_adapter->getGlobal( 'EnableIPVelocityFilter' ) ){
+			return true;
+		}
+		if (
+			$gateway_adapter->getRequest()->getSessionData( self::RAN_INITIAL ) &&
+			!$gateway_adapter->getRequest()->getSessionData( 'numAttempt' )
+		) {
+			// We're on the first attempt, already counted in onInitialFilter
 			return true;
 		}
 		$gateway_adapter->debugarray[] = 'IP Velocity onFilter hook!';
 		return self::singleton( $gateway_adapter, $custom_filter_object )->filter();
 	}
-	
-	static function onPostProcess( &$gateway_adapter ) {
+
+	/**
+	 * Run the filter if we haven't for this session, and set a flag
+	 * @param GatewayType $gateway_adapter
+	 * @param Gateway_Extras_CustomFilters $custom_filter_object
+	 * @return bool
+	 */
+	public static function onInitialFilter( $gateway_adapter, $custom_filter_object ) {
+		if ( !$gateway_adapter->getGlobal( 'EnableIPVelocityFilter' ) ){
+			return true;
+		}
+		if ( $gateway_adapter->getRequest()->getSessionData( self::RAN_INITIAL ) ) {
+			return true;
+		}
+
+		$gateway_adapter->getRequest()->setSessionData( self::RAN_INITIAL, true );
+		$gateway_adapter->debugarray[] = 'IP Velocity onFilter hook!';
+		return self::singleton( $gateway_adapter, $custom_filter_object )->filter();
+	}
+
+	public static function onPostProcess( GatewayType $gateway_adapter ) {
 		if ( !$gateway_adapter->getGlobal( 'EnableIPVelocityFilter' ) ){
 			return true;
 		}
 		$gateway_adapter->debugarray[] = 'IP Velocity onPostProcess hook!';
-		$dummy = null; //have to do this or it fails hard on a pass-by-reference...
-		return self::singleton( $gateway_adapter, $dummy )->postProcess();
+		return self::singleton( $gateway_adapter )->postProcess();
 	}
 
-	static function singleton( &$gateway_adapter, &$custom_filter_object ) {
+	protected static function singleton(
+		GatewayType $gateway_adapter,
+		Gateway_Extras_CustomFilters $custom_filter_object = null
+	) {
+
 		if ( !self::$instance || $gateway_adapter->isBatchProcessor() ) {
 			self::$instance = new self( $gateway_adapter, $custom_filter_object );
 		}
@@ -174,8 +224,9 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 	 * Add a hit to this IP's history for a toxic card.  This is designed to be
 	 * called outside of the usual filter callbacks so we record nasty attempts
 	 * even when the filters aren't called.
+	 * @param GatewayType $gateway adapter instance with user_ip set
 	 */
-	public static function penalize( &$gateway ) {
+	public static function penalize( GatewayType $gateway ) {
 		$logger = DonationLoggerFactory::getLogger( $gateway );
 		$logger->info( 'IPVelocityFilter penalizing IP address '
 			. $gateway->getData_Unstaged_Escaped( 'user_ip' )

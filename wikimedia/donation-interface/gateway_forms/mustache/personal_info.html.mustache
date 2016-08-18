@@ -1,33 +1,56 @@
 {{# fname_required }}{{! if we don't need the fname, hide the whole name cell }}
 						<tr>
 							<td>
-								<input class="halfwidth" name="fname" value="{{ fname }}" type="text" placeholder="{{ l10n "donate_interface-donor-fname" }}" id="fname" required><input class="halfwidth" name="lname" value="{{ lname }}" type="text" placeholder="{{ l10n "donate_interface-donor-lname" }}" id="lname" required>
+								<input class="halfwidth" name="fname" value="{{ fname }}" type="text" placeholder="{{ l10n "donate_interface-donor-fname" }}" id="fname" required autocomplete="billing given-name cc-given-name"><input class="halfwidth" name="lname" value="{{ lname }}" type="text" placeholder="{{ l10n "donate_interface-donor-lname" }}" id="lname" required autocomplete="billing family-name cc-family-name">
 							</td>
 						</tr>
+                        {{{ fieldError "fname" }}}
+                        {{{ fieldError "lname" }}}
 {{/ fname_required }}
-{{# email_required }}
-						<tr>
-							<td>
-								<input class="fullwidth" name="email" value="{{ email }}" type="email" title="{{ l10n "donate_interface-donor-email" }}" placeholder="{{ l10n "donate_interface-donor-email" }}" id="email" required>
-							</td>
-						</tr>
-{{/ email_required }}
 {{# address_required }}
+{{# street_required }}
 						<tr>
 							<td>
-								<input class="fullwidth" name="street" value="{{ street }}" type="text" title="{{ l10n "donate_interface-donor-street" }}" placeholder="{{ l10n "donate_interface-donor-street" }}" id="street" required>
+								<input class="fullwidth" name="street" value="{{ street }}" type="text" title="{{ l10n "donate_interface-donor-street" }}" placeholder="{{ l10n "donate_interface-donor-street" }}" id="street" required autocomplete="billing address-line1">
 							</td>
 						</tr>
+                        {{{ fieldError "street" }}}
+{{/ street_required }}
 						<tr>
 							<td>
-								<input class="halfwidth" name="city" value="{{ city }}" type="text" placeholder="{{ l10n "donate_interface-donor-city" }}" id="city" required><input class="halfwidth" name="state" value="{{ state }}" type="text" placeholder="{{ l10n "donate_interface-donor-state" }}" id="state" required>
+{{# city_required }}
+								<input class="{{ address_css_class }}" name="city" value="{{ city }}" type="text" placeholder="{{ l10n "donate_interface-donor-city" }}" id="city" required autocomplete="billing address-level2">
+{{/ city_required }}
+{{> state_dropdown }}{{! only renders if required }}
+{{# zip_required }}
+								<input class="{{ address_css_class }}" name="zip" value="{{ zip }}" type="text" placeholder="{{ l10n "donate_interface-donor-postal" }}" id="zip" required autocomplete="billing postal-code">
+{{/ zip_required }}
 							</td>
 						</tr>
+
+    {{# city_required }}
+                        {{{ fieldError "city" }}}
+    {{/ city_required }}
+    {{# state_required }}
+                        {{{ fieldError "state" }}}
+    {{/ state_required }}
+    {{# zip_required }}
+                        {{{ fieldError "postal_code" }}}
+    {{/ zip_required }}
 {{/ address_required }}
 {{# fiscal_number_required }}
 						<tr>
-							<td>
+							<td>{{! TODO: Explore the new pattern attribute for browser validation while allowing the donor to enter whatever punctuated format they're used to }}
 								<input class="fullwidth" name="fiscal_number" value="{{ fiscal_number }}" type="text" title="{{ l10n "donate_interface-donor-fiscal_number" }}" placeholder="{{ l10n "donate_interface-donor-fiscal_number" }}" id="fiscal_number" required >
 							</td>
 						</tr>
+                        {{{ fieldError "fiscal_number" }}}
 {{/ fiscal_number_required }}
+{{# email_required }}
+						<tr>
+							<td>
+								<input class="fullwidth" name="email" value="{{ email }}" type="email" title="{{ l10n "donate_interface-donor-email" }}" placeholder="{{ l10n "donate_interface-donor-email" }}" id="email" required autocomplete="email">
+							</td>
+						</tr>
+                        {{{ fieldError "email" }}}
+{{/ email_required }}

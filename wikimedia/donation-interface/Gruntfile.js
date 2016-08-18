@@ -8,8 +8,9 @@
 module.exports = function ( grunt ) {
 	grunt.loadNpmTasks( 'grunt-contrib-jshint' );
 	grunt.loadNpmTasks( 'grunt-contrib-watch' );
+	grunt.loadNpmTasks( 'grunt-jsonlint' );
 	grunt.loadNpmTasks( 'grunt-banana-checker' );
-	grunt.loadNpmTasks( 'grunt-jscs-checker' );
+	grunt.loadNpmTasks( 'grunt-jscs' );
 
 	grunt.initConfig( {
 		pkg: grunt.file.readJSON( 'package.json' ),
@@ -18,12 +19,13 @@ module.exports = function ( grunt ) {
 				jshintrc: true
 			},
 			shared: [
+				'*.js',
 				'modules/*.js',
 				'modules/js/*.js',
-				'gateway_forms/rapidhtml/*/*.js'
+				'!modules/js/mailcheck.js'
 			],
 			tests: 'tests/*/*.js',
-			gateways: '{adyen,amazon,globalcollect,paypal,worldpay}_gateway/forms/**/*.js'
+			gateways: '{adyen,amazon,globalcollect,paypal}_gateway/forms/**/*.js'
 		},
 		jscs: {
 			shared: { src: '<%= jshint.shared %>' },
@@ -32,7 +34,7 @@ module.exports = function ( grunt ) {
 		},
 		banana: {
 			shared: 'gateway_common/i18n/*/',
-			gateways: '{adyen,amazon,globalcollect,paypal,worldpay}_gateway/i18n/'
+			gateways: '{adyen,amazon,globalcollect,paypal}_gateway/i18n/'
 		},
 		watch: {
 			files: [
@@ -42,10 +44,16 @@ module.exports = function ( grunt ) {
 				'<%= jshint.gateways %>'
 			],
 			tasks: 'test'
+		},
+		jsonlint: {
+			all: [
+				'**/*.json',
+				'!node_modules/**'
+			]
 		}
 	} );
 
-	grunt.registerTask( 'lint', [ 'jshint', 'jscs', 'banana' ] );
+	grunt.registerTask( 'lint', [ 'jshint', 'jscs', 'jsonlint', 'banana' ] );
 	grunt.registerTask( 'test', [ 'lint' ] );
 	grunt.registerTask( 'default', 'test' );
 };

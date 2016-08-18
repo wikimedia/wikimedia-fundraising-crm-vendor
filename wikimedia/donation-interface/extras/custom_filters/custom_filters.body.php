@@ -1,6 +1,12 @@
 <?php
 
-class Gateway_Extras_CustomFilters extends Gateway_Extras {
+class Gateway_Extras_CustomFilters extends FraudFilter {
+
+	// filter list hook to run on GatewayReady
+	const HOOK_INITIAL = 'GatewayInitialFilter';
+
+	// filter list hook to run on GatewayValidate
+	const HOOK_VALIDATE = 'GatewayCustomFilter';
 
 	/**
 	 * A value for tracking the 'riskiness' of a transaction
@@ -20,25 +26,26 @@ class Gateway_Extras_CustomFilters extends Gateway_Extras {
 	 * Define the action to take for a given $risk_score
 	 * @var array
 	 */
-	public $action_ranges;
+	protected $action_ranges;
 
 	/**
 	 * A container for an instance of self
 	 */
-	static $instance;
+	protected static $instance;
 
-	/**
-	 * Sends messages to the blah_gateway_fraud log
-	 * @var \Psr\Log\LoggerInterface
-	 */
-	protected $fraud_logger;
-
-	public function __construct( &$gateway_adapter ) {
+	protected function __construct( GatewayType $gateway_adapter ) {
 		parent::__construct( $gateway_adapter ); //gateway_adapter is set in there. 
+
 		// load user action ranges and risk score		
 		$this->action_ranges = $this->gateway_adapter->getGlobal( 'CustomFiltersActionRanges' );
+		$this->risk_score = WmfFramework::getSessionValue( 'risk_scores' );
+		if ( !$this->risk_score ) {
+			$this->risk_score = array();
+		} else {
+			$unnecessarily_escaped_session_contents = addslashes( json_encode( $this->risk_score ) );
+			$this->fraud_logger->info( '"Loaded from session" ' . $unnecessarily_escaped_session_contents );
+		}
 		$this->risk_score['initial'] = $this->gateway_adapter->getGlobal( 'CustomFiltersRiskScore' );
-		$this->fraud_logger = DonationLoggerFactory::getLogger( $this->gateway_adapter, '_fraud' );
 	}
 
 	/**
@@ -46,7 +53,7 @@ class Gateway_Extras_CustomFilters extends Gateway_Extras {
 	 *
 	 * @return string The action to take
 	 */
-	public function determineAction() {
+	protected function determineAction() {
 		$risk_score = $this->getRiskScore();
 		// possible risk scores are between 0 and 100
 		if ( $risk_score < 0 )
@@ -78,43 +85,51 @@ class Gateway_Extras_CustomFilters extends Gateway_Extras {
 		$log_message = "\"$source added a score of $score\"";
 		$this->fraud_logger->info( '"addRiskScore" ' . $log_message );
 		$this->risk_score[$source] = $score;
-
-		$this->gateway_adapter->addRiskScore( $score );
 	}
-	
 
 	/**
-	 * @throws InvalidArgumentException
+	 * Add up the risk scores in an array, by default $this->risk_score
+	 * @param array|null $scoreArray
+	 * @return float total risk score
 	 */
-	public function getRiskScore() {
+	public function getRiskScore( $scoreArray = null ) {
+		if ( is_null( $scoreArray ) ) {
+			$scoreArray = $this->risk_score;
+		}
 
-		if ( is_numeric( $this->risk_score ) ) {
-			return $this->risk_score;
-
-		} elseif ( is_array( $this->risk_score) ) {
+		if ( is_numeric( $scoreArray ) ) {
+			return $scoreArray;
+		} elseif ( is_array( $scoreArray ) ) {
 			$total = 0;
-			foreach ( $this->risk_score as $score ){
+			foreach ( $scoreArray as $score ){
 				$total += $score;
 			}
 			return $total;
 
 		} else {
 			// TODO: We should catch this during setRiskScore.
-			throw new InvalidArgumentException( __FUNCTION__ . " risk_score is neither numeric, nor an array." . print_r( $this->risk_score, true ) );
+			throw new InvalidArgumentException(
+				__FUNCTION__ . " risk_score is neither numeric, nor an array."
+				. print_r( $scoreArray, true )
+			);
 		}
 	}
-	
 
 	/**
 	 * Run the transaction through the custom filters
+	 * @param string $hook Run custom filters attached to a hook with this name
+	 * @return bool
 	 */
-	public function validate() {
+	protected function validate( $hook ) {
 		// expose a hook for custom filters
-		WmfFramework::runHooks( 'GatewayCustomFilter', array( &$this->gateway_adapter, &$this ) );
+		WmfFramework::runHooks( $hook, array( $this->gateway_adapter, $this ) );
+		$score = $this->getRiskScore();
+		$this->gateway_adapter->setRiskScore( $score );
 		$localAction = $this->determineAction();
 		$this->gateway_adapter->setValidationAction( $localAction );
 
-		$log_message = '"' . $localAction . "\"\t\"" . $this->getRiskScore() . "\"";
+		$log_message = '"' . $localAction . "\"\t\"" . $score . "\"";
+
 		$this->fraud_logger->info( '"Filtered" ' . $log_message );
 
 		$log_message = '"' . addslashes( json_encode( $this->risk_score ) ) . '"';
@@ -128,44 +143,55 @@ class Gateway_Extras_CustomFilters extends Gateway_Extras {
 		$log_message = '"' . addslashes( json_encode( $utm ) ) . '"';
 		$this->fraud_logger->info( '"utm" ' . $log_message );
 
-		//add a message to the fraud stats queue, so we can shovel it into the fredge.
-		$stomp_msg = array (
-			'validation_action' => $localAction,
-			'risk_score' => $this->getRiskScore(),
-			'score_breakdown' => $this->risk_score,
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceAntifraud',
-			'user_ip' => $this->gateway_adapter->getData_Unstaged_Escaped( 'user_ip' ),
-		);
-		//If we need much more here to help combat fraud, we could just
-		//start stuffing the whole maxmind query in the fredge, too.
-		//Legal said ok... but this seems a bit excessive to me at the
-		//moment. 
-
-		$transaction = $this->gateway_adapter->makeFreeformStompTransaction( $stomp_msg );
-
-		try {
-			$this->fraud_logger->info( 'Pushing transaction to payments-antifraud queue.' );
-			DonationQueue::instance()->push( $transaction, 'payments-antifraud' );
-		} catch ( Exception $e ) {
-			$this->fraud_logger->error( 'Unable to send payments-antifraud message' );
+		// Always send a message if we're about to charge or redirect the donor
+		// Only send a message on initial validation if things look fishy
+		if ( $hook === self::HOOK_VALIDATE || $localAction !== 'process' ) {
+			$this->sendAntifraudMessage( $localAction, $score, $this->risk_score );
 		}
+
+		// Always keep the stored scores up to date
+		WmfFramework::setSessionValue( 'risk_scores', $this->risk_score );
 
 		return TRUE;
 	}
 
-	static function onValidate( &$gateway_adapter ) {
+	public static function onValidate( GatewayType $gateway_adapter ) {
 		if ( !$gateway_adapter->getGlobal( 'EnableCustomFilters' ) ){
 			return true;
 		}
 		$gateway_adapter->debugarray[] = 'custom filters onValidate hook!';
-		return self::singleton( $gateway_adapter )->validate();
+		return self::singleton( $gateway_adapter )->validate( self::HOOK_VALIDATE );
 	}
 
-	static function singleton( &$gateway_adapter ) {
+	public static function onGatewayReady( GatewayType $gateway_adapter ) {
+		if ( !$gateway_adapter->getGlobal( 'EnableCustomFilters' ) ){
+			return true;
+		}
+		$gateway_adapter->debugarray[] = 'custom filters onGatewayReady hook!';
+		return self::singleton( $gateway_adapter )->validate( self::HOOK_INITIAL );
+	}
+
+	public static function singleton( GatewayType $gateway_adapter ) {
 		if ( !self::$instance || $gateway_adapter->isBatchProcessor() ) {
 			self::$instance = new self( $gateway_adapter );
 		}
 		return self::$instance;
 	}
 
+	/**
+	 * Gets the action calculated on the last filter run. If there are no
+	 * risk scores stored in session, throws a RuntimeException. Even if
+	 * all filters are disabled, we should have stored 'initial' => 0.
+	 *
+	 * @param GatewayType $gateway_adapter
+	 * @return string
+	 */
+	public static function determineStoredAction( GatewayType $gateway_adapter ) {
+		if (
+			!WmfFramework::getSessionValue( 'risk_scores' )
+		) {
+			throw new RuntimeException( 'No stored risk scores' );
+		}
+		return self::singleton( $gateway_adapter )->determineAction();
+	}
 }
