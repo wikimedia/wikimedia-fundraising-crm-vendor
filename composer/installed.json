@@ -1107,67 +1107,6 @@
         ]
     },
     {
-        "name": "wikimedia/smash-pig",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "29866633d165747dbf8be1d2ec482886dd31a2dd"
-        },
-        "require": {
-            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-            "coderkungfu/php-queue": "dev-master",
-            "fusesource/stomp-php": "^2.1.1",
-            "php": "^5.3.3",
-            "phpmailer/phpmailer": "^5.2",
-            "predis/predis": "^1.1",
-            "symfony/event-dispatcher": "^2.1",
-            "symfony/http-foundation": "^2.1",
-            "symfony/yaml": "^2.8"
-        },
-        "require-dev": {
-            "jakub-onderka/php-parallel-lint": "^0.9",
-            "phpunit/phpunit": "^4.8"
-        },
-        "time": "2016-08-09 18:59:16",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "psr-4": {
-                "SmashPig\\": "./"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "authors": [
-            {
-                "name": "Katie Horn",
-                "email": "khorn@wikimedia.org"
-            },
-            {
-                "name": "Matthew Walker",
-                "email": "mwalker@wikimedia.org"
-            },
-            {
-                "name": "Adam Roses Wight",
-                "email": "awight@wikimedia.org"
-            },
-            {
-                "name": "Elliott Eggleston",
-                "email": "eeggleston@wikimedia.org"
-            }
-        ],
-        "description": "The open source PHP flexible payments library and frontend/backend mediator.",
-        "homepage": "http://smashpig.org",
-        "keywords": [
-            "donations",
-            "payments"
-        ]
-    },
-    {
         "name": "symfony/polyfill-php54",
         "version": "v1.2.0",
         "version_normalized": "1.2.0.0",
@@ -1228,13 +1167,74 @@
         ]
     },
     {
+        "name": "wikimedia/smash-pig",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
+            "reference": "fd570e4ad72ae5b35f317346e53d753855957835"
+        },
+        "require": {
+            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "^2.1.1",
+            "php": ">=5.3.3",
+            "phpmailer/phpmailer": "^5.2",
+            "predis/predis": "^1.1",
+            "symfony/event-dispatcher": "^2.1",
+            "symfony/http-foundation": "^2.1",
+            "symfony/yaml": "^2.8"
+        },
+        "require-dev": {
+            "jakub-onderka/php-parallel-lint": "^0.9",
+            "phpunit/phpunit": "^4.8"
+        },
+        "time": "2016-08-22 16:47:05",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "SmashPig\\": "./"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0"
+        ],
+        "authors": [
+            {
+                "name": "Katie Horn",
+                "email": "khorn@wikimedia.org"
+            },
+            {
+                "name": "Matthew Walker",
+                "email": "mwalker@wikimedia.org"
+            },
+            {
+                "name": "Adam Roses Wight",
+                "email": "awight@wikimedia.org"
+            },
+            {
+                "name": "Elliott Eggleston",
+                "email": "eeggleston@wikimedia.org"
+            }
+        ],
+        "description": "The open source PHP flexible payments library and frontend/backend mediator.",
+        "homepage": "http://smashpig.org",
+        "keywords": [
+            "donations",
+            "payments"
+        ]
+    },
+    {
         "name": "wikimedia/donation-interface",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "dffabc362b09b002d7e55280e7aa24b249d52874"
+            "reference": "1e2fd3deade07d4663999496dd0aa79c27eb9d2d"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -1249,14 +1249,17 @@
             "wikimedia/smash-pig": "dev-master",
             "zordius/lightncandy": "0.23"
         },
-        "time": "2016-08-18 00:03:36",
+        "time": "2016-08-25 21:28:41",
         "type": "library",
         "installation-source": "source",
         "autoload": {
             "classmap": [
                 "adyen_gateway",
                 "amazon_gateway",
+                "astropay_gateway",
+                "extras",
                 "gateway_common",
+                "gateway_forms",
                 "globalcollect_gateway",
                 "paypal_gateway",
                 "DonationInterface.class.php"

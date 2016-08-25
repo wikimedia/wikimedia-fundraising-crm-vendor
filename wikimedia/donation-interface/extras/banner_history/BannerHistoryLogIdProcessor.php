@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Processor for banner history log ID. Handles the GatewayReady hook. (See
- * below.)
+ * Processor for banner history log ID. Runs when gateway is constructed,
+ * if DonationInterface global EnableBannerHistoryLog is true.
  */
 class BannerHistoryLogIdProcessor {
 
@@ -77,16 +77,13 @@ class BannerHistoryLogIdProcessor {
 	}
 
 	/**
-	 * Handler for the GatewayReady hook. This is the class's entry point.
+	 * This is the class's entry point.
 	 *
 	 * @param GatewayType $gatewayAdapter
-	 * @return bool always true
 	 */
 	public static function onGatewayReady( GatewayType $gatewayAdapter ) {
-
-		self::singleton( $gatewayAdapter )
-			->queueAssociationOfIds();
-
-		return true;
+		if ( $gatewayAdapter->getGlobal( 'EnableBannerHistoryLog' ) ) {
+			self::singleton( $gatewayAdapter )->queueAssociationOfIds();
+		}
 	}
 }
