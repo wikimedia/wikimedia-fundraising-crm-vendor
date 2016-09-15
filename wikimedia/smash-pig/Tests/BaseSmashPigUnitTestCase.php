@@ -12,6 +12,9 @@ class BaseSmashPigUnitTestCase extends PHPUnit_Framework_TestCase {
 		parent::setUp();
 
 		require_once __DIR__ . '/../vendor/autoload.php';
+
+		// Disable normal config search paths.
+		TestingConfiguration::installTestConfiguration();
 	}
 
 	function tearDown() {
@@ -30,7 +33,7 @@ class BaseSmashPigUnitTestCase extends PHPUnit_Framework_TestCase {
 	 * @return Configuration
 	 */
 	function setConfig( $configNode = 'default', $configPath = null ) {
-		$config = new Configuration( $configNode, $configPath );
+		$config = Configuration::createForViewWithOverrideFile( $configNode, $configPath );
 		Context::initWithLogger( $config );
 		return $config;
 	}

@@ -17,9 +17,9 @@
  *
  */
 
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Tests\SmashPigDatabaseTestConfiguration;
 
 /**
  * @covers GlobalCollectOrphanRectifier
@@ -61,25 +61,13 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 			),
 		) );
 
-		// Configure a temporary database for the pending-db queue.
-		$smashPigConfiguration = array(
-			'data-store' => array(
-				'pending-db' => array(
-					'class' => 'PDO',
-					'inst-args' => array( 'sqlite::memory:' ),
-				),
-			),
-		);
-		$config = new Configuration();
-		$config->override( $smashPigConfiguration );
+		$config = SmashPigDatabaseTestConfiguration::instance();
 		Context::init( $config );
 
 		$this->pendingDb = PendingDatabase::get();
 
 		// Create the schema.
-		// FIXME: Reuse something from SmashPig\Tests
-		$sql = file_get_contents( __DIR__ . '/../../../../vendor/wikimedia/smash-pig/Schema/sqlite/001_CreatePendingTable.sqlite.sql' );
-		$this->pendingDb->getDatabase()->exec( $sql );
+		$this->pendingDb->createTable();
 	}
 
 	/**

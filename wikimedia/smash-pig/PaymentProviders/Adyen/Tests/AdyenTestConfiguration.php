@@ -5,28 +5,44 @@ use SmashPig\Core\DataStores\PendingDatabase;
 
 class AdyenTestConfiguration extends Configuration {
 
-	public function __construct() {
-		parent::__construct(
+	public static function instance( $overrides = array() ) {
+		$config = self::createForViewWithOverrideFile(
 			'adyen',
 			__DIR__ . '/config_test.yaml'
 		);
+		$config->override( $overrides );
+
+		// FIXME: What is this doing here?
+		PendingDatabase::get()->createTable();
+
+		return $config;
 	}
 
-	public static function get( $success ) {
-		$config = new AdyenTestConfiguration();
+	public static function createWithSuccessfulApi() {
 		$override = array( 'payment-provider' =>
 			array( 'adyen' =>
 				array( 'api' =>
-					array( 'inst-args' =>
-						array( $success ? 'Success!' : 'false' )
+					array( 'constructor-parameters' =>
+						array( 'Success!' )
 					)
 				)
 			)
 		);
-		$config->override( $override );
+		return self::instance( $override );
+	}
 
-		PendingDatabase::get()->createTable();
-
-		return $config;
+	public static function createWithUnsuccessfulApi() {
+		$override = array( 'payment-provider' =>
+			array( 'adyen' =>
+				array( 'api' =>
+					array( 'constructor-parameters' =>
+						// FIXME: Really?  or boolean `false` as it would be if
+						// we parsed "false" from yaml?
+						array( 'false' )
+					)
+				)
+			)
+		);
+		return self::instance( $override );
 	}
 }

@@ -44,7 +44,7 @@ class RequestHandler {
 		$action = array_shift( $parts );
 
 		// --- Initialize core services ---
-		$config = new Configuration( $view );
+		$config = Configuration::createForView( $view );
 		Context::init( $config );
 		Logger::init(
 			$config->val( 'logging/root-context' ),
@@ -95,7 +95,7 @@ class RequestHandler {
 		// --- Actually get the endpoint object and start the request ---
 		$endpointObj = $config->object( "endpoints/$action" );
 		if ( $endpointObj instanceof IHttpActionHandler ) {
-			$endpointObj->execute( $request, $response, $parts );
+			$endpointObj->execute( $request, $response );
 		} else {
 			$str = "Requested action '$action' does not implement a known handler. Cannot continue.";
 			Logger::debug( $str );
