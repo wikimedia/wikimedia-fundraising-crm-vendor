@@ -51,6 +51,7 @@ default:
             constructor-parameters:
                 -
                     - recurring-stomp
+                    - recurring-new
 
         recurring-stomp:
             class: SmashPig\Core\DataStores\StompDataStore
@@ -69,6 +70,7 @@ default:
             constructor-parameters:
                 -
                     - refund-stomp
+                    - refund-new
 
         refund-stomp:
             class: SmashPig\Core\DataStores\StompDataStore
@@ -91,6 +93,15 @@ default:
             class: SmashPig\Core\DataStores\StompDataStore
             constructor-parameters:
                 - jobs
+
+        jobs-paypal:
+            class: PHPQueue\Backend\Predis
+            constructor-parameters:
+                -
+                    <<: *REDIS
+                    # FIXME: This queue thing is introspected at times, and at
+                    # others not.  Make it consistent (and invisible).
+                    queue: jobs-paypal
 
         verified:
             class: SmashPig\Core\DataStores\MultiQueueWriter
@@ -352,10 +363,76 @@ astropay:
     charset: iso-8859-1
 
 paypal:
-    listener:
-        # For testing purposes override this entry with
-        # postback-url: https://www.sandbox.paypal.com/cgi-bin/webscr
-        postback-url: https://www.paypal.com/cgi-bin/webscr
+    api:
+        class: SmashPig\PaymentProviders\PayPal\PayPalPaymentsAPI
+
+    endpoints:
+        listener:
+            class: SmashPig\PaymentProviders\PayPal\Listener
+
+    # For testing, override with
+    # postback-url: https://ipnpb.sandbox.paypal.com/cgi-bin/webscr
+    postback-url: https://ipnpb.paypal.com/cgi-bin/webscr
+
+    var_map:
+        payment_date: date # needs strtotime(payment_date)
+        # FIXME Recurring messages use non-normalized field names, for example:
+        txn_type: txn_type
+        parent_txn_id: gateway_parent_id
+        txn_id: gateway_txn_id
+        # FIXME This is only true for refund messages.  Where to represent?
+        #txn_id: gateway_refund_id
+        mc_currency: currency
+        # FIXME rename refund_type
+        reason_code: type
+        #test_ipn:  # signals test mode
+        custom: contribution_tracking_id
+        payer_email: email
+        first_name: first_name
+        last_name: last_name
+        # FIXME this used to get split up
+        address_street: street_address
+        address_city: city
+        address_state: state_province
+        address_country_code: country
+        address_zip: postal_code
+        # FIXME this too
+        address_name: supplemental_address_1
+        gateway: gateway
+        mc_gross: gross
+        mc_fee: fee
+
+    messages:
+        verified:
+            valid_statuses: # TODO is this message type agnostic?
+                - Completed
+                - Reversed
+            txn_types:
+                - adjustment
+                - cart
+                - new_case
+                - send_money
+                - web_accept
+                - merch_pmt
+                - express_checkout
+                - masspay
+                - virtual_terminal
+        recurring:
+            txn_types:
+                - recurring_payment_profile_created
+                - subscr_cancel
+                - subscr_eot
+                - subscr_failed
+                - subscr_modify
+                - subscr_signup
+                # the following mean we got money \o/
+                - recurring_payment
+                - subscr_payment
+        refund:
+            txn_types:
+                - refund
+                # FIXME: if case_type=chargeback, then txn_type might be blank
+                # and the message should go to the refund queue.
 
 globalcollect:
     actions:

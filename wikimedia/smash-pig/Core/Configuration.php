@@ -38,16 +38,6 @@ class Configuration {
 	}
 
 	/**
-	 * Set the default configuration object that will be returned by get_default_config()
-	 *
-	 * @param Configuration $obj
-	 */
-	protected static function setDefaultConfig( Configuration $obj ) {
-		// TODO: And in fact, freak out if there's already a default config.
-		Configuration::$defaultObj = $obj;
-	}
-
-	/**
 	 * Creates a configuration object for a specific configuration node.
 	 *
 	 * @param string $view Configuration view to load
@@ -90,7 +80,9 @@ class Configuration {
 	}
 
 	protected function __construct() {
-		Configuration::setDefaultConfig( $this );
+		// Memoize configuration.
+		// TODO It could be confusing for the ctor to nuke the stored config.
+		self::$defaultObj = $this;
 	}
 
 	public function loadDefaultConfig() {
@@ -120,11 +112,6 @@ class Configuration {
 	 */
 	public function loadConfigFromPaths( $searchPath ) {
 		$paths = $this->expandSearchPathToActual( $searchPath );
-
-		if ( $this->loadConfigFromCache( $paths ) ) {
-			// Config file loaded, nothing else to do.
-			return;
-		}
 
 		// Reset to empty set.
 		$this->options = array();
@@ -159,9 +146,6 @@ class Configuration {
 				}
 			}
 		}
-
-		// Store the configuration to cache, if possible
-		$this->saveConfigToCache( $paths );
 	}
 
 	/**
@@ -196,80 +180,6 @@ class Configuration {
 	}
 
 	/**
-	 * Loads a configuration file from the cache if it is still valid (ie: source files have not
-	 * changed)
-	 *
-	 * TODO: Generalize to any caching backend.
-	 *
-	 * @param array  $paths    Paths we read from
-	 *
-	 * @return bool True if the config was loaded successfully.
-	 */
-	protected function loadConfigFromCache( $paths ) {
-		if ( !$this->hasApc() ) {
-			return false;
-		}
-
-		$fileModifiedTimes = array_map( function ( $path ) {
-			$fileModifiedTimes[] = filemtime( $path );
-		}, $paths );
-
-		// TODO: Cache the config for each installation's paths.
-		$cacheObj = apc_fetch( "smashpig-settings-{$this->viewName}", $success );
-
-		if ( !$success
-			|| empty( $cacheObj['configTimes'] )
-			|| empty( $cacheObj['paths'] )
-		) {
-			return false;
-		}
-
-		if ( implode( ':', $paths ) === $cacheObj['paths']
-			&& implode( ':', $fileModifiedTimes ) === $cacheObj['configTimes']
-		) {
-			// The cached values are valid
-			// TODO: log safely.
-			$this->options = $cacheObj['values'];
-			return true;
-		}
-
-		return false;
-	}
-
-	protected function hasApc() {
-		static $useApc = null;
-		if ( $useApc === null ) {
-			$useApc = extension_loaded( 'apc' );
-		}
-		return $useApc;
-	}
-
-	/**
-	 * Saves the loaded configuration to the cache.
-	 *
-	 * @param array $paths Paths we read from
-	 * @param string $node Node name that we're saving to cache
-	 */
-	protected function saveConfigToCache( $paths ) {
-		if ( !$this->hasApc() ) {
-			return;
-		}
-
-		$fileModifiedTimes = array_map( function ( $path ) {
-			$fileModifiedTimes[] = filemtime( $path );
-		}, $paths );
-
-		apc_store(
-			"smashpig-settings-{$this->viewName}",
-			array(
-				 'paths' => implode( ':', $paths ),
-				 'configTimes' => implode( ':', $fileModifiedTimes ),
-				 'values' => $this->options,
-			)
-		);
-	}
-
-	/**
 	 * Obtain a value from the configuration. If the key does not exist this will throw an
 	 * exception.
 	 *
@@ -293,6 +203,7 @@ class Configuration {
 		 */
 		if ( $node === '/' ) {
 			if ( $returnRef ) {
+				// TODO: Don't offer a return-by-reference.
 				$options = &$this->options;
 			} else {
 				$options = $this->options;
@@ -325,8 +236,6 @@ class Configuration {
 	 * key name which will be an array with at least a subkey of 'class'. The class will then be
 	 * instantiated with any arguments as given in the subkey 'constructor-parameters'.
 	 *
-	 * NOTE: This will return a reference to the object!
-	 *
 	 * When arguments are given it should be a simple list with arguments in the expected order.
 	 *
 	 * Example:
@@ -343,7 +252,7 @@ class Configuration {
 	 * @return mixed|object
 	 * @throws ConfigurationKeyException
 	 */
-	public function &object( $node, $persistent = true ) {
+	public function object( $node, $persistent = true ) {
 		// First look and see if we already have a $persistent object.
 		if ( array_key_exists( $node, $this->objects ) ) {
 			return $this->objects[$node];

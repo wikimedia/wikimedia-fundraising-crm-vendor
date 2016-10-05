@@ -1,0 +1,37 @@
+paypal:
+    api:
+        class: SmashPig\PaymentProviders\PayPal\Tests\MockPayPalPaymentsAPI
+
+    data-store:
+        verified:
+            class: PHPQueue\Backend\PDO
+            constructor-parameters:
+                -
+                    connection_string: 'sqlite::memory:'
+                    queue: verified
+
+        jobs-paypal:
+            class: PHPQueue\Backend\PDO
+            constructor-parameters:
+                -
+                    connection_string: 'sqlite::memory:'
+                    queue: jobs-paypal
+
+        recurring:
+            class: PHPQueue\Backend\PDO
+            constructor-parameters:
+                -
+                    connection_string: 'sqlite::memory:'
+                    queue: recurring
+
+        refund:
+            class: PHPQueue\Backend\PDO
+            constructor-parameters:
+                -
+                    connection_string: 'sqlite::memory:'
+                    queue: refund
+
+        pending-db:
+            class: PDO
+            constructor-parameters:
+                - 'sqlite::memory:'
