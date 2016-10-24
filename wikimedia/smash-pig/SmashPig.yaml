@@ -191,6 +191,11 @@ default:
             time-limit: 60
             max-messages: 0
 
+    # in seconds
+    requeue-delay: 600
+
+    requeue-max-age: 36000
+
 adyen:
     logging:
         root-context: SmashPig-Adyen
@@ -407,6 +412,10 @@ paypal:
         mc_gross: gross
         mc_fee: fee
 
+    rejects:
+        txn_type: new_case
+        type: chargeback_settlement
+
     messages:
         verified:
             valid_statuses: # TODO is this message type agnostic?
@@ -415,7 +424,6 @@ paypal:
             txn_types:
                 - adjustment
                 - cart
-                - new_case
                 - send_money
                 - web_accept
                 - merch_pmt

@@ -203,7 +203,8 @@
             "jms",
             "messaging",
             "stomp"
-        ]
+        ],
+        "abandoned": "stomp-php/stomp-php"
     },
     {
         "name": "phpmailer/phpmailer",
@@ -934,118 +935,54 @@
         ]
     },
     {
-        "name": "symfony/yaml",
-        "version": "v2.8.11",
-        "version_normalized": "2.8.11.0",
+        "name": "wikimedia/donation-interface",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
-            "url": "https://github.com/symfony/yaml.git",
-            "reference": "e7540734bad981fe59f8ef14b6fc194ae9df8d9c"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/symfony/yaml/zipball/e7540734bad981fe59f8ef14b6fc194ae9df8d9c",
-            "reference": "e7540734bad981fe59f8ef14b6fc194ae9df8d9c",
-            "shasum": ""
+            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
+            "reference": "675a404c1114b598ca0e0cd93b04b9d3510ffc4d"
         },
         "require": {
-            "php": ">=5.3.9"
+            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+            "coderkungfu/php-queue": "dev-master",
+            "fusesource/stomp-php": "^2.1",
+            "minfraud/http": "^1.70",
+            "monolog/monolog": "~1.18.2",
+            "neitanod/forceutf8": "^2.0",
+            "predis/predis": "^1.1",
+            "psr/log": "^1.0",
+            "symfony/yaml": "^2.8",
+            "wikimedia/smash-pig": "dev-master",
+            "zordius/lightncandy": "0.23"
         },
-        "time": "2016-09-02 01:57:56",
+        "require-dev": {
+            "jakub-onderka/php-parallel-lint": "0.9.2"
+        },
+        "time": "2016-10-11 20:43:31",
         "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.8-dev"
-            }
-        },
-        "installation-source": "dist",
+        "installation-source": "source",
         "autoload": {
-            "psr-4": {
-                "Symfony\\Component\\Yaml\\": ""
-            },
-            "exclude-from-classmap": [
-                "/Tests/"
+            "classmap": [
+                "adyen_gateway",
+                "amazon_gateway",
+                "astropay_gateway",
+                "extras",
+                "gateway_common",
+                "gateway_forms",
+                "globalcollect_gateway",
+                "paypal_gateway",
+                "DonationInterface.class.php"
+            ],
+            "files": [
+                "gateway_common/WmfFramework.php"
             ]
         },
         "notification-url": "https://packagist.org/downloads/",
         "license": [
-            "MIT"
+            "GPL-2.0"
         ],
-        "authors": [
-            {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com"
-            },
-            {
-                "name": "Symfony Community",
-                "homepage": "https://symfony.com/contributors"
-            }
-        ],
-        "description": "Symfony Yaml Component",
-        "homepage": "https://symfony.com"
-    },
-    {
-        "name": "twig/twig",
-        "version": "v1.24.2",
-        "version_normalized": "1.24.2.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/twigphp/Twig.git",
-            "reference": "33093f6e310e6976baeac7b14f3a6ec02f2d79b7"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/twigphp/Twig/zipball/33093f6e310e6976baeac7b14f3a6ec02f2d79b7",
-            "reference": "33093f6e310e6976baeac7b14f3a6ec02f2d79b7",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.2.7"
-        },
-        "require-dev": {
-            "symfony/debug": "~2.7",
-            "symfony/phpunit-bridge": "~2.7"
-        },
-        "time": "2016-09-01 17:50:53",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.24-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-0": {
-                "Twig_": "lib/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "BSD-3-Clause"
-        ],
-        "authors": [
-            {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com",
-                "homepage": "http://fabien.potencier.org",
-                "role": "Lead Developer"
-            },
-            {
-                "name": "Armin Ronacher",
-                "email": "armin.ronacher@active-4.com",
-                "role": "Project Founder"
-            },
-            {
-                "name": "Twig Team",
-                "homepage": "http://twig.sensiolabs.org/contributors",
-                "role": "Contributors"
-            }
-        ],
-        "description": "Twig, the flexible, fast, and secure template language for PHP",
-        "homepage": "http://twig.sensiolabs.org",
-        "keywords": [
-            "templating"
-        ]
+        "description": "Wikimedia Foundation payment processing library"
     },
     {
         "name": "symfony/event-dispatcher",
@@ -1167,13 +1104,127 @@
         "homepage": "https://symfony.com"
     },
     {
+        "name": "symfony/yaml",
+        "version": "v2.8.11",
+        "version_normalized": "2.8.11.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/yaml.git",
+            "reference": "e7540734bad981fe59f8ef14b6fc194ae9df8d9c"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/yaml/zipball/e7540734bad981fe59f8ef14b6fc194ae9df8d9c",
+            "reference": "e7540734bad981fe59f8ef14b6fc194ae9df8d9c",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.9"
+        },
+        "time": "2016-09-02 01:57:56",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.8-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Symfony\\Component\\Yaml\\": ""
+            },
+            "exclude-from-classmap": [
+                "/Tests/"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony Yaml Component",
+        "homepage": "https://symfony.com"
+    },
+    {
+        "name": "twig/twig",
+        "version": "v1.24.2",
+        "version_normalized": "1.24.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/twigphp/Twig.git",
+            "reference": "33093f6e310e6976baeac7b14f3a6ec02f2d79b7"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/twigphp/Twig/zipball/33093f6e310e6976baeac7b14f3a6ec02f2d79b7",
+            "reference": "33093f6e310e6976baeac7b14f3a6ec02f2d79b7",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.2.7"
+        },
+        "require-dev": {
+            "symfony/debug": "~2.7",
+            "symfony/phpunit-bridge": "~2.7"
+        },
+        "time": "2016-09-01 17:50:53",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.24-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Twig_": "lib/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "authors": [
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com",
+                "homepage": "http://fabien.potencier.org",
+                "role": "Lead Developer"
+            },
+            {
+                "name": "Armin Ronacher",
+                "email": "armin.ronacher@active-4.com",
+                "role": "Project Founder"
+            },
+            {
+                "name": "Twig Team",
+                "homepage": "http://twig.sensiolabs.org/contributors",
+                "role": "Contributors"
+            }
+        ],
+        "description": "Twig, the flexible, fast, and secure template language for PHP",
+        "homepage": "http://twig.sensiolabs.org",
+        "keywords": [
+            "templating"
+        ]
+    },
+    {
         "name": "wikimedia/smash-pig",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "c90adf17b48149d06e4b863f42da02570c5ff163"
+            "reference": "345dc21e9cb0b4ef0a1a1e25286f21a91d099171"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -1190,7 +1241,7 @@
             "jakub-onderka/php-parallel-lint": "^0.9",
             "phpunit/phpunit": "^4.8"
         },
-        "time": "2016-10-11 19:00:16",
+        "time": "2016-10-24 21:30:18",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -1226,55 +1277,5 @@
             "donations",
             "payments"
         ]
-    },
-    {
-        "name": "wikimedia/donation-interface",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "675a404c1114b598ca0e0cd93b04b9d3510ffc4d"
-        },
-        "require": {
-            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-            "coderkungfu/php-queue": "dev-master",
-            "fusesource/stomp-php": "^2.1",
-            "minfraud/http": "^1.70",
-            "monolog/monolog": "~1.18.2",
-            "neitanod/forceutf8": "^2.0",
-            "predis/predis": "^1.1",
-            "psr/log": "^1.0",
-            "symfony/yaml": "^2.8",
-            "wikimedia/smash-pig": "dev-master",
-            "zordius/lightncandy": "0.23"
-        },
-        "require-dev": {
-            "jakub-onderka/php-parallel-lint": "0.9.2"
-        },
-        "time": "2016-10-11 20:43:31",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "classmap": [
-                "adyen_gateway",
-                "amazon_gateway",
-                "astropay_gateway",
-                "extras",
-                "gateway_common",
-                "gateway_forms",
-                "globalcollect_gateway",
-                "paypal_gateway",
-                "DonationInterface.class.php"
-            ],
-            "files": [
-                "gateway_common/WmfFramework.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "description": "Wikimedia Foundation payment processing library"
     }
 ]

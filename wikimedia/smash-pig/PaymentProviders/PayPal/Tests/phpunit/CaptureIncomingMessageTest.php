@@ -3,10 +3,7 @@ namespace SmashPig\PaymentProviders\PayPal\Tests;
 
 use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use SmashPig\PaymentProviders\PayPal\Listener;
-use SmashPig\PaymentProviders\PayPal\Job;
-use SmashPig\PaymentProviders\PayPal\Tests\PayPalTestConfiguration;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 use SmashPig\Core\Http\Response;
 use SmashPig\Core\Http\Request;
@@ -24,11 +21,14 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 
 	static $fail_verification = false;
 
-	static $message_locations = array(
-		'verified' => 'web_accept.json',
-		'recurring' => 'subscr_signup.json',
-		'recurring' => 'subscr_payment.json',
-		'refund' => 'refund.json',
+	// filename and the queue it should get dropped in
+	static $message_data = array(
+		'web_accept.json' => 'verified',
+		'subscr_signup.json' => 'recurring',
+		'subscr_payment.json' => 'recurring',
+		'refund.json' => 'refund',
+		// this should not actually get written to
+		'chargeback_settlement.json' => 'no-op'
 	);
 
 	static $messages = array();
@@ -42,10 +42,13 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 			->createTable( 'jobs-paypal' );
 
 		Context::initWithLogger( $this->config );
-		foreach ( self::$message_locations as $type => $file ) {
-			self::$messages[$type] = json_decode(
-				file_get_contents( __DIR__ . '/../Data/' . $file ),
-				true
+		foreach ( self::$message_data as $file => $type ) {
+			self::$messages[] = array(
+				'type' => $type,
+				'payload' => json_decode(
+					file_get_contents( __DIR__ . '/../Data/' . $file ),
+					true
+				)
 			);
 		}
 	}
@@ -58,9 +61,9 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 	}
 
 	public function testCapture() {
-		foreach ( self::$messages as $type => $msg ) {
+		foreach ( self::$messages as $msg ) {
 
-			$this->capture( $msg );
+			$this->capture( $msg['payload'] );
 
 			$jobQueue = $this->config->object( 'data-store/jobs-paypal' );
 			$jobMessage = $jobQueue->pop();
@@ -68,8 +71,7 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 			$this->assertEquals( $jobMessage['php-message-class'],
 				'SmashPig\PaymentProviders\PayPal\Job' );
 
-			$this->assertEquals( $jobMessage['payload'], $msg );
-
+			$this->assertEquals( $jobMessage['payload'], $msg['payload'] );
 		}
 	}
 
@@ -80,8 +82,8 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 	}
 
 	public function testConsume() {
-		foreach ( self::$messages as $type => $msg ) {
-			$this->capture( $msg );
+		foreach ( self::$messages as $msg ) {
+			$this->capture( $msg['payload'] );
 
 			$jobQueue = $this->config->object( 'data-store/jobs-paypal' );
 			$jobMessage = $jobQueue->pop();
@@ -93,37 +95,29 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 
 			$job->execute();
 
-			$queue = $this->config->object( 'data-store/' . $type );
-			$queue->createTable( $type );
+			$queue = $this->config->object( 'data-store/' . $msg['type'] );
+			$queue->createTable( $msg['type'] );
 			$message = $queue->pop();
 
-			$this->assertNotEmpty( $message );
-			if ( isset( $message['contribution_tracking_id'] ) ) {
-				$this->assertEquals( $message['contribution_tracking_id'], $message['order_id'] );
+			if ( $job->is_reject() ) {
+				$this->assertEmpty( $message );
+			} else {
+				$this->assertNotEmpty( $message );
+				if ( isset( $message['contribution_tracking_id'] ) ) {
+					$this->assertEquals( $message['contribution_tracking_id'], $message['order_id'] );
+				}
 			}
 
 		}
 	}
 
-	public function testFailedConsume() {
+	/**
+	 * @expectedException \SmashPig\Core\Listeners\ListenerSecurityException
+	 */
+	public function testFailedVerification() {
 		self::$fail_verification = true;
 		$jobMessage = array( 'txn_type' => 'fail' );
-		$jobClass = 'SmashPig\PaymentProviders\PayPal\Job';
-		$job = KeyedOpaqueStorableObject::fromJsonProxy(
-			$jobClass,
-			json_encode( $jobMessage )
-		);
-
-		try {
-			$job->execute();
-		} catch ( \Exception $e ) {
-			// TODO I think this can throw a special exception to move to
-			// damaged queue or some other stuff
-			$this->assertEquals(
-				\SmashPig\PaymentProviders\PayPal\Job::$verifyFailedMsg,
-				$e->getMessage()
-			);
-		}
-
+		$this->capture( $jobMessage );
 	}
+
 }
