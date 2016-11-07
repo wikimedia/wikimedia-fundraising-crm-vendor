@@ -1,3 +1,4 @@
+/* globals Mailcheck */
 /**
  * Client-side validation logic for DonationInterface
  * For starters, we just redirect to the existing global functions.
@@ -51,30 +52,49 @@
 
 	// Set up email error detection and correction
 	$( document ).on( 'blur', '#email', function () {
+		// Be really conservative - only catch two letter errors
+		Mailcheck.domainThreshold = 2; // No way to set from opts!
 		$( this ).mailcheck( {
 			topLevelDomains: [],
-			secondLevelDomains: [],
+			domains: Mailcheck.defaultDomains.concat( [
+				'aim.com', 'alice.it', 'aon.at', 'bellsouth.net', 'bigpond.com',
+				'bigpond.net.au', 'blueyonder.co.uk', 'btinternet.com',
+				'btopenworld.com', 'charter.net', 'cox.net', 'docomo.ne.jp',
+				'earthlink.net', 'email.it', 'embarqmail.com', 'ezweb.ne.jp',
+				'fastwebnet.it', 'free.fr', 'frontier.com', 'gmx.at', 'gmx.de',
+				'gmx.net', 'hetnet.nl', 'home.nl', 'hotmail.co.jp', 'hotmail.es',
+				'hotmail.fr', 'hotmail.it', 'i.softbank.jp', 'iinet.net.au',
+				'inwind.it', 'juno.com', 'laposte.net', 'libero.it', 'live.ca',
+				'live.co.uk', 'live.com.au', 'live.fr', 'live.it', 'live.nl',
+				'mindspring.com', 'netscape.net', 'neuf.fr', 'nifty.com',
+				'ntlworld.com', 'o2.pl', 'online.no', 'optonline.net',
+				'optusnet.com.au', 'orange.fr', 'pacbell.net', 'planet.nl',
+				'q.com', 'qq.com','roadrunner.com', 'rocketmail.com',
+				'rogers.com', 'seznam.cz', 'sfr.fr', 'shaw.ca', 'sky.com',
+				'skynet.be', 'sympatico.ca', 'talktalk.net', 'telefonica.net',
+				'telenet.be', 'telia.com', 'telus.net', 'tin.it',
+				'tiscali.co.uk', 'tiscali.it', 'tpg.com.au', 'umich.edu',
+				'uol.com.br', 'videotron.ca', 'virgilio.it', 'wanadoo.fr',
+				'web.de', 'windstream.net', 'wp.pl', 'xs4all.nl', 'xtra.co.nz',
+				'yahoo.ca', 'yahoo.co.in', 'yahoo.co.jp', 'yahoo.com.au',
+				'yahoo.com.br', 'yahoo.com.mx', 'yahoo.de', 'yahoo.es',
+				'yahoo.fr', 'yahoo.it', 'ybb.ne.jp', 'ymail.com', 'ziggo.nl'
+			] ),
 			suggested: function ( element, suggestion ) {
 				var message = mw.msg(
 					'donate_interface-did-you-mean',
 					suggestion.full
 				);
-				$( '#emailMsg' )
-					.removeClass( 'errorMsgHide' )
-					.addClass( 'errorMsg' )
-					.html( message );
+				$( '#emailSuggestion' ).show();
+				$( '#emailSuggestion span' ).html( message );
 			},
 			empty: function ( element ) {
-				$( '#emailMsg' )
-					.removeClass( 'errorMsg' )
-					.addClass( 'errorMsgHide' );
+				$( '#emailSuggestion' ).hide();
 			}
 		} );
 	} );
-	$( document ).on( 'click', '#emailMsg .correction', function () {
+	$( document ).on( 'click', '#emailSuggestion .correction', function () {
 		$( '#email' ).val( $( this ).text() );
-		$( '#emailMsg' )
-			.removeClass( 'errorMsg' )
-			.addClass( 'errorMsgHide' );
+		$( '#emailSuggestion' ).hide();
 	} );
 } )( jQuery, mediaWiki );

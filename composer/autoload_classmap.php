@@ -25,6 +25,7 @@ return array(
     'AstroPaySignature' => $vendorDir . '/wikimedia/donation-interface/astropay_gateway/AstroPaySignature.php',
     'AstroPayStatusQuery' => $vendorDir . '/wikimedia/donation-interface/astropay_gateway/scripts/status.php',
     'BannerHistoryLogIdProcessor' => $vendorDir . '/wikimedia/donation-interface/extras/banner_history/BannerHistoryLogIdProcessor.php',
+    'BlankAddressFields' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
     'CallbackFilterIterator' => $vendorDir . '/symfony/polyfill-php54/Resources/stubs/CallbackFilterIterator.php',
     'CleanupRecurringLength' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
     'ClientSideValidationHelper' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
