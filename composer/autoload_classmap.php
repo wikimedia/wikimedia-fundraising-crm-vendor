@@ -46,6 +46,7 @@ return array(
     'DonorLanguage' => $vendorDir . '/wikimedia/donation-interface/gateway_common/DonorLanguage.php',
     'DonorLocale' => $vendorDir . '/wikimedia/donation-interface/gateway_common/DonorLocale.php',
     'DummyFiscalNumber' => $vendorDir . '/wikimedia/donation-interface/astropay_gateway/DummyFiscalNumber.php',
+    'EasyPeasyICS' => $vendorDir . '/phpmailer/phpmailer/extras/EasyPeasyICS.php',
     'EncodingMangler' => $vendorDir . '/wikimedia/donation-interface/gateway_common/EncodingMangler.php',
     'FallbackLogPrefixer' => $vendorDir . '/wikimedia/donation-interface/gateway_common/FallbackLogPrefixer.php',
     'FinalStatus' => $vendorDir . '/wikimedia/donation-interface/gateway_common/FinalStatus.php',
@@ -85,6 +86,8 @@ return array(
     'MustacheErrorForm' => $vendorDir . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',
     'NationalCurrencies' => $vendorDir . '/wikimedia/donation-interface/gateway_common/NationalCurrencies.php',
     'PHPMailer' => $vendorDir . '/phpmailer/phpmailer/class.phpmailer.php',
+    'PHPMailerOAuth' => $vendorDir . '/phpmailer/phpmailer/class.phpmaileroauth.php',
+    'PHPMailerOAuthGoogle' => $vendorDir . '/phpmailer/phpmailer/class.phpmaileroauthgoogle.php',
     'POP3' => $vendorDir . '/phpmailer/phpmailer/class.pop3.php',
     'PaymentMethod' => $vendorDir . '/wikimedia/donation-interface/gateway_common/PaymentMethod.php',
     'PaymentResult' => $vendorDir . '/wikimedia/donation-interface/gateway_common/PaymentResult.php',
@@ -111,5 +114,6 @@ return array(
     'WmfFrameworkLogHandler' => $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFrameworkLogHandler.php',
     'WmfFramework_Drupal' => $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFramework.drupal.php',
     'WmfFramework_Mediawiki' => $vendorDir . '/wikimedia/donation-interface/gateway_common/WmfFramework.mediawiki.php',
+    'ntlm_sasl_client_class' => $vendorDir . '/phpmailer/phpmailer/extras/ntlm_sasl_client.php',
     'phpmailerException' => $vendorDir . '/phpmailer/phpmailer/class.phpmailer.php',
 );
