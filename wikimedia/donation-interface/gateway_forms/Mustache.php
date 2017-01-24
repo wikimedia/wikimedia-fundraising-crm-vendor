@@ -171,7 +171,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$address_fields = array(
 			'city',
 			'state',
-			'zip',
+			'postal_code',
 			'street',
 		);
 		$address_field_count = 0;
@@ -276,6 +276,9 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			if ( $key === 'currency_code' || $key === 'amount' ) {
 				$return['show_amount_input'] = true;
 			}
+			if ( !empty( $return['errors']['general'] ) ) {
+				$return['show_error_reference'] = true;
+			}
 		}
 		return $return;
 	}
@@ -296,7 +299,6 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	 * Get a message value specific to the donor's country and language.
 	 *
 	 * @param array $params first value is used as message key
-	 * TODO: use the rest as message parameters
 	 * @return string
 	 */
 	public static function l10n( $params ) {

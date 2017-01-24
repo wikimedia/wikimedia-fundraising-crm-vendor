@@ -31,7 +31,6 @@ use Psr\Log\LogLevel;
  * @code
  * $wgDonationInterfaceEnableMinfraud = true;
  * $wgMinFraudLicenseKey = 'YOUR LICENSE KEY';
- * $wgDonationInterfaceMinFraudActionRanges
  * @endcode
  */
 class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
@@ -85,12 +84,6 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	protected $fraud_logger;
 
 	/**
-	 * Determines which action to take for a given score
-	 * @var array @see $wgDonationInterfaceMinFraudActionRanges
-	 */
-	protected $action_ranges;
-
-	/**
 	 * Constructor
 	 *
 	 * @param GatewayType    $gateway_adapter    Gateway adapter instance
@@ -116,12 +109,6 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 			throw new RuntimeException( "minFraud license key required but not present." );
 		}
 		$this->minfraudLicenseKey = ( $license_key ) ? $license_key : $wgMinFraudLicenseKey;
-		
-		// Set the action range
-		$gateway_ranges = $gateway_adapter->getGlobal( 'MinFraudActionRanges' );
-		if ( !is_null( $gateway_ranges ) ) {
-			$this->action_ranges = $gateway_ranges;
-		}
 		
 		// Set the minFraud API servers
 		$minFraudServers = $gateway_adapter->getGlobal( 'MinFraudServers' );
@@ -155,7 +142,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		$map = array(
 			"city" => "city",
 			"region" => "state",
-			"postal" => "zip",
+			"postal" => "postal_code",
 			"country" => "country",
 			"domain" => "email",
 			"emailMD5" => "email",
@@ -281,8 +268,13 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 			if ( !isset( $this->minfraudResponse['riskScore'] ) ) {
 				throw new RuntimeException( "No response at all from minfraud." );
 			}
+			$weight = $this->gateway_adapter->getGlobal( 'MinfraudWeight' );
+			$multiplier = $weight / 100;
 
-			$this->cfo->addRiskScore( $this->minfraudResponse['riskScore'], 'minfraud_filter' );
+			$this->cfo->addRiskScore(
+				$this->minfraudResponse['riskScore'] * $multiplier,
+				'minfraud_filter'
+			);
 		} 
 		catch( Exception $ex){
 			//log out the whole response to the error log so we can tell what the heck happened... and fail closed.

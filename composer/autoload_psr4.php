@@ -13,6 +13,7 @@ return array(
     'Symfony\\Component\\HttpFoundation\\' => array($vendorDir . '/symfony/http-foundation'),
     'Symfony\\Component\\EventDispatcher\\' => array($vendorDir . '/symfony/event-dispatcher'),
     'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'Predis\\' => array($vendorDir . '/predis/predis/src'),
     'PayWithAmazon\\' => array($vendorDir . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),

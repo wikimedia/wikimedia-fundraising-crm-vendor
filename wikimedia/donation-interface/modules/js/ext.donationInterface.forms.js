@@ -36,6 +36,10 @@
 	function callDonateApi( successCallback ) {
 		di.forms.disable();
 		di.forms.clean();
+		$( '#topError' ).html( '' );
+		$( '#errorReference' )
+			.removeClass( 'errorMsg' )
+			.addClass( 'errorMsgHide' );
 		$( '#paymentContinueBtn' ).removeClass( 'enabled' );
 
 		var sendData = {
@@ -48,7 +52,7 @@
 			street: $( '#street' ).val(),
 			city: $( '#city' ).val(),
 			state: $( '#state' ).val(),
-			zip: $( '#zip' ).val(),
+			postal_code: $( '#postal_code' ).val(),
 			email: $( '#email' ).val(),
 			country: $( '#country' ).val(),
 			payment_method: $( '#payment_method' ).val(),
@@ -117,6 +121,9 @@
 	};
 
 	$( function () {
+
+		$( '#fname' ).focus();
+
 		// If a submethod is already selected on page load, show the continue button
 		if ( $( 'input[name="payment_submethod"]:checked' ).length > 0 ) {
 			$( '#paymentContinue' ).show();

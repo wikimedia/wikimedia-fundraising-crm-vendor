@@ -15,7 +15,6 @@
 		"Casey Dentinger"
 	],
 	"url": "https://www.mediawiki.org/wiki/Extension:DonationInterface",
-	"descriptionmsg": "donationinterface-desc",
 	"type": "specialpage",
 	"requires": {
 		"MediaWiki": ">= 1.27.0"
@@ -70,7 +69,6 @@
 		"ContributionTrackingPlusUnique": "gateway_common/ContributionTrackingPlusUnique.php",
 		"CurrencyRates": "gateway_common/CurrencyRates.php",
 		"CurrencyRatesModule": "modules/CurrencyRatesModule.php",
-		"CyclicalArray": "globalcollect_gateway/CyclicalArray.php",
 		"DonationData": "gateway_common/DonationData.php",
 		"DonationInterface": "DonationInterface.class.php",
 		"DonationLoggerFactory": "gateway_common/DonationLoggerFactory.php",
@@ -230,7 +228,7 @@
 				"donate_interface-error-msg-discover",
 				"donate_interface-error-msg-amount",
 				"donate_interface-error-msg-email",
-				"donate_interface-error-msg-postal",
+				"donate_interface-error-msg-postal_code",
 				"donate_interface-error-msg-country",
 				"donate_interface-error-msg-card_type",
 				"donate_interface-error-msg-card_num",
@@ -252,8 +250,7 @@
 				"donate_interface-donor-street",
 				"donate_interface-donor-city",
 				"donate_interface-donor-state",
-				"donate_interface-donor-zip",
-				"donate_interface-donor-postal",
+				"donate_interface-donor-postal_code",
 				"donate_interface-donor-country",
 				"donate_interface-donor-email",
 				"donate_interface-donor-fiscal_number",
@@ -371,10 +368,8 @@
 		"AstroPayGatewayURL": "https://astropaycard.com/",
 		"AstroPayGatewayTestingURL": "https://sandbox.astropaycard.com/",
 		"DonationInterfaceDefaultQueueServer": {
-			"type": "PHPQueue\\Backend\\Stomp",
-			"uri": "tcp://localhost:61613",
-			"read_timeout": "1",
-			"expiry": "30 days",
+			"type": "PHPQueue\\Backend\\PDO",
+			"connection_string": "mysql:host=localhost;dbname=payment_queues",
 			"_merge_strategy": "array_plus"
 		},
 		"DonationInterfaceQueues": {
@@ -409,25 +404,6 @@
 		},
 		"DonationInterfaceCustomFiltersRiskScore": 0,
 		"MinFraudLicenseKey": "",
-		"DonationInterfaceMinFraudActionRanges": {
-			"process": [
-				0,
-				100
-			],
-			"review": [
-				-1,
-				-1
-			],
-			"challenge": [
-				-1,
-				-1
-			],
-			"reject": [
-				-1,
-				-1
-			],
-			"_merge_strategy": "array_plus_2d"
-		},
 		"DonationInterfaceMinFraudServers": [],
 		"MinFraudTimeout": 2,
 		"DonationInterfaceMinFraudAlarmLimit": 25000,
@@ -452,6 +428,7 @@
 		"DonationInterfaceEnableQueue": false,
 		"DonationInterfaceEnableConversionLog": false,
 		"DonationInterfaceEnableMinfraud": false,
+		"DonationInterfaceMinfraudWeight": 100,
 		"DonationInterfaceEnableBannerHistoryLog": false,
 		"GlobalCollectGatewayEnabled": false,
 		"AmazonGatewayEnabled": false,

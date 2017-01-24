@@ -80,8 +80,19 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		try {
 			$this->adapter = new $className();
 			$this->logger = DonationLoggerFactory::getLogger( $this->adapter );
-			$this->getOutput()->addModuleStyles( 'donationInterface.styles' );
-			$this->getOutput()->addModules( 'donationInterface.skinOverride' );
+			$out = $this->getOutput();
+			$out->addModuleStyles( 'donationInterface.styles' );
+			$out->addModules( 'donationInterface.skinOverride' );
+			// Stolen from Minerva skin
+			$out->addHeadItem( 'viewport',
+				Html::element(
+					'meta', array(
+						'name' => 'viewport',
+						'content' => 'initial-scale=1.0, user-scalable=yes, minimum-scale=0.25, maximum-scale=5.0',
+					)
+				)
+			);
+
 		} catch ( Exception $ex ) {
 			if ( !$this->logger ) {
 				$this->logger = DonationLoggerFactory::getLoggerForType(
@@ -410,14 +421,9 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$this->getOutput()->allowClickjacking();
 			// FIXME: do we really need this again?
 			$this->getOutput()->addModules( 'iframe.liberator' );
-			// processResponse expects some data, so let's feed it all the
-			// GET and POST vars
-			$response = $this->getRequest()->getValues();
-			// TODO: run the whole set of getResponseStatus, getResponseErrors
-			// and getResponseData first.  Maybe do_transaction with a
-			// communication_type of 'incoming' and a way to provide the
-			// adapter the GET/POST params harvested here.
-			$this->adapter->processResponse( $response );
+			// feed processDonorReturn all the GET and POST vars
+			$requestValues = $this->getRequest()->getValues();
+			$this->adapter->processDonorReturn( $requestValues );
 			$status = $this->adapter->getFinalStatus();
 			switch ( $status ) {
 			case FinalStatus::COMPLETE:

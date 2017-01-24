@@ -53,11 +53,6 @@ abstract class GatewayAdapter
 	protected $dataConstraints = array();
 
 	/**
-	 * $cdata lists fields which require CDATA tags
-	 */
-	protected $cdata = array();
-
-	/**
 	 * $error_map maps gateway errors to client errors
 	 *
 	 * The key of each error should map to a i18n message key or a callable
@@ -599,14 +594,9 @@ abstract class GatewayAdapter
 
 		$response_message = $this->getIdentifier() . '_gateway-response-' . $code;
 
-		$translatedMessage = WmfFramework::formatMessage( $response_message );
-
-		// FIXME: don't do this.
-		// Check to see if an error message exists in translation
-		if ( substr( $translatedMessage, 0, 3 ) !== '&lt;' ) {
-
-			// Message does not exist
-			$translatedMessage = '';
+		$translatedMessage = '';
+		if ( WmfFramework::messageExists( $response_message ) ) {
+			$translatedMessage = WmfFramework::formatMessage( $response_message );
 		}
 
 		if ( isset( $this->error_map[ $code ] ) ) {
@@ -621,7 +611,9 @@ abstract class GatewayAdapter
 			$messageKey = 'donate_interface-processing-error';
 		}
 
-		$translatedMessage = ( $options['translate'] && empty( $translatedMessage ) ) ? WmfFramework::formatMessage( $messageKey ) : $translatedMessage;
+		$translatedMessage = ( $options['translate'] && empty( $translatedMessage ) )
+			? WmfFramework::formatMessage( $messageKey )
+			: $translatedMessage;
 
 		// Check to see if we return the translated message.
 		$message = ( $options['translate'] ) ? $translatedMessage : $messageKey;
@@ -889,11 +881,7 @@ abstract class GatewayAdapter
 			$temp = $this->xmlDoc->createElement( $value );
 
 			$data = null;
-			if ( in_array( $value, $this->cdata ) ) {
-				$data = $this->xmlDoc->createCDATASection( $nodevalue );
-			} else {
-				$data = $this->xmlDoc->createTextNode( $nodevalue );
-			}
+			$data = $this->xmlDoc->createTextNode( $nodevalue );
 
 			$temp->appendChild( $data );
 			$node->appendChild( $temp );
@@ -1077,7 +1065,7 @@ abstract class GatewayAdapter
 				$errCode = $ex->getErrorCode();
 				$retryVars = $ex->getRetryVars();
 				$this->transaction_response->addError( $errCode, array(
-					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0001' ),
+					'message' => $this->getErrorMapByCodeAndTranslate( $errCode ),
 					'debugInfo' => $ex->getMessage(),
 					'logLevel' => LogLevel::ERROR
 				) );
@@ -1450,6 +1438,28 @@ abstract class GatewayAdapter
 	 */
 	public function isReturnProcessingRequired() {
 		return false;
+	}
+
+	/**
+	 * Process the API response obtained from the payment processor and set
+	 * properties of transaction_response.
+	 * Default implementation just says we got a response.
+	 *
+	 * @param array|DomDocument $response Cleaned-up response returned from
+	 *        @see getFormattedResponse.  Type depends on $this->getResponseType
+	 * @throws ResponseProcessingException with an actionable error code and any
+	 *         variables to retry
+	 */
+	protected function processResponse( $response ) {
+		$this->transaction_response->setCommunicationStatus( true );
+	}
+
+	/**
+	 * Default implementation sets status to complete.
+	 * @param array $requestValues all GET and POST values from the request
+	 */
+	public function processDonorReturn( $requestValues ) {
+		$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 	}
 
 	/**
@@ -2428,7 +2438,7 @@ abstract class GatewayAdapter
 						'street',
 						'city',
 						'country',
-						'zip', //this should really be added or removed, depending on the country and/or gateway requirements.
+						'postal_code', //this should really be added or removed, depending on the country and/or gateway requirements.
 						//however, that's not happening in this class in the code I'm replacing, so...
 						//TODO: Something clever in the DataValidator with data groups like these.
 					);
@@ -3163,30 +3173,6 @@ abstract class GatewayAdapter
 		}
 
 		return $match;
-	}
-
-	public function getRetryData() {
-		$params = array ( );
-		foreach ( $this->dataObj->getRetryFields() as $field ) {
-			$params[$field] = $this->getData_Unstaged_Escaped( $field );
-		}
-		return $params;
-	}
-
-	/**
-	 * isValidSpecialForm: Tells us if the ffname supplied is a valid
-	 * special form for the current gateway.
-	 * @var string $ffname The form name we want to try
-	 * @return boolean True if this is a valid special form, otherwise false
-	 */
-	public function isValidSpecialForm( $ffname ){
-		$defn = GatewayFormChooser::getFormDefinition( $ffname );
-		if ( is_array( $defn ) &&
-			DataValidator::value_appears_in( $this->getIdentifier(), $defn['gateway'] ) &&
-			array_key_exists( 'special_type', $defn ) ){
-				return true;
-		}
-		return false;
 	}
 
 	/**
