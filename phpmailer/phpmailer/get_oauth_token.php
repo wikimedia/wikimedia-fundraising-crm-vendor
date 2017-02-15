@@ -80,24 +80,24 @@ class Google extends AbstractProvider
 
         $params = array_merge(
             parent::getAuthorizationParameters($options),
-            array_filter(array(
+            array_filter([
                 'hd'          => $this->hostedDomain,
                 'access_type' => $this->accessType,
 		'scope'       => $this->scope,
                 // if the user is logged in with more than one account ask which one to use for the login!
                 'authuser'    => '-1'
-            ))
+            ])
         );
         return $params;
     }
 
     protected function getDefaultScopes()
     {
-        return array(
+        return [
             'email',
             'openid',
             'profile',
-        );
+        ];
     }
 
     protected function getScopeSeparator()
