@@ -29,6 +29,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'P' => 
         array (
             'Psr\\Log\\' => 8,
+            'Psr\\Cache\\' => 10,
             'Predis\\' => 7,
             'PayWithAmazon\\' => 14,
         ),
@@ -70,6 +71,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Psr\\Log\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+        ),
+        'Psr\\Cache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/cache/src',
         ),
         'Predis\\' => 
         array (

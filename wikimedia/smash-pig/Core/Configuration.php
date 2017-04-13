@@ -180,6 +180,18 @@ class Configuration {
 	}
 
 	/**
+	 * For testing: provide a specific instance of an object to fulfil requests
+	 * for a specific node. Helpful when using test library mocks that you can't
+	 * declaratively configure with constructor parameters.
+	 *
+	 * @param $node string
+	 * @param $object object
+	 */
+	public function overrideObjectInstance( $node, $object ) {
+		$this->objects[$node] = $object;
+	}
+
+	/**
 	 * Obtain a value from the configuration. If the key does not exist this will throw an
 	 * exception.
 	 *
@@ -262,6 +274,9 @@ class Configuration {
 
 		// Optional keys
 		$arguments = array();
+		// It would be nice to be able to provide other objects defined
+		// in config as arguments. We might have had that pre-simplification
+		// with nodes that referred to other nodes.
 		if ( $this->nodeExists( $node . '/constructor-parameters' ) ) {
 			$arguments = $this->val( $node . '/constructor-parameters' );
 		}
@@ -310,7 +325,7 @@ class Configuration {
 	 * or empty string to begin.
 	 * @throws SmashPigException
 	 */
-	private static function treeMerge( &$base, $graft, $myRoot = '' ) {
+	protected static function treeMerge( &$base, $graft, $myRoot = '' ) {
 		foreach ( $graft as $graftNodeName => $graftNodeValue ) {
 			$node = ($myRoot ? "{$myRoot}/{$graftNodeName}" : $graftNodeName);
 
