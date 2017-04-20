@@ -82,6 +82,7 @@ return array(
     'IsoDate' => $vendorDir . '/wikimedia/donation-interface/gateway_common/IsoDate.php',
     'LCRun3' => $vendorDir . '/zordius/lightncandy/src/lightncandy.php',
     'LightnCandy' => $vendorDir . '/zordius/lightncandy/src/lightncandy.php',
+    'LocalClusterPsr6Cache' => $vendorDir . '/wikimedia/donation-interface/gateway_common/LocalClusterPsr6Cache.php',
     'LogPrefixProvider' => $vendorDir . '/wikimedia/donation-interface/gateway_common/LogPrefixProvider.php',
     'MessageUtils' => $vendorDir . '/wikimedia/donation-interface/gateway_common/MessageUtils.php',
     'MustacheErrorForm' => $vendorDir . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',

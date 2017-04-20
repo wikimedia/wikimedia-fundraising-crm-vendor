@@ -18,4 +18,5 @@ return array(
     'Predis\\' => array($vendorDir . '/predis/predis/src'),
     'PayWithAmazon\\' => array($vendorDir . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
+    'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => array($vendorDir . '/addshore/psr-6-mediawiki-bagostuff-adapter/src'),
 );

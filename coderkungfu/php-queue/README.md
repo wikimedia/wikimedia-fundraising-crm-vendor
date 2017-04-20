@@ -1,4 +1,4 @@
-#PHP-Queue#
+# PHP-Queue #
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/CoderKungfu/php-queue?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 A unified front-end for different queuing backends. Includes a REST server, CLI interface and daemon runners.
@@ -190,16 +190,6 @@ The message will only be popped if churn() returns successfully.
 * FifoQueueStore
 
 A first in first out queue accessed by push and pop.
-
-* IndexedFifoQueueStore
-
-Messages are indexed along one column as they are pushed into a FIFO queue,
-otherwise these behave like FifoQueueStore. clear() deletes records by index.
-There is no get() operation, you'll need a KeyValueStore for that.
-
-* KeyValueStore
-
-Jobs can be retrieved and deleted by their index.
 
 ---
 ## License ##

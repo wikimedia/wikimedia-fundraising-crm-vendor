@@ -171,7 +171,6 @@ abstract class GatewayAdapter
 	 */
 	public $posted = false;
 	protected $batch = false;
-	protected $api_request = false;
 
 	// ALL OF THESE need to be redefined in the children. Much voodoo depends on the accuracy of these constants.
 	const GATEWAY_NAME = 'Donation Gateway';
@@ -206,15 +205,12 @@ abstract class GatewayAdapter
 	 * @param array	$options
 	 *   OPTIONAL - You may set options for testing
 	 *   - external_data - array, data from unusual sources (such as test fixture)
-	 *   - api_request - Boolean, this is an api request, do not perform UI actions
-	 *
 	 * @see DonationData
 	 */
 	public function __construct( $options = array() ) {
 
 		$defaults = array(
 			'external_data' => null,
-			'api_request' => false,
 		);
 		$options = array_merge( $defaults, $options );
 		if ( array_key_exists( 'batch_mode', $options ) ) {
@@ -228,11 +224,6 @@ abstract class GatewayAdapter
 		$this->profiler = DonationLoggerFactory::getProfiler( $this );
 
 		$this->logger->info( "Creating a new adapter of type: [{$this->getGatewayName()}]" );
-
-		// so we know we can skip all the visual stuff.
-		if ( $options['api_request'] ) {
-			$this->setApiRequest();
-		}
 
 		// The following needs to be set up before we initialize DonationData.
 		// TODO: move the rest of the initialization here
@@ -1241,6 +1232,8 @@ abstract class GatewayAdapter
 		return $this->payment_submethods;
 	}
 
+	function setGatewayDefaults( $options = array ( ) ) {}
+
 	public function getCurrencies( $options = array() ) {
 		return $this->config['currencies'];
 	}
@@ -1425,7 +1418,9 @@ abstract class GatewayAdapter
 		// Feed the message into the pending queue, so the CRM queue consumer
 		// can read it to fill in donor details when it gets a partial message
 		$this->sendPendingMessage();
+
 		// Avoid 'bad ffname' logspam on return and try again links.
+		// TODO: deprecate
 		$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
 	}
 
@@ -1449,6 +1444,8 @@ abstract class GatewayAdapter
 	 *        @see getFormattedResponse.  Type depends on $this->getResponseType
 	 * @throws ResponseProcessingException with an actionable error code and any
 	 *         variables to retry
+	 *
+	 * TODO: Move response parsing to a separate class.
 	 */
 	protected function processResponse( $response ) {
 		$this->transaction_response->setCommunicationStatus( true );
@@ -2363,27 +2360,6 @@ abstract class GatewayAdapter
 
 	public function isBatchProcessor() {
 		return $this->batch;
-	}
-
-	/**
-	 * Tell the gateway that it is going to be used for an API request, so
-	 * it can bypass setting up all the visual components.
-	 * @param boolean $set True if this is an API request, false if not.
-	 */
-	public function setApiRequest( $set = true ) {
-		$this->api_request = $set;
-	}
-
-	/**
-	 * Find out if we're an API request or not.
-	 * @return boolean true if we are, otherwise false.
-	 */
-	public function isApiRequest() {
-		if ( !property_exists( $this, 'api_request' ) ) {
-			return false;
-		} else {
-			return $this->api_request;
-		}
 	}
 
 	public function getOriginalValidationErrors() {

@@ -23,21 +23,19 @@
         "clio/clio": "0.1.*"
     },
     "require-dev": {
-        "jakub-onderka/php-parallel-lint": "0.9",
-        "phpunit/phpunit": "4.4.*"
-    },
-    "scripts": {
-        "test": [
-            "parallel-lint . --exclude vendor",
-            "phpunit"
-        ]
+        "mrpoundsign/pheanstalk-5.3": "dev-master",
+        "aws/aws-sdk-php": "dev-master",
+        "amazonwebservices/aws-sdk-for-php": "dev-master",
+        "predis/predis": "1.*",
+        "iron-io/iron_mq": "dev-master",
+        "ext-memcache": "*",
+        "microsoft/windowsazure": "dev-master"
     },
     "suggest": {
         "predis/predis": "For Redis backend support",
         "mrpoundsign/pheanstalk-5.3": "For Beanstalkd backend support",
         "aws/aws-sdk-php": "For AWS SQS backend support",
         "amazonwebservices/aws-sdk-for-php": "For AWS SQS backend support (legacy version)",
-        "ext-memcache": "*",
         "pecl-mongodb": "For MongoDB backend support",
         "clio/clio": "Support for daemonizing PHP CLI runner",
         "iron-io/iron_mq": "For IronMQ backend support",

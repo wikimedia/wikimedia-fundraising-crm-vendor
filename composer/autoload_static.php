@@ -37,6 +37,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             'Monolog\\' => 8,
         ),
+        'A' => 
+        array (
+            'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 38,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -87,6 +91,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Monolog\\' => 
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
+        ),
+        'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/addshore/psr-6-mediawiki-bagostuff-adapter/src',
         ),
     );
 
@@ -234,6 +242,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'IsoDate' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/IsoDate.php',
         'LCRun3' => __DIR__ . '/..' . '/zordius/lightncandy/src/lightncandy.php',
         'LightnCandy' => __DIR__ . '/..' . '/zordius/lightncandy/src/lightncandy.php',
+        'LocalClusterPsr6Cache' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LocalClusterPsr6Cache.php',
         'LogPrefixProvider' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LogPrefixProvider.php',
         'MessageUtils' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/MessageUtils.php',
         'MustacheErrorForm' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',

@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use SmashPig\Core\Logging\Logger;
 
 /**
  * GatewayPage
@@ -75,11 +76,23 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$wgLang = $this->getContext()->getLanguage(); // BackCompat
 		}
 
+		if( $wgContributionTrackingFundraiserMaintenance
+			|| $wgContributionTrackingFundraiserMaintenanceUnsched ){
+			$this->redirect( Title::newFromText('Special:FundraiserMaintenance')->getFullURL(), '302' );
+			return;
+		}
+
 		$gatewayName = $this->getGatewayIdentifier();
 		$className = DonationInterface::getAdapterClassForGateway( $gatewayName );
+		DonationInterface::initializeSmashPig( $gatewayName );
+
 		try {
 			$this->adapter = new $className();
 			$this->logger = DonationLoggerFactory::getLogger( $this->adapter );
+
+			// FIXME: SmashPig should just use Monolog.
+			Logger::getContext()->enterContext( $this->adapter->getLogMessagePrefix() );
+
 			$out = $this->getOutput();
 			$out->addModuleStyles( 'donationInterface.styles' );
 			$out->addModules( 'donationInterface.skinOverride' );
@@ -88,7 +101,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 				Html::element(
 					'meta', array(
 						'name' => 'viewport',
-						'content' => 'initial-scale=1.0, user-scalable=yes, minimum-scale=0.25, maximum-scale=5.0',
+						'content' => 'initial-scale=1.0, user-scalable=yes, minimum-scale=0.25, maximum-scale=5.0, width=device-width',
 					)
 				)
 			);
@@ -115,12 +128,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			return;
 		}
 
-		if( $wgContributionTrackingFundraiserMaintenance
-			|| $wgContributionTrackingFundraiserMaintenanceUnsched ){
-			$this->getOutput()->redirect( Title::newFromText('Special:FundraiserMaintenance')->getFullURL(), '302' );
-			return;
-		}
-
 		if ( $this->adapter->getFinalStatus() === FinalStatus::FAILED ) {
 			$this->logger->info( 'Displaying fail page for failed GatewayReady checks' );
 			$this->displayFailPage();
@@ -141,6 +148,10 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	/**
 	 * Should be overridden in each derived class to actually handle the request
 	 * Performs gateway-specific checks and either redirects or displays form.
+	 *
+	 * FIXME: Be more disciplined about how handleRequest fits with
+	 * handleDonationRequest.  Would it be cleaner to move to a pre and post
+	 * hook scheme?
 	 */
 	protected abstract function handleRequest();
 
@@ -185,6 +196,15 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	}
 
 	/**
+	 * @param string $logReason Logged explanation for redirect
+	 */
+	protected function displayThankYouPage( $logReason ) {
+		$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
+		$this->logger->info( "Displaying thank you page $thankYouPage for status $logReason." );
+		$this->redirect( $thankYouPage );
+	}
+
+	/**
 	 * Display a failure page
 	 *
 	 * @param bool $allowRapid Whether to allow rendering a RapidFail form
@@ -195,6 +215,8 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		if ( $this->adapter && $allowRapid ) {
 			$page = ResultPages::getFailPage( $this->adapter );
+			// FIXME: Structured data $page rather than a union.  displayForm
+			// will add the ffname if needed.
 			if ( !filter_var( $page, FILTER_VALIDATE_URL ) ) {
 				// If it's not a URL, we're rendering a RapidFail form
 				$this->logger->info( "Displaying fail form $page" );
@@ -212,8 +234,25 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		}
 		$log_message = "Redirecting to [{$page}]";
 		$this->logger->info( $log_message );
-
 		$output->redirect( $page );
+	}
+
+	public function redirect( $url, $responsecode = '302' ) {
+		// Do we need to pop out of an iframe?
+		if ( $this->isReturnFramed() ) {
+			$this->logger->info(
+				"Resultswitcher: Popping out of iframe for Order ID " .
+				$this->adapter->getData_Unstaged_Escaped( 'order_id' )
+			);
+			$this->getOutput()->allowClickjacking();
+			$this->getOutput()->addModules( 'iframe.liberator' );
+			$this->getOutput()->addJsConfigVars(
+				'wgDonationInterfaceLiberationDestination', $url
+			);
+			return;
+		}
+		// No, normal redirect.
+		$this->getOutput()->redirect( $url, $responsecode );
 	}
 
 	/**
@@ -373,27 +412,12 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		$request = $this->getRequest();
 		$referrer = $request->getHeader( 'referer' );
-		$liberated = false;
-		if ( $this->adapter->session_getData( 'order_status', $oid ) === 'liberated' ) {
-			$liberated = true;
-		}
-
-		// XXX need to know whether we were in an iframe or not.
-		global $wgServer;
-		if ( $this->isReturnFramed() && ( strpos( $referrer, $wgServer ) === false ) && !$liberated ) {
-			$sessionOrderStatus = $request->getSessionData( 'order_status' );
-			$sessionOrderStatus[$oid] = 'liberated';
-			$request->setSessionData( 'order_status', $sessionOrderStatus );
-			$this->logger->info( "Resultswitcher: Popping out of iframe for Order ID " . $oid );
-			$this->getOutput()->allowClickjacking();
-			$this->getOutput()->addModules( 'iframe.liberator' );
-			return;
-		}
 
 		$this->setHeaders();
 
 		if ( $deadSession ){
 			if ( $this->adapter->isReturnProcessingRequired() ) {
+				// FIXME: this may display inside an iframe
 				wfHttpError( 403, 'Forbidden', wfMessage( 'donate_interface-error-http-403' )->text() );
 				throw new RuntimeException(
 					'Resultswitcher: Request forbidden. No active donation in the session. ' .
@@ -418,16 +442,15 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		$this->logger->info( "Resultswitcher: OK to process Order ID: " . $oid );
 
 		if ( $this->adapter->checkTokens() ) {
-			$this->getOutput()->allowClickjacking();
-			// FIXME: do we really need this again?
-			$this->getOutput()->addModules( 'iframe.liberator' );
 			// feed processDonorReturn all the GET and POST vars
 			$requestValues = $this->getRequest()->getValues();
 			$this->adapter->processDonorReturn( $requestValues );
 			$status = $this->adapter->getFinalStatus();
+
 			switch ( $status ) {
 			case FinalStatus::COMPLETE:
 			case FinalStatus::PENDING:
+			case FinalStatus::PENDING_POKE:
 				$this->displayThankYouPage( $status );
 				return;
 			}
@@ -456,7 +479,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$this->displayFailPage();
 		} elseif ( $url = $result->getRedirect() ) {
 			$this->adapter->logPending();
-			$this->getOutput()->redirect( $url );
+			$this->redirect( $url );
 		} elseif ( $url = $result->getIframe() ) {
 			// Show a form containing an iframe.
 
@@ -494,7 +517,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			// Success.
 			$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
 			$this->logger->info( "Displaying thank you page $thankYouPage for successful PaymentResult." );
-			$this->getOutput()->redirect( $thankYouPage );
+			$this->redirect( $thankYouPage );
 		}
 	}
 
@@ -546,14 +569,5 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		// TODO: Switch title according to failiness.
 		// Maybe ask $form_obj for a title so different errors can show different titles
 		$this->getOutput()->setPageTitle( wfMessage( 'donate_interface-make-your-donation' ) );
-	}
-
-	/**
-	 * @param string $logReason Logged explanation for redirect
-	 */
-	protected function displayThankYouPage( $logReason ) {
-		$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
-		$this->logger->info( "Displaying thank you page $thankYouPage for status $logReason." );
-		$this->getOutput()->redirect( $thankYouPage );
 	}
 }

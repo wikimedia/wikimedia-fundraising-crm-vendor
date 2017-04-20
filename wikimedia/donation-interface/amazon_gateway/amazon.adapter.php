@@ -63,10 +63,6 @@ class AmazonAdapter extends GatewayAdapter {
 				array( 'payment_method' => 'amazon' )
 			);
 		}
-		if ( !$this->isApiRequest() ) {
-			// Avoid missing ffname issues on return from Amazon login
-			$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
-		}
 		$this->session_addDonorData();
 	}
 
@@ -87,8 +83,6 @@ class AmazonAdapter extends GatewayAdapter {
 			'ct_id' => TRUE,
 		);
 	}
-
-	function setGatewayDefaults() {}
 
 	public function defineErrorMap() {
 		parent::defineErrorMap();

@@ -16,6 +16,7 @@
  *
  */
 use Psr\Log\LogLevel;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
  * GlobalCollectAdapter
@@ -1264,6 +1265,50 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		return $return;
 	}
 
+	public function processDonorReturn( $requestValues ) {
+
+		$oid = null;
+		if ( array_key_exists( 'order_id', $requestValues ) ) {
+			$oid = $requestValues['order_id'];
+		} else if ( array_key_exists( 'REF', $requestValues ) ) {
+			$oid = $requestValues['REF'];
+		}
+
+		if (! $oid) {
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
+			$this->logger->error( 'Missing Order ID' );
+			return;
+		}
+
+		if ( $this->getData_Unstaged_Escaped( 'payment_method' ) !== 'cc' ) {
+			$this->finalizeInternalStatus( FinalStatus::FAILED );
+			$this->logger->error( "Payment method is not CC, OID: {$oid}" );
+			return;
+		}
+
+		$session_oid = $this->session_getData( 'Donor', 'order_id' );
+
+		if (! $session_oid ) {
+			$this->logger->info( "Missing Session Order ID for OID: {$oid}" );
+			// Donor has made two payment attempts, and we have the wrong one's
+			// info in session. To avoid recording the wrong details, leave the
+			// attempt in PENDING status, which will show the thank you page
+			// but leave the payment to be resolved by the orphan rectifier.
+			// FIXME: should use finalizeInternalStatus() but there are side effects.
+			$this->final_status = FinalStatus::PENDING;
+			return;
+		}
+
+		if ( $oid !== $session_oid ) {
+			$this->logger->info( "Order ID mismatch '{$oid}'/'{$session_oid}'" );
+			// FIXME: should use finalizeInternalStatus() but there are side effects
+			$this->final_status = FinalStatus::PENDING;
+			return;
+		}
+
+		$this->do_transaction( 'Confirm_CreditCard' );
+	}
+
 	/**
 	 * Process the response and set transaction_response properties
 	 *
@@ -1583,6 +1628,9 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			// TODO: Review.  Why is this set to country_bank_code in other cases?
 			$this->var_map['COUNTRYCODEBANK'] = 'country';
 			break;
+		case 'rtbt':
+			$this->getBankList();
+			break;
 		}
 
 		// Use staged data so we pick up tricksy -_country variants
@@ -1711,6 +1759,32 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 		$result = $avs_map[$this->getData_Unstaged_Escaped( 'avs_result' )];
 		return $result;
+	}
+
+	/**
+	 * Update the list of banks for realtime bank transfer
+	 */
+	protected function getBankList() {
+		// Need some basic data to do lookups
+		if ( !is_array( $this->unstaged_data ) ) {
+			return;
+		}
+		$country = $this->getData_Unstaged_Escaped( 'country' );
+		$currency = $this->getData_Unstaged_Escaped( 'currency_code' );
+		if ( $country === null || $currency === null ) {
+			return;
+		}
+		try {
+			$provider = PaymentProviderFactory::getProviderForMethod( 'rtbt' );
+			$banks = $provider->getBankList( $country, $currency );
+			$this->payment_submethods['rtbt_ideal']['issuerids'] = $banks;
+		}
+		catch( Exception $e ) {
+			$this->logger->warning(
+				'Something failed trying to look up the banks, using hard-coded list' .
+				$e->getMessage()
+			);
+		}
 	}
 
 	/**
