@@ -8,12 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'cogpowered\\FineDiff' => array($vendorDir . '/cogpowered/finediff/src'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
-    'System' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'PHPQueue' => array($vendorDir . '/coderkungfu/php-queue/src'),
-    'Net' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
-    'Math' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'ForceUTF8\\' => array($vendorDir . '/neitanod/forceutf8/src'),
-    'File' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
-    'Crypt' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'Clio' => array($vendorDir . '/clio/clio/src'),
 );
