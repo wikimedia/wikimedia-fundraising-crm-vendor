@@ -1858,52 +1858,6 @@
         ]
     },
     {
-        "name": "mrmarkfrench/silverpop-php-connector",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-            "reference": "da4275f3a44888954e72068642956056fdc74a9b"
-        },
-        "require": {
-            "ext-curl": "*",
-            "ext-xml": "*",
-            "guzzlehttp/guzzle": "*",
-            "php": "^5.5 || ^7.0",
-            "phpseclib/phpseclib": "~2.0"
-        },
-        "require-dev": {
-            "phpunit/phpunit": "~4.4 || ^6.1"
-        },
-        "time": "2017-07-06T03:06:53+00:00",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "psr-4": {
-                "SilverpopConnector\\": "src/SilverpopConnector"
-            }
-        },
-        "autoload-dev": {
-            "psr-4": {
-                "SilverpopConnector\\Tests\\": "test/tests"
-            }
-        },
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Mark French"
-            }
-        ],
-        "description": "A connector SDK library for applications integrating with Silverpop, including the Silverpop Universal Behavior API",
-        "homepage": "https://github.com/mrmarkfrench/silverpop-php-connector",
-        "keywords": [
-            "Silverpop"
-        ]
-    },
-    {
         "name": "league/csv",
         "version": "8.2.1",
         "version_normalized": "8.2.1.0",
@@ -2009,6 +1963,52 @@
             "mail",
             "omnimail",
             "silverpop"
+        ]
+    },
+    {
+        "name": "mrmarkfrench/silverpop-php-connector",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
+            "reference": "6cbb9e1760c3927f871109ed588e6056b58fd7d2"
+        },
+        "require": {
+            "ext-curl": "*",
+            "ext-xml": "*",
+            "guzzlehttp/guzzle": "*",
+            "php": "^5.5 || ^7.0",
+            "phpseclib/phpseclib": "~2.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "~4.4 || ^6.1"
+        },
+        "time": "2017-07-24T07:31:30+00:00",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "SilverpopConnector\\": "src/SilverpopConnector"
+            }
+        },
+        "autoload-dev": {
+            "psr-4": {
+                "SilverpopConnector\\Tests\\": "test/tests"
+            }
+        },
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Mark French"
+            }
+        ],
+        "description": "A connector SDK library for applications integrating with Silverpop, including the Silverpop Universal Behavior API",
+        "homepage": "https://github.com/mrmarkfrench/silverpop-php-connector",
+        "keywords": [
+            "Silverpop"
         ]
     }
 ]
