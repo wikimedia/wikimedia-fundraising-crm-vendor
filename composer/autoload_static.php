@@ -14,7 +14,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
-        '3e2471375464aac821502deb0ac64275' => __DIR__ . '/..' . '/symfony/polyfill-php54/bootstrap.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         'bf34263f834e2781b79cae4d55a1d350' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
     );
@@ -31,7 +30,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'S' => 
         array (
             'Symfony\\Polyfill\\Php55\\' => 23,
-            'Symfony\\Polyfill\\Php54\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Component\\Yaml\\' => 23,
             'Symfony\\Component\\HttpFoundation\\' => 33,
@@ -90,10 +88,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Symfony\\Polyfill\\Php55\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php55',
-        ),
-        'Symfony\\Polyfill\\Php54\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/polyfill-php54',
         ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
@@ -245,7 +239,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'AstroPayStatusQuery' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/scripts/status.php',
         'BannerHistoryLogIdProcessor' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/banner_history/BannerHistoryLogIdProcessor.php',
         'BlankAddressFields' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
-        'CallbackFilterIterator' => __DIR__ . '/..' . '/symfony/polyfill-php54/Resources/stubs/CallbackFilterIterator.php',
         'CleanupRecurringLength' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
         'ClientSideValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
         'ContributionTrackingPlusUnique' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
@@ -322,13 +315,11 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'PaypalLegacyAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy.adapter.php',
         'PaypalLegacyGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy_gateway.body.php',
         'PaypalLegacyLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/PaypalLegacyLocale.php',
-        'RecursiveCallbackFilterIterator' => __DIR__ . '/..' . '/symfony/polyfill-php54/Resources/stubs/RecursiveCallbackFilterIterator.php',
         'ResponseCodes' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseCodes.php',
         'ResponseProcessingException' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',
         'ResultPages' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultPages.php',
         'RiskScore' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/RiskScore.php',
         'SMTP' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.smtp.php',
-        'SessionHandlerInterface' => __DIR__ . '/..' . '/symfony/polyfill-php54/Resources/stubs/SessionHandlerInterface.php',
         'StagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StagingHelper.php',
         'StreetAddress' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StreetAddress.php',
         'Subdivisions' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/includes/Subdivisions.php',
