@@ -127,6 +127,7 @@ class DataValidatorTest  extends PHPUnit_Framework_TestCase {
 			array( 'CO', '1234-5678-901', false ),
 			array( 'AR', 'ABC12312', false ),
 			array( 'AR', '12341234', true ),
+			array( 'AR', '12-34123412-1', true ), // 11 digit CUIT should pass
 			array( 'AR', '1112223', true ),
 			array( 'AR', '111222', false ),
 			array( 'MX', '', true ), // Not required for MX
@@ -139,13 +140,17 @@ class DataValidatorTest  extends PHPUnit_Framework_TestCase {
 	 */
 	public function testValidateFiscalNumber( $country, $value, $valid ) {
 		$validator = new FiscalNumber();
-		$errors = array();
+		$errors = new ErrorState();
 		$validator->validate(
 			new TestingGenericAdapter(),
 			array( 'country' => $country, 'fiscal_number' => $value, 'language' => 'en' ),
 			$errors
 		);
 		$expectation = $valid ? "should" : "should not";
-		$this->assertEquals( $valid, empty( $errors['fiscal_number'] ), "$value $expectation be a valid fiscal number for $country" );
+		$this->assertEquals(
+			!$valid,
+			$errors->hasValidationError( 'fiscal_number' ),
+			"$value $expectation be a valid fiscal number for $country"
+		);
 	}
 }

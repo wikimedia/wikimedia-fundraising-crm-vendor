@@ -33,10 +33,11 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	 */
 	public function getForm() {
 		$data = $this->getData();
+		self::$country = $data['country'];
+
 		$data = $data + $this->getErrors();
 		$data = $data + $this->getUrls();
 
-		self::$country = $data['country'];
 		self::$fieldErrors = $data['errors']['field'];
 
 		// FIXME: is this really necessary for rendering retry links?
@@ -70,6 +71,9 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 		$options = $options + $defaultOptions;
 
+		if ( !file_exists( $fileName ) ) {
+			throw new RuntimeException( "Template file unavailable: [$fileName]" );
+		}
 		$template = file_get_contents( $fileName );
 		if ( $template === false ) {
 			throw new RuntimeException( "Template file unavailable: [$fileName]" );
@@ -85,7 +89,9 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		}
 		$renderer = eval( $code );
 		if ( !is_callable( $renderer ) ) {
-			throw new RuntimeException( 'Can\'t run compiled template!' );
+			throw new RuntimeException(
+				"Can't run compiled template! Template: '$code'"
+			);
 		}
 
 		$html = call_user_func( $renderer, $data, array() );
@@ -98,7 +104,6 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$output = $this->gatewayPage->getContext()->getOutput();
 
 		$data['script_path'] = $this->scriptPath;
-		$data['verisign_logo'] = $this->getSmallSecureLogo();
 		$relativePath = $this->sanitizePath( $this->getTopLevelTemplate() );
 		$data['template_trail'] = "<!-- Generated from: $relativePath -->";
 		$data['action'] = $this->getNoCacheAction();
@@ -170,9 +175,9 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		// If any of these are required, show the address block
 		$address_fields = array(
 			'city',
-			'state',
+			'state_province',
 			'postal_code',
-			'street',
+			'street_address',
 		);
 		$address_field_count = 0;
 		$required_fields = $this->gateway->getRequiredFields();
@@ -182,7 +187,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 			if ( in_array( $field, $address_fields ) ) {
 				$data['address_required'] = true;
-				if ( $field !== 'street' ) {
+				if ( $field !== 'street_address' ) {
 					// street gets its own line
 					$address_field_count++;
 				}
@@ -197,7 +202,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 				3 => 'thirdwidth'
 			);
 			$data['address_css_class'] = $classes[$address_field_count];
-			if ( !empty( $data['state_required'] ) ) {
+			if ( !empty( $data['state_province_required'] ) ) {
 				$this->setStateOptions( $data );
 			}
 		}
@@ -205,13 +210,13 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 	protected function setStateOptions( &$data ) {
 		$state_list = Subdivisions::getByCountry( $data['country'] );
-		$data['state_options'] = array();
+		$data['state_province_options'] = array();
 
 		foreach ( $state_list as $abbr => $name ) {
-			$selected = isset( $data['state'] )
-				&& $data['state'] === $abbr;
+			$selected = isset( $data['state_province'] )
+				&& $data['state_province'] === $abbr;
 
-			$data['state_options'][] = array(
+			$data['state_province_options'][] = array(
 				'abbr' => $abbr,
 				'name' => $name,
 				'selected' => $selected,
@@ -225,20 +230,20 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			$data['show_currency_selector'] = false;
 			// The select input will be hidden, but posting the form will use its only value
 			// Display the same currency code
-			$data['currency_code'] = $supportedCurrencies[0];
+			$data['currency'] = $supportedCurrencies[0];
 		} else {
 			$data['show_currency_selector'] = true;
 		}
 		foreach( $supportedCurrencies as $currency ) {
 			$data['currencies'][] = array(
 				'code' => $currency,
-				'selected' => ( $currency === $data['currency_code'] ),
+				'selected' => ( $currency === $data['currency'] ),
 			);
 		}
 
 		$data['display_amount'] = Amount::format(
 			$data['amount'],
-			$data['currency_code'],
+			$data['currency'],
 			$data['language'] . '_' . $data['country']
 		);
 	}
@@ -250,30 +255,43 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	 * @return array
 	 */
 	protected function getErrors() {
-		$errors = $this->gateway->getAllErrors();
+		$errors = $this->gateway->getErrorState()->getErrors();
 		$return = array( 'errors' => array(
 			'general' => array(),
 			'field' => array(),
 		) );
 		$fieldNames = DonationData::getFieldNames();
-		foreach( $errors as $key => $error ) {
-			if ( is_array( $error ) ) {
-				// TODO: set errors consistently
-				$message = implode( '<br/>', $error );
+		foreach ( $errors as $error ) {
+			if ( $error instanceof ValidationError ) {
+				$key = $error->getField();
+
+				$message = MessageUtils::getCountrySpecificMessage(
+					$error->getMessageKey(),
+					self::$country,
+					RequestContext::getMain()->getLanguage()->getCode(),
+					$error->getMessageParams()
+				);
+			} elseif ( $error instanceof PaymentError ) {
+				$key = $error->getErrorCode();
+				$message = $this->gateway->getErrorMapByCodeAndTranslate( $error->getErrorCode() );
 			} else {
-				$message = $error;
+				throw new RuntimeException( "Unknown error type: " . var_export( $error, true ) );
 			}
+
 			$errorContext = array(
 				'key' => $key,
 				'message' => $message,
 			);
+
 			if ( in_array( $key, $fieldNames ) ) {
 				$return['errors']['field'][$key] = $errorContext;
 			} else {
 				$return['errors']['general'][] = $errorContext;
 			}
 			$return["{$key}_error"] = true;
-			if ( $key === 'currency_code' || $key === 'amount' ) {
+
+			// FIXME: Belongs in a separate phase?
+			if ( $key === 'currency' || $key === 'amount' ) {
 				$return['show_amount_input'] = true;
 			}
 			if ( !empty( $return['errors']['general'] ) ) {

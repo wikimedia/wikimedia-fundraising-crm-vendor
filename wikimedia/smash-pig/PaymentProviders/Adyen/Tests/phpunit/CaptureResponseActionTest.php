@@ -2,17 +2,15 @@
 namespace SmashPig\PaymentProviders\Adyen\Tests;
 
 use PHPQueue\Interfaces\FifoQueueStore;
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Adyen\Actions\CaptureResponseAction;
 use SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Capture;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
-class CaptureResponseActionTest extends BaseSmashPigUnitTestCase {
-	/**
-	 * @var Configuration
-	 */
-	protected $config;
+/**
+ * @group Adyen
+ */
+class CaptureResponseActionTest extends BaseAdyenTestCase {
 
 	/**
 	 * @var FifoQueueStore
@@ -21,17 +19,14 @@ class CaptureResponseActionTest extends BaseSmashPigUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$this->config = AdyenTestConfiguration::createWithSuccessfulApi();
-		Context::initWithLogger( $this->config );
-		$this->jobQueue = $this->config->object( 'data-store/jobs-adyen' );
-		$this->jobQueue->createTable( 'jobs-adyen' );
+		$this->jobQueue = Context::get()->getGlobalConfiguration()
+			->object( 'data-store/jobs-adyen' );
 	}
 
 	public function testSuccessfulCapture() {
 		$capture = new Capture();
 		$capture->success = true;
 
-		$capture->correlationId = 'adyen-' . mt_rand();
 		$capture->merchantAccountCode = 'WikimediaTest';
 		$capture->currency = 'USD';
 		$capture->amount = 10.00;

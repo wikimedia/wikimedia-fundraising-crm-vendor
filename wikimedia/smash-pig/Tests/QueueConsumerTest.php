@@ -5,9 +5,9 @@ namespace SmashPig\Tests;
 use Exception;
 use PDO;
 use PHPQueue\Interfaces\FifoQueueStore;
-use SmashPig\Core\Context;
+
 use SmashPig\Core\DataStores\DamagedDatabase;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 class QueueConsumerTest extends BaseSmashPigUnitTestCase {
 
@@ -22,11 +22,8 @@ class QueueConsumerTest extends BaseSmashPigUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		Context::initWithLogger( QueueTestConfiguration::instance() );
-		$this->queue = BaseQueueConsumer::getQueue( 'test' );
-		$this->queue->createTable( 'test' );
+		$this->queue = QueueWrapper::getQueue( 'test' );
 		$damagedDb = DamagedDatabase::get();
-		$damagedDb->createTable();
 		$this->damaged = $damagedDb->getDatabase();
 	}
 

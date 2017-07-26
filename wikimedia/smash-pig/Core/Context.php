@@ -12,50 +12,33 @@ use SmashPig\Core\Logging\Logger;
 class Context {
 	/** @var Context Reference to the current global context */
 	protected static $instance;
-	protected static $loggerInitialized = false;
 	protected $contextId;
 	protected $sourceRevision = 'unknown';
+	protected $sourceName = 'SmashPig';
+	protected $sourceType = 'listener';
 
-	/** @var Configuration|null Reference to the context configuration object */
-	protected $config = null;
+	/** @var GlobalConfiguration|null Reference to the global configuration object */
+	protected $globalConfiguration = null;
 
-	public static function init( Configuration $config ) {
+	/** @var ProviderConfiguration current provider-specific settings */
+	protected $providerConfiguration = null;
+
+	public static function init( GlobalConfiguration $config, $providerConfig = null ) {
 		if ( !Context::$instance ) {
+			if ( !$providerConfig ) {
+				$providerConfig = ProviderConfiguration::createDefault( $config );
+			}
 			Context::$instance = new Context();
-			Context::$instance->setConfiguration( $config );
-		}
-	}
-
-	public static function initWithLogger(
-		Configuration $config,
-		$loggerPrefix = ''
-	) {
-		self::init( $config );
-		if ( !self::$loggerInitialized ) {
-			// FIXME: Terminate logger crap with extreme prejudice
-			Logger::init(
-				$config->val( 'logging/root-context' ),
-				$config->val( 'logging/log-level' ),
-				$config,
-				$loggerPrefix
-			);
-			self::$loggerInitialized = true;
+			Context::$instance->setGlobalConfiguration( $config );
+			Context::$instance->setProviderConfiguration( $providerConfig );
 		}
 	}
 
 	/**
 	 * Obtains the current context object
-	 * @return Context
+	 * @return static
 	 */
 	public static function get() {
-		if ( Context::$instance === null ) {
-			// Remove this once we know we aren't going to blow up
-			Logger::notice(
-				'Context being initialized as part of get() request. Normally should use init() first.',
-				debug_backtrace( null )
-			);
-			Context::init( Configuration::getDefaultConfig() );
-		}
 		return Context::$instance;
 	}
 
@@ -79,13 +62,21 @@ class Context {
 		}
 
 		$versionStampPath = __DIR__ . "/../.version-stamp";
-		if ( file_exists( $versionStampPath ) ) {
-			$versionId = file_get_contents( $versionStampPath );
-			if ( $versionId !== false ) {
-				$this->sourceRevision = trim( $versionId );
-			}
-		}
+		$this->setVersionFromFile( $versionStampPath );
 	}
+
+    /**
+     * Sets the version string to the contents of a file, if it exists
+     * @param string $versionStampPath
+     */
+	public function setVersionFromFile( $versionStampPath ) {
+        if ( file_exists( $versionStampPath ) ) {
+            $versionId = file_get_contents( $versionStampPath );
+            if ( $versionId !== false ) {
+                $this->sourceRevision = trim( $versionId );
+            }
+        }
+    }
 
 	/**
 	 * Gets the global context identifier - this is used for logging, filenames,
@@ -97,10 +88,6 @@ class Context {
 		return $this->contextId;
 	}
 
-	public function getSourceRevision() {
-		return $this->sourceRevision;
-	}
-
 	/**
 	 * Sets a configuration object associated with this context.
 	 *
@@ -109,30 +96,84 @@ class Context {
 	 * based on account; this will somehow require us to support either
 	 * stacked configurations or stacked contexts...
 	 *
-	 * @param Configuration $config
+	 * @param GlobalConfiguration $config
 	 */
-	protected function setConfiguration( Configuration $config ) {
-		$this->config = $config;
+	protected function setGlobalConfiguration( GlobalConfiguration $config ) {
+		$this->globalConfiguration = $config;
 	}
 
 	/**
-	 * Gets the configuration object associated with the current context.
+	 * Gets the global configuration object associated with the current context.
 	 *
-	 * Set the configuration using init()
+	 * Set the global configuration using init()
 	 *
-	 * Use this instead of Configuration::getDefaultConfig();
-	 *
-	 * @return null|Configuration
+	 * @return GlobalConfiguration
 	 */
-	public function getConfiguration() {
-		if ( $this->config ) {
-			return $this->config;
-		} else {
-			Logger::notice(
-				'Context returning default configuration. Probably missing a setConfiguration().',
-				debug_backtrace( null )
-			);
-			return Configuration::getDefaultConfig();
-		}
+	public function getGlobalConfiguration() {
+		return $this->globalConfiguration;
 	}
+
+	/**
+	 * @return ProviderConfiguration
+	 */
+	public function getProviderConfiguration() {
+		return $this->providerConfiguration;
+	}
+
+	public function setProviderConfiguration( ProviderConfiguration $configuration ) {
+		$this->providerConfiguration = $configuration;
+		// FIXME: Terminate logger crap with extreme prejudice
+		Logger::init(
+			$configuration->val( 'logging/root-context' ),
+			$configuration->val( 'logging/log-level' ),
+			$configuration,
+			$configuration->getProviderName()
+		);
+	}
+
+    /**
+     * Get the revision ID to tag queue messages
+     * @see setVersionFromFile
+     *
+     * @return string
+     */
+    public function getSourceRevision() {
+        return $this->sourceRevision;
+    }
+
+    /**
+     * Get an identifier for the application to tag queue messages
+     *
+     * @return string
+     */
+    public function getSourceName() {
+        return $this->sourceName;
+    }
+
+    /**
+     * Set an identifier for the application to tag queue messages
+     *
+     * @param string $sourceName
+     */
+    public function setSourceName( $sourceName ) {
+        $this->sourceName = $sourceName;
+    }
+
+    /**
+     * Get the application type used in queue messages
+     *
+     * @return string
+     */
+    public function getSourceType() {
+        return $this->sourceType;
+    }
+
+    /**
+     * Set the application type used in queue messages
+     *
+     * @param string $sourceType
+     */
+    public function setSourceType( $sourceType ) {
+        $this->sourceType = $sourceType;
+    }
 }

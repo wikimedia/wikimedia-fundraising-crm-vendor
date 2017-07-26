@@ -3,7 +3,7 @@
 namespace SmashPig\Tests;
 
 use PDO;
-use SmashPig\Core\Context;
+
 use SmashPig\Core\DataStores\PendingDatabase;
 
 class PendingDatabaseTest extends BaseSmashPigUnitTestCase {
@@ -15,10 +15,7 @@ class PendingDatabaseTest extends BaseSmashPigUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = SmashPigDatabaseTestConfiguration::instance();
-		Context::initWithLogger( $config );
 		$this->db = PendingDatabase::get();
-		$this->db->createTable();
 	}
 
 	public function tearDown() {

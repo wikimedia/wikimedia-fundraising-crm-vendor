@@ -10,10 +10,11 @@ class FiscalNumber implements StagingHelper, ValidationHelper, ClientSideValidat
 	protected static $key = 'fiscal_number';
 
 	protected static $countryRules = array(
+		// Argentina's DNI numbers have 7-10 digits and CUIT numbers have 11
 		'AR' => array(
 			'numeric' => true,
 			'min' => 7,
-			'max' => 10,
+			'max' => 11,
 		),
 		'BR' => array(
 			'numeric' => true,
@@ -58,7 +59,7 @@ class FiscalNumber implements StagingHelper, ValidationHelper, ClientSideValidat
 	 *
 	 * @param GatewayType $unused
 	 * @param array $normalized Normalized donation data
-	 * @param array $errors Results of validation to this point
+	 * @param ErrorState $errors Results of validation to this point
 	 */
 	public function validate( GatewayType $unused, $normalized, &$errors ) {
 		if (
@@ -98,18 +99,14 @@ class FiscalNumber implements StagingHelper, ValidationHelper, ClientSideValidat
 			} else {
 				$errorType = 'calculated';
 			}
-			$errors[self::$key] = self::getErrorMessage(
-				$errorType, $normalized['language'], $country
-			);
+			$errors->addError( self::getError( $errorType ) );
 		}
 	}
 
-	protected static function getErrorMessage( $type, $language, $country ) {
-		return DataValidator::getErrorMessage(
+	protected static function getError( $type ) {
+		return DataValidator::getError(
 			self::$key,
-			$type,
-			$language,
-			$country
+			$type
 		);
 	}
 
@@ -131,9 +128,7 @@ class FiscalNumber implements StagingHelper, ValidationHelper, ClientSideValidat
 
 		$fiscalRules = array( array(
 			'pattern' => $pattern,
-			'message' => self::getErrorMessage(
-				'calculated', $normalized['language'], $normalized['country']
-			)
+			'messageKey' => 'donate_interface-error-msg-invalid-fiscal_number'
 		) );
 
 		$clientRules[self::$key] = $fiscalRules;

@@ -269,6 +269,17 @@ $forms_whitelist['paypal-recurring'] = array(
 	'recurring',
 );
 
+$forms_whitelist['paypal_ec'] = array(
+	'gateway' => 'paypal_ec',
+	'payment_methods' => array('paypal' => 'ALL'),
+);
+
+$forms_whitelist['paypal_ec-recurring'] = array(
+	'gateway' => 'paypal_ec',
+	'payment_methods' => array('paypal' => 'ALL'),
+	'recurring',
+);
+
 /************
  * AstroPay *
  ************/
@@ -428,12 +439,12 @@ $forms_whitelist['adyen-test'] = array(
  * *********** */
 
 $forms_whitelist['error-default'] = array (
-	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal' ),
+	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal', 'paypal_ec' ),
 	'special_type' => 'error',
 );
 
 $forms_whitelist['error-noform'] = array (
-	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal' ),
+	'gateway' => array ( 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal', 'paypal_ec' ),
 	'special_type' => 'error',
 );
 

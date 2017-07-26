@@ -72,7 +72,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 
 		$expected = array (
 			'amount' => $init['amount'],
-			'currency_code' => $init['currency_code'],
+			'currency_code' => $init['currency'],
 			'country' => $init['country'],
 			'business' => 'phpunittesting@wikimedia.org',
 			'cmd' => '_donations',
@@ -106,7 +106,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 
 		$expected = array (
 			'a3' => $init['amount'], //obviously.
-			'currency_code' => $init['currency_code'],
+			'currency_code' => $init['currency'],
 			'country' => $init['country'],
 			'business' => 'phpunittesting@wikimedia.org',
 			'cmd' => '_xclick-subscriptions',
@@ -143,7 +143,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 
 		$expected = array (
 			'amount' => $init['amount'],
-			'currency_code' => $init['currency_code'],
+			'currency_code' => $init['currency'],
 			'country' => $init['country'],
 			'business' => 'phpunittesting@wikimedia.org',
 			'cmd' => '_xclick',
@@ -167,10 +167,9 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 		$init = $this->getDonorTestData();
 		$session = array( 'Donor' => $init );
 
-		$that = $this;
-		$redirectTest = function( $location ) use ( $that, $init ) {
+		$redirectTest = function( $location ) use ( $init ) {
 			parse_str( parse_url( $location, PHP_URL_QUERY ), $actual );
-			$that->assertEquals( $init['amount'], $actual['amount'] );
+			$this->assertEquals( $init['amount'], $actual['amount'] );
 		};
 		$assertNodes = array(
 			'headers' => array(
@@ -199,6 +198,31 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	}
 
 	/**
+	 * Stay on the payments form if there's a currency conversion notification.
+	 */
+	function testShowFormOnCurrencyFallback() {
+		$init = $this->getDonorTestData();
+		$init['currency'] = 'BBD';
+		$init['amount'] = 15.00;
+		$session = array( 'Donor' => $init );
+		$this->setMwGlobals( array(
+			'wgDonationInterfaceFallbackCurrency' => 'USD',
+			'wgDonationInterfaceNotifyOnConvert' => true,
+		) );
+		$errorMessage = wfMessage( 'donate_interface-fallback-currency-notice', 'USD' )->text();
+		$assertNodes = array(
+			'headers' => array(
+				'location' => null,
+			),
+			'currencyMsg' => array(
+				'innerhtmlmatches' => "/.*$errorMessage.*/"
+			)
+		);
+
+		$this->verifyFormOutput( 'PaypalLegacyGateway', $init, $assertNodes, false, $session );
+	}
+
+	/**
 	 * Integration test to verify that the Donate transaction works as expected in Belgium for fr, de, and nl.
 	 *
 	 * @dataProvider belgiumLanguageProvider
@@ -214,7 +238,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 
 		$expected = array (
 			'amount' => $init['amount'],
-			'currency_code' => $init['currency_code'],
+			'currency_code' => $init['currency'],
 			'country' => 'BE',
 			'business' => 'phpunittesting@wikimedia.org',
 			'cmd' => '_donations',
@@ -286,7 +310,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 
 		$expected = array (
 			'amount' => $init['amount'],
-			'currency_code' => $init['currency_code'],
+			'currency_code' => $init['currency'],
 			'country' => 'IT',
 			'business' => 'phpunittesting@wikimedia.org',
 			'cmd' => '_donations',

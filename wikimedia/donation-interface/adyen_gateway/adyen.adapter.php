@@ -43,6 +43,8 @@ class AdyenAdapter extends GatewayAdapter {
 		);
 	}
 
+	// FIXME: That's not what ReturnValueMap is for!
+	// Unused?
 	function defineReturnValueMap() {
 		$this->return_value_map = array(
 			'authResult' => 'result',
@@ -109,13 +111,11 @@ class AdyenAdapter extends GatewayAdapter {
 			'billingAddress.houseNumberOrName',
 		);
 
-		if ( in_array( 'street', $this->getRequiredFields() ) )  {
+		if ( in_array( 'street_address', $this->getRequiredFields() ) )  {
 			$requestFields = array_merge( $requestFields, $addressFields );
 		}
 
-
-
-		$this->transactions[ 'donate' ] = array(
+		$this->transactions['donate'] = array(
 			'request' => $requestFields,
 			'values' => array(
 				'allowedMethods' => implode( ',', $this->getAllowedPaymentMethods() ),
@@ -126,7 +126,7 @@ class AdyenAdapter extends GatewayAdapter {
 				'skinCode' => $this->accountInfo[ 'skinCode' ],
 				//'shopperLocale' => language _ country
 			),
-
+			'check_required' => TRUE,
 			'iframe' => TRUE,
 		);
 	}
@@ -160,8 +160,15 @@ class AdyenAdapter extends GatewayAdapter {
 		}
 		$this->session_addDonorData();
 		$this->setCurrentTransaction( $transaction );
-		$this->transaction_response = new PaymentTransactionResponse();
 
+		$this->validate();
+		if ( !$this->validatedOK() ){
+			//If the data didn't validate okay, prevent all data transmissions.
+			$response = $this->getFailedValidationResponse();
+			$this->logger->info( "Failed Validation. Aborting $transaction " . print_r( $this->errors, true ) );
+			return $response;
+		}
+		$this->transaction_response = new PaymentTransactionResponse();
 		if ( $this->transaction_option( 'iframe' ) ) {
 			// slightly different than other gateways' iframe method,
 			// we don't have to make the round-trip, instead just
@@ -208,8 +215,8 @@ class AdyenAdapter extends GatewayAdapter {
 	 * whether to capture the payment or leave it for manual review.
 	 * @return array
 	 */
-	protected function getStompTransaction() {
-		$transaction = parent::getStompTransaction();
+	protected function getQueueDonationMessage() {
+		$transaction = parent::getQueueDonationMessage();
 		$transaction['risk_score'] = $this->risk_score;
 		return $transaction;
 	}
@@ -217,6 +224,7 @@ class AdyenAdapter extends GatewayAdapter {
 	/**
 	 * @param array $requestValues GET/POST params from request
 	 * @throws ResponseProcessingException
+	 * @return PaymentResult
 	 */
 	public function processDonorReturn( $requestValues ) {
 		// Always called outside do_transaction, so just make a new response object
@@ -249,6 +257,7 @@ class AdyenAdapter extends GatewayAdapter {
 		$this->transaction_response->setGatewayTransactionId( $gateway_txn_id );
 
 		$result_code = isset( $requestValues['authResult'] ) ? $requestValues['authResult'] : '';
+		$paymentResult = null;
 		if ( $result_code == 'PENDING' || $result_code == 'AUTHORISED' ) {
 			// Both of these are listed as pending because we have to submit a capture
 			// request on 'AUTHORIZATION' ipn message receipt.
@@ -261,19 +270,23 @@ class AdyenAdapter extends GatewayAdapter {
 			if ( $action === 'process' ) {
 				$this->logger->info( "User came back as pending or authorised, placing in payments-init queue" );
 				$this->finalizeInternalStatus( FinalStatus::PENDING );
+				$paymentResult = PaymentResult::newSuccess();
 			} else {
 				$this->logger->info(
 					"User came back authorized but with action $action. " .
 					"Showing a fail page, but leaving details in case of manual capture."
 				);
 				$this->finalizeInternalStatus( FinalStatus::FAILED );
+				$paymentResult = PaymentResult::newFailure();
 			}
 		}
 		else {
 			$this->finalizeInternalStatus( FinalStatus::FAILED );
+			$paymentResult = PaymentResult::newFailure();
 			$this->logger->info( "Negative response from gateway. Full response: " . print_r( $requestValues, TRUE ) );
 		}
 		$this->postProcessDonation();
+		return $paymentResult;
 	}
 
 	/**
@@ -290,7 +303,7 @@ class AdyenAdapter extends GatewayAdapter {
 	 * @param boolean $token
 	 * @return mixed
 	 */
-	protected function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
+	public function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
 		$value = parent::getTransactionSpecificValue( $gateway_field_name, $token );
 		return str_replace( '\n', '', $value );
 	}

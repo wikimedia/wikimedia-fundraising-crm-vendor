@@ -6,7 +6,6 @@ use DateTime;
 use DateTimeZone;
 use SmashPig\Core\Context;
 use SmashPig\Core\Http\OutboundRequest;
-use SmashPig\Core\SmashPigException;
 
 /**
  * Prepares and sends requests to the Ingenico Connect API.
@@ -30,7 +29,7 @@ class Api {
 		$this->baseUrl = $baseUrl;
 		$this->merchantId = $merchantId;
 		// FIXME: provide objects in constructor
-		$config = Context::get()->getConfiguration();
+		$config = Context::get()->getProviderConfiguration();
 		$this->authenticator = $config->object( 'authenticator' );
 	}
 

@@ -1,23 +1,21 @@
 <?php namespace SmashPig\PaymentProviders\Adyen\Test;
 
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
-use SmashPig\Core\DataStores\KeyedOpaqueStorableObject;
+use SmashPig\Core\DataStores\JsonSerializableObject;
 use SmashPig\Core\DataStores\PendingDatabase;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Adyen\Jobs\RecordCaptureJob;
 use SmashPig\PaymentProviders\Adyen\Tests\AdyenTestConfiguration;
+use SmashPig\PaymentProviders\Adyen\Tests\BaseAdyenTestCase;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
 /**
  * Verify Adyen RecordCapture job functions
+ *
+ * @group Adyen
  */
-class RecordCaptureJobTest extends BaseSmashPigUnitTestCase {
+class RecordCaptureJobTest extends BaseAdyenTestCase {
 
-	/**
-	 * @var Configuration
-	 */
-	public $config;
 	/**
 	 * @var PendingDatabase
 	 */
@@ -26,8 +24,6 @@ class RecordCaptureJobTest extends BaseSmashPigUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$this->config = AdyenTestConfiguration::createWithSuccessfulApi();
-		Context::initWithLogger( $this->config );
 		$this->pendingDatabase = PendingDatabase::get();
 		$this->pendingMessage = json_decode(
 			file_get_contents( __DIR__ . '/../Data/pending.json' ) , true
@@ -42,10 +38,8 @@ class RecordCaptureJobTest extends BaseSmashPigUnitTestCase {
 	}
 
 	public function testRecordCapture() {
-		$verifiedQueue = BaseQueueConsumer::getQueue( 'verified' );
-		$verifiedQueue->createTable( 'verified' );
-
-		$capture = KeyedOpaqueStorableObject::fromJsonProxy(
+		$donationsQueue = QueueWrapper::getQueue( 'donations' );
+		$capture = JsonSerializableObject::fromJsonProxy(
 			'SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Capture',
 			file_get_contents( __DIR__ . '/../Data/capture.json' )
 		);
@@ -62,26 +56,26 @@ class RecordCaptureJobTest extends BaseSmashPigUnitTestCase {
 			'RecordCaptureJob left donor data on pending queue'
 		);
 
-		$verifiedMessage = $verifiedQueue->pop();
+		$donationMessage = $donationsQueue->pop();
 		$this->assertNotNull(
-			$verifiedMessage,
-			'RecordCaptureJob did not send verified message'
+			$donationMessage,
+			'RecordCaptureJob did not send donation message'
 		);
 		// can we use arraySubset yet?
 		$sameKeys = array_intersect(
-			array_keys( $verifiedMessage ),
+			array_keys( $donationMessage ),
 			array_keys( $this->pendingMessage )
 		);
 		foreach ( $sameKeys as $key ) {
 			if ( $key === 'gateway_txn_id' ) {
 				$this->assertEquals(
-					$capture->originalReference, $verifiedMessage[$key],
+					$capture->originalReference, $donationMessage[$key],
 					'RecordCaptureJob should have set gateway_txn_id'
 				);
 			} else {
 				$this->assertEquals(
 					$this->pendingMessage[$key],
-					$verifiedMessage[$key],
+					$donationMessage[$key],
 					"Value of key $key mutated"
 				);
 			}

@@ -48,7 +48,11 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		};
 
 		$country = $getValOrNull( 'country' );
-		$currency = $getValOrNull( 'currency_code' );
+		$currency = $getValOrNull( 'currency' );
+		// TODO: remove when incoming links are updated
+		if ( !$currency ) {
+			$currency = $getValOrNull( 'currency_code' );
+		}
 		$paymentMethod = $getValOrNull( 'payment_method' );
 		$paymentSubMethod = $getValOrNull( 'payment_submethod' );
 		$gateway = $getValOrNull( 'gateway' );
@@ -90,6 +94,14 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 			if ( !in_array( $key, $excludeKeys ) ) {
 				$params[$key] = $value;
 			}
+		}
+
+		// TODO: remove when incoming links are updated
+		if ( !empty( $params['currency_code'] ) ) {
+			if ( empty( $params['currency'] ) ) {
+				$params['currency'] = $params['currency_code'];
+			}
+			unset( $params['currency_code'] );
 		}
 
 		$redirectURL = self::buildPaymentsFormURL( $form, $params );
@@ -215,11 +227,10 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		// First get all the valid and enabled gateways capable of processing shtuff
 		$valid_gateways = self::getAllEnabledGateways();
 		if ( $gateway !== null ) {
+			// If the requested gateway is valid and enabled, only allow
+			// forms for that gateway. Otherwise try 'em all.
 			if ( in_array( $gateway, $valid_gateways ) ) {
 				$valid_gateways = array( $gateway );
-			} else {
-				// Aaah; the requested gateway is not valid :'( Nothing to do but return nothing
-				return array();
 			}
 		}
 

@@ -17,6 +17,10 @@
  */
 use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingGlobalConfiguration;
+use SmashPig\Tests\TestingProviderConfiguration;
+use Wikimedia\TestingAccessWrapper;
 
 /**
  * @group		Fundraising
@@ -36,7 +40,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	public static $initial_vars = array (
 		'ffname' => 'testytest',
 		'referrer' => 'www.yourmom.com', //please don't go there.
-		'currency_code' => 'USD',
+		'currency' => 'USD',
 	);
 
 	/**
@@ -51,6 +55,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 */
 	protected $testLogger;
 	protected $testAdapterClass = TESTS_ADAPTER_DEFAULT;
+	protected $smashPigGlobalConfig;
 
 	/**
 	 * @param $name string The name of the test case
@@ -71,11 +76,24 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		// SmashPig core logger.
 		$this->testLogger = new TestingDonationLogger();
 		DonationLoggerFactory::$overrideLogger = $this->testLogger;
+		$this->setMwGlobals( array(
+			'wgDonationInterfaceEnableQueue' => true,
+			'wgDonationInterfaceDefaultQueueServer' => array(
+				'type' => 'TestingQueue',
+			),
+		) );
+		// Replace real SmashPig context with test version that lets us
+		// override provider configurations that may be set in code
+		$this->smashPigGlobalConfig = TestingGlobalConfiguration::create();
+		TestingContext::init( $this->smashPigGlobalConfig );
+		Context::get()->setSourceType( 'payments' );
+		Context::get()->setSourceName( 'DonationInterface' );
 		parent::setUp();
 	}
 
 	protected function tearDown() {
 		$this->resetAllEnv();
+		TestingQueue::clearAll();
 		DonationLoggerFactory::$overrideLogger = null;
 		parent::tearDown();
 	}
@@ -145,133 +163,133 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		$donortestdata = array (
 			'US' => array ( //default
 				'city' => 'San Francisco',
-				'state' => 'CA',
+				'state_province' => 'CA',
 				'postal_code' => '94105',
-				'currency_code' => 'USD',
-				'street' => '123 Fake Street',
-				'fname' => 'Firstname',
-				'lname' => 'Surname',
+				'currency' => 'USD',
+				'street_address' => '123 Fake Street',
+				'first_name' => 'Firstname',
+				'last_name' => 'Surname',
 				'amount' => '1.55',
 				'language' => 'en',
 				'email' => 'nobody@wikimedia.org',
 			),
 			'ES' => array (
 				'city' => 'Barcelona',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 Calle Fake',
-				'fname' => 'Nombre',
-				'lname' => 'Apellido',
+				'currency' => 'EUR',
+				'street_address' => '123 Calle Fake',
+				'first_name' => 'Nombre',
+				'last_name' => 'Apellido',
 				'amount' => '1.55',
 				'language' => 'es',
 			),
 			'Catalonia' => array (
 				'city' => 'Barcelona',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 Calle Fake',
-				'fname' => 'Nombre',
-				'lname' => 'Apellido',
+				'currency' => 'EUR',
+				'street_address' => '123 Calle Fake',
+				'first_name' => 'Nombre',
+				'last_name' => 'Apellido',
 				'amount' => '1.55',
 				'language' => 'ca',
 			),
 			'NO' => array (
 				'city' => 'Oslo',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 Fake Gate',
-				'fname' => 'Fornavn',
-				'lname' => 'Etternavn',
+				'currency' => 'EUR',
+				'street_address' => '123 Fake Gate',
+				'first_name' => 'Fornavn',
+				'last_name' => 'Etternavn',
 				'amount' => '1.55',
 				'language' => 'no',
 			),
 			'FR' => array (
 				'city' => 'Versailles',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 Rue Faux',
-				'fname' => 'Prénom',
-				'lname' => 'Nom',
+				'currency' => 'EUR',
+				'street_address' => '123 Rue Faux',
+				'first_name' => 'Prénom',
+				'last_name' => 'Nom',
 				'amount' => '1.55',
 				'language' => 'fr',
 			),
 			// Fiji is configured as a snowflake to test special treatment for certain store IDs
 			'FJ' => array (
 				'city' => 'Suva',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 Fake Street',
-				'fname' => 'FirstName',
-				'lname' => 'LastName',
+				'currency' => 'EUR',
+				'street_address' => '123 Fake Street',
+				'first_name' => 'FirstName',
+				'last_name' => 'LastName',
 				'amount' => '1.55',
 				'language' => 'en',
 			),
 			'NL' => array (
 				'city' => 'Amsterdam',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 nep straat',
-				'fname' => 'Voornaam',
-				'lname' => 'Achternaam',
+				'currency' => 'EUR',
+				'street_address' => '123 nep straat',
+				'first_name' => 'Voornaam',
+				'last_name' => 'Achternaam',
 				'amount' => '1.55',
 				'language' => 'nl',
 			),
 			'BE' => array (
 				'city' => 'Antwerp',
-				'state' => 'XX',
+				'state_province' => 'XX',
 				'postal_code' => '0',
-				'currency_code' => 'EUR',
-				'street' => '123 nep straat',
-				'fname' => 'Voornaam',
-				'lname' => 'Achternaam',
+				'currency' => 'EUR',
+				'street_address' => '123 nep straat',
+				'first_name' => 'Voornaam',
+				'last_name' => 'Achternaam',
 				'amount' => '1.55',
 				'language' => 'nl',
 			),
 			'IT' => array (
 				'city' => 'Torino',
-				'state' => 'TO',
+				'state_province' => 'TO',
 				'postal_code' => '10123',
-				'currency_code' => 'EUR',
-				'street' => 'Via Falso 123',
-				'fname' => 'Nome',
-				'lname' => 'Cognome',
+				'currency' => 'EUR',
+				'street_address' => 'Via Falso 123',
+				'first_name' => 'Nome',
+				'last_name' => 'Cognome',
 				'amount' => '1.55',
 				'language' => 'it',
 			),
 			'CA' => array (
 				'city' => 'Saskatoon',
-				'state' => 'SK',
+				'state_province' => 'SK',
 				'postal_code' => 'S7K 0J5',
-				'currency_code' => 'CAD',
-				'street' => '123 Fake Street',
-				'fname' => 'Firstname',
-				'lname' => 'Surname',
+				'currency' => 'CAD',
+				'street_address' => '123 Fake Street',
+				'first_name' => 'Firstname',
+				'last_name' => 'Surname',
 				'amount' => '1.55',
 				'language' => 'en',
 			),
 			'BR' => array (
-				'currency_code' => 'BRL',
+				'currency' => 'BRL',
 				'fiscal_number' => '00003456789',
 				'payment_submethod' => 'test_bank',
-				'fname' => 'Nome',
-				'lname' => 'Apelido',
+				'first_name' => 'Nome',
+				'last_name' => 'Apelido',
 				'amount' => '100',
 				'language' => 'pt',
 				'email' => 'nobody@example.org'
 			),
 			'MX' => array (
 				'city' => 'Tuxtla Gutiérrez',
-				'state' => 'CHP',
-				'currency_code' => 'MXN',
-				'street' => 'Calle Falso 123',
-				'fname' => 'Nombre',
-				'lname' => 'Apellido',
+				'state_province' => 'CHP',
+				'currency' => 'MXN',
+				'street_address' => 'Calle Falso 123',
+				'first_name' => 'Nombre',
+				'last_name' => 'Apellido',
 				'email' => 'pueblo@unido.coop',
 				'amount' => '155',
 				'language' => 'es',
@@ -362,7 +380,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		$expected .= 			'<ORDER>';
 		$expected .= 				'<ORDERID>' . $orderId . '</ORDERID>';
 		$expected .= 				'<AMOUNT>' . $options['amount'] * 100 . '</AMOUNT>';
-		$expected .= 				'<CURRENCYCODE>' . $options['currency_code'] . '</CURRENCYCODE>';
+		$expected .= 				'<CURRENCYCODE>' . $options['currency'] . '</CURRENCYCODE>';
 		$expected .= 				'<LANGUAGECODE>' . $options['language'] . '</LANGUAGECODE>';
 		$expected .= 				'<COUNTRYCODE>' . $options['country'] . '</COUNTRYCODE>';
 		$expected .= '<MERCHANTREFERENCE>' . $merchantref . '</MERCHANTREFERENCE>';
@@ -376,17 +394,17 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		$expected .= 			'<PAYMENT>';
 		$expected .= 				'<PAYMENTPRODUCTID>' . $optionsForTestData['payment_product_id'] . '</PAYMENTPRODUCTID>';
 		$expected .= 				'<AMOUNT>' . $options['amount'] * 100 . '</AMOUNT>';
-		$expected .= 				'<CURRENCYCODE>' . $options['currency_code'] . '</CURRENCYCODE>';
+		$expected .= 				'<CURRENCYCODE>' . $options['currency'] . '</CURRENCYCODE>';
 		$expected .= 				'<LANGUAGECODE>' . $options['language'] . '</LANGUAGECODE>';
 		$expected .= 				'<COUNTRYCODE>' . $options['country'] . '</COUNTRYCODE>';
 		$expected .= 				'<HOSTEDINDICATOR>1</HOSTEDINDICATOR>';
 		$expected .= 				"<RETURNURL>{$wgDonationInterfaceThankYouPage}/{$options['language']}?country={$options['country']}</RETURNURL>";
 		$expected .=				'<AUTHENTICATIONINDICATOR>0</AUTHENTICATIONINDICATOR>';
-		$expected .= 				'<FIRSTNAME>' . $options['fname'] . '</FIRSTNAME>';
-		$expected .= 				'<SURNAME>' . $options['lname'] . '</SURNAME>';
-		$expected .= 				'<STREET>' . $options['street'] . '</STREET>';
+		$expected .= 				'<FIRSTNAME>' . $options['first_name'] . '</FIRSTNAME>';
+		$expected .= 				'<SURNAME>' . $options['last_name'] . '</SURNAME>';
+		$expected .= 				'<STREET>' . $options['street_address'] . '</STREET>';
 		$expected .= 				'<CITY>' . $options['city'] . '</CITY>';
-		$expected .= 				'<STATE>' . $options['state'] . '</STATE>';
+		$expected .= 				'<STATE>' . $options['state_province'] . '</STATE>';
 		$expected .= 				'<ZIP>' . $options['postal_code'] . '</ZIP>';
 		$expected .= '<EMAIL>' . TESTS_EMAIL . '</EMAIL>';
 
@@ -434,23 +452,23 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * @return GatewayAdapter The new relevant gateway adapter object.
 	 */
 	function getFreshGatewayObject( $external_data = null, $setup_hacks = array() ) {
-		$p1 = null;
+		$data = null;
 		if ( !is_null( $external_data ) ) {
-			$p1 = array (
+			$data = array (
 				'external_data' => $external_data,
 			);
 		}
 
 		if ( $setup_hacks ) {
-			if ( !is_null( $p1 ) ) {
-				$p1 = array_merge( $p1, $setup_hacks );
+			if ( !is_null( $data ) ) {
+				$data = array_merge( $data, $setup_hacks );
 			} else {
-				$p1 = $setup_hacks;
+				$data = $setup_hacks;
 			}
 		}
 
 		$class = $this->testAdapterClass;
-		$gateway = new $class( $p1 );
+		$gateway = new $class( $data );
 
 		$classReflection = new ReflectionClass( $gateway );
 
@@ -468,6 +486,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	}
 
 	function resetAllEnv() {
+		// TODO: reset PDO/sqlite queues
 		$_SESSION = array ( );
 		$_GET = array ( );
 		$_POST = array ( );
@@ -667,6 +686,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * @param string $log_level One of the constants in \Psr\Log\LogLevel
 	 * @param string $match A regex to match against the log lines.
 	 * @return array All log lines that match $match.
+	 *     FIXME: Or false.  Return an empty array or throw an exception instead.
 	 */
 	public function getLogMatches( $log_level, $match ) {
 		$log = $this->testLogger->messages;

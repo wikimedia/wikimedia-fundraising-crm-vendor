@@ -17,9 +17,7 @@
  *
  */
 
-use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PendingDatabase;
-use SmashPig\Tests\SmashPigDatabaseTestConfiguration;
 
 /**
  * @covers GlobalCollectOrphanRectifier
@@ -60,9 +58,6 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 				'globalcollect_orphan' => 'TestingGlobalCollectOrphanAdapter',
 			),
 		) );
-
-		$config = SmashPigDatabaseTestConfiguration::instance();
-		Context::init( $config );
 
 		$this->pendingDb = PendingDatabase::get();
 
@@ -172,8 +167,8 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 		$uniq = mt_rand();
 		$message = $overrides + array(
 			'contribution_tracking_id' => $uniq,
-			'fname' => 'Flighty',
-			'lname' => 'Dono',
+			'first_name' => 'Flighty',
+			'last_name' => 'Dono',
 			'email' => 'test+wmf@eff.org',
 			'gateway' => 'globalcollect',
 			'gateway_txn_id' => "txn-{$uniq}",

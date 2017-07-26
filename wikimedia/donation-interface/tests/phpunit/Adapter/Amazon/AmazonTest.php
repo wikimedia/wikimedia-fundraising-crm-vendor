@@ -14,9 +14,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  */
+use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
+use SmashPig\Tests\TestingContext;
 
 /**
- * 
+ *
  * @group Fundraising
  * @group DonationInterface
  * @group Amazon
@@ -35,6 +37,10 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 
 	public function setUp() {
 		parent::setUp();
+		TestingContext::get()->providerConfigurationOverride =
+			AmazonTestConfiguration::instance(
+				$this->smashPigGlobalConfig
+			);
 
 		TestingAmazonAdapter::$mockClient = new MockAmazonClient();
 
@@ -65,6 +71,8 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 	 * Integration test to verify that the Amazon gateway converts Canadian
 	 * dollars before redirecting
 	 *
+	 * FIXME: Merge with currency fallback tests?
+	 *
 	 * @dataProvider canadaLanguageProvider
 	 */
 	function testCanadianDollarConversion( $language ) {
@@ -91,9 +99,8 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$locale = $init['language'] . '_' . $init['country'];
 		$expectedDisplayAmount = Amount::format( $expectedAmount, 'USD', $locale );
 
-		$that = $this; //needed for PHP pre-5.4
-		$convertTest = function( $amountString ) use ( $expectedDisplayAmount, $that ) {
-			$that->assertEquals( $expectedDisplayAmount, trim( $amountString ), 'Displaying wrong amount' );
+		$convertTest = function( $amountString ) use ( $expectedDisplayAmount ) {
+			$this->assertEquals( $expectedDisplayAmount, trim( $amountString ), 'Displaying wrong amount' );
 		};
 
 		$assertNodes = array(
@@ -133,25 +140,24 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init['order_reference_id'] = mt_rand( 0, 10000000 ); // provided by client-side widget IRL
 		// We don't get any profile data up front
 		unset( $init['email'] );
-		unset( $init['fname'] );
-		unset( $init['lname'] );
+		unset( $init['first_name'] );
+		unset( $init['last_name'] );
 
 		$gateway = $this->getFreshGatewayObject( $init );
 		$result = $gateway->doPayment();
-		// FIXME: PaymentResult->isFailed returns null for false
-		$this->assertTrue( !( $result->isFailed() ), 'Result should not be failed when responses are good' );
-		$this->assertEquals( 'Testy', $gateway->getData_Unstaged_Escaped( 'fname' ), 'Did not populate first name from Amazon data' );
-		$this->assertEquals( 'Test', $gateway->getData_Unstaged_Escaped( 'lname' ), 'Did not populate last name from Amazon data' );
+		$this->assertFalse( $result->isFailed(), 'Result should not be failed when responses are good' );
+		$this->assertEquals( 'Testy', $gateway->getData_Unstaged_Escaped( 'first_name' ), 'Did not populate first name from Amazon data' );
+		$this->assertEquals( 'Test', $gateway->getData_Unstaged_Escaped( 'last_name' ), 'Did not populate last name from Amazon data' );
 		$this->assertEquals( 'nobody@wikimedia.org', $gateway->getData_Unstaged_Escaped( 'email' ), 'Did not populate email from Amazon data' );
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$setOrderReferenceDetailsArgs = $mockClient->calls['setOrderReferenceDetails'][0];
 		$oid = $gateway->getData_Unstaged_Escaped( 'order_id' );
 		$this->assertEquals( $oid, $setOrderReferenceDetailsArgs['seller_order_id'], 'Did not set order id on order reference' );
 		$this->assertEquals( $init['amount'], $setOrderReferenceDetailsArgs['amount'], 'Did not set amount on order reference' );
-		$this->assertEquals( $init['currency_code'], $setOrderReferenceDetailsArgs['currency_code'], 'Did not set currency code on order reference' );
-		$queued = $gateway->queue_messages;
-		$this->assertNotEmpty( $queued['complete'], 'Not sending a message to the complete queue' );
-		$message = $queued['complete'][0];
+
+		$this->assertEquals( $init['currency'], $setOrderReferenceDetailsArgs['currency_code'], 'Did not set currency code on order reference' );
+		$message = DonationQueue::instance()->pop( 'donations' );
+		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
 		$this->assertEquals( 'S01-0391295-0674065-C095112', $message['gateway_txn_id'], 'Queue message has wrong txn ID' );
 	}
 
@@ -164,8 +170,8 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init['order_reference_id'] = mt_rand( 0, 10000000 ); // provided by client-side widget IRL
 		// We don't get any profile data up front
 		unset( $init['email'] );
-		unset( $init['fname'] );
-		unset( $init['lname'] );
+		unset( $init['first_name'] );
+		unset( $init['last_name'] );
 
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$mockClient->returns['authorize'][] = 'InvalidPaymentMethod';
@@ -175,7 +181,11 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 
 		$this->assertTrue( $result->getRefresh(), 'Result should be a refresh on error' );
 		$errors = $result->getErrors();
-		$this->assertTrue( isset( $errors['InvalidPaymentMethod'] ), 'InvalidPaymentMethod error should be set' );
+		$this->assertEquals(
+			'InvalidPaymentMethod',
+			$errors[0]->getErrorCode(),
+			'InvalidPaymentMethod error should be set'
+		);
 	}
 
 	/**
@@ -187,8 +197,8 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init['order_reference_id'] = mt_rand( 0, 10000000 ); // provided by client-side widget IRL
 		// We don't get any profile data up front
 		unset( $init['email'] );
-		unset( $init['fname'] );
-		unset( $init['lname'] );
+		unset( $init['first_name'] );
+		unset( $init['last_name'] );
 
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$mockClient->returns['authorize'][] = 'AmazonRejected';
@@ -212,8 +222,8 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init['order_reference_id'] = mt_rand( 0, 10000000 ); // provided by client-side widget IRL
 		// We don't get any profile data up front
 		unset( $init['email'] );
-		unset( $init['fname'] );
-		unset( $init['lname'] );
+		unset( $init['first_name'] );
+		unset( $init['last_name'] );
 
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$mockClient->returns['authorize'][] = 'TransactionTimedOut';
@@ -233,8 +243,8 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init['order_reference_id'] = mt_rand( 0, 10000000 ); // provided by client-side widget IRL
 		// We don't get any profile data up front
 		unset( $init['email'] );
-		unset( $init['fname'] );
-		unset( $init['lname'] );
+		unset( $init['first_name'] );
+		unset( $init['last_name'] );
 
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$mockClient->exceptions['authorize'][] = new Exception( 'Test' );
@@ -243,7 +253,12 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$result = $gateway->doPayment();
 
 		$errors = $result->getErrors();
-		$this->assertTrue( isset( $errors[ResponseCodes::NO_RESPONSE] ), 'NO_RESPONSE error should be set' );
+
+		$this->assertEquals(
+			ResponseCodes::NO_RESPONSE,
+			$errors[0]->getErrorCode(),
+			'NO_RESPONSE error should be set'
+		);
 	}
 
 	/**
@@ -256,15 +271,15 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init['subscr_id'] = 'C01-9650293-7351908';
 		// We don't get any profile data up front
 		unset( $init['email'] );
-		unset( $init['fname'] );
-		unset( $init['lname'] );
+		unset( $init['first_name'] );
+		unset( $init['last_name'] );
 
 		$gateway = $this->getFreshGatewayObject( $init );
 		$result = $gateway->doPayment();
 		// FIXME: PaymentResult->isFailed returns null for false
 		$this->assertTrue( !( $result->isFailed() ), 'Result should not be failed when responses are good' );
-		$this->assertEquals( 'Testy', $gateway->getData_Unstaged_Escaped( 'fname' ), 'Did not populate first name from Amazon data' );
-		$this->assertEquals( 'Test', $gateway->getData_Unstaged_Escaped( 'lname' ), 'Did not populate last name from Amazon data' );
+		$this->assertEquals( 'Testy', $gateway->getData_Unstaged_Escaped( 'first_name' ), 'Did not populate first name from Amazon data' );
+		$this->assertEquals( 'Test', $gateway->getData_Unstaged_Escaped( 'last_name' ), 'Did not populate last name from Amazon data' );
 		$this->assertEquals( 'nobody@wikimedia.org', $gateway->getData_Unstaged_Escaped( 'email' ), 'Did not populate email from Amazon data' );
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$setBillingAgreementDetailsArgs = $mockClient->calls['setBillingAgreementDetails'][0];
@@ -272,10 +287,9 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$this->assertEquals( $oid, $setBillingAgreementDetailsArgs['seller_billing_agreement_id'], 'Did not set order id on billing agreement' );
 		$authorizeOnBillingAgreementDetailsArgs = $mockClient->calls['authorizeOnBillingAgreement'][0];
 		$this->assertEquals( $init['amount'], $authorizeOnBillingAgreementDetailsArgs['authorization_amount'], 'Did not authorize correct amount' );
-		$this->assertEquals( $init['currency_code'], $authorizeOnBillingAgreementDetailsArgs['currency_code'], 'Did not authorize correct currency code' );
-		$queued = $gateway->queue_messages;
-		$this->assertNotEmpty( $queued['complete'], 'Not sending a message to the complete queue' );
-		$message = $queued['complete'][0];
+		$this->assertEquals( $init['currency'], $authorizeOnBillingAgreementDetailsArgs['currency_code'], 'Did not authorize correct currency code' );
+		$message = DonationQueue::instance()->pop( 'donations' );
+		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
 		$this->assertEquals( 'S01-5318994-6362993-C004044', $message['gateway_txn_id'], 'Queue message has wrong txn ID' );
 		$this->assertEquals( $init['subscr_id'], $message['subscr_id'], 'Queue message has wrong subscription ID' );
 	}

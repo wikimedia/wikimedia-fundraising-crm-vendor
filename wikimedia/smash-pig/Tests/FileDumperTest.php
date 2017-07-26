@@ -2,8 +2,8 @@
 
 namespace SmashPig\Tests;
 
-use SmashPig\Core\Context;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
+
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\QueueConsumers\QueueFileDumper;
 
 class FileDumperTest extends BaseSmashPigUnitTestCase {
@@ -12,7 +12,6 @@ class FileDumperTest extends BaseSmashPigUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		Context::initWithLogger( QueueTestConfiguration::instance() );
 		$this->filename = tempnam( '/tmp', 'sptest' );
 	}
 
@@ -24,7 +23,7 @@ class FileDumperTest extends BaseSmashPigUnitTestCase {
 	}
 
 	public function testDump() {
-		$queue = BaseQueueConsumer::getQueue( 'test' );
+		$queue = QueueWrapper::getQueue( 'test' );
 		$expected = '';
 		for( $i = 0; $i < 5; $i++ ) {
 			$message = array(

@@ -16,6 +16,8 @@
  *
  */
 
+use Wikimedia\TestingAccessWrapper;
+
 /**
  * TODO: Test everything.
  * Make sure all the basic functions in the gateway_adapter are tested here.
@@ -133,9 +135,10 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 	public function testResetOnGatewaySwitch() {
 		// Fill the session with some GlobalCollect stuff
 		$init = $this->getDonorTestData( 'FR' );
+		$init['payment_method'] = 'cc';
 		$firstRequest = $this->setUpRequest( $init );
 		$globalcollect_gateway = new TestingGlobalCollectAdapter();
-		$globalcollect_gateway->do_transaction( 'Donate' );
+		$globalcollect_gateway->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
 
 		$session = $firstRequest->getSessionArray();
 		$this->assertEquals( 'globalcollect', $session['Donor']['gateway'], 'Test setup failed.' );
@@ -163,11 +166,11 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$firstRequest = $this->setUpRequest( $init );
 
 		$gateway = new TestingGlobalCollectAdapter();
-		$gateway->do_transaction( 'Donate' );
+		$oneTimeOrderId = $gateway->getData_Unstaged_Escaped( 'order_id' );
+		$gateway->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
 
 		$donorData = $firstRequest->getSessionData( 'Donor' );
 		$this->assertEquals( '', $donorData['recurring'], 'Test setup failed.' );
-		$oneTimeOrderId = $gateway->getData_Unstaged_Escaped( 'order_id' );
 
 		// Then they go back and decide they want to make a recurring donation
 
@@ -175,11 +178,11 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$secondRequest = $this->setUpRequest( $init, $firstRequest->getSessionArray() );
 
 		$gateway = new TestingGlobalCollectAdapter();
-		$gateway->do_transaction( 'Donate' );
+		$recurOrderId = $gateway->getData_Unstaged_Escaped( 'order_id' );
+		$gateway->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
 		$donorData = $secondRequest->getSessionData( 'Donor' );
 		$this->assertEquals( '1', $donorData['recurring'], 'Test setup failed.' );
 
-		$recurOrderId = $gateway->getData_Unstaged_Escaped( 'order_id' );
 
 		$this->assertNotEquals( $oneTimeOrderId, $recurOrderId,
 			'Order ID was not regenerated on recurring switch!' );
@@ -194,7 +197,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$firstRequest = $this->setUpRequest( $init );
 
 		$gateway = new TestingAstroPayAdapter();
-		$gateway->do_transaction( 'Donate' );
+		$gateway->do_transaction( 'NewInvoice' );
 
 		$donorData = $firstRequest->getSessionData( 'Donor' );
 		$this->assertEquals( 'itau', $donorData['payment_submethod'], 'Test setup failed.' );
@@ -215,7 +218,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 
 	public function testStreetStaging() {
 		$options = $this->getDonorTestData( 'BR' );
-		unset( $options['street'] );
+		unset( $options['street_address'] );
 		$options['payment_method'] = 'cc';
 		$options['payment_submethod'] = 'visa';
 		$this->setUpRequest( $options );
@@ -224,7 +227,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
 		$exposed->stageData();
 
-		$this->assertEquals( 'N0NE PROVIDED', $exposed->getData_Staged( 'street' ),
+		$this->assertEquals( 'N0NE PROVIDED', $exposed->getData_Staged( 'street_address' ),
 			'Street must be stuffed with fake data to prevent AVS scam.' );
 	}
 
@@ -313,8 +316,8 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 			array( 'wgDonationInterfaceNameFilterRules' => array( $rule ) )
 		);
 		$init = $this->getDonorTestData();
-		$init['fname'] = 'asdf';
-		$init['lname'] = 'qwert';
+		$init['first_name'] = 'asdf';
+		$init['last_name'] = 'qwert';
 
 		$gateway = $this->getFreshGatewayObject( $init );
 		$result = $gateway->getScoreName();

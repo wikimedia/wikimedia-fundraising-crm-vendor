@@ -100,7 +100,7 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 					).
 					'\s*$/',
 			),
-			'state' => array (
+			'state_province' => array (
 				'nodename' => 'select',
 				'selected' => 'CA',
 			),
@@ -123,11 +123,11 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 					Amount::format( 1.55, 'EUR', $init['language'] . '_' . $init['country'] ) .
 					'\s*$/',
 			),
-			'fname' => array (
+			'first_name' => array (
 				'nodename' => 'input',
 				'value' => 'Prénom',
 			),
-			'lname' => array (
+			'last_name' => array (
 				'nodename' => 'input',
 				'value' => 'Nom',
 			),
@@ -157,13 +157,13 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 					Amount::format( 1.55, 'EUR', $init['language'] . '_' . $init['country'] ) .
 					'\s*$/',
 			),
-			'fname' => array (
+			'first_name' => array (
 				'nodename' => 'input',
-				'placeholder' => wfMessage( 'donate_interface-donor-fname')->inLanguage( 'it' )->text(),
+				'placeholder' => wfMessage( 'donate_interface-donor-first_name')->inLanguage( 'it' )->text(),
 			),
-			'lname' => array (
+			'last_name' => array (
 				'nodename' => 'input',
-				'placeholder' => wfMessage( 'donate_interface-donor-lname')->inLanguage( 'it' )->text(),
+				'placeholder' => wfMessage( 'donate_interface-donor-last_name')->inLanguage( 'it' )->text(),
 			),
 			'informationsharing' => array (
 				'nodename' => 'p',
@@ -197,13 +197,13 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 					Amount::format( 1.55, 'EUR', $init['language'] . '_' . $init['country'] ) .
 					'\s*$/',
 			),
-			'fname' => array (
+			'first_name' => array (
 				'nodename' => 'input',
-				'placeholder' => wfMessage( 'donate_interface-donor-fname')->inLanguage( $language )->text(),
+				'placeholder' => wfMessage( 'donate_interface-donor-first_name')->inLanguage( $language )->text(),
 			),
-			'lname' => array (
+			'last_name' => array (
 				'nodename' => 'input',
-				'placeholder' => wfMessage( 'donate_interface-donor-lname')->inLanguage( $language )->text(),
+				'placeholder' => wfMessage( 'donate_interface-donor-last_name')->inLanguage( $language )->text(),
 			),
 			'informationsharing' => array (
 				'nodename' => 'p',
@@ -229,7 +229,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init['payment_submethod'] = 'visa';
 		$init['ffname'] = 'cc-vma';
 		$init['language'] = $language;
-		$locale = $language . '_CA';
 
 		$assertNodes = array (
 			'selected-amount' => array (
@@ -240,19 +239,19 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 					) .
 					'\s*$/',
 			),
-			'fname' => array (
+			'first_name' => array (
 				'nodename' => 'input',
-				'placeholder' => wfMessage( 'donate_interface-donor-fname')->inLanguage( $language )->text(),
+				'placeholder' => wfMessage( 'donate_interface-donor-first_name')->inLanguage( $language )->text(),
 			),
-			'lname' => array (
+			'last_name' => array (
 				'nodename' => 'input',
-				'placeholder' => wfMessage( 'donate_interface-donor-lname')->inLanguage( $language )->text(),
+				'placeholder' => wfMessage( 'donate_interface-donor-last_name')->inLanguage( $language )->text(),
 			),
 			'informationsharing' => array (
 				'nodename' => 'p',
 				'innerhtml' => wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( $language )->text(),
 			),
-			'state' => array (
+			'state_province' => array (
 				'nodename' => 'select',
 				'selected' => 'SK',
 			),

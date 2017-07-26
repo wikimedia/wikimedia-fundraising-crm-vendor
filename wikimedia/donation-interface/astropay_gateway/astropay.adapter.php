@@ -46,6 +46,7 @@ class AstroPayAdapter extends GatewayAdapter {
 	function defineErrorMap() {
 		$this->error_map = array(
 			'internal-0000' => 'donate_interface-processing-error', // Failed pre-process checks.
+			'internal-0001' => 'donate_interface-try-again', //
 			ResponseCodes::DUPLICATE_ORDER_ID => 'donate_interface-processing-error', // Order ID already used in a previous transaction
 		);
 	}
@@ -80,9 +81,9 @@ class AstroPayAdapter extends GatewayAdapter {
 	}
 
 	function defineTransactions() {
-		$this->transactions = array( );
+		$this->transactions = array();
 
-		$this->transactions[ 'NewInvoice' ] = array(
+		$this->transactions['NewInvoice'] = array(
 			'path' => 'api_curl/streamline/NewInvoice',
 			'request' => array(
 				'x_login',
@@ -111,7 +112,8 @@ class AstroPayAdapter extends GatewayAdapter {
 				'x_trans_key' => $this->accountInfo['Create']['Password'],
 				'x_description' => WmfFramework::formatMessage( 'donate_interface-donation-description' ),
 				'type' => 'json',
-			)
+			),
+			'check_required' => TRUE
 		);
 
 		$this->transactions[ 'GetBanks' ] = array(
@@ -298,6 +300,10 @@ class AstroPayAdapter extends GatewayAdapter {
 		$this->logger->info( "Payment status $status coming back to ResultSwitcher" );
 		$this->finalizeInternalStatus( $status );
 		$this->postProcessDonation();
+		return PaymentResult::fromResults(
+			$this->transaction_response,
+			$status
+		);
 	}
 
 	/**
@@ -329,9 +335,11 @@ class AstroPayAdapter extends GatewayAdapter {
 				. print_r( $response, true );
 			$this->logger->warning( $logme );
 
-			$code = 'internal-0000';
-			$message = $this->getErrorMapByCodeAndTranslate( $code );
-			$context = null;
+			$error = new PaymentError(
+				'internal-0000',
+				$logme,
+				LogLevel::WARNING
+			);
 
 			if ( isset( $response['desc'] ) ) {
 				// error codes are unreliable, so we have to examine the description
@@ -344,7 +352,11 @@ class AstroPayAdapter extends GatewayAdapter {
 					);
 				} else if ( preg_match( '/^could not (register user|make the deposit)/i', $response['desc'] ) ) {
 					// AstroPay is overwhelmed.  Tell the donor to try again soon.
-					$message = WmfFramework::formatMessage( 'donate_interface-try-again' );
+					$error = new PaymentError(
+						'internal-0001',
+						$logme,
+						LogLevel::WARNING
+					);
 				} else if ( preg_match( '/^user (unauthorized|blacklisted)/i', $response['desc'] ) ) {
 					// They are blacklisted by AstroPay for shady doings,
 					// or listed delinquent by their government.
@@ -354,14 +366,16 @@ class AstroPayAdapter extends GatewayAdapter {
 					// They've spent too much via AstroPay today.
 					// Setting context to 'amount' will tell the form to treat
 					// this like a validation error and make amount editable.
-					$context = 'amount';
-					$message = WmfFramework::formatMessage( 'donate_interface-error-msg-limit' );
+					$error = new ValidationError(
+						'amount',
+						'donate_interface-error-msg-limit'
+					);
 				} else if ( preg_match( '/param x_cpf$/i', $response['desc'] ) ) {
 					// Something wrong with the fiscal number
-					$context = 'fiscal_number';
-					$language = $this->dataObj->getVal_Escaped( 'language' );
-					$country = $this->dataObj->getVal_Escaped( 'country' );
-					$message = DataValidator::getErrorMessage( 'fiscal_number', 'calculated', $language, $country );
+					$error = new ValidationError(
+						'fiscal_number',
+						'donate_interface-error-msg-fiscal_number'
+					);
 				} else if ( preg_match( '/invalid control/i', $response['desc'] ) ) {
 					// They think we screwed up the signature.  Log what we signed.
 					$signed = AstroPaySignature::getNewInvoiceMessage(
@@ -374,14 +388,7 @@ class AstroPayAdapter extends GatewayAdapter {
 					$this->logger->error( $logme );
 				}
 			}
-			$this->transaction_response->setErrors( array(
-				$code => array (
-					'message' => $message,
-					'debugInfo' => $logme,
-					'logLevel' => LogLevel::WARNING,
-					'context' => $context
-				)
-			) );
+			$this->transaction_response->addError( $error );
 		}
 	}
 
@@ -406,13 +413,13 @@ class AstroPayAdapter extends GatewayAdapter {
 			$logme = 'AstroPay reports they cannot find the transaction for order ID ' .
 				$this->getData_Unstaged_Escaped( 'order_id' );
 			$this->logger->error( $logme );
-			$this->transaction_response->setErrors( array(
-				'internal-0000' => array (
-					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
-					'debugInfo' => $logme,
-					'logLevel' => LogLevel::ERROR
+			$this->transaction_response->addError(
+				new PaymentError(
+					'internal-0000',
+					$logme,
+					LogLevel::ERROR
 				)
-			) );
+			);
 		}
 	}
 

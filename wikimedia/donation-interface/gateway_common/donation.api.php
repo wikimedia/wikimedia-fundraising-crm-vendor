@@ -17,7 +17,7 @@ class DonationApi extends ApiBase {
 		// @todo FIXME: Unused local variable.
 		$submethod = $this->donationData['payment_submethod'];
 
-		DonationInterface::initializeSmashPig( $this->gateway );
+		DonationInterface::setSmashPigProvider( $this->gateway );
 		$gatewayObj = $this->getGatewayObject();
 
 		// FIXME: SmashPig should just use Monolog.
@@ -27,9 +27,11 @@ class DonationApi extends ApiBase {
 			return; // already failed with a dieUsage call
 		}
 
-		$gatewayObj->revalidate();
-		if ( $gatewayObj->getAllErrors() ) {
-			$outputResult['errors'] = $gatewayObj->getAllErrors();
+		$validated_ok = $gatewayObj->validatedOK();
+		if ( !$validated_ok ) {
+			$errors = $gatewayObj->getErrorState()->getErrors();
+			$outputResult['errors'] = $this->serializeErrors( $errors, $gatewayObj );
+			// FIXME: What is this junk?  Smaller API, like getResult()->addErrors
 			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
 			$this->getResult()->addValue( null, 'result', $outputResult );
 			return;
@@ -79,11 +81,7 @@ class DonationApi extends ApiBase {
 		}
 		$errors = $result->getErrors();
 		if ( !empty( $errors ) ) {
-			$simplify = function( $error ) {
-				return $error['message'];
-			};
-			// TODO:objectify errors, decide here whether to include debug info
-			$outputResult['errors'] = array_map( $simplify, $errors );
+			$outputResult['errors'] = $this->serializeErrors( $errors, $gatewayObj );
 			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
 		}
 
@@ -91,6 +89,26 @@ class DonationApi extends ApiBase {
 			$this->getResult()->addValue( null, 'request', $this->donationData );
 		}
 		$this->getResult()->addValue( null, 'result', $outputResult );
+	}
+
+	protected function serializeErrors( $errors, GatewayAdapter $adapter ) {
+		$serializedErrors = array();
+		foreach( $errors as $error ) {
+			if ( $error instanceof ValidationError ) {
+				$message = WmfFramework::formatMessage(
+					$error->getMessageKey(),
+					$error->getMessageParams()
+				);
+				$serializedErrors[$error->getField()] = $message;
+			} elseif ( $error instanceof PaymentError ) {
+				$message = $adapter->getErrorMapByCodeAndTranslate( $error->getErrorCode() );
+				$serializedErrors['general'][] = $message;
+			} else {
+				$logger = DonationLoggerFactory::getLogger( $adapter );
+				$logger->error( 'API trying to serialize unknown error type: ' . get_class( $error ) );
+			}
+		}
+		return $serializedErrors;
 	}
 
 	public function isReadMode() {
@@ -101,13 +119,13 @@ class DonationApi extends ApiBase {
 		return array(
 			'gateway' => $this->defineParam( true ),
 			'amount' => $this->defineParam( false ),
-			'currency_code' => $this->defineParam( false ),
-			'fname' => $this->defineParam( false ),
-			'lname' => $this->defineParam( false ),
-			'street' => $this->defineParam( false ),
-			'street_supplemental' => $this->defineParam( false ),
+			'currency' => $this->defineParam( false ),
+			'first_name' => $this->defineParam( false ),
+			'last_name' => $this->defineParam( false ),
+			'street_address' => $this->defineParam( false ),
+			'supplemental_address_1' => $this->defineParam( false ),
 			'city' => $this->defineParam( false ),
-			'state' => $this->defineParam( false ),
+			'state_province' => $this->defineParam( false ),
 			'postal_code' => $this->defineParam( false ),
 			'email' => $this->defineParam( false ),
 			'country' => $this->defineParam( false ),
@@ -142,12 +160,15 @@ class DonationApi extends ApiBase {
 	 */
 	protected function getExamplesMessages() {
 		return array(
-			'action=donate&gateway=globalcollect&amount=2.00&currency_code=USD'
+			'action=donate&gateway=globalcollect&amount=2.00&currency=USD'
 				=> 'apihelp-donate-example-1',
 		);
 	}
 
-	private function getGatewayObject() {
+	/**
+	 * @return GatewayAdapter
+	 */
+	protected function getGatewayObject() {
 		$className = DonationInterface::getAdapterClassForGateway( $this->gateway );
 		return new $className();
 	}

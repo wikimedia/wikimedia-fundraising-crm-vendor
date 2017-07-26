@@ -1,7 +1,7 @@
 <?php namespace SmashPig\PaymentProviders\Adyen\Actions;
 
 use SmashPig\Core\Actions\IListenerMessageAction;
-use SmashPig\Core\Configuration;
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\Logging\TaggedLogger;
 use SmashPig\Core\Messages\ListenerMessage;
 use SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Capture;
@@ -19,14 +19,13 @@ class CaptureResponseAction implements IListenerMessageAction {
 		if ( $msg instanceof Capture ) {
 			if ( $msg->success ) {
 				$tl->info(
-					"Adding record capture job for {$msg->currency} {$msg->amount} with id {$msg->correlationId} and psp reference {$msg->pspReference}."
+					"Adding record capture job for {$msg->currency} {$msg->amount} with psp reference {$msg->pspReference}."
 				);
 				$recordJob = RecordCaptureJob::factory( $msg );
-				$jobQueue = Configuration::getDefaultConfig()->object( 'data-store/jobs-adyen' );
-				$jobQueue->push( json_decode( $recordJob->toJson(), true ) );
+				QueueWrapper::push( 'jobs-adyen', $recordJob );
 			} else {
 				$tl->warning(
-					"Capture failed for payment with reference {$msg->pspReference} and correlation id {$msg->correlationId}.",
+					"Capture failed for payment with reference {$msg->pspReference}.",
 					$msg
 				);
 			}

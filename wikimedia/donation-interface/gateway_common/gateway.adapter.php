@@ -20,6 +20,7 @@
 use ForceUTF8\Encoding;
 use MediaWiki\Session\SessionManager;
 use Psr\Log\LogLevel;
+use SmashPig\Core\UtcDate;
 use Symfony\Component\Yaml\Parser;
 
 /**
@@ -53,7 +54,7 @@ abstract class GatewayAdapter
 	protected $dataConstraints = array();
 
 	/**
-	 * $error_map maps gateway errors to client errors
+	 * $error_map Reference map from gateway error to client error.
 	 *
 	 * The key of each error should map to a i18n message key or a callable
 	 * By convention, the following three keys have these meanings:
@@ -152,8 +153,10 @@ abstract class GatewayAdapter
 	 * constants defined in @see FinalStatus
 	 */
 	protected $final_status;
-	protected $validation_errors;
-	protected $manual_errors = array();
+	/**
+	 * @var ErrorState List of errors preventing this transaction from continuing.
+	 */
+	protected $errorState;
 
 	/**
 	 * Name of the current transaction.  Set via @see setCurrentTransaction
@@ -217,7 +220,7 @@ abstract class GatewayAdapter
 			$this->batch = $options['batch_mode'];
 			unset( $options['batch_mode'] );
 		}
-
+		$this->errorState = new ErrorState();
 		$this->logger = DonationLoggerFactory::getLogger( $this );
 		$this->payment_init_logger = DonationLoggerFactory::getLogger( $this, '_payment_init' );
 
@@ -237,11 +240,10 @@ abstract class GatewayAdapter
 		$this->session_resetOnSwitch(); // Need to do this before creating DonationData
 
 		// FIXME: this should not have side effects like setting order_id_meta['final']
+		// TODO: On second thought, neither set data nor validate in this constructor.
 		$this->dataObj = new DonationData( $this, $options['external_data'] );
 
-		$this->setValidationErrors( $this->getOriginalValidationErrors() );
-
-		$this->unstaged_data = $this->dataObj->getDataEscaped();
+		$this->unstaged_data = $this->dataObj->getData();
 		$this->staged_data = $this->unstaged_data;
 
 		// checking to see if we have an edit token in the request...
@@ -255,6 +257,10 @@ abstract class GatewayAdapter
 		$this->defineReturnValueMap();
 
 		$this->setGatewayDefaults( $options );
+
+		// FIXME: Same as above, don't validate or stage in the constructor.
+		$this->validate();
+
 		$this->stageData();
 
 		BannerHistoryLogIdProcessor::onGatewayReady( $this );
@@ -262,10 +268,11 @@ abstract class GatewayAdapter
 
 		if ( $this->getValidationAction() !== 'process' ) {
 			$this->finalizeInternalStatus( FinalStatus::FAILED );
-			$error = array( 'general' => array( 'internal-0001' =>
-				$this->getErrorMapByCodeAndTranslate( 'internal-0001' )
+			$this->errorState->addError( new PaymentError(
+				'internal-0001',
+				'Failed initial filters',
+				LogLevel::INFO
 			) );
-			$this->addManualError( $error );
 		}
 	}
 
@@ -348,6 +355,8 @@ abstract class GatewayAdapter
 		}
 
 		foreach ( $this->config['transformers'] as $className ) {
+			// TODO: Pass $this to the constructor so we can take gateway out
+			// of the interfaces.
 			$this->data_transformers[] = new $className();
 		}
 	}
@@ -572,11 +581,7 @@ abstract class GatewayAdapter
 	 * @param    array     $options
 	 * @return   array|string    Returns @see GatewayAdapter::$error_map
 	 */
-	public function getErrorMap( $code = null, $options = array() ) {
-
-		if ( is_null( $code ) ) {
-			return $this->error_map;
-		}
+	public function getErrorMap( $code, $options = array() ) {
 
 		$defaults = array(
 			'translate' => false,
@@ -651,7 +656,7 @@ abstract class GatewayAdapter
 	 * @return mixed The value we want to send directly to the gateway, for the
 	 * specified gateway field name.
 	 */
-	protected function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
+	public function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
 		if ( empty( $this->transactions ) ) {
 			$msg = self::getGatewayName() . ': Transactions structure is empty! No transaction can be constructed.';
 			$this->logger->critical( $msg );
@@ -737,22 +742,19 @@ abstract class GatewayAdapter
 	 * curl'd off to the remote server.
 	 */
 	protected function buildRequestNameValueString() {
+		$data = $this->buildRequestArray();
+		$ret = http_build_query( $data );
+		return $ret;
+	}
+
+	protected function buildRequestArray() {
 		// Look up the request structure for our current transaction type in the transactions array
 		$structure = $this->getTransactionRequestStructure();
 		if ( !is_array( $structure ) ) {
-			return '';
+			return array();
 		}
-
-		$data = array();
-		foreach ( $structure as $fieldname ) {
-			$fieldvalue = $this->getTransactionSpecificValue( $fieldname );
-			if ( $fieldvalue !== '' && $fieldvalue !== false ) {
-				$data[$fieldname] = $fieldvalue;
-			}
-		}
-
-		$ret = http_build_query( $data );
-		return $ret;
+		$callback = array( $this, 'getTransactionSpecificValue' );
+		return ArrayHelper::buildRequestArray( $callback, $structure );
 	}
 
 	/**
@@ -894,17 +896,14 @@ abstract class GatewayAdapter
 	 */
 	public function do_transaction( $transaction ) {
 		$this->session_addDonorData();
+		$this->setCurrentTransaction( $transaction );
+		$this->validate();
 		if ( !$this->validatedOK() ){
 			//If the data didn't validate okay, prevent all data transmissions.
-			$return = new PaymentTransactionResponse();
-			$return->setCommunicationStatus( false );
-			$return->setMessage( 'Failed data validation' );
-			foreach ( $this->getAllErrors() as $code => $error ) {
-				$return->addError( $code, array( 'message' => $error, 'logLevel' => LogLevel::INFO, 'debugInfo' => '' ) );
-			}
+			$response = $this->getFailedValidationResponse();
 			// TODO: should we set $this->transaction_response ?
-			$this->logger->info( "Failed Validation. Aborting $transaction " . print_r( $this->getValidationErrors(), true ) );
-			return $return;
+			$this->logger->info( "Failed Validation. Aborting $transaction " . print_r( $this->errorState, true ) );
+			return $response;
 		}
 
 		$retryCount = 0;
@@ -915,18 +914,30 @@ abstract class GatewayAdapter
 			$retval = $this->do_transaction_internal( $transaction, $retryVars );
 
 			if ( !empty( $retryVars ) ) {
-				// TODO: Add more intelligence here. Right now we just assume it's the order_id
+				// TODO: Add more intelligence here. Right now timeout is the only one specifically
+				// handled, all other cases we just assume it's the order_id
 				// and that it is totally OK to just reset it and reroll.
+				// FIXME: Only a single value ever gets added to $retryVars before it gets wiped out
+				// for the next attempt.  Decide if we really need an array and redo this switch
+				// statement accordingly.
+				switch( $retryVars[0] ) {
+					case 'timeout' :
+						// Just retry without changing anything.
+						$this->logger->info( "Repeating transaction for timeout" );
+						break;
 
-				$this->logger->info( "Repeating transaction on request for vars: " . implode( ',', $retryVars ) );
+					default :
+						$this->logger->info( "Repeating transaction on request for vars: " . implode( ',', $retryVars ) );
 
-				// Force regen of the order_id
-				$this->regenerateOrderID();
+							// Force regen of the order_id
+						$this->regenerateOrderID();
 
-				// Pull anything changed from dataObj
-				$this->unstaged_data = $this->dataObj->getDataEscaped();
-				$this->staged_data = $this->unstaged_data;
-				$this->stageData();
+							// Pull anything changed from dataObj
+						$this->unstaged_data = $this->dataObj->getData();
+						$this->staged_data = $this->unstaged_data;
+						$this->stageData();
+						break;
+				}
 			}
 
 		} while ( ( !empty( $retryVars ) ) && ( ++$retryCount < $loopCount ) );
@@ -968,20 +979,19 @@ abstract class GatewayAdapter
 
 		/* --- Build the transaction string for cURL --- */
 		try {
-			$this->setCurrentTransaction( $transaction );
 
 			$this->executeIfFunctionExists( 'pre_process_' . $transaction );
 			if ( $this->getValidationAction() != 'process' ) {
 				$this->logger->info( "Failed pre-process checks for transaction type $transaction." );
 				$this->transaction_response->setCommunicationStatus( false );
 				$this->transaction_response->setMessage( $this->getErrorMapByCodeAndTranslate( 'internal-0000' ) );
-				$this->transaction_response->setErrors( array(
-					'internal-0000' => array(
-						'debugInfo' => "Failed pre-process checks for transaction type $transaction.",
-						'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
-						'logLevel' => LogLevel::INFO
+				$this->transaction_response->addError(
+					new PaymentError(
+						'internal-0000',
+						"Failed pre-process checks for transaction type $transaction.",
+						LogLevel::INFO
 					)
-				) );
+				);
 				return $this->transaction_response;
 			}
 
@@ -989,53 +999,58 @@ abstract class GatewayAdapter
 				// TODO: Maybe move this to the pre_process functions?
 				$this->dataObj->saveContributionTrackingData();
 			}
-
 			$commType = $this->getCommunicationType();
-			if ( $commType === 'redirect' ) {
+			switch( $commType ) {
+				case 'redirect':
 
-				//in the event that we have a redirect transaction that never displays the form,
-				//save this most recent one before we leave.
-				$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
+					//in the event that we have a redirect transaction that never displays the form,
+					//save this most recent one before we leave.
+					$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
 
-				$this->transaction_response->setCommunicationStatus( true );
+					$this->transaction_response->setCommunicationStatus( true );
 
-				// Build the redirect URL.
-				$redirectUrl = $this->getProcessorUrl();
-				$redirectParams = $this->buildRequestParams();
-				if ( $redirectParams ) {
-					// Add GET parameters, if provided.
-					$redirectUrl .= '?' . http_build_query( $redirectParams );
-				}
+					// Build the redirect URL.
+					$redirectUrl = $this->getProcessorUrl();
+					$redirectParams = $this->buildRequestParams();
+					if ( $redirectParams ) {
+						// Add GET parameters, if provided.
+						$redirectUrl .= '?' . http_build_query( $redirectParams );
+					}
 
-				$this->transaction_response->setRedirect( $redirectUrl );
+					$this->transaction_response->setRedirect( $redirectUrl );
 
-				return $this->transaction_response;
+					return $this->transaction_response;
 
-			} elseif ( $commType === 'xml' ) {
-				$this->profiler->getStopwatch( "buildRequestXML", true ); // begin profiling
-				$curlme = $this->buildRequestXML(); // build the XML
-				$this->profiler->saveCommunicationStats( "buildRequestXML", $transaction ); // save profiling data
-
-			} elseif ( $commType === 'namevalue' ) {
-				$this->profiler->getStopwatch( "buildRequestNameValueString", true ); // begin profiling
-				$curlme = $this->buildRequestNameValueString(); // build the name/value pairs
-				$this->profiler->saveCommunicationStats( "buildRequestNameValueString", $transaction ); // save profiling data
-
-			} else {
-				throw new UnexpectedValueException( "Communication type of '{$commType}' unknown" );
+				case 'xml':
+					$this->profiler->getStopwatch( "buildRequestXML", true ); // begin profiling
+					$curlme = $this->buildRequestXML(); // build the XML
+					$this->profiler->saveCommunicationStats( "buildRequestXML", $transaction ); // save profiling data
+					break;
+				case 'namevalue':
+					$this->profiler->getStopwatch( "buildRequestNameValueString", true ); // begin profiling
+					$curlme = $this->buildRequestNameValueString(); // build the name/value pairs
+					$this->profiler->saveCommunicationStats( "buildRequestNameValueString", $transaction );
+					break;
+				case 'array':
+					$this->profiler->getStopwatch( "buildRequestNameValueString", true ); // begin profiling
+					$curlme = $this->buildRequestArray(); // build the name/value pairs
+					$this->profiler->saveCommunicationStats( "buildRequestNameValueString", $transaction );
+					break;
+				default:
+					throw new UnexpectedValueException( "Communication type of '{$commType}' unknown" );
 			}
 		} catch ( Exception $e ) {
 			$this->logger->critical( 'Malformed gateway definition. Cannot continue: Aborting.\n' . $e->getMessage() );
 
 			$this->transaction_response->setCommunicationStatus( false );
 			$this->transaction_response->setMessage( $this->getErrorMapByCodeAndTranslate( 'internal-0001' ) );
-			$this->transaction_response->setErrors( array(
-				'internal-0001' => array(
-					'debugInfo' => 'Malformed gateway definition. Cannot continue: Aborting.\n' . $e->getMessage(),
-					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0001' ),
-					'logLevel' => LogLevel::CRITICAL
+			$this->transaction_response->addError(
+				new PaymentError(
+					'internal-0001',
+					'Malformed gateway definition. Cannot continue: Aborting.\n' . $e->getMessage(),
+					LogLevel::CRITICAL
 				)
-			) );
+			);
 
 			return $this->transaction_response;
 		}
@@ -1053,13 +1068,16 @@ abstract class GatewayAdapter
 			try {
 				$this->processResponse( $formatted );
 			} catch ( ResponseProcessingException $ex ) {
+				// TODO: Should we integrate ResponseProcessingException with PaymentError?
 				$errCode = $ex->getErrorCode();
 				$retryVars = $ex->getRetryVars();
-				$this->transaction_response->addError( $errCode, array(
-					'message' => $this->getErrorMapByCodeAndTranslate( $errCode ),
-					'debugInfo' => $ex->getMessage(),
-					'logLevel' => LogLevel::ERROR
-				) );
+				$this->transaction_response->addError(
+					new PaymentError(
+						$errCode,
+						$ex->getMessage(),
+						LogLevel::ERROR
+					)
+				);
 			}
 
 		} elseif ( $txn_ok === false ) { // nothing to process, so we have to build it manually
@@ -1068,13 +1086,13 @@ abstract class GatewayAdapter
 
 			$this->transaction_response->setCommunicationStatus( false );
 			$this->transaction_response->setMessage( $this->getErrorMapByCodeAndTranslate( 'internal-0002' ) );
-			$this->transaction_response->setErrors( array(
-				'internal-0002' => array(
-					'debugInfo' => $logMessage,
-					'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0002' ),
-					'logLevel' => LogLevel::ERROR
+			$this->transaction_response->addError(
+				new PaymentError(
+					'internal-0002',
+					$logMessage,
+					LogLevel::ERROR
 				)
-			) );
+			);
 		}
 
 		// Log out how much time it took for the cURL request
@@ -1086,19 +1104,20 @@ abstract class GatewayAdapter
 			// Set this by key so that the result object still has all the cURL data
 			$this->transaction_response->setCommunicationStatus( false );
 			$this->transaction_response->setMessage( $this->getErrorMapByCodeAndTranslate( $errCode ) );
-			$this->transaction_response->setErrors( array(
-				$errCode => array(
-					'debugInfo' => "$transaction Communication failed (errcode $errCode), will reattempt!",
-					'message' => $this->getErrorMapByCodeAndTranslate( $errCode ),
-					'logLevel' => LogLevel::CRITICAL
+			$this->transaction_response->addError(
+				new PaymentError(
+					$errCode,
+					"$transaction Communication failed (errcode $errCode), will reattempt!",
+					LogLevel::CRITICAL
 				)
-			) );
+			);
 		}
 
 		//if we have set errors by this point, the transaction is not okay
-		$errors = $this->getTransactionErrors();
+		$errors = $this->transaction_response->getErrors();
 		if ( !empty( $errors ) ) {
 			$txn_ok = false;
+			$this->errorState->addErrors( $errors );
 		}
 		// If we have any special post-process instructions for this
 		// transaction, do 'em.
@@ -1113,13 +1132,13 @@ abstract class GatewayAdapter
 				$this->logger->info( "Failed post-process checks for transaction type $transaction." );
 				$this->transaction_response->setCommunicationStatus( false );
 				$this->transaction_response->setMessage( $this->getErrorMapByCodeAndTranslate( 'internal-0000' ) );
-				$this->transaction_response->setErrors( array(
-					'internal-0000' => array(
-						'debugInfo' => "Failed post-process checks for transaction type $transaction.",
-						'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
-						'logLevel' => LogLevel::INFO
+				$this->transaction_response->addError(
+					new PaymentError(
+						'internal-0000',
+						"Failed post-process checks for transaction type $transaction.",
+						LogLevel::INFO
 					)
-				) );
+				);
 				return $this->transaction_response;
 			}
 		}
@@ -1436,6 +1455,18 @@ abstract class GatewayAdapter
 	}
 
 	/**
+	 * Gateways which return true from isReturnProcessingRequired must
+	 * override this with logic to get an ID from the request which will
+	 * identify repeated attempts to process the same payment.
+	 *
+	 * @param array $requestValues
+	 * @return int|string Order id
+	 */
+	public function getRequestProcessId( $requestValues ) {
+		return null;
+	}
+
+	/**
 	 * Process the API response obtained from the payment processor and set
 	 * properties of transaction_response.
 	 * Default implementation just says we got a response.
@@ -1454,9 +1485,11 @@ abstract class GatewayAdapter
 	/**
 	 * Default implementation sets status to complete.
 	 * @param array $requestValues all GET and POST values from the request
+	 * @return PaymentResult
 	 */
 	public function processDonorReturn( $requestValues ) {
 		$this->finalizeInternalStatus( FinalStatus::COMPLETE );
+		return PaymentResult::newSuccess();
 	}
 
 	/**
@@ -1470,6 +1503,8 @@ abstract class GatewayAdapter
 	/**
 	 * Parse the response to get the errors in a format we can log and otherwise deal with.
 	 * @return array a key/value array of codes (if they exist) and messages.
+	 * TODO: Move to a parsing class, where these are part of an interface
+	 * rather than empty although non-abstract.
 	 */
 	protected function parseResponseErrors( $response ) {
 		return array();
@@ -1723,7 +1758,7 @@ abstract class GatewayAdapter
 				// This transaction completed successfully.  Send to the CRM
 				// for filing.
 				$this->logCompletedPayment();
-				$this->pushMessage( 'complete' );
+				$this->pushMessage( 'donations' );
 				break;
 
 			case FinalStatus::PENDING:
@@ -1743,74 +1778,83 @@ abstract class GatewayAdapter
 	}
 
 	/**
-	 * Formats an array in preparation for dispatch to a STOMP queue
+	 * Collect donation details and normalize keys for pending or
+	 * donations queue
 	 *
-	 * @return array Pass this return array to STOMP :)
-	 *
-	 * TODO: Stop saying "STOMP".
+	 * @return array
 	 */
-	protected function getStompTransaction() {
-		$transaction = array(
+	protected function getQueueDonationMessage() {
+		$queueMessage = array(
 			'gateway_txn_id' => $this->getTransactionGatewayTxnID(),
 			'response' => $this->getTransactionMessage(),
-			// Can this be deprecated?
-			'correlation-id' => $this->getCorrelationID(),
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceMessage',
 			'gateway_account' => $this->account_name,
+			'fee' => 0, // FIXME: don't we know this for some gateways?
+		);
+
+		$messageKeys = DonationData::getMessageFields();
+
+		$requiredKeys = array(
+			'amount',
+			'contribution_tracking_id',
+			'country',
+			'gateway',
+			'language',
+			'order_id',
+			'payment_method',
+			'payment_submethod',
+			'user_ip',
+			'utm_source',
+		);
+
+		$remapKeys = array(
+			'amount' => 'gross',
 		);
 
 		// Add the rest of the relevant data
 		// FIXME: This is "normalized" data.  We should refer to it as such,
 		// and rename the getData_Unstaged_Escaped function.
-		$stomp_data = array_intersect_key(
-			$this->getData_Unstaged_Escaped(),
-			array_flip( $this->dataObj->getMessageFields() )
-		);
-
-		// The order here is important, values in $transaction are considered more definitive
-		// in case the transaction already had keys with those values
-		$transaction = array_merge( $stomp_data, $transaction );
-
+		$data = $this->getData_Unstaged_Escaped();
+		foreach ( $messageKeys as $key ) {
+			if ( isset( $queueMessage[$key] ) ) {
+				// don't clobber the pre-sets
+				continue;
+			}
+			if ( !isset( $data[$key] ) ) {
+				if ( in_array( $key, $requiredKeys ) ) {
+					throw new RuntimeException( "Missing required message key $key" );
+				}
+				continue;
+			}
+			$value = Encoding::toUTF8( $data[$key] );
+			if ( isset( $remapKeys[$key] ) ) {
+				$queueMessage[$remapKeys[$key]] = $value;
+			} else {
+				$queueMessage[$key] = $value;
+			}
+		}
 		// FIXME: Note that we're not using any existing date or ts fields.  Why is that?
-		$transaction['date'] = time();
+		$queueMessage['date'] = time();
 
-		// Force any incorrect encoding to UTF-8.
-		// FIXME: Move down to the PHP-Queue library
-		$transaction = Encoding::toUTF8( $transaction );
-
-		return $transaction;
+		return $queueMessage;
 	}
 
-	public function makeFreeformStompTransaction( $transaction ) {
-		if ( !array_key_exists( 'php-message-class', $transaction ) ) {
-			$this->logger->warning( "Trying to send a freeform STOMP message with no class defined. Bad programmer." );
-			$transaction['php-message-class'] = 'undefined-loser-message';
-		}
-
-		// Mark as freeform so we avoid normalization.
-		$transaction['freeform'] = true;
-
-		//bascially, add all the stuff we have come to take for granted, because syslog.
-		$transaction['gateway_txn_id'] = $this->getTransactionGatewayTxnID();
-		$transaction['correlation-id'] = $this->getCorrelationID();
-		$transaction['date'] = ( int ) time(); //I know this looks odd. Just trust me here.
-		$transaction['server'] = WmfFramework::getHostname();
+	public function addStandardMessageFields( $transaction ) {
+		// basically, add all the stuff we have come to take for granted, because syslog.
+		$transaction['gateway_txn_id'] = $this->getTransactionGatewayTxnId();
+		$transaction['date'] = UtcDate::getUtcTimestamp();
+		$transaction['server'] = gethostname();
 
 		$these_too = array (
 			'gateway',
 			'contribution_tracking_id',
 			'order_id',
-			'payment_method', //the stomp sender gets mad if we don't have this. @TODO: Stop being lazy someday.
+			'payment_method',
 		);
 		foreach ( $these_too as $field ) {
 			$transaction[$field] = $this->getData_Unstaged_Escaped( $field );
 		}
 
 		return $transaction;
-	}
-
-	protected function getCorrelationID(){
-		return $this->getIdentifier() . '-' . $this->getData_Unstaged_Escaped('order_id');
 	}
 
 	/**
@@ -2020,7 +2064,7 @@ abstract class GatewayAdapter
 			'country',
 			'utm_campaign',
 			'amount',
-			'currency_code',
+			'currency',
 		);
 
 		foreach ( $keys as $key ) {
@@ -2040,7 +2084,6 @@ abstract class GatewayAdapter
 	 */
 	public function sendFinalStatusMessage( $status ) {
 		$transaction = array(
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceFinalStatus',
 			'validation_action' => $this->getValidationAction(),
 			'payments_final_status' => $status,
 		);
@@ -2049,17 +2092,16 @@ abstract class GatewayAdapter
 		//for now, though, just taking the ones that make it to the logs.
 		$keys = array(
 			'payment_submethod',
-			'payment_method',
 			'country',
 			'amount',
-			'currency_code',
+			'currency',
 		);
 
 		foreach ( $keys as $key ) {
 			$transaction[$key] = $this->getData_Unstaged_Escaped( $key );
 		}
 
-		$transaction = $this->makeFreeformStompTransaction( $transaction );
+		$transaction = $this->addStandardMessageFields( $transaction );
 
 		try {
 			// FIXME: Dispatch "freeform" messages transparently as well.
@@ -2104,28 +2146,8 @@ abstract class GatewayAdapter
 		return false;
 	}
 
-	/**
-	 * Returns an array of errors, in the format $error_code => $error_message.
-	 * This should be an empty array on transaction success.
-	 *
-	 * @deprecated
-	 *
-	 * @return array
-	 */
-	public function getTransactionErrors() {
-
-		if ( $this->transaction_response && $this->transaction_response->getErrors() ) {
-			$simplify = function( $error ) {
-				return $error['message'];
-			};
-			return array_map( $simplify, $this->transaction_response->getErrors() );
-		} else {
-			return array();
-		}
-	}
-
 	public function getFormClass() {
-		$ffname = $this->dataObj->getVal_Escaped( 'ffname' );
+		$ffname = $this->dataObj->getVal( 'ffname' );
 		if ( strpos( $ffname, 'error') === 0
 			|| strpos( $ffname, 'maintenance') === 0 ) {
 			return 'MustacheErrorForm';
@@ -2137,46 +2159,12 @@ abstract class GatewayAdapter
 		return get_called_class();
 	}
 
-	//only the gateway should be setting validation errors. Everybody else should set manual errors.
-	protected function setValidationErrors( $errors ) {
-		$this->validation_errors = $errors;
-	}
-
-	public function getValidationErrors() {
-		if ( !empty( $this->validation_errors ) ) {
-			return $this->validation_errors;
-		} else {
-			return false;
-		}
-	}
-
-	public function addManualError( $errors, $reset = false ) {
-		if ( $reset ){
-			$this->manual_errors = array();
-			return;
-		}
-		$this->manual_errors = array_merge( $this->manual_errors, $errors );
-	}
-
-	public function getManualErrors() {
-		if ( !empty( $this->manual_errors ) ) {
-			return $this->manual_errors;
-		} else {
-			return false;
-		}
-	}
-
-	public function getAllErrors(){
-		$validation = $this->getValidationErrors();
-		$manual = $this->getManualErrors();
-		$return = array();
-		if ( is_array( $validation ) ){
-			$return = array_merge( $return, $validation );
-		}
-		if ( is_array( $manual ) ){
-			$return = array_merge( $return, $manual );
-		}
-		return $return;
+	/**
+	 * Return any errors that prevent this transaction from continuing.
+	 * @return ErrorState
+	 */
+	public function getErrorState() {
+		return $this->errorState;
 	}
 
 	/**
@@ -2237,8 +2225,7 @@ abstract class GatewayAdapter
 	 */
 	function runAntifraudFilters() {
 		//extra layer of Stop Doing This.
-		$errors = $this->getTransactionErrors();
-		if ( !empty( $errors ) ) {
+		if ( $this->errorState->hasErrors() ) {
 			$this->logger->info( 'Skipping antifraud filters: Transaction is already in error' );
 			return;
 		}
@@ -2269,13 +2256,13 @@ abstract class GatewayAdapter
 
 	protected function pushMessage( $queue ) {
 		$this->logger->info( "Pushing transaction to queue [$queue]" );
-		DonationQueue::instance()->push( $this->getStompTransaction(), $queue );
+		DonationQueue::instance()->push( $this->getQueueDonationMessage(), $queue );
 	}
 
 	protected function sendPendingMessage() {
 		$order_id = $this->getData_Unstaged_Escaped( 'order_id' );
 		$this->logger->info( "Sending donor details for $order_id to pending queue" );
-		DonationQueue::instance()->push( $this->getStompTransaction(), 'pending' );
+		DonationQueue::instance()->push( $this->getQueueDonationMessage(), 'pending' );
 	}
 
 	/**
@@ -2315,7 +2302,7 @@ abstract class GatewayAdapter
 	 * our DonationData object.
 	 */
 	function refreshGatewayValueFromSource( $val ) {
-		$refreshed = $this->dataObj->getVal_Escaped( $val );
+		$refreshed = $this->dataObj->getVal( $val );
 		if ( !is_null($refreshed) ){
 			$this->staged_data[$val] = $refreshed;
 			$this->unstaged_data[$val] = $refreshed;
@@ -2360,10 +2347,6 @@ abstract class GatewayAdapter
 
 	public function isBatchProcessor() {
 		return $this->batch;
-	}
-
-	public function getOriginalValidationErrors() {
-		return $this->dataObj->getValidationErrors();
 	}
 
 	/**
@@ -2411,7 +2394,7 @@ abstract class GatewayAdapter
 			switch ( $type ) {
 				case 'address' :
 					$check_not_empty = array(
-						'street',
+						'street_address',
 						'city',
 						'country',
 						'postal_code', //this should really be added or removed, depending on the country and/or gateway requirements.
@@ -2420,7 +2403,7 @@ abstract class GatewayAdapter
 					);
 					$country = $this->getData_Unstaged_Escaped( 'country' );
 					if ( $country && Subdivisions::getByCountry( $country ) ) {
-						$check_not_empty[] = 'state';
+						$check_not_empty[] = 'state_province';
 					}
 					break;
 				case 'creditCard' :
@@ -2433,8 +2416,8 @@ abstract class GatewayAdapter
 					break;
 				case 'name' :
 					$check_not_empty = array(
-						'fname',
-						'lname'
+						'first_name',
+						'last_name'
 					);
 					break;
 				default:
@@ -2448,25 +2431,136 @@ abstract class GatewayAdapter
 	}
 
 	/**
-	 * Check donation data for validity
+	 * Check donation data for validity and set errors.
+	 *
+	 * This function will go through all the data we have pulled from wherever
+	 * we've pulled it, and make sure it's safe and expected and everything.
+	 * If it is not, it will return an array of errors ready for any
+	 * DonationInterface form class derivative to display.
 	 *
 	 * @return boolean true if validation passes
-	 *
-	 * TODO: Maybe validate on $unstaged_data directly?
 	 */
-	public function revalidate() {
-		$check_not_empty = $this->getRequiredFields();
+	public function validate() {
+		$normalized = $this->dataObj->getData();
 
-		$validation_errors = $this->dataObj->getValidationErrors( true, $check_not_empty );
-		$this->setValidationErrors( $validation_errors );
+		if ( $this->transaction_option( 'check_required' ) ) {
+			// The fields returned by getRequiredFields only make sense
+			// for certain transactions. TODO: getRequiredFields should
+			// actually return different things for different transactions
+			$check_not_empty = $this->getRequiredFields();
+		} else {
+			$check_not_empty = array();
+		}
+		$this->errorState->addErrors(
+			DataValidator::validate( $this, $normalized, $check_not_empty )
+		);
+
+		// Run modular validations.
+		$transformers = $this->getDataTransformers();
+		foreach ( $transformers as $transformer ) {
+			if ( $transformer instanceof ValidationHelper ) {
+				$transformer->validate( $this, $normalized, $this->errorState );
+			}
+		}
+
+		// TODO: Rewrite as something modular?  It's in-between validation and normalization...
+		if ( $this->errorState->hasValidationError( 'currency' ) ) {
+			// Try to fall back to a default currency, clearing the error if
+			// successful.
+			$this->fallbackToDefaultCurrency();
+			// FIXME: This is part of the same wart.
+			$this->unstaged_data = $this->dataObj->getData();
+		}
+
 		return $this->validatedOK();
 	}
 
-	public function validatedOK(){
-		if ( $this->getValidationErrors() === false ){
-			return true;
+	/**
+	 * @return boolean True if submitted data is valid and sufficient to proceed to the next step.
+	 * TODO: Were we also trying to indicate whether the validation step has succeeded here, by distinguishing array() != false?
+	 */
+	public function validatedOK() {
+		return !$this->errorState->hasValidationError();
+	}
+
+	/**
+	 * Called when a currency code error exists. If a fallback currency
+	 * conversion is enabled for this adapter, convert intended amount to
+	 * default currency.
+	 *
+	 * TODO: In the future, we might want to switch gateways.
+	 *
+	 * @throws DomainException
+	 */
+	protected function fallbackToDefaultCurrency() {
+		$defaultCurrency = null;
+		if ( $this->getGlobal( 'FallbackCurrencyByCountry' ) ) {
+			$country = $this->dataObj->getVal( 'country' );
+			if ( $country !== null ) {
+				$defaultCurrency = NationalCurrencies::getNationalCurrency( $country );
+			}
+		} else {
+			$defaultCurrency = $this->getGlobal( 'FallbackCurrency' );
 		}
-		return false;
+		if ( !$defaultCurrency ) {
+			return;
+		}
+		// Our conversion rates are all relative to USD, so use that as an
+		// intermediate currency if converting between two others.
+		$oldCurrency = $this->dataObj->getVal( 'currency' );
+		if ( $oldCurrency === $defaultCurrency ) {
+			$adapterClass = $this->getGatewayAdapterClass();
+			throw new DomainException( __FUNCTION__ . " Unsupported currency $defaultCurrency set as fallback for $adapterClass." );
+		}
+		$oldAmount = $this->dataObj->getVal( 'amount' );
+		$usdAmount = 0.0;
+		$newAmount = 0;
+
+		$conversionRates = CurrencyRates::getCurrencyRates();
+		if ( $oldCurrency === 'USD' ) {
+			$usdAmount = $oldAmount;
+		} elseif ( array_key_exists( $oldCurrency, $conversionRates ) ) {
+			$usdAmount = $oldAmount / $conversionRates[$oldCurrency];
+		} else {
+			// We can't convert from this unknown currency.
+			$this->logger->warning( "Currency conversion not available for {$oldCurrency}" );
+			return;
+		}
+
+		if ( $defaultCurrency === 'USD' ) {
+			$newAmount = floor( $usdAmount );
+		} elseif ( array_key_exists( $defaultCurrency, $conversionRates ) ) {
+			$newAmount = floor( $usdAmount * $conversionRates[$defaultCurrency] );
+		} else {
+			// No conversion available.
+			$this->logger->error( "Default fallback currency {$defaultCurrency} has no conversion available" );
+			return;
+		}
+
+		$formData = array(
+			'amount' => $newAmount,
+			'currency' => $defaultCurrency,
+		);
+		$this->dataObj->addData( $formData );
+
+		$this->logger->info( "Unsupported currency $oldCurrency forced to $defaultCurrency" );
+
+		// Clear the currency error.
+		$this->errorState->clearValidationError( 'currency' );
+
+		$notify = $this->getGlobal( 'NotifyOnConvert' );
+
+		// If we're configured to notify, or if there are already other errors,
+		// add a notification message.
+		if ( $notify || $this->errorState->hasErrors() ) {
+			$this->errorState->addError(
+				new ValidationError(
+					'currency',
+					'donate_interface-fallback-currency-notice',
+					array( $defaultCurrency )
+				)
+			);
+		}
 	}
 
 	/**
@@ -2487,8 +2581,8 @@ abstract class GatewayAdapter
 	 * @return integer
 	 */
 	public function getScoreName(){
-		$fName = $this->getData_Unstaged_Escaped( 'fname' );
-		$lName = $this->getData_Unstaged_Escaped( 'lname' );
+		$fName = $this->getData_Unstaged_Escaped( 'first_name' );
+		$lName = $this->getData_Unstaged_Escaped( 'last_name' );
 
 		$nameArray = str_split( strtolower( $fName . $lName ) );
 		$rules = $this->getGlobal( 'NameFilterRules' );
@@ -2804,8 +2898,9 @@ abstract class GatewayAdapter
 		if ( $this->isBatchProcessor() ) {
 			return;
 		}
-		$this->logger->info( __FUNCTION__ . ': Refreshing all donor data' );
 		$this->session_ensure();
+		$sessionId = WmfFramework::getSessionId();
+		$this->logger->info( __FUNCTION__ . ": Refreshing all donor data in session '$sessionId''" );
 		$sessionFields = DonationData::getSessionFields();
 
 		$data = array();
@@ -2872,6 +2967,7 @@ abstract class GatewayAdapter
 				'PaymentForms',
 				'numAttempt',
 				'order_status', //for post-payment activities
+				'processed_requests', //for post-payment activities
 				'sequence',
 			);
 			$preservedData = array();
@@ -3377,7 +3473,7 @@ abstract class GatewayAdapter
 			// sequence number tacked on to the end for uniqueness
 			$dataObj = ( $dataObj ) ?: $this->dataObj;
 
-			$ctid = $dataObj->getVal_Escaped( 'contribution_tracking_id' );
+			$ctid = $dataObj->getVal( 'contribution_tracking_id' );
 			if ( !$ctid ) {
 				$ctid = $dataObj->saveContributionTrackingData();
 			}
@@ -3526,7 +3622,7 @@ abstract class GatewayAdapter
 			'amount',
 			'ffname',
 			'country',
-			'currency_code',
+			'currency',
 			'payment_method',
 			'payment_submethod',
 			'recurring',
@@ -3544,7 +3640,7 @@ abstract class GatewayAdapter
 	}
 
 	protected function logPaymentDetails( $preface = self::REDIRECT_PREFACE ) {
-		$details = $this->getStompTransaction();
+		$details = $this->getQueueDonationMessage();
 		$json = json_encode( $details );
 		$this->logger->info( $preface . $json );
 	}
@@ -3566,43 +3662,20 @@ abstract class GatewayAdapter
 	}
 
 	/**
-	 * MakeGlobalVariablesScript handler, sends settings to Javascript
-	 * @param array $vars
-	 */
-	public function setClientVariables( &$vars ) {
-		$vars['wgDonationInterfacePriceFloor'] = $this->getGlobal( 'PriceFloor' );
-		$vars['wgDonationInterfacePriceCeiling'] = $this->getGlobal( 'PriceCeiling' );
-		try {
-			$clientRules = $this->getClientSideValidationRules();
-			if ( !empty( $clientRules ) ) {
-				$vars['wgDonationInterfaceValidationRules'] = $clientRules;
-			}
-		} catch ( Exception $ex ) {
-			$this->logger->warning(
-				'Caught exception setting client-side validation rules: ' .
-				$ex->getMessage()
-			);
-		}
-	}
-
-	/**
 	 * Returns an array of rules used to validate data before submission.
 	 * Each entry's key should correspond to the id of the target field, and
 	 * the value should be a list of rules with keys as described in
 	 * @see ClientSideValidationHelper::getClientSideValidation
 	 */
-	protected function getClientSideValidationRules() {
-		$language = $this->getData_Unstaged_Escaped( 'language' );
-		$country = $this->getData_Unstaged_Escaped( 'country' );
+	public function getClientSideValidationRules() {
 		// Start with the server required field validations.
 		$requiredRules = array();
 		foreach ( $this->getRequiredFields() as $field ) {
+			$key = 'donate_interface-error-msg-' . $field;
 			$requiredRules[$field] = array(
 				array(
 					'required' => true,
-					'message' => DataValidator::getErrorMessage(
-						$field, 'not_empty', $language, $country
-					)
+					'messageKey' => $key,
 				)
 			);
 		};
@@ -3617,5 +3690,18 @@ abstract class GatewayAdapter
 			}
 		}
 		return array_merge_recursive( $requiredRules, $transformerRules );
+	}
+
+	/**
+	 * @return PaymentTransactionResponse
+	 */
+	protected function getFailedValidationResponse() {
+		$return = new PaymentTransactionResponse();
+		$return->setCommunicationStatus( false );
+		$return->setMessage( 'Failed data validation' );
+		foreach ( $this->errorState->getErrors() as $error ) {
+			$return->addError( $error );
+		}
+		return $return;
 	}
 }

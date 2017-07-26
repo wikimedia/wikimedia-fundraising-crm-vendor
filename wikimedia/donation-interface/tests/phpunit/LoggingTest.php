@@ -53,26 +53,26 @@ class DonationInterface_LoggingTest extends DonationInterfaceTestCase {
 		unset( $init['order_id'] );
 
 		$expectedObject = array(
-			'amount' => 23.45,
+			'gross' => 23.45,
 			'city' => 'San Francisco',
 			//'contribution_tracking_id' => '1',
+			'fee' => 0,
 			'country' => 'US',
-			'currency_code' => 'EUR',
+			'currency' => 'EUR',
 			'email' => 'innocent@manichean.com',
-			'fname' => 'Firstname',
+			'first_name' => 'Firstname',
 			'gateway' => 'globalcollect',
 			'language' => 'en',
-			'lname' => 'Surname',
+			'last_name' => 'Surname',
 			'payment_method' => 'cc',
 			'payment_submethod' => 'visa',
 			'recurring' => '',
-			'state' => 'CA',
-			'street' => '123 Fake Street',
+			'state_province' => 'CA',
+			'street_address' => '123 Fake Street',
 			'user_ip' => '127.0.0.1',
 			'utm_source' => '..cc',
 			'postal_code' => '94105',
 			'response' => 'Original Response Status (pre-SET_PAYMENT): 200',
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceMessage',
 			'gateway_account' => 'test',
 		);
 
@@ -99,33 +99,33 @@ class DonationInterface_LoggingTest extends DonationInterfaceTestCase {
 		$init['payment_submethod'] = 'visa';
 		$init['amount'] = '23';
 		// Fake name with a bad character encoding.
-		$init['fname'] = 'Алексан�';
-		$init['lname'] = 'Гончар';
+		$init['first_name'] = 'Алексан�';
+		$init['last_name'] = 'Гончар';
 		$init['email'] = 'innocent@manichean.com';
 		$init['ffname'] = 'cc-vmad';
 		$init['unusual_key'] = mt_rand();
 		unset( $init['order_id'] );
 
 		$expectedObject = array(
-			'amount' => 23.45,
+			'gross' => 23.45,
+			'fee' => 0,
 			'city' => 'San Francisco',
 			'country' => 'US',
-			'currency_code' => 'EUR',
+			'currency' => 'EUR',
 			'email' => 'innocent@manichean.com',
-			'fname' => 'Алексанï',
+			'first_name' => 'Алексанï',
 			'gateway' => 'globalcollect',
 			'language' => 'en',
-			'lname' => 'Гончар',
+			'last_name' => 'Гончар',
 			'payment_method' => 'cc',
 			'payment_submethod' => 'visa',
 			'recurring' => '',
-			'state' => 'CA',
-			'street' => '123 Fake Street',
+			'state_province' => 'CA',
+			'street_address' => '123 Fake Street',
 			'user_ip' => '127.0.0.1',
 			'utm_source' => '..cc',
 			'postal_code' => '94105',
 			'response' => 'Original Response Status (pre-SET_PAYMENT): 200',
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceMessage',
 			'gateway_account' => 'test',
 		);
 
@@ -147,7 +147,6 @@ class DonationInterface_LoggingTest extends DonationInterfaceTestCase {
 	protected function stripRandomFields( $data ) {
 		$toUnset = array(
 			'contribution_tracking_id',
-			'correlation-id',
 			'date',
 			'gateway_txn_id',
 			'order_id',

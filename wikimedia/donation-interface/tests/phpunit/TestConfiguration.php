@@ -60,6 +60,10 @@ global $wgDonationInterfaceTestMode,
 	$wgGlobalCollectGatewayAccountInfo,
 	$wgPaypalGatewayAccountInfo,
 	$wgPaypalGatewayReturnURL,
+	$wgPaypalExpressGatewayURL,
+	$wgPaypalExpressGatewayTestingURL,
+	$wgPaypalExpressGatewaySignatureURL,
+	$wgPaypalExpressGatewayAccountInfo,
 	$wgAmazonGatewayReturnURL,
 	$wgAmazonGatewayAccountInfo,
 	$wgAdyenGatewayURL,
@@ -74,14 +78,24 @@ global $wgDonationInterfaceTestMode,
 	$wgDonationInterfaceEnableMinfraud,
 	$wgDonationInterfaceEnableFunctionsFilter,
 	$wgDonationInterfaceEnableReferrerFilter,
-	$wgDonationInterfaceEnableSourceFilter;
+	$wgDonationInterfaceEnableSourceFilter,
+	$wgDonationInterfaceCustomFiltersActionRanges,
+	$wgDonationInterfaceCustomFiltersRefRules,
+	$wgDonationInterfaceCustomFiltersSrcRules,
+	$wgDonationInterfaceCustomFiltersFunctions,
+	$wgGlobalCollectGatewayCustomFiltersFunctions,
+	$wgDonationInterfaceCountryMap,
+	$wgDonationInterfaceUtmCampaignMap,
+	$wgDonationInterfaceUtmSourceMap,
+	$wgDonationInterfaceUtmMediumMap,
+	$wgDonationInterfaceEmailDomainMap;
 
 $wgDonationInterfaceGatewayAdapters = array(
 	'globalcollect'=> 'TestingGlobalCollectAdapter',
 	'amazon'=> 'TestingAmazonAdapter',
 	'adyen'=> 'TestingAdyenAdapter',
 	'astropay'=> 'TestingAstroPayAdapter',
-	'paypal_ec'=> 'PaypalExpressAdapter', // ooh, flexible!
+	'paypal_ec'=> 'TestingPaypalExpressAdapter',
 	'paypal'=> 'TestingPaypalLegacyAdapter'
 );
 /**
@@ -90,11 +104,6 @@ $wgDonationInterfaceGatewayAdapters = array(
 /** DonationInterface General Settings **/
 $wgDonationInterfaceTestMode = true;
 $wgDonationInterfaceMerchantID = 'test';
-
-$wgDonationInterfaceAllowedHtmlForms = array(
-	'test' => array(
-	),
-);
 
 $wgDonationInterfaceThankYouPage = 'https://wikimediafoundation.org/wiki/Thank_You';
 
@@ -112,6 +121,18 @@ $wgPaypalGatewayAccountInfo['testing'] = array(
 	'AccountEmail' => 'phpunittesting@wikimedia.org',
 );
 $wgPaypalGatewayReturnURL = 'http://donate.wikimedia.org'; // whatever, doesn't matter.
+
+
+/** Paypal Express Checkout **/
+$wgPaypalExpressGatewayURL = 'https://api-3t.sandbox.paypal.com/nvp';
+$wgPaypalExpressGatewayTestingURL = 'https://api-3t.sandbox.paypal.com/nvp';
+$wgPaypalExpressGatewaySignatureURL = $wgPaypalExpressGatewayURL;
+$wgPaypalExpressGatewayAccountInfo['test'] = array(
+    'User' => 'phpunittesting@wikimedia.org',
+    'Password' => '9876543210',
+    'Signature' => 'ABCDEFGHIJKLMNOPQRSTUV-ZXCVBNMLKJHGFDSAPOIUYTREWQ',
+    'RedirectURL' => 'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=',
+);
 
 
 /** Amazon **/
@@ -159,10 +180,7 @@ $wgMinFraudLicenseKey = 'testkey';
 $wgMinFraudTimeout = 1;
 $wgDonationInterfaceMinFraudServers = array( "minfraud.wikimedia.org" );
 
-// Don't connect to the queue.
-$wgDonationInterfaceEnableQueue = false;
-
-// still can't quite handle mindfraud by itself yet, so default like this. 
+// still can't quite handle minfraud by itself yet, so default like this.
 // I will turn it on for individual tests in which I want to verify that it at
 // least fails closed when enabled.
 $wgDonationInterfaceEnableMinfraud = false;
@@ -171,3 +189,56 @@ $wgDonationInterfaceEnableMinfraud = false;
 $wgDonationInterfaceEnableFunctionsFilter = true;
 $wgDonationInterfaceEnableReferrerFilter = true;
 $wgDonationInterfaceEnableSourceFilter = true;
+
+$customFilters = array(
+	'getScoreCountryMap' => 50,
+	'getScoreUtmCampaignMap' => 50,
+	'getScoreUtmSourceMap' => 15,
+	'getScoreUtmMediumMap' => 15,
+	'getScoreEmailDomainMap' => 75,
+);
+
+
+$wgDonationInterfaceCustomFiltersActionRanges = array (
+	'process' => array ( 0, 25 ),
+	'review' => array ( 25, 50 ),
+	'challenge' => array ( 50, 75 ),
+	'reject' => array ( 75, 100 ),
+);
+
+$wgDonationInterfaceCustomFiltersRefRules = array (
+	'/donate-error/i' => 5,
+);
+
+$wgDonationInterfaceCustomFiltersSrcRules = array ( '/wikimedia\.org/i' => 80 );
+
+$wgDonationInterfaceCustomFiltersFunctions = $customFilters;
+
+$wgGlobalCollectGatewayCustomFiltersFunctions = array(
+	'getCVVResult' => 20,
+	'getAVSResult' => 25,
+) + $customFilters;
+
+$wgDonationInterfaceCountryMap = array (
+	'US' => 40,
+	'CA' => 15,
+	'RU' => -4,
+);
+
+$wgDonationInterfaceUtmCampaignMap = array (
+	'/^(C14_)/' => 14,
+	'/^(spontaneous)/' => 5
+);
+
+$wgDonationInterfaceUtmSourceMap = array (
+	'/somethingmedia/' => 70
+);
+
+$wgDonationInterfaceUtmMediumMap = array (
+	'/somethingmedia/' => 80
+);
+
+$wgDonationInterfaceEmailDomainMap = array (
+	'wikimedia.org' => 42,
+	'wikipedia.org' => 50,
+);

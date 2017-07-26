@@ -16,6 +16,9 @@
  *
  */
 
+use SmashPig\CrmLink\Messages\SourceFields;
+use Wikimedia\TestingAccessWrapper;
+
 /**
  * @group Fundraising
  * @group DonationInterface
@@ -23,86 +26,15 @@
  */
 class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 
-	/**
-	 * @param $name string The name of the test case
-	 * @param $data array Any parameters read from a dataProvider
-	 * @param $dataName string|int The name or index of the data set
-	 */
-	public function __construct( $name = null, array $data = array(), $dataName = '' ) {
-		$adapterclass = TESTS_ADAPTER_DEFAULT;
-		$this->testAdapterClass = $adapterclass;
-
-		parent::__construct( $name, $data, $dataName );
-		self::setupFraudMaps( $this );
-	}
-
-	public static function setupFraudMaps( $testContext ) {
-		// Declare so setMwGlobals can override.
-		global $wgGlobalCollectGatewayCustomFiltersFunctions;
-		$wgGlobalCollectGatewayCustomFiltersFunctions = null;
-
-
-		// Declare here cos reused.
-		$customFilters = array(
-			'getScoreCountryMap' => 50,
-			'getScoreUtmCampaignMap' => 50,
-			'getScoreUtmSourceMap' => 15,
-			'getScoreUtmMediumMap' => 15,
-			'getScoreEmailDomainMap' => 75,
-		);
-
-		$testContext->setMwGlobals( array(
-			'wgDonationInterfaceCustomFiltersActionRanges' => array (
-				'process' => array ( 0, 25 ),
-				'review' => array ( 25, 50 ),
-				'challenge' => array ( 50, 75 ),
-				'reject' => array ( 75, 100 ),
-			),
-
-			'wgDonationInterfaceCustomFiltersRefRules' => array (
-				'/donate-error/i' => 5,
-			),
-
-			'wgDonationInterfaceCustomFiltersSrcRules' => array ( '/wikimedia\.org/i' => 80 ),
-
-			'wgDonationInterfaceCustomFiltersFunctions' => $customFilters,
-
-			'wgGlobalCollectGatewayCustomFiltersFunctions' => array(
-				'getCVVResult' => 20,
-				'getAVSResult' => 25,
-			) + $customFilters,
-
-			'wgDonationInterfaceCountryMap' => array (
-				'US' => 40,
-				'CA' => 15,
-				'RU' => -4,
-			),
-
-			'wgDonationInterfaceUtmCampaignMap' => array (
-				'/^(C14_)/' => 14,
-				'/^(spontaneous)/' => 5
-			),
-			'wgDonationInterfaceUtmSourceMap' => array (
-				'/somethingmedia/' => 70
-			),
-			'wgDonationInterfaceUtmMediumMap' => array (
-				'/somethingmedia/' => 80
-			),
-			'wgDonationInterfaceEmailDomainMap' => array (
-				'wikimedia.org' => 42,
-				'wikipedia.org' => 50,
-			),
-		) );
-	}
-
 	function testGCFraudFilters() {
 		$this->setMwGlobals( array(
 			'wgGlobalCollectGatewayEnableMinfraud' => true,
+			'wgDonationInterfaceMinFraudServers' => array('0.0.0.0'),
 		) );
 
 		$options = $this->getDonorTestData();
 		$options['email'] = 'somebody@wikipedia.org';
-		$class = $this->testAdapterClass;
+		$options['payment_method'] = 'cc';
 
 		$gateway = $this->getFreshGatewayObject( $options );
 
@@ -110,7 +42,33 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 
 		$this->assertEquals( 'reject', $gateway->getValidationAction(), 'Validation action is not as expected' );
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
-		$this->assertEquals( 157.5, $exposed->risk_score, 'RiskScore is not as expected' );
+		$this->assertEquals( 107.5, $exposed->risk_score, 'RiskScore is not as expected for failure mode' );
+		$message = DonationQueue::instance()->pop( 'payments-antifraud' );
+		SourceFields::removeFromMessage( $message );
+		$expected = array(
+			'validation_action' => 'reject',
+			'risk_score' => 107.5,
+			'score_breakdown' => array(
+				'initial' => 0,
+				'getScoreUtmCampaignMap' => 0,
+				'getScoreCountryMap' => 20,
+				'getScoreUtmSourceMap' => 0,
+				'getScoreUtmMediumMap' => 0,
+				'getScoreEmailDomainMap' => 37.5,
+				'getCVVResult' => 0,
+				'getAVSResult' => 0,
+				'minfraud_filter' => 50,
+			),
+			'user_ip' => '127.0.0.1',
+			'gateway_txn_id' => false,
+			'date' => $message['date'],
+			'server' => gethostname(),
+			'gateway' => 'globalcollect',
+			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
+			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
+			'payment_method' => 'cc',
+		);
+		$this->assertEquals( $expected, $message );
 	}
 }
 // Stub out Minfraud class for CI tests

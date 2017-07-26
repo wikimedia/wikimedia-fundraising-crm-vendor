@@ -30,5 +30,6 @@ return array(
     'GuzzleHttp\\Psr7\\' => array($vendorDir . '/guzzlehttp/psr7/src'),
     'GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
     'GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
+    'GetOptionKit\\' => array($vendorDir . '/corneltek/getoptionkit/src'),
     'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => array($vendorDir . '/addshore/psr-6-mediawiki-bagostuff-adapter/src'),
 );

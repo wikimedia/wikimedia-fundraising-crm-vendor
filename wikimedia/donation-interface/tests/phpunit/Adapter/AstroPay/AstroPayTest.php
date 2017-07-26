@@ -15,7 +15,12 @@
  * GNU General Public License for more details.
  *
  */
+
 use \Psr\Log\LogLevel;
+use SmashPig\CrmLink\Messages\SourceFields;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingProviderConfiguration;
+use Wikimedia\TestingAccessWrapper;
 
 /**
  *
@@ -40,6 +45,11 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->setMwGlobals( array(
 			'wgAstroPayGatewayEnabled' => true,
 		) );
+		TestingContext::get()->providerConfigurationOverride =
+			TestingProviderConfiguration::createForProvider(
+				'astropay',
+				$this->smashPigGlobalConfig
+			);
 	}
 
 	/**
@@ -110,7 +120,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertEquals( true, $gateway->getTransactionStatus(),
 			'Transaction status should be true for code "0"' );
 
-		$this->assertEmpty( $gateway->getTransactionErrors(),
+		$this->assertFalse( $gateway->getErrorState()->hasErrors(),
 			'Transaction errors should be empty for code "0"' );
 	}
 
@@ -141,11 +151,13 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 
 		$gateway->do_transaction( 'NewInvoice' );
 
-		$expected = array(
-			'internal-0000' => wfMessage( 'donate_interface-processing-error')->inLanguage( $init['language'] )->text()
+		$errors = $gateway->getErrorState()->getErrors();
+
+		$this->assertEquals(
+			'internal-0000',
+			$errors[0]->getErrorCode(),
+			'Wrong error for code "1"'
 		);
-		$this->assertEquals( $expected, $gateway->getTransactionErrors(),
-			'Wrong error for code "1"' );
 		$logged = $this->getLogMatches( LogLevel::WARNING, '/This error message should appear in the log./' );
 		$this->assertNotEmpty( $logged );
 	}
@@ -194,10 +206,11 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 
 		$result = $gateway->doPayment();
 
-		$expectedMessage = wfMessage( 'donate_interface-processing-error')->inLanguage( $init['language'] )->text();
-		$actual = $result->getErrors();
-		$this->assertEquals( $expectedMessage, $actual['internal-0000']['message'],
-			'Wrong error array in PaymentResult' );
+		$errors = $result->getErrors();
+		$this->assertNotEmpty(
+			$errors,
+			'Should be an error in PaymentResult'
+		);
 
 		$logged = $this->getLogMatches( LogLevel::WARNING, '/This error message should appear in the log./' );
 		$this->assertNotEmpty( $logged );
@@ -219,9 +232,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
 
 		$errors = $gateway->getTransactionResponse()->getErrors();
-		$expectedMessage = wfMessage( 'donate_interface-error-msg-limit')->inLanguage( $init['language'] )->text();
-		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
-		$this->assertEquals( 'amount', $errors['internal-0000']['context'] );
+		$this->assertEquals( 'donate_interface-error-msg-limit', $errors[0]->getMessageKey() );
+		$this->assertEquals( 'amount', $errors[0]->getField() );
 	}
 
 	/**
@@ -238,9 +250,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
 
 		$errors = $gateway->getTransactionResponse()->getErrors();
-		$expectedMessage = DataValidator::getErrorMessage( 'fiscal_number', 'calculated', $init['language'], $init['country'] );
-		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
-		$this->assertEquals( 'fiscal_number', $errors['internal-0000']['context'] );
+		$this->assertEquals( 'donate_interface-error-msg-fiscal_number', $errors[0]->getMessageKey() );
+		$this->assertEquals( 'fiscal_number', $errors[0]->getField() );
 	}
 
 	/**
@@ -271,8 +282,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
 
 		$errors = $gateway->getTransactionResponse()->getErrors();
-		$expectedMessage = wfMessage( 'donate_interface-try-again')->inLanguage( $init['language'] )->text();
-		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
+
+		$this->assertEquals( 'internal-0001', $errors[0]->getErrorCode() );
 	}
 
 	/**
@@ -289,8 +300,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertTrue( $result->getRefresh(), 'PaymentResult should be a refresh' );
 
 		$errors = $gateway->getTransactionResponse()->getErrors();
-		$expectedMessage = wfMessage( 'donate_interface-try-again')->inLanguage( $init['language'] )->text();
-		$this->assertEquals( $expectedMessage, $errors['internal-0000']['message'] );
+
+		$this->assertEquals( 'internal-0001', $errors[0]->getErrorCode() );
 	}
 
 	/**
@@ -363,7 +374,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_invoice' => '123456789',
 		);
 
-		$gateway->processDonorReturn( $requestValues );
+		$result = $gateway->processDonorReturn( $requestValues );
+		$this->assertFalse( $result->isFailed() );
 		$status = $gateway->getFinalStatus();
 		$this->assertEquals( FinalStatus::COMPLETE, $status );
 	}
@@ -393,7 +405,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_invoice' => '123456789',
 		);
 
-		$gateway->processDonorReturn( $requestValues );
+		$result = $gateway->processDonorReturn( $requestValues );
+		$this->assertFalse( $result->isFailed() );
 		$amount = $gateway->getData_Unstaged_Escaped( 'amount' );
 		$this->assertEquals( '100.00', $amount, 'Not recording correct amount' );
 	}
@@ -418,7 +431,8 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_invoice' => '123456789',
 		);
 
-		$gateway->processDonorReturn( $requestValues );
+		$result = $gateway->processDonorReturn( $requestValues );
+		$this->assertTrue( $result->isFailed() );
 		$status = $gateway->getFinalStatus();
 		$this->assertEquals( FinalStatus::FAILED, $status );
 	}
@@ -440,7 +454,6 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * Test that we run the AntiFraud filters before redirecting
 	 */
 	function testAntiFraudFilters() {
-		DonationInterface_FraudFiltersTest::setupFraudMaps( $this );
 		$init = $this->getDonorTestData( 'BR' );
 		$init['payment_method'] = 'cc';
 		$init['bank_code'] = 'VD';
@@ -457,6 +470,29 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertEquals( 'challenge', $gateway->getValidationAction(), 'Validation action is not as expected' );
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
 		$this->assertEquals( 60, $exposed->risk_score, 'RiskScore is not as expected' );
+		$message = DonationQueue::instance()->pop( 'payments-antifraud' );
+		SourceFields::removeFromMessage( $message );
+		$expected = array(
+			'validation_action' => 'challenge',
+			'risk_score' => 60,
+			'score_breakdown' => array(
+				'initial' => 0,
+				'getScoreUtmCampaignMap' => 0,
+				'getScoreCountryMap' => 0,
+				'getScoreUtmSourceMap' => 10.5,
+				'getScoreUtmMediumMap' => 12,
+				'getScoreEmailDomainMap' => 37.5,
+			),
+			'user_ip' => '127.0.0.1',
+			'gateway_txn_id' => false,
+			'date' => $message['date'],
+			'server' => gethostname(),
+			'gateway' => 'astropay',
+			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
+			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
+			'payment_method' => 'cc',
+		);
+		$this->assertEquals( $expected, $message );
 	}
 
 	function testStageFiscalNumber() {
@@ -518,14 +554,13 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 */
 	function testBadCurrencyForCountry() {
 		$init = $this->getDonorTestData( 'BR' );
-		$init['currency_code'] = 'CLP';
+		$init['currency'] = 'CLP';
 		$gateway = $this->getFreshGatewayObject( $init );
 
-		$errors = $gateway->getValidationErrors();
+		$errorState = $gateway->getErrorState();
 
-		$this->assertNotEmpty( $errors );
 		$this->assertTrue(
-			isset( $errors['currency_code'] ),
+			$errorState->hasValidationError( 'currency' ),
 			'Should show a currency code error for trying to use CLP in BR'
 		);
 	}

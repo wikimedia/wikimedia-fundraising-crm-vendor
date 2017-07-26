@@ -2,18 +2,15 @@
 namespace SmashPig\PaymentProviders\Adyen\Tests;
 
 use PHPQueue\Interfaces\FifoQueueStore;
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use SmashPig\PaymentProviders\Adyen\Actions\PaymentCaptureAction;
 use SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Authorisation;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
-class PaymentCaptureActionTest extends BaseSmashPigUnitTestCase  {
-	/**
-	 * @var Configuration
-	 */
-	protected $config;
+/**
+ * @group Adyen
+ */
+class PaymentCaptureActionTest extends BaseAdyenTestCase {
 
 	/**
 	 * @var FifoQueueStore
@@ -22,16 +19,13 @@ class PaymentCaptureActionTest extends BaseSmashPigUnitTestCase  {
 
 	public function setUp() {
 		parent::setUp();
-		$this->config = AdyenTestConfiguration::createWithSuccessfulApi();
-		Context::initWithLogger( $this->config );
-		$this->jobQueue = $this->config->object( 'data-store/jobs-adyen' );
-		$this->jobQueue->createTable( 'jobs-adyen' );
+		$globalConfig = Context::get()->getGlobalConfiguration();
+		$this->jobQueue = $globalConfig->object( 'data-store/jobs-adyen' );
 	}
 
 	public function testSuccessfulAuth() {
 		$auth = new Authorisation();
 		$auth->success = true;
-		$auth->correlationId = 'adyen-' . mt_rand();
 		$auth->merchantAccountCode = 'WikimediaTest' ;
 		$auth->currency = 'USD';
 		$auth->amount = '10';
@@ -66,7 +60,6 @@ class PaymentCaptureActionTest extends BaseSmashPigUnitTestCase  {
 	public function testFailedAuth() {
 		$auth = new Authorisation();
 		$auth->success = false;
-		$auth->correlationId = 'adyen-' . mt_rand();
 		$auth->merchantAccountCode = 'WikimediaTest' ;
 		$auth->merchantReference = mt_rand();
 

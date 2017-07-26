@@ -25,6 +25,7 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 	protected $form;
 	protected $adapter;
 	protected $outputPage;
+	protected $gatewayPage;
 
 	public function setUp() {
 		$this->resetAllEnv();
@@ -44,7 +45,7 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 		$this->adapter = new TestingGenericAdapter();
 		$this->adapter->addRequestData( array(
 			'amount' => '12',
-			'currency_code' => 'EUR',
+			'currency' => 'EUR',
 		) );
 
 		$this->setMwGlobals( array(
@@ -90,10 +91,7 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 		$this->form = new Gateway_Form_Mustache();
 		$this->form->setGateway( $this->adapter );
 		$this->form->setGatewayPage( $this->gatewayPage );
-		// Suppress the error cos: we know.
-		$html = @$this->form->getForm();
-
-		$this->fail( 'I\'m not dead yet!' );
+		$this->form->getForm();
 	}
 
 	/**

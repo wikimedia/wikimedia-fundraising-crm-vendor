@@ -14,6 +14,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  */
+use SmashPig\PaymentProviders\Adyen\Tests\AdyenTestConfiguration;
+use SmashPig\Tests\TestingContext;
+use Wikimedia\TestingAccessWrapper;
 
 /**
  *
@@ -35,6 +38,10 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 
 	public function setUp() {
 		parent::setUp();
+		TestingContext::get()->providerConfigurationOverride =
+			AdyenTestConfiguration::createWithSuccessfulApi(
+				$this->smashPigGlobalConfig
+			);
 
 		$this->setMwGlobals( array(
 			'wgAdyenGatewayEnabled' => true,
@@ -46,6 +53,7 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 	 */
 	function testDoTransactionDonate() {
 		$init = $this->getDonorTestData();
+		$init['payment_submethod'] = 'visa';
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$gateway->do_transaction( 'donate' );
@@ -54,15 +62,15 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 
 		$expected = array (
 			'allowedMethods' => 'card',
-			'billingAddress.street' => $init['street'],
+			'billingAddress.street' => $init['street_address'],
 			'billingAddress.city' => $init['city'],
 			'billingAddress.postalCode' => $init['postal_code'],
-			'billingAddress.stateOrProvince' => $init['state'],
+			'billingAddress.stateOrProvince' => $init['state_province'],
 			'billingAddress.country' => $init['country'],
 			'billingAddress.houseNumberOrName' => 'NA',
 			'billingAddressType' => 2,
-			'card.cardHolderName' => $init['fname'] . ' ' . $init['lname'],
-			'currencyCode' => $init['currency_code'],
+			'card.cardHolderName' => $init['first_name'] . ' ' . $init['last_name'],
+			'currencyCode' => $init['currency'],
 			'merchantAccount' => 'wikitest',
 			'merchantReference' => $exposed->getData_Staged( 'order_id' ),
 			'merchantSig' => $exposed->getData_Staged( 'hpp_signature' ),
@@ -94,11 +102,12 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 
 	function testRiskScoreAddedToQueueMessage() {
 		$init = $this->getDonorTestData();
+		$init['payment_submethod'] = 'visa';
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
 		$exposed->risk_score = 57;
-		$message = $exposed->getStompTransaction();
+		$message = $exposed->getQueueDonationMessage();
 		$this->assertEquals( 57, $message['risk_score'], 'Risk score was not correctly added to queue message.' );
 	}
 
@@ -107,6 +116,7 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 	 */
 	function testLanguageCaseSensitivity() {
 		$init = $this->getDonorTestData();
+		$init['payment_submethod'] = 'visa';
 		$init['language'] = 'FR';
 		$gateway = $this->getFreshGatewayObject( $init );
 
@@ -116,15 +126,15 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 
 		$expected = array (
 			'allowedMethods' => 'card',
-			'billingAddress.street' => $init['street'],
+			'billingAddress.street' => $init['street_address'],
 			'billingAddress.city' => $init['city'],
 			'billingAddress.postalCode' => $init['postal_code'],
-			'billingAddress.stateOrProvince' => $init['state'],
+			'billingAddress.stateOrProvince' => $init['state_province'],
 			'billingAddress.country' => $init['country'],
 			'billingAddress.houseNumberOrName' => 'NA',
 			'billingAddressType' => 2,
-			'card.cardHolderName' => $init['fname'] . ' ' . $init['lname'],
-			'currencyCode' => $init['currency_code'],
+			'card.cardHolderName' => $init['first_name'] . ' ' . $init['last_name'],
+			'currencyCode' => $init['currency'],
 			'merchantAccount' => 'wikitest',
 			'merchantReference' => $exposed->getData_Staged( 'order_id' ),
 			'merchantSig' => $exposed->getData_Staged( 'hpp_signature' ),
@@ -150,5 +160,51 @@ class DonationInterface_Adapter_Adyen_Test extends DonationInterfaceTestCase {
 
 		$this->assertEquals( $expected, $ret, 'Adyen "donate" transaction not constructing the expected redirect URL' );
 		$this->assertNotNull( $gateway->getData_Unstaged_Escaped( 'order_id' ), "Adyen order_id is null, and we need one for 'merchantReference'" );
+	}
+
+	public function testDonorReturnSuccess() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['language'] = 'FR';
+		$init['order_id'] = '55555';
+		$session['Donor'] = $init;
+		$this->setUpRequest( $init, $session );
+		$gateway = $this->getFreshGatewayObject( array() );
+		$result = $gateway->processDonorReturn( array(
+			'authResult' => 'AUTHORISED',
+			'merchantReference' => '55555.0',
+			'merchantSig' => 'o1QTd6X/PYrOgLPoSheamR3osAksh6oTaSytsCcJsFA=',
+			'paymentMethod' => 'visa',
+			'pspReference' => '123987612346789',
+			'shopperLocale' => 'fr_FR',
+			'skinCode' => 'testskin',
+			'title' => 'Special:AdyenGatewayResult'
+		) );
+		$this->assertFalse( $result->isFailed() );
+		$this->assertEmpty( $result->getErrors() );
+		// TODO inspect the queue message
+	}
+
+	public function testDonorReturnFailure() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['language'] = 'FR';
+		$init['order_id'] = '55555';
+		$session['Donor'] = $init;
+		$this->setUpRequest( $init, $session );
+		$gateway = $this->getFreshGatewayObject( array() );
+		$result = $gateway->processDonorReturn( array(
+			'authResult' => 'REFUSED',
+			'merchantReference' => '55555.0',
+			'merchantSig' => 'EVqAiz4nZ8XQ9Wfbm9bOQYaKPV22qdY+/6va7zAo580=',
+			'paymentMethod' => 'visa',
+			'pspReference' => '123987612346789',
+			'shopperLocale' => 'fr_FR',
+			'skinCode' => 'testskin',
+			'title' => 'Special:AdyenGatewayResult'
+		) );
+		$this->assertTrue( $result->isFailed() );
 	}
 }

@@ -27,9 +27,9 @@ class PaymentResult {
 	protected $iframe;
 	protected $form;
 	protected $redirect;
-	protected $refresh;
+	protected $refresh = false;
 	protected $errors = array();
-	protected $failed;
+	protected $failed = false;
 
 	protected function __construct() {
 	}
@@ -73,9 +73,9 @@ class PaymentResult {
 
 	public static function newEmpty() {
 		$response = new PaymentResult();
-		$response->errors = array(
-			'internal-0000' => 'Internal error: no results yet.',
-		);
+		$response->errors = array( new PaymentError(
+			'internal-0000', 'Internal error: no results yet.'
+		) );
 		$response->failed = true;
 		return $response;
 	}

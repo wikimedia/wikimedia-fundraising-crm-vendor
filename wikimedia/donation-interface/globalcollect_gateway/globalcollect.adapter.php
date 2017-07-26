@@ -276,6 +276,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				'HOSTEDINDICATOR' => '1',
 				'AUTHENTICATIONINDICATOR' => 0, //default to no 3DSecure ourselves
 			),
+			'check_required' => TRUE,
 		);
 
 		$this->transactions['DO_REFUND'] = array(
@@ -790,10 +791,10 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			//orphans.php is looking for specific things in position 0.
 			$ret->setMessage( $problemmessage );
 			foreach( $errors as $code => $error ) {
-				$ret->addError( $code, array(
-					'message' => $error,
-					'debugInfo' => 'Failure in transactionConfirm_CreditCard',
-					'logLevel' => $problemseverity
+				$ret->addError( new PaymentError(
+					$code,
+					'Failure in transactionConfirm_CreditCard',
+					$problemseverity
 				) );
 			}
 			// TODO: should we set $this->transaction_response ?
@@ -883,7 +884,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	/**
 	 * Refunds a transaction.  Assumes that we're running in batch mode with
 	 * payment_method = cc, and that all of these have been set:
-	 * order_id, effort_id, country, currency_code, amount, and payment_submethod
+	 * order_id, effort_id, country, currency, amount, and payment_submethod
 	 * Also requires merchant_reference to be set to the reference from the
 	 * original transaction.  FIXME: store that some place besides the logs
 	 * @return PaymentResult
@@ -1040,7 +1041,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		$errors = array( );
 		foreach ( $response->getElementsByTagName( 'ERROR' ) as $node ) {
 			$code = '';
-			$message = '';
 			$debugInfo = '';
 			foreach ( $node->childNodes as $childnode ) {
 				if ( $childnode->nodeName === "CODE" ) {
@@ -1057,10 +1057,10 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				}
 			}
 
-			$errors[ $code ] = array(
-				'logLevel' => LogLevel::ERROR,
-				'message' => ( $this->getGlobal( 'DisplayDebug' ) ) ? '*** ' . $message : $this->getErrorMapByCodeAndTranslate( $code ),
-				'debugInfo' => $debugInfo,
+			$errors[] = new PaymentError(
+				$code,
+				$debugInfo,
+				LogLevel::ERROR
 			);
 		}
 		return $errors;
@@ -1277,13 +1277,13 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		if (! $oid) {
 			$this->finalizeInternalStatus( FinalStatus::FAILED );
 			$this->logger->error( 'Missing Order ID' );
-			return;
+			return PaymentResult::newFailure();
 		}
 
 		if ( $this->getData_Unstaged_Escaped( 'payment_method' ) !== 'cc' ) {
 			$this->finalizeInternalStatus( FinalStatus::FAILED );
 			$this->logger->error( "Payment method is not CC, OID: {$oid}" );
-			return;
+			return PaymentResult::newFailure();
 		}
 
 		$session_oid = $this->session_getData( 'Donor', 'order_id' );
@@ -1296,17 +1296,21 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			// but leave the payment to be resolved by the orphan rectifier.
 			// FIXME: should use finalizeInternalStatus() but there are side effects.
 			$this->final_status = FinalStatus::PENDING;
-			return;
+			return PaymentResult::newSuccess();
 		}
 
 		if ( $oid !== $session_oid ) {
 			$this->logger->info( "Order ID mismatch '{$oid}'/'{$session_oid}'" );
 			// FIXME: should use finalizeInternalStatus() but there are side effects
 			$this->final_status = FinalStatus::PENDING;
-			return;
+			return PaymentResult::newSuccess();
 		}
 
-		$this->do_transaction( 'Confirm_CreditCard' );
+		$response = $this->do_transaction( 'Confirm_CreditCard' );
+		return PaymentResult::fromResults(
+			$response,
+			$this->getFinalStatus()
+		);
 	}
 
 	/**
@@ -1321,7 +1325,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			$this->parseResponseCommunicationStatus( $response )
 		);
 		$errors = $this->parseResponseErrors( $response );
-		$this->transaction_response->setErrors( $errors );
+		$this->transaction_response->addErrors( $errors );
 		$data = $this->parseResponseData( $response );
 		$this->transaction_response->setData( $data );
 		//set the transaction result message
@@ -1330,13 +1334,12 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		$this->transaction_response->setGatewayTransactionId( $this->getData_Unstaged_Escaped( 'order_id' ) );
 
 		$retErrCode = null;
-		$retErrMsg = '';
 		$retryVars = array();
 
 		// We are also curious to know if there were any recoverable errors
-		foreach ( $errors as $errCode => $errObj ) {
-			$errMsg = $errObj['message'];
-			$messageFromProcessor = $errObj['debugInfo'];
+		foreach ( $errors as $errObj ) {
+			$errCode = $errObj->getErrorCode();
+			$messageFromProcessor = $errObj->getDebugMessage();
 			$retryOrderId = false;
 			switch ( $errCode ) {
 				case 400120: // INSERTATTEMPT PAYMENT FOR ORDER ALREADY FINAL FOR COMBINATION.
@@ -1347,7 +1350,6 @@ class GlobalCollectAdapter extends GatewayAdapter {
 						// with it.
 						$this->logger->error( 'Order ID already processed, remain calm.' );
 						$retErrCode = $errCode;
-						$retErrMsg = $errMsg;
 						break;
 					}
 					$this->logger->error( 'InsertAttempt on a finalized order! Starting again.' );
@@ -1386,10 +1388,10 @@ class GlobalCollectAdapter extends GatewayAdapter {
 					$this->logger->info( "Got error code $errCode, not retrying to avoid MasterCard fines." );
 					// TODO: move forceCancel - maybe to the exception?
 					$this->transaction_response->setForceCancel( true );
-					$this->transaction_response->setErrors( array(
-							'internal-0003' => array(
-								'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0003' ),
-							)
+					$this->transaction_response->addError( new PaymentError(
+							$errCode,
+							'Mastercard third rail error',
+							LogLevel::ERROR
 						)
 					);
 					throw new ResponseProcessingException(
@@ -1403,6 +1405,12 @@ class GlobalCollectAdapter extends GatewayAdapter {
 				case 430692: //cvv2 declined
 					break; //don't need to hear about these at all.
 
+				case 11000400 :  //Ingenico internal timeout, just try again as-is.
+					$retryVars[] = 'timeout';
+					$this->logger->error( 'Server Timeout, retrying.' );
+					$retErrCode = $errCode;
+					break;
+
 				case 20001000 : //REQUEST {0} NULL VALUE NOT ALLOWED FOR {1} : Validation pain. Need more.
 					//look in the message for more clues.
 					//Yes: That's an 8-digit error code that buckets a silly number of validation issues, some of which are legitimately ours.
@@ -1413,11 +1421,11 @@ class GlobalCollectAdapter extends GatewayAdapter {
 						'/DID NOT PASS THE LUHNCHECK/',
 					);
 					foreach ( $not_errors as $regex ){
-						if ( preg_match( $regex, $errObj['debugInfo'] ) ){
+						if ( preg_match( $regex, $messageFromProcessor ) ){
 							//not a system error, but definitely the end of the payment attempt. Log it to info and leave.
-							$this->logger->info( __FUNCTION__ . ": {$errObj['debugInfo']}" );
+							$this->logger->info( __FUNCTION__ . ": {$messageFromProcessor}" );
 							throw new ResponseProcessingException(
-								$errMsg,
+								$messageFromProcessor,
 								$errCode
 							);
 						}
@@ -1425,21 +1433,21 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 				case 21000050 : //REQUEST {0} VALUE {2} OF FIELD {1} IS NOT A NUMBER WITH MINLENGTH {3}, MAXLENGTH {4} AND PRECISION {5}  : More validation pain.
 					//say something painful here.
-					$errMsg = 'Blocking validation problems with this payment. Investigation required! '
+					$messageFromProcessor = 'Blocking validation problems with this payment. Investigation required! '
 								. "Original error: '$messageFromProcessor'.  Our data: " . $this->getLogDebugJSON();
+
 				default:
-					$this->logger->error( __FUNCTION__ . " Error $errCode : $errMsg" );
+					$this->logger->error( __FUNCTION__ . " Error $errCode : $messageFromProcessor" );
 					break;
 			}
 			if ( $retryOrderId ) {
 				$retryVars[] = 'order_id';
 				$retErrCode = $errCode;
-				$retErrMsg = $errMsg;
 			}
 		}
 		if ( $retErrCode ) {
 			throw new ResponseProcessingException(
-				$retErrMsg,
+				$messageFromProcessor,
 				$retErrCode,
 				$retryVars
 			);
@@ -1478,7 +1486,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		);
 
 		$enable3ds = false;
-		$currency = $this->getData_Unstaged_Escaped( 'currency_code' );
+		$currency = $this->getData_Unstaged_Escaped( 'currency' );
 		$country = strtoupper( $this->getData_Unstaged_Escaped( 'country' ) );
 		if ( isset( $this->staged_data['payment_product'] )
 		  && in_array( $this->staged_data['payment_product'], $authenticationIndicatorTypes )
@@ -1770,7 +1778,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			return;
 		}
 		$country = $this->getData_Unstaged_Escaped( 'country' );
-		$currency = $this->getData_Unstaged_Escaped( 'currency_code' );
+		$currency = $this->getData_Unstaged_Escaped( 'currency' );
 		if ( $country === null || $currency === null ) {
 			return;
 		}

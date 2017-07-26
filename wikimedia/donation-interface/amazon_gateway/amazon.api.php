@@ -4,32 +4,35 @@ class AmazonBillingApi extends ApiBase {
 	protected $allowedParams = array(
 		'amount',
 		'billingAgreementId',
-		'currency_code',
+		'currency',
 		'orderReferenceId',
 		'recurring',
 		'wmf_token',
 	);
 
 	public function execute() {
+		DonationInterface::setSmashPigProvider( 'amazon' );
 		$output = $this->getResult();
 		$recurring = $this->getParameter( 'recurring');
 		$token = $this->getParameter( 'wmf_token' );
 		$adapterParams = array(
 			'external_data' => array(
 				'amount' => $this->getParameter( 'amount' ),
-				'currency_code' => $this->getParameter( 'currency_code' ),
+				'currency' => $this->getParameter( 'currency' ),
 				'recurring' => $recurring,
 				'wmf_token' => $token,
 			),
 		);
 
-		$adapter = new AmazonAdapter( $adapterParams );
+		$adapterClass = DonationInterface::getAdapterClassForGateway( 'amazon' );
+		// @var AmazonAdapter
+		$adapter = new $adapterClass( $adapterParams );
 
-		if ( $adapter->getAllErrors() ) {
+		if ( $adapter->getErrorState()->hasErrors() ) {
 			$output->addValue(
 				null,
 				'errors',
-				$adapter->getAllErrors()
+				$adapter->getErrorState()->getErrors()
 			);
 		} else if ( $token && $adapter->checkTokens() ) {
 			if ( $recurring ) {

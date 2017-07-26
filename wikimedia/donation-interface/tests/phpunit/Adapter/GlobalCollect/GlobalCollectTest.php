@@ -15,7 +15,9 @@
  * GNU General Public License for more details.
  *
  */
+
 use Psr\Log\LogLevel;
+use Wikimedia\TestingAccessWrapper;
 
 /**
  *
@@ -257,19 +259,19 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		// The values in session are not the values we originally used
 		// for INSERT_ORDERWITHPAYMENT
 		$init['amount'] = '12.50';
-		$init['currency_code'] = 'USD';
+		$init['currency'] = 'USD';
 
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$amount = $gateway->getData_Unstaged_Escaped( 'amount' );
-		$currency = $gateway->getData_Unstaged_Escaped( 'currency_code' );
+		$currency = $gateway->getData_Unstaged_Escaped( 'currency' );
 		$this->assertEquals( '12.50', $amount );
 		$this->assertEquals( 'USD', $currency );
 
 		$gateway->do_transaction( 'Confirm_CreditCard' );
 
 		$amount = $gateway->getData_Unstaged_Escaped( 'amount' );
-		$currency = $gateway->getData_Unstaged_Escaped( 'currency_code' );
+		$currency = $gateway->getData_Unstaged_Escaped( 'currency' );
 		$this->assertEquals( '23.45', $amount, 'Not recording correct amount' );
 		$this->assertEquals( 'EUR', $currency, 'Not recording correct currency'  );
 	}
@@ -289,7 +291,7 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 		$var_map = array(
 			'ORDERID' => 'order_id',
 			'AMOUNT' => 'amount',
-			'CURRENCYCODE' => 'currency_code',
+			'CURRENCYCODE' => 'currency',
 			'LANGUAGECODE' => 'language',
 			'COUNTRYCODE' => 'country',
 			'MERCHANTREFERENCE' => 'contribution_tracking_id',
@@ -300,11 +302,11 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 			'CVV' => 'cvv',
 			'EXPIRYDATE' => 'expiration',
 			'CREDITCARDNUMBER' => 'card_num',
-			'FIRSTNAME' => 'fname',
-			'SURNAME' => 'lname',
-			'STREET' => 'street',
+			'FIRSTNAME' => 'first_name',
+			'SURNAME' => 'last_name',
+			'STREET' => 'street_address',
 			'CITY' => 'city',
-			'STATE' => 'state',
+			'STATE' => 'state_province',
 			'ZIP' => 'postal_code',
 			'EMAIL' => 'email',
 			'ACCOUNTHOLDER' => 'account_holder',
@@ -396,10 +398,10 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
 		// Desired vars were written into normalized data.
-		$this->assertEquals( $ctid, $exposed->dataObj->getVal_Escaped( 'contribution_tracking_id' ) );
+		$this->assertEquals( $ctid, $exposed->dataObj->getVal( 'contribution_tracking_id' ) );
 
 		// Language was not overwritten.
-		$this->assertEquals( 'ca', $exposed->dataObj->getVal_Escaped( 'language' ) );
+		$this->assertEquals( 'ca', $exposed->dataObj->getVal( 'language' ) );
 	}
 
 	/**
@@ -474,17 +476,17 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 			'city'=>'Hollywood',
 			'contribution_tracking_id'=>'22901382',
 			'country'=>'US',
-			'currency_code'=>'USD',
+			'currency'=>'USD',
 			'email'=>'FaketyFake@gmail.com',
-			'fname'=>'Fakety',
+			'first_name'=>'Fakety',
 			'format'=>'json',
 			'gateway'=>'globalcollect',
 			'language'=>'en',
-			'lname'=>'Fake',
+			'last_name'=>'Fake',
 			'payment_method'=>'cc',
 			'referrer'=>'http://en.wikipedia.org/wiki/Main_Page',
-			'state'=>'MA',
-			'street'=>'99 Fake St',
+			'state_province'=>'MA',
+			'street_address'=>'99 Fake St',
 			'utm_campaign'=>'C14_en5C_dec_dsk_FR',
 			'utm_medium'=>'sitenotice',
 			'utm_source'=>'B14_120921_5C_lg_fnt_sans.no-LP.cc',
@@ -578,5 +580,59 @@ class DonationInterface_Adapter_GlobalCollect_GlobalCollectTest extends Donation
 			'Order ID regenerated in DonationData.' );
 		$this->assertNotEquals( $gateway->session_getData( 'order_id' ), $orig_id,
 			'Order ID regenerated in session.' );
+	}
+
+	/**
+	 * doPayment should recover from Ingenico-side timeouts.
+	 */
+	function testTimeoutRecover() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['email'] = 'innocent@localhost.net';
+		$init['ffname'] = 'cc-vmad';
+
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->setDummyGatewayResponseCode( '11000400' );
+		$gateway->do_transaction( 'SET_PAYMENT' );
+		$loglines = $this->getLogMatches( LogLevel::INFO, '/Repeating transaction for timeout/' );
+		$this->assertNotEmpty( $loglines, "Log does not say we retried for timeout." );
+	}
+
+	public function testDonorReturnSuccess() {
+		$init = $this->getDonorTestData( 'FR' );
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['email'] = 'innocent@localhost.net';
+		$init['order_id'] = mt_rand();
+		$session['Donor'] = $init;
+		$this->setUpRequest( $init, $session );
+		$gateway = $this->getFreshGatewayObject( array() );
+		$result = $gateway->processDonorReturn( array(
+			'REF' => $init['order_id'],
+			'CVVRESULT' => 'M',
+			'AVSRESULT' => '0'
+		) );
+		$this->assertFalse( $result->isFailed() );
+		$this->assertEmpty( $result->getErrors() );
+		// TODO inspect the queue message
+	}
+
+	public function testDonorReturnFailure() {
+		$init = $this->getDonorTestData();
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = 'visa';
+		$init['email'] = 'innocent@localhost.net';
+		$init['order_id'] = mt_rand();
+		$session['Donor'] = $init;
+		$this->setUpRequest( $init, $session );
+		$gateway = $this->getFreshGatewayObject( array() );
+		$gateway->setDummyGatewayResponseCode( '430285' ); // invalid card
+		$result = $gateway->processDonorReturn( array(
+			'REF' => $init['order_id'],
+			'CVVRESULT' => 'M',
+			'AVSRESULT' => '0'
+		) );
+		$this->assertTrue( $result->isFailed() );
 	}
 }

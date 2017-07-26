@@ -5,50 +5,53 @@ class Amount implements ValidationHelper {
 	public function validate( GatewayType $adapter, $normalized, &$errors ) {
 		if (
 			!isset( $normalized['amount'] ) ||
-			!isset( $normalized['currency_code'] )
+			!isset( $normalized['currency'] )
 		) {
 			// Not enough info to validate
 			return;
 		}
-		if ( isset( $errors['currency_code'] ) ) {
+		if ( $errors->hasValidationError( 'currency' ) ) {
 			// Already displaying an error
 			return;
 		}
 		$value = $normalized['amount'];
 
 		if ( self::isZeroIsh( $value ) ) {
-			$errors['amount'] = DataValidator::getErrorMessage(
-				'amount',
-				'not_empty',
-				$normalized['language']
+			$errors->addError(
+				DataValidator::getError( 'amount', 'not_empty' )
 			);
 			return;
 		}
-		$currency = $normalized['currency_code'];
+		$currency = $normalized['currency'];
 		$min = self::convert( $adapter->getGlobal( 'PriceFloor' ), $currency );
 		$max = self::convert( $adapter->getGlobal( 'PriceCeiling' ), $currency );
 		if (
 			!is_numeric( $value ) ||
 			$value < 0
 		) {
-			$errors['amount'] = WmfFramework::formatMessage(
+			$errors->addError( new ValidationError(
+				'amount',
 				'donate_interface-error-msg-invalid-amount'
-			);
+			) );
 		} else if ( $value > $max ) {
 			// FIXME: should format the currency values in this message
-			$errors['amount'] = WmfFramework::formatMessage(
+			$errors->addError( new ValidationError(
+				'amount',
 				'donate_interface-bigamount-error',
-				$max,
-				$currency,
-				$adapter->getGlobal( 'MajorGiftsEmail' )
-			);
+				array(
+					$max,
+					$currency,
+					$adapter->getGlobal( 'MajorGiftsEmail' ),
+				)
+			) );
 		} else if ( $value < $min ) {
 			$locale = $normalized['language'] . '_' . $normalized['country'];
 			$formattedMin = self::format( $min, $currency, $locale );
-			$errors['amount'] = WmfFramework::formatMessage(
+			$errors->addError( new ValidationError(
+				'amount',
 				'donate_interface-smallamount-error',
-				$formattedMin
-			);
+				array( $formattedMin )
+			) );
 		}
 	}
 

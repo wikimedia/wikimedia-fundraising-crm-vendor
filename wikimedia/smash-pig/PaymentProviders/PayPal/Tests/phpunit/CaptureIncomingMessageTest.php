@@ -1,13 +1,14 @@
 <?php
 namespace SmashPig\PaymentProviders\PayPal\Tests;
 
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
+use SmashPig\Core\ProviderConfiguration;
+use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentProviders\PayPal\Listener;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 use SmashPig\Core\Http\Response;
 use SmashPig\Core\Http\Request;
-use SmashPig\Core\DataStores\KeyedOpaqueStorableObject;
+use SmashPig\Core\DataStores\JsonSerializableObject;
 
 /**
  * Test the IPN listener which receives messages, stores and processes them.
@@ -16,7 +17,7 @@ use SmashPig\Core\DataStores\KeyedOpaqueStorableObject;
 class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 
 	/**
-	 * @var Configuration
+	 * @var ProviderConfiguration
 	 */
 	public $config;
 
@@ -41,13 +42,10 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$this->config = PayPalTestConfiguration::get();
-
-		// php-queue\PDO complains about pop() from non-existent table
-		$this->config->object( 'data-store/jobs-paypal' )
-			->createTable( 'jobs-paypal' );
-
-		Context::initWithLogger( $this->config );
+		$this->config = Context::get()->getGlobalConfiguration();
+		Context::get()->setProviderConfiguration(
+			PayPalTestConfiguration::get( $this->config )
+		);
 	}
 
 	public function tearDown() {
@@ -86,15 +84,6 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 		return $listener->execute( $request, $response );
 	}
 
-	private function scrubIgnoredFields( &$message ) {
-		unset( $message['source_host'] );
-		unset( $message['source_run_id'] );
-		unset( $message['source_enqueued_time'] );
-		unset( $message['correlationId'] );
-		unset( $message['propertiesExportedAsKeys'] );
-		unset( $message['propertiesExcludedFromExport'] );
-	}
-
 	/**
 	 * @dataProvider messageProvider
 	 */
@@ -125,7 +114,7 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 		$jobQueue = $this->config->object( 'data-store/jobs-paypal' );
 		$jobMessage = $jobQueue->pop();
 
-		$job = KeyedOpaqueStorableObject::fromJsonProxy(
+		$job = JsonSerializableObject::fromJsonProxy(
 			$jobMessage['php-message-class'],
 			json_encode( $jobMessage )
 		);
@@ -133,7 +122,6 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 		$job->execute();
 
 		$queue = $this->config->object( 'data-store/' . $msg['type'] );
-		$queue->createTable( $msg['type'] );
 		$message = $queue->pop();
 
 		if ( $job->is_reject() ) {
@@ -151,7 +139,7 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 				);
 			}
 			if ( isset( $msg['transformed'] ) ) {
-				$this->scrubIgnoredFields( $message );
+				SourceFields::removeFromMessage( $message );
 				$this->assertEquals( $msg['transformed'], $message );
 			}
 		}

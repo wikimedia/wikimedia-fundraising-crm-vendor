@@ -388,6 +388,10 @@ class PaypalExpressAdapter extends GatewayAdapter {
 		return true;
 	}
 
+	public function getRequestProcessId( $requestValues ) {
+		return $requestValues['token'];
+	}
+
 	protected function processResponse( $response ) {
 		$this->transaction_response->setData( $response );
 		// FIXME: I'm not sure why we're responsible for failing the
@@ -415,6 +419,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 			case 'SetExpressCheckout':
 			case 'SetExpressCheckout_recurring':
 				$this->checkResponseAck( $response );
+				$this->addResponseData( $this->unstageKeys( $response ) );
 				$this->transaction_response->setRedirect(
 					$this->account_config['RedirectURL'] . $response['TOKEN'] );
 				break;
@@ -441,9 +446,15 @@ class PaypalExpressAdapter extends GatewayAdapter {
 					$this->getData_Unstaged_Escaped( 'gateway_txn_id' ) );
 				$status = $this->findCodeAction( 'DoExpressCheckoutPayment',
 					'PAYMENTINFO_0_ERRORCODE', $response['PAYMENTINFO_0_ERRORCODE'] );
-				// TODO: Can we do this from do_transaction instead, or at least protect with !recurring...
-				$this->finalizeInternalStatus( $status );
-				$this->postProcessDonation();
+				// For recurring payments, we don't want to finalize or send the queue
+				// message just yet
+				if (
+					$status === FinalStatus::FAILED ||
+					!$this->getData_Unstaged_Escaped( 'recurring' )
+				) {
+					$this->finalizeInternalStatus( $status );
+					$this->postProcessDonation();
+				}
 				break;
 			}
 
@@ -451,25 +462,76 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				// TODO: so much boilerplate...  Just throw an exception subclass.
 				$logme = 'Failed response for Order ID ' . $this->getData_Unstaged_Escaped( 'order_id' );
 				$this->logger->error( $logme );
-				$this->transaction_response->setErrors( array(
-					'internal-0000' => array (
-						'message' => $this->getErrorMapByCodeAndTranslate( 'internal-0000' ),
-						'debugInfo' => $logme,
-						'logLevel' => LogLevel::ERROR
-					)
+				$this->transaction_response->addError( new PaymentError(
+					'internal-0000',
+					$logme,
+					LogLevel::ERROR
 				) );
 			}
 		} catch ( Exception $ex ) {
-			// TODO: Parse the API error fields and log them.
-			$this->logger->error( "Failure detected in " . json_encode( $response ) );
-			$this->finalizeInternalStatus( FinalStatus::FAILED );
-			throw $ex;
+			$errors = $this->parseResponseErrors( $response );
+			$fatal = true;
+			// TODO: Handle more error codes
+			foreach ( $errors as $error ) {
+				// There are errors, so it wasn't a total comms failure
+				$this->transaction_response->setCommunicationStatus( true );
+				$code = $error->getErrorCode();
+				$debugInfo = $error->getDebugMessage();
+				$this->logger->warning(
+					"Error code $code returned: '$debugInfo'"
+				);
+				switch ( $code ) {
+					case '10486':
+						// Donor's first funding method failed, but they might have another
+						$this->transaction_response->setRedirect(
+							$this->account_config['RedirectURL'] . $response['TOKEN']
+						);
+						$fatal = false;
+						break;
+					default:
+						$this->transaction_response->addError( $error );
+				}
+			}
+			if ( $fatal ) {
+				if ( empty( $errors ) ) {
+					// Unrecognizable problems, log the whole thing
+					$this->logger->error( "Failure detected in " . json_encode( $response ) );
+				}
+				$this->finalizeInternalStatus( FinalStatus::FAILED );
+				throw $ex;
+			}
 		}
 	}
 
+	/**
+	 * @param array $response
+	 * @return PaymentError[]
+	 */
+	protected function parseResponseErrors( $response ) {
+		$errors = array();
+		// TODO: can they put errors in other places too?
+		if ( isset( $response['L_ERRORCODE0'] ) ) {
+			$errors[] = new PaymentError(
+				$response['L_ERRORCODE0'],
+				isset( $response['L_LONGMESSAGE0'] ) ? $response['L_LONGMESSAGE0'] : '',
+				LogLevel::ERROR
+			);
+		}
+		return $errors;
+	}
+
 	public function processDonorReturn( $requestValues ) {
+		if (
+			empty( $requestValues['token'] ) ||
+			empty( $requestValues['PayerID'] )
+		) {
+			throw new ResponseProcessingException(
+				'Missing required parameters in request',
+				ResponseCodes::MISSING_REQUIRED_DATA
+			);
+		}
 		$this->addRequestData( array(
-			'ec_token' => $requestValues['token'],
+			'gateway_session_id' => $requestValues['token'],
 			'payer_id' => $requestValues['PayerID'],
 		) );
 		$resultData = $this->do_transaction( 'GetExpressCheckoutDetails' );
@@ -479,14 +541,19 @@ class PaypalExpressAdapter extends GatewayAdapter {
 		}
 
 		// One-time payment, or initial payment in a subscription.
-		// XXX: This shouldn't finalize the transaction.
 		$resultData = $this->do_transaction( 'DoExpressCheckoutPayment' );
 		if ( !$resultData->getCommunicationStatus() ) {
 			$this->finalizeInternalStatus( FinalStatus::FAILED );
-			return;
+			return PaymentResult::newFailure();
 		}
 
-		if ( $this->getData_Unstaged_Escaped( 'recurring' ) ) {
+		// Silly conditional. What we really want to know is if the
+		// DoExpressCheckoutPayment txn was successful.
+		if (
+			!$resultData->getRedirect() &&
+			!$resultData->getErrors() &&
+			$this->getData_Unstaged_Escaped( 'recurring' )
+		) {
 			// Set up recurring billing agreement.
 			$this->addRequestData( array(
 				// Start in a month; we're making today's payment as an one-time charge.
@@ -498,6 +565,10 @@ class PaypalExpressAdapter extends GatewayAdapter {
 					'Failed to create a recurring profile', ResponseCodes::UNKNOWN );
 			}
 		}
+		return PaymentResult::fromResults(
+			$this->getTransactionResponse(),
+			$this->getFinalStatus()
+		);
 	}
 
 	/**
@@ -512,5 +583,13 @@ class PaypalExpressAdapter extends GatewayAdapter {
 		} else {
 			throw new ResponseProcessingException( "Failure response", $response['ACK'] );
 		}
+	}
+
+	/**
+	 * FIXME: this is coming out of the ambient transaction response
+	 * in the parent adapters. Probably a bad idea everywhere.
+	 */
+	public function getTransactionGatewayTxnID() {
+		return $this->getData_Unstaged_Escaped( 'gateway_txn_id' );
 	}
 }

@@ -6,7 +6,6 @@ use SmashPig\Core\Messages\ListenerMessage;
 use SmashPig\Core\SmashPigException;
 use SmashPig\PaymentProviders\Amazon\AmazonApi;
 use SmashPig\PaymentProviders\Amazon\ExpatriatedMessages\PaymentCapture;
-use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
 
 /**
  * Looks up our reference ID for transactions pushed through manually
@@ -19,7 +18,7 @@ class ReconstructMerchantReference implements IListenerMessageAction {
 			return true;
 		}
 		$captureReference = $msg->getOrderId();
-		if ( substr( $captureReference, 0, 10 ) !== 'AUTHORIZE_' ) {
+		if ( !AmazonApi::isAmazonGeneratedMerchantReference( $captureReference ) ) {
 			// We only have to fix Amazon-generated IDs with that prefix
 			return true;
 		}

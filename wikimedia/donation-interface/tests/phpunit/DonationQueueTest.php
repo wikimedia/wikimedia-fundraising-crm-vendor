@@ -34,38 +34,32 @@ class DonationQueueTest extends DonationInterfaceTestCase {
 		$this->queue_name = 'test-' . mt_rand();
 
 		$this->setMwGlobals( array(
-			'wgDonationInterfaceEnableQueue' => true,
-			'wgDonationInterfaceDefaultQueueServer' => array(
-				'type' => 'TestingQueue',
-			),
 			'wgDonationInterfaceQueues' => array(
 				$this->queue_name => array(),
 			),
 		) );
 
 		$this->transaction = array(
-			'amount' => '1.24',
+			'gross' => '1.24',
+			'fee' => '0',
 			'city' => 'Dunburger',
 			'contribution_tracking_id' => mt_rand(),
-			// FIXME: err, we're cheating normalization here.
-			'correlation-id' => 'testgateway-' . mt_rand(),
 			'country' => 'US',
-			'currency_code' => 'USD',
+			'currency' => 'USD',
 			'date' => time(),
 			'email' => 'nobody@wikimedia.org',
-			'fname' => 'Jen',
+			'first_name' => 'Jen',
 			'gateway_account' => 'default',
 			'gateway' => 'testgateway',
 			'gateway_txn_id' => mt_rand(),
 			'order_id' => mt_rand(),
 			'language' => 'en',
-			'lname' => 'Russ',
+			'last_name' => 'Russ',
 			'payment_method' => 'cc',
 			'payment_submethod' => 'visa',
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceMessage',
 			'response' => 'Gateway response something',
-			'state' => 'AK',
-			'street' => '1 Fake St.',
+			'state_province' => 'AK',
+			'street_address' => '1 Fake St.',
 			'user_ip' => '127.0.0.1',
 			'utm_source' => 'testing',
 			'postal_code' => '12345',
@@ -95,7 +89,7 @@ class DonationQueueTest extends DonationInterfaceTestCase {
 			'gross' => '1.24',
 			'user_ip' => '127.0.0.1',
 			'date' => (int)$this->transaction['date'],
-			'source_host' => WmfFramework::getHostname(),
+			'source_host' => gethostname(),
 			'source_name' => 'DonationInterface',
 			'source_run_id' => getmypid(),
 			'source_type' => 'payments',
@@ -103,18 +97,13 @@ class DonationQueueTest extends DonationInterfaceTestCase {
 		);
 	}
 
-	public function tearDown() {
-		// Clear static variables.
-		TestingQueue::clearAll();
-
-		parent::tearDown();
-	}
-
 	public function testPushMessage() {
 		DonationQueue::instance()->push( $this->transaction, $this->queue_name );
 
-		$this->assertEquals( $this->expected_message,
-			DonationQueue::instance()->pop( $this->queue_name ) );
+		$actual = DonationQueue::instance()->pop( $this->queue_name );
+		unset( $actual['source_enqueued_time'] );
+
+		$this->assertEquals( $this->expected_message, $actual );
 	}
 
 	/**
@@ -124,33 +113,13 @@ class DonationQueueTest extends DonationInterfaceTestCase {
 		DonationQueue::instance()->push( $this->transaction, $this->queue_name );
 
 		$transaction2 = $this->transaction;
-		$transaction2['correlation-id'] = mt_rand();
+		$transaction2['order_id'] = mt_rand();
 
-		$this->assertEquals( $this->expected_message,
-			DonationQueue::instance()->pop( $this->queue_name ) );
-	}
+		DonationQueue::instance()->push( $transaction2, $this->queue_name );
 
-	public function testSetMessage() {
-		DonationQueue::instance()->set( $this->transaction['correlation-id'],
-			$this->transaction, $this->queue_name );
+		$actual = DonationQueue::instance()->pop( $this->queue_name );
+		unset( $actual['source_enqueued_time'] );
 
-		$this->assertEquals( $this->expected_message,
-			DonationQueue::instance()->get(
-				$this->transaction['correlation-id'], $this->queue_name ) );
-	}
-
-	public function testDeleteMessage() {
-		DonationQueue::instance()->set( $this->transaction['correlation-id'],
-			$this->transaction, $this->queue_name );
-		$this->assertEquals( $this->expected_message,
-			DonationQueue::instance()->get(
-				$this->transaction['correlation-id'], $this->queue_name ) );
-
-		DonationQueue::instance()->delete(
-			$this->transaction['correlation-id'], $this->queue_name );
-
-		$this->assertNull(
-			DonationQueue::instance()->get(
-				$this->transaction['correlation-id'], $this->queue_name ) );
+		$this->assertEquals( $this->expected_message, $actual );
 	}
 }

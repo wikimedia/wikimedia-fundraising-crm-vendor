@@ -1,6 +1,6 @@
 <?php namespace SmashPig\PaymentProviders\Adyen\Actions;
 
-use SmashPig\Core\Configuration;
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\Jobs\DeletePendingJob;
 use SmashPig\Core\Logging\TaggedLogger;
 use SmashPig\Core\Messages\ListenerMessage;
@@ -18,30 +18,28 @@ class PaymentCaptureAction implements IListenerMessageAction {
 		$tl = new TaggedLogger( 'PaymentCaptureAction' );
 
 		if ( $msg instanceof Authorisation ) {
-			$jobQueueObj = Configuration::getDefaultConfig()->object( 'data-store/jobs-adyen' );
 			if ( $msg->success ) {
 				// Here we need to capture the payment, the job runner will collect the
 				// orphan message
 				$tl->info(
 					"Adding Adyen capture job for {$msg->currency} {$msg->amount} " .
-					"with id {$msg->correlationId} and psp reference {$msg->pspReference}."
+					"with psp reference {$msg->pspReference}."
 				);
 				$job = ProcessCaptureRequestJob::factory( $msg );
-				$jobQueueObj->push( json_decode( $job->toJson(), true ) );
+				QueueWrapper::push( 'jobs-adyen', $job );
 
 			} else {
 				// And here we just need to destroy the orphan
 				$tl->info(
-					"Adyen payment with correlation id {$msg->correlationId} " .
+					"Adyen payment with psp reference {$msg->pspReference} " .
 					"reported status failed: '{$msg->reason}'. " .
 					'Queueing job to delete pending records.'
 				);
 				$job = DeletePendingJob::factory(
 					'adyen',
-					$msg->merchantReference,
-					$msg->correlationId
+					$msg->merchantReference
 				);
-				$jobQueueObj->push( json_decode( $job->toJson(), true ) );
+                QueueWrapper::push( 'jobs-adyen', $job );
 			}
 		}
 

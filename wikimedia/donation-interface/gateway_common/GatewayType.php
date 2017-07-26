@@ -51,6 +51,7 @@ interface GatewayType {
 	 * Perform any additional processing required when donor returns from
 	 * payment processor site. Should set the final status.
 	 * @param array $requestValues all GET and POST values from the request
+	 * @return PaymentResult
 	 */
 	public function processDonorReturn( $requestValues );
 
@@ -63,6 +64,8 @@ interface GatewayType {
 	 * 		'request' contains the structure of that request. Leaves in the array tree will eventually be mapped to actual values of ours,
 	 * 		according to the precidence established in the getTransactionSpecificValue function.
 	 * 		'values' contains default values for the transaction. Things that are typically not overridden should go here.
+	 * 		'check_required' should be set to true for transactions that require donor information,
+	 * 		  like initial payment setup. TODO: different required fields per transaction
 	 */
 	function defineTransactions();
 
@@ -342,7 +345,7 @@ interface GatewayType {
 	 * @param array $transaction The fields that we are interested in sending.
 	 * @return array The fields that will actually be sent. So, $transaction ++ some other things we think we're likely to always need.
 	 */
-	public function makeFreeformStompTransaction( $transaction );
+	public function addStandardMessageFields( $transaction );
 
 	/**
 	 * returns information about how to manage the Order ID

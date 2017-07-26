@@ -54,6 +54,7 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 	public function loadDataAndReInit( $data ) {
 		//re-init all these arrays, because this is a batch thing.
 		$this->session_killAllEverything(); // just to be sure
+		$this->errorState = new ErrorState();
 		$this->transaction_response = new PaymentTransactionResponse();
 		$this->hard_data = array(
 			'order_id' => $data['order_id']
@@ -63,7 +64,7 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 
 		$this->dataObj = new DonationData( $this, $data );
 
-		$this->unstaged_data = $this->dataObj->getDataEscaped();
+		$this->unstaged_data = $this->dataObj->getData();
 
 		$this->hard_data = array_merge( $this->hard_data, $this->getContributionTracking() );
 		$this->reAddHardData();
@@ -81,7 +82,7 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 		//have to do this again here.
 		$this->reAddHardData();
 
-		$this->revalidate();
+		$this->validate();
 	}
 
 	public function addRequestData( $dataArray ) {
@@ -162,8 +163,8 @@ class GlobalCollectOrphanAdapter extends GlobalCollectAdapter {
 	 *
 	 * FIXME: Carefully move this to the base class and decide when appropriate.
 	 */
-	protected function getStompTransaction() {
-		$transaction = parent::getStompTransaction();
+	protected function getQueueDonationMessage() {
+		$transaction = parent::getQueueDonationMessage();
 
 		// Overwrite the time field, if historical date is available.
 		if ( !is_null( $this->getData_Unstaged_Escaped( 'date' ) ) ) {

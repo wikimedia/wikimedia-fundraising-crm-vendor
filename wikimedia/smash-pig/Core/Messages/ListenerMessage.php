@@ -2,10 +2,10 @@
 
 use SmashPig\Core\Actions\IListenerMessageAction;
 use SmashPig\Core\Context;
-use SmashPig\Core\DataStores\KeyedOpaqueStorableObject;
+use SmashPig\Core\DataStores\JsonSerializableObject;
 use SmashPig\Core\Logging\Logger;
 
-abstract class ListenerMessage extends KeyedOpaqueStorableObject {
+abstract class ListenerMessage extends JsonSerializableObject {
 
 	/**
 	 * Determine if the message is complete, well formed, and able to be
@@ -31,7 +31,7 @@ abstract class ListenerMessage extends KeyedOpaqueStorableObject {
 		$retval = true;
 
 		// TODO: Cache this?
-		$actions = Context::get()->getConfiguration()->val( 'actions' );
+		$actions = Context::get()->getProviderConfiguration()->val( 'actions' );
 
 		foreach ( $actions as $actionClassName ) {
 			$action = new $actionClassName;

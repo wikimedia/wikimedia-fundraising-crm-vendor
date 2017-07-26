@@ -41,7 +41,12 @@ class GatewayValidationTest extends DonationInterfaceTestCase {
 		TestingGenericAdapter::$acceptedCurrencies[] = 'USD';
 
 		$this->page = new TestingGatewayPage();
-		$this->adapter = new TestingGenericAdapter();
+	}
+
+	protected function setUpAdapter( $data = array() ) {
+		$this->adapter = new TestingGenericAdapter( array(
+			'external_data' => $data,
+		) );
 		$this->page->adapter = $this->adapter;
 	}
 
@@ -51,62 +56,69 @@ class GatewayValidationTest extends DonationInterfaceTestCase {
 		parent::tearDown();
 	}
 
+	public function assertHasValidationError( $field, $messageKey = null, $messageParams = null ) {
+		$hasError = false;
+		foreach( $this->adapter->getErrorState()->getErrors() as $error ) {
+			if ( $error instanceof ValidationError and $error->getField() === $field ) {
+				$hasError = true;
+				if ( $messageKey !== null ) {
+					$this->assertEquals( $messageKey, $error->getMessageKey() );
+				}
+				if ( $messageParams !== null ) {
+					$this->assertEquals( $messageParams, $error->getMessageParams() );
+				}
+			}
+		}
+		$this->assertTrue( $hasError );
+	}
+
 	public function testPassesValidation() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '2.00',
 			'country' => 'US',
 			'currency' => 'USD',
 			'email' => 'foo@localhost.net',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertTrue( $this->adapter->validatedOK() );
 	}
 
 	public function testLowAmountError() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '1.99',
 			'country' => 'US',
 			'currency' => 'USD',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
 
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'amount', $errors );
+		$errors = $this->adapter->getErrorState();
+		$this->assertTrue( $errors->hasValidationError( 'amount' ) );
 	}
 
 	public function testHighAmountError() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '100.99',
 			'country' => 'US',
 			'currency' => 'USD',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
 
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'amount', $errors );
+		$errors = $this->adapter->getErrorState();
+		$this->assertTrue( $errors->hasValidationError( 'amount' ) );
 	}
 
 	public function testCurrencyCodeError() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '2.99',
 			'country' => 'BR',
 			'currency' => 'BRL',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
 
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'currency_code', $errors );
+		$this->assertHasValidationError( 'currency' );
 	}
 
 	public function testCountryError() {
@@ -116,82 +128,46 @@ class GatewayValidationTest extends DonationInterfaceTestCase {
 			'wgDonationInterfaceForbiddenCountries' => array( 'XX' )
 		) );
 
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '2.99',
 			'country' => 'XX',
 			'currency' => 'USD',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
 
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'country', $errors );
+		$this->assertHasValidationError( 'country' );
 	}
 
 	public function testEmailError() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '2.99',
 			'currency' => 'USD',
 			'email' => 'foo',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
 
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'email', $errors );
+		$this->assertHasValidationError( 'email' );
 	}
 
 	public function testSpuriousCcError() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '2.99',
 			'currency' => 'USD',
-			'fname' => '4111111111111111',
+			'first_name' => '4111111111111111',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
-
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'fname', $errors );
+		$this->assertHasValidationError( 'first_name' );
 	}
 
 	public function testMissingFieldError() {
-		$this->adapter->addRequestData( array(
+		$this->setUpAdapter( array(
 			'amount' => '2.99',
 		) );
 
-		$this->page->validateForm();
-
 		$this->assertFalse( $this->adapter->validatedOK() );
-
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'currency_code', $errors );
-	}
-
-	/**
-	 * @covers DataValidator::validate_gateway
-	 */
-	public function testBadGatewayError() {
-		$badGateway = uniqid();
-
-		// The gateway is calculated from adapter class, so this validation
-		// doesn't happen in practice and we can't fake a bad gateway using
-		// GatewayAdapter::addRequestData().
-
-		TestingGenericAdapter::$fakeIdentifier = $badGateway;
-		$this->adapter = new TestingGenericAdapter();
-		$this->page->adapter = $this->adapter;
-
-		$this->page->validateForm();
-
-		$this->assertFalse( $this->adapter->validatedOK() );
-
-		$errors = $this->adapter->getValidationErrors();
-		$this->assertArrayHasKey( 'general', $errors );
+		$this->assertHasValidationError( 'currency' );
 	}
 }

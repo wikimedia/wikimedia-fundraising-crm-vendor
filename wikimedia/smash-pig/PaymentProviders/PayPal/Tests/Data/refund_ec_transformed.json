@@ -13,8 +13,6 @@
   "order_id": "46239229",
   "gateway_refund_id": "3HD08833MR473623T",
   "gross_currency": "JPY",
-  "gateway": "paypal_ec",
-  "source_name": "SmashPig",
-  "source_type": "listener",
-  "source_version": "unknown"
+  "country": "US",
+  "gateway": "paypal_ec"
 }

@@ -3,8 +3,8 @@ namespace SmashPig\PaymentProviders\Ingenico\Tests;
 
 use PHPUnit_Framework_MockObject_MockObject;
 use Psr\Cache\CacheItemPoolInterface;
+use SmashPig\Core\Context;
 use SmashPig\Core\Http\CurlWrapper;
-use SmashPig\PaymentProviders\Ingenico\BankPaymentProvider;
 use SmashPig\PaymentProviders\Ingenico\IdealStatusProvider;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
@@ -29,12 +29,16 @@ class IdealStatusProviderTest extends BaseSmashPigUnitTestCase {
 	protected $cache;
 
 	public function setUp() {
+		parent::setUp();
 
-		$config = $this->setConfig( 'ingenico' );
+		$providerConfiguration = $this->setProviderConfiguration( 'ingenico' );
 		$this->curlWrapper = $this->getMock( '\SmashPig\Core\Http\CurlWrapper' );
-		$this->cache = $config->object( 'cache', true );
-		$config->overrideObjectInstance( 'curl/wrapper', $this->curlWrapper );
-		$config->object( 'cache' )->clear();
+		$providerConfiguration->overrideObjectInstance( 'curl/wrapper', $this->curlWrapper );
+
+		$globalConfig = Context::get()->getGlobalConfiguration();
+		$this->cache = $globalConfig->object( 'cache', true );
+		$this->cache->clear();
+
 		$this->provider = new IdealStatusProvider( array(
 			'cache-parameters' => array(
 				'duration' => 10,
@@ -42,12 +46,7 @@ class IdealStatusProviderTest extends BaseSmashPigUnitTestCase {
 			),
 			'availability-url' => 'http://example.org/undocumented/api/GetIssuers'
 		) );
-		$contents = file_get_contents( __DIR__ . "/../Data/availability.response" );
-		$parsed = CurlWrapper::parseResponse(
-			$contents, array( 'http_code' => 200 )
-		);
-		$this->curlWrapper->method( 'execute' )->willReturn( $parsed );
-		parent::setUp();
+		$this->setUpResponse(__DIR__ . "/../Data/availability.response", 200);
 	}
 
 	public function testGetBankStatus() {

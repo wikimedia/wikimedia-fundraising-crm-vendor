@@ -29,10 +29,6 @@ class WmfFramework_Drupal {
 		throw new BadMethodCallException( 'Unimplemented' );
 	}
 
-	static function getHostname() {
-		return gethostname();
-	}
-
 	static function formatMessage( $message_identifier ) {
 		// TODO: Use the i18n logic in wmf_communication
 		return $message_identifier;
@@ -73,6 +69,10 @@ class WmfFramework_Drupal {
 	}
 
 	static function setSessionValue( $key, $value ) {
+		throw new BadMethodCallException( 'Unimplemented' );
+	}
+
+	static function getSessionId() {
 		throw new BadMethodCallException( 'Unimplemented' );
 	}
 

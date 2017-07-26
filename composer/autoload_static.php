@@ -14,6 +14,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '3e2471375464aac821502deb0ac64275' => __DIR__ . '/..' . '/symfony/polyfill-php54/bootstrap.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         'bf34263f834e2781b79cae4d55a1d350' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
     );
@@ -69,6 +70,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'GuzzleHttp\\Psr7\\' => 16,
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
+            'GetOptionKit\\' => 13,
         ),
         'A' => 
         array (
@@ -174,6 +176,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
         ),
+        'GetOptionKit\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/corneltek/getoptionkit/src',
+        ),
         'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 
         array (
             0 => __DIR__ . '/..' . '/addshore/psr-6-mediawiki-bagostuff-adapter/src',
@@ -261,6 +267,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'DummyFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/DummyFiscalNumber.php',
         'EasyPeasyICS' => __DIR__ . '/..' . '/phpmailer/phpmailer/extras/EasyPeasyICS.php',
         'EncodingMangler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EncodingMangler.php',
+        'ErrorState' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ErrorState.php',
         'FallbackLogPrefixer' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/FallbackLogPrefixer.php',
         'FinalStatus' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/FinalStatus.php',
         'FiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/FiscalNumber.php',
@@ -304,6 +311,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'PHPMailerOAuth' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauth.php',
         'PHPMailerOAuthGoogle' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauthgoogle.php',
         'POP3' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.pop3.php',
+        'PaymentError' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentError.php',
         'PaymentMethod' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentMethod.php',
         'PaymentResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentResult.php',
         'PaymentTransactionResponse' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentTransactionResponse.php',
@@ -325,6 +333,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'StreetAddress' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StreetAddress.php',
         'Subdivisions' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/includes/Subdivisions.php',
         'UnstagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/UnstagingHelper.php',
+        'ValidationError' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ValidationError.php',
         'ValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ValidationHelper.php',
         'WmfFrameworkLogHandler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFrameworkLogHandler.php',
         'WmfFramework_Drupal' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.drupal.php',

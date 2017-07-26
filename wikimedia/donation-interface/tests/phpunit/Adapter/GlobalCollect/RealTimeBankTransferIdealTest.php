@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  *
  */
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingProviderConfiguration;
 
 /**
  * 
@@ -34,8 +34,10 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	public function setUp() {
 		parent::setUp();
 
-		$config = Configuration::createForView( 'ingenico' );
-		Context::initWithLogger( $config ); // gets torn down in parent
+		$config = TestingProviderConfiguration::createForProvider(
+			'ingenico', $this->smashPigGlobalConfig
+		);
+		TestingContext::get()->providerConfigurationOverride = $config;
 
 		$this->bankPaymentProvider = $this->getMockBuilder(
 			'\SmashPig\PaymentProviders\Ingenico\BankPaymentProvider'
@@ -77,7 +79,7 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 				'nodename' => 'input',
 				'value' => '1.55',
 			),
-			'currency_code' => array (
+			'currency' => array (
 				'nodename' => 'select',
 				'selected' => 'EUR',
 			),
@@ -351,6 +353,8 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'issuer_id' => 771,
+			// Email is required for RTBT.
+			'email' => 'nobody@wikimedia.org',
 		);
 
 		//somewhere else?
@@ -358,6 +362,9 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 		$options = array_merge( $options, $optionsForTestData );
 
 		$this->gatewayAdapter = $this->getFreshGatewayObject( $options );
+
+		$this->assertTrue( $this->gatewayAdapter->validatedOK() );
+
 		$this->gatewayAdapter->do_transaction( "INSERT_ORDERWITHPAYMENT" );
 		$action = $this->gatewayAdapter->getTransactionDataFormAction();
 		$this->assertEquals( "url_placeholder", $action, "The formaction was not populated as expected (ideal)." );

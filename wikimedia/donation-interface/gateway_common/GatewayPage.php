@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use Psr\Log\LogLevel;
 use SmashPig\Core\Logging\Logger;
 
 /**
@@ -33,12 +34,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * @var string
 	 */
 	protected $gatewayIdentifier;
-
-	/**
-	 * An array of form errors
-	 * @var array $errors
-	 */
-	public $errors = array( );
 
 	/**
 	 * The gateway adapter object
@@ -78,13 +73,15 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		if( $wgContributionTrackingFundraiserMaintenance
 			|| $wgContributionTrackingFundraiserMaintenanceUnsched ){
-			$this->redirect( Title::newFromText('Special:FundraiserMaintenance')->getFullURL(), '302' );
+			$this->getOutput()->redirect(
+				Title::newFromText('Special:FundraiserMaintenance')->getFullURL(), '302'
+			);
 			return;
 		}
 
 		$gatewayName = $this->getGatewayIdentifier();
 		$className = DonationInterface::getAdapterClassForGateway( $gatewayName );
-		DonationInterface::initializeSmashPig( $gatewayName );
+		DonationInterface::setSmashPigProvider( $gatewayName );
 
 		try {
 			$this->adapter = new $className();
@@ -122,6 +119,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			return;
 		}
 
+		// FIXME: Should have checked this before creating the adapter.
 		if ( $this->adapter->getGlobal( 'Enabled' ) !== true ) {
 			$this->logger->info( 'Displaying fail page for disabled gateway' );
 			$this->displayFailPage();
@@ -134,7 +132,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			return;
 		}
 
-		Hooks::register( 'MakeGlobalVariablesScript', array( $this->adapter, 'setClientVariables' ) );
+		Hooks::register( 'MakeGlobalVariablesScript', array( $this, 'setClientVariables' ) );
 
 		try {
 			$this->handleRequest();
@@ -154,24 +152,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * hook scheme?
 	 */
 	protected abstract function handleRequest();
-
-	/**
-	 * Checks current dataset for validation errors
-	 * TODO: As with every other bit of gateway-related logic that should 
-	 * definitely be available to every entry point, and functionally has very 
-	 * little to do with being contained within what in an ideal world would be 
-	 * a piece of mostly UI, this function needs to be moved inside the gateway 
-	 * adapter class.
-	 *
-	 * @return boolean Returns false on an error-free validation, otherwise true.
-	 * FIXME: that return value seems backwards to me.
-	 */
-	public function validateForm() {
-
-		$validated_ok = $this->adapter->revalidate();
-
-		return !$validated_ok;
-	}
 
 	/**
 	 * Build and display form to user
@@ -201,7 +181,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	protected function displayThankYouPage( $logReason ) {
 		$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
 		$this->logger->info( "Displaying thank you page $thankYouPage for status $logReason." );
-		$this->redirect( $thankYouPage );
+		$this->getOutput()->redirect( $thankYouPage );
 	}
 
 	/**
@@ -235,24 +215,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		$log_message = "Redirecting to [{$page}]";
 		$this->logger->info( $log_message );
 		$output->redirect( $page );
-	}
-
-	public function redirect( $url, $responsecode = '302' ) {
-		// Do we need to pop out of an iframe?
-		if ( $this->isReturnFramed() ) {
-			$this->logger->info(
-				"Resultswitcher: Popping out of iframe for Order ID " .
-				$this->adapter->getData_Unstaged_Escaped( 'order_id' )
-			);
-			$this->getOutput()->allowClickjacking();
-			$this->getOutput()->addModules( 'iframe.liberator' );
-			$this->getOutput()->addJsConfigVars(
-				'wgDonationInterfaceLiberationDestination', $url
-			);
-			return;
-		}
-		// No, normal redirect.
-		$this->getOutput()->redirect( $url, $responsecode );
 	}
 
 	/**
@@ -341,29 +303,34 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	protected function handleDonationRequest() {
 		$this->setHeaders();
 
-		// TODO: this is where we should feed GPCS parameters into DonationData.
+		// TODO: This is where we should feed GPCS parameters into the gateway
+		// and DonationData, rather than harvest params in the adapter itself.
 
 		// dispatch forms/handling
 		if ( $this->adapter->checkTokens() ) {
 			if ( $this->isProcessImmediate() ) {
 				// Check form for errors
-				// FIXME: Should this be rolled into adapter.doPayment?
-				$form_errors = $this->validateForm();
+				$validated_ok = $this->adapter->validatedOK();
 
-				// If there were errors, redisplay form, otherwise proceed to next step
-				if ( $form_errors ) {
-					$this->displayForm();
-				} else {
-					// Attempt to process the payment, and render the response.
+				// Proceed to the next step, unless there were errors.
+				if ( $validated_ok ) {
+					// Attempt to process the payment, then render the response.
 					$this->processPayment();
+				} else {
+					// Redisplay form to give the donor notification and a
+					// chance correct their errors.
+					$this->displayForm();
 				}
 			} else {
 				$this->adapter->session_addDonorData();
 				$this->displayForm();
 			}
 		} else { //token mismatch
-			$error['general']['token-mismatch'] = $this->msg( 'donate_interface-token-mismatch' );
-			$this->adapter->addManualError( $error );
+			$this->adapter->getErrorState()->addError( new PaymentError(
+				'internal-0001',
+				'Failed CSRF token validation',
+				LogLevel::INFO
+			) );
 			$this->displayForm();
 		}
 	}
@@ -412,16 +379,48 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		$request = $this->getRequest();
 		$referrer = $request->getHeader( 'referer' );
+		$liberated = false;
+		if ( $this->adapter->session_getData( 'order_status', $oid ) === 'liberated' ) {
+			$liberated = true;
+		}
+
+		// XXX need to know whether we were in an iframe or not.
+		global $wgServer;
+		if ( $this->isReturnFramed() && ( strpos( $referrer, $wgServer ) === false ) && !$liberated ) {
+			$sessionOrderStatus = $request->getSessionData( 'order_status' );
+			$sessionOrderStatus[$oid] = 'liberated';
+			$request->setSessionData( 'order_status', $sessionOrderStatus );
+			$this->logger->info( "Resultswitcher: Popping out of iframe for Order ID " . $oid );
+			$this->getOutput()->allowClickjacking();
+			$this->getOutput()->addModules( 'iframe.liberator' );
+			return;
+		}
 
 		$this->setHeaders();
+		$userAgent = $request->getHeader( 'User-Agent' );
+		if ( !$userAgent ) {
+			$userAgent = 'Unknown';
+		}
+
+		if ( $this->isRepeatReturnProcess() ) {
+			$this->logger->warning(
+				'Donor is trying to process an already-processed payment. ' .
+				"Adapter Order ID: $oid.\n" .
+				"Cookies: " . print_r( $_COOKIE, true ) ."\n" .
+				"User-Agent: " . $userAgent
+			);
+			$this->displayThankYouPage( 'repeat return processing' );
+			return;
+		}
 
 		if ( $deadSession ){
 			if ( $this->adapter->isReturnProcessingRequired() ) {
-				// FIXME: this may display inside an iframe
 				wfHttpError( 403, 'Forbidden', wfMessage( 'donate_interface-error-http-403' )->text() );
 				throw new RuntimeException(
 					'Resultswitcher: Request forbidden. No active donation in the session. ' .
-					"Adapter Order ID: $oid"
+					"Adapter Order ID: $oid.\n" .
+					"Cookies: " . print_r( $_COOKIE, true ) ."\n" .
+					"User-Agent: " . $userAgent
 				);
 			}
 			// If it's possible for a donation to go through without our
@@ -444,17 +443,10 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		if ( $this->adapter->checkTokens() ) {
 			// feed processDonorReturn all the GET and POST vars
 			$requestValues = $this->getRequest()->getValues();
-			$this->adapter->processDonorReturn( $requestValues );
-			$status = $this->adapter->getFinalStatus();
-
-			switch ( $status ) {
-			case FinalStatus::COMPLETE:
-			case FinalStatus::PENDING:
-			case FinalStatus::PENDING_POKE:
-				$this->displayThankYouPage( $status );
-				return;
-			}
-			$this->logger->info( "Displaying fail page for final status $status" );
+			$result = $this->adapter->processDonorReturn( $requestValues );
+			$this->markReturnProcessed();
+			$this->renderResponse( $result );
+			return;
 		} else {
 			$this->logger->error( "Resultswitcher: Token Check Failed. Order ID: $oid" );
 		}
@@ -479,7 +471,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$this->displayFailPage();
 		} elseif ( $url = $result->getRedirect() ) {
 			$this->adapter->logPending();
-			$this->redirect( $url );
+			$this->getOutput()->redirect( $url );
 		} elseif ( $url = $result->getIframe() ) {
 			// Show a form containing an iframe.
 
@@ -496,28 +488,13 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 				'ffname' => $form,
 			) );
 			$this->displayForm();
-		} elseif ( $errors = $result->getErrors() ) {
-			// FIXME: Creepy.  Currently, the form inspects adapter errors.  Use
-			// the stuff encapsulated in PaymentResult instead.
-			foreach ( $this->adapter->getTransactionResponse()->getErrors() as $code => $transactionError ) {
-				$message = $transactionError['message'];
-				$error = array();
-				if ( !empty( $transactionError['context'] ) ) {
-					$error[$transactionError['context']] = $message;
-				} else if ( strpos( $code, 'internal' ) === 0 ) {
-					$error['retryMsg'][ $code ] = $message;
-				}
-				else {
-					$error['general'][ $code ] = $message;
-				}
-				$this->adapter->addManualError( $error );
-			}
+		} elseif ( !empty( $result->getErrors() ) ) {
 			$this->displayForm();
 		} else {
 			// Success.
 			$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
 			$this->logger->info( "Displaying thank you page $thankYouPage for successful PaymentResult." );
-			$this->redirect( $thankYouPage );
+			$this->getOutput()->redirect( $thankYouPage );
 		}
 	}
 
@@ -569,5 +546,71 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		// TODO: Switch title according to failiness.
 		// Maybe ask $form_obj for a title so different errors can show different titles
 		$this->getOutput()->setPageTitle( wfMessage( 'donate_interface-make-your-donation' ) );
+	}
+
+	/**
+	 * MakeGlobalVariablesScript handler, sends settings to Javascript
+	 * @param array $vars
+	 */
+	public function setClientVariables( &$vars ) {
+		$language = $this->adapter->getData_Unstaged_Escaped( 'language' );
+		$country = $this->adapter->getData_Unstaged_Escaped( 'country' );
+		$vars['wgDonationInterfacePriceFloor'] = $this->adapter->getGlobal( 'PriceFloor' );
+		$vars['wgDonationInterfacePriceCeiling'] = $this->adapter->getGlobal( 'PriceCeiling' );
+		try {
+			$clientRules = $this->adapter->getClientSideValidationRules();
+			if ( !empty( $clientRules ) ) {
+				// Translate all the messages
+				// FIXME: figure out country fallback add the i18n strings
+				// for use with client-side mw.msg()
+				foreach( $clientRules as &$fieldRules ) {
+					foreach ( $fieldRules as &$rule ) {
+						if ( !empty( $rule['messageKey'] ) ) {
+							$rule['message'] = MessageUtils::getCountrySpecificMessage(
+								$rule['messageKey'],
+								$country,
+								$language
+							);
+						}
+					}
+				}
+				$vars['wgDonationInterfaceValidationRules'] = $clientRules;
+			}
+		} catch ( Exception $ex ) {
+			$this->logger->warning(
+				'Caught exception setting client-side validation rules: ' .
+				$ex->getMessage()
+			);
+		}
+	}
+
+	protected function isRepeatReturnProcess() {
+		$request = $this->getRequest();
+		$requestProcessId = $this->adapter->getRequestProcessId(
+			$request->getValues()
+		);
+		$processedRequests = $request->getSessionData( 'processed_requests' );
+		if ( !$requestProcessId || empty( $processedRequests ) ) {
+			return false;
+		}
+		return array_key_exists( $requestProcessId, $processedRequests );
+	}
+
+	protected function markReturnProcessed() {
+		$request = $this->getRequest();
+		$requestProcessId = $this->adapter->getRequestProcessId(
+			$request->getValues()
+		);
+		if ( !$requestProcessId ) {
+			return;
+		}
+		$processedRequests = $request->getSessionData( 'processed_requests' );
+		if ( !$processedRequests ) {
+			$processedRequests = array();
+		}
+		// TODO: we could store the results of the last process here, but for now
+		// we just indicate we did SOMETHING with it
+		$processedRequests[$requestProcessId] = true;
+		$request->setSessionData( 'processed_requests', $processedRequests );
 	}
 }

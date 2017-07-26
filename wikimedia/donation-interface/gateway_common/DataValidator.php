@@ -26,19 +26,20 @@ class DataValidator {
 		switch ( $field ) {
 			case 'email' :
 			case 'amount' :
-			case 'currency_code' :
+			case 'currency' :
 			case 'fiscal_number' :
 			case 'issuer_id' :
 			case 'card_num':
 			case 'card_type':
 			case 'cvv':
-			case 'fname':
-			case 'lname':
+			case 'first_name':
+			case 'last_name':
 			case 'city':
 			case 'country':
-			case 'street':
-			case 'state':
+			case 'street_address':
+			case 'state_province':
 			case 'postal_code':
+			case 'expiration':
 				$error_token = $field;
 				break;
 			default:
@@ -65,12 +66,12 @@ class DataValidator {
 			'card_type' => '',
 			'cvv' => '',
 			'fiscal_number' => '',
-			'fname' => '',
-			'lname' => '',
+			'first_name' => '',
+			'last_name' => '',
 			'city' => '',
 			'country' => '',
-			'street' => '',
-			'state' => '',
+			'street_address' => '',
+			'state_province' => '',
 			'postal_code' => '',
 			'email' => '',
 		);
@@ -78,8 +79,9 @@ class DataValidator {
 
 
 	/**
-	 * getErrorMessage - returns the translated error message appropriate for a
-	 * validation error on the specified field, of the specified type.
+	 * getError - returns the error object appropriate for a validation error
+	 * on the specified field, of the specified type.
+	 *
 	 * @param string $field - The common name of the field containing the data
 	 * that is causing the error.
 	 * @param string $type - The type of error being caused, from a set.
@@ -88,74 +90,30 @@ class DataValidator {
 	 *        'valid_type' - in general, the wrong format
 	 *        'calculated' - fields that failed some kind of multiple-field data
 	 * integrity check.
-	 * @param string $language MediaWiki language code
-	 * @param string $country ISO country code
-	 * @return String
+	 *
+	 * @return ValidationError
 	 */
-	public static function getErrorMessage( $field, $type, $language, $country = null ){
-		//this is gonna get ugly up in here.
-		//error_log( __FUNCTION__ . " $field, $type, $value " );
-
+	public static function getError( $field, $type ) {
 		//NOTE: We are just using the next bit because it's convenient.
 		//getErrorToken is actually for something entirely different:
 		//Figuring out where on the form the error should land.
-		$message_field = self::getErrorToken( $field );
-		if ( $field === 'expiration' ){
-			///the inevitable special case.
-			$message_field = $field;
-		}
-		//postal code is a weird one. More L10n than I18n.
-		//'donate_interface-error-msg-postal' => 'postal code',
+		$token = self::getErrorToken( $field );
 
-		$error_message_field_key = 'donate_interface-error-msg-' . $message_field;
-
-		if ( $country !== null ) {
-			$translated_field_name = MessageUtils::getCountrySpecificMessage( $error_message_field_key, $country, $language );
-		} else if ( WmfFramework::messageExists( $error_message_field_key, $language ) ) {
-			$translated_field_name = WmfFramework::formatMessage( $error_message_field_key );
-		} else {
-			$translated_field_name = false;
-		}
-
-		//Empty messages should get:
-		//'donate_interface-error-msg' => 'Please enter your $1';
-		//If they have no defined error message, give 'em the default.
+		//Empty messages
 		if ($type === 'not_empty'){
-			if ( $message_field != 'general' && $translated_field_name ) {
-				return WmfFramework::formatMessage(
-					'donate_interface-error-msg',
-					$translated_field_name
-				);
+			if ( $token != 'general' ) {
+				$missingErrorKey = "donate_interface-error-msg-{$token}";
+				return new ValidationError( $token, $missingErrorKey );
 			}
 		}
 
 		if ( $type === 'valid_type' || $type === 'calculated' ) {
-			//NOTE: We are just using the next bit because it's convenient.
-			//getErrorToken is actually for something entirely different:
-			//Figuring out where on the form the error should land.
-			$token = self::getErrorToken( $field );
-			$error_key_calc = 'donate_interface-error-msg-' . $token . '-calc';
-
-			if ( $type === 'calculated' ){
-				// try for the special "calculated" error message.
-				if ( WmfFramework::messageExists( $error_key_calc, $language ) ) {
-					return WmfFramework::formatMessage( $error_key_calc );
-				}
-			}
-
-			//try for new more specific default correction message
-			if ( $message_field != 'general'
-				&& $translated_field_name
-				&& WmfFramework::messageExists( 'donate_interface-error-msg-field-correction', $language ) ) {
-				return WmfFramework::formatMessage(
-					'donate_interface-error-msg-field-correction',
-					$translated_field_name
-				);
-			}
+			$invalidErrorKey = "donate_interface-error-msg-invalid-{$token}";
+			return new ValidationError( $token, $invalidErrorKey );
 		}
 
 		//ultimate defaultness.
-		return WmfFramework::formatMessage( 'donate_interface-error-msg-general' );
+		return new ValidationError( $token, 'donate_interface-error-msg-general' );
 	}
 
 	/**
@@ -169,9 +127,7 @@ class DataValidator {
 	 * UNLESS they are required for a field that uses them for more complex
 	 * validation (the 'calculated' phase).
 	 * @throws BadMethodCallException
-	 * @return array An array of errors in a format ready for any derivative of
-	 * the main DonationInterface Form class to display. The array will be empty
-	 * if no errors were generated and everything passed OK.
+	 * @return array A list of ValidationError objects, or empty on successful validation.
 	 */
 	public static function validate( GatewayType $gateway, $data, $check_not_empty = array()  ){
 		//return the array of errors that should be generated on validate.
@@ -194,7 +150,7 @@ class DataValidator {
 		$validations = array(
 			'not_empty' => array(
 				'country',
-				'currency_code',
+				'currency',
 				'gateway',
 			),
 			'valid_type' => array(
@@ -202,7 +158,7 @@ class DataValidator {
 				'account_number' => 'validate_numeric',
 				'anonymous' => 'validate_boolean',
 				'contribution_tracking_id' => 'validate_numeric',
-				'currency_code' => 'validate_alphanumeric',
+				'currency' => 'validate_alphanumeric',
 				'gateway' => 'validate_alphanumeric',
 				'numAttempt' => 'validate_numeric',
 				'optout' => 'validate_boolean',
@@ -216,10 +172,11 @@ class DataValidator {
 				'city' => 'validate_address',
 				'country' => 'validate_country_allowed',
 				'email' => 'validate_email',
-				'street' => 'validate_address',
-				'currency_code' => 'validate_currency_code',
-				'fname' => 'validate_name',
-				'lname' => 'validate_name',
+				'street_address' => 'validate_address',
+				'postal_code' => 'validate_address',
+				'currency' => 'validate_currency_code',
+				'first_name' => 'validate_name',
+				'last_name' => 'validate_name',
 				'name' => 'validate_name',
 			),
 		);
@@ -232,14 +189,8 @@ class DataValidator {
 		}
 
 		$errors = array();
+		$errored_fields = array();
 		$results = array();
-
-		$language = DataValidator::guessLanguage( $data );
-		if ( empty( $data['country'] ) ) {
-			$country = null;
-		} else {
-			$country = $data['country'];
-		}
 
 		foreach ( $validations as $phase => $fields ) {
 			foreach ( $fields as $key => $custom ) {
@@ -252,19 +203,22 @@ class DataValidator {
 					$validation_function = $custom;
 				}
 
-				if ( !isset( $data[$field] ) ) {
+				if ( empty( $data[$field] ) ) {
 					if ( $phase !== 'not_empty' ) {
 						// Skip if not required and nothing to validate.
 						continue;
 					} else {
 						// Stuff with nothing.
+						// FIXME: Weird though 'cos this parameter isn't passed
+						// by reference, so the null value only affects
+						// DataValidator subroutines.
 						$data[$field] = null;
 					}
 				}
 
 				// Skip if we've already determined this field group is invalid.
 				$errorToken = self::getErrorToken( $field );
-				if ( array_key_exists( $errorToken, $errors ) ) {
+				if ( array_key_exists( $errorToken, $errored_fields ) ) {
 					continue;
 				}
 
@@ -288,7 +242,8 @@ class DataValidator {
 				$results[$phase][$field] = $result;
 				if ( $result === false ) {
 					// We did the check, and it failed.
-					$errors[$errorToken] = self::getErrorMessage( $field, $phase, $language, $country );
+					$errored_fields[$errorToken] = true;
+					$errors[] = self::getError( $field, $phase );
 				}
 			}
 		}
@@ -498,7 +453,8 @@ class DataValidator {
 	 * @return boolean True if the name is not suspiciously like a CC number
 	 */
 	public static function validate_name( $value ) {
-		return !DataValidator::cc_number_exists_in_str( $value );
+		return !DataValidator::cc_number_exists_in_str( $value ) &&
+			!DataValidator::obviousXssInString( $value );
 	}
 
 	/**
@@ -507,7 +463,13 @@ class DataValidator {
 	 * @return bool True if suspiciously like a CC number
 	 */
 	public static function validate_address( $value ) {
-		return !DataValidator::cc_number_exists_in_str( $value );
+		return !DataValidator::cc_number_exists_in_str( $value ) &&
+			!DataValidator::obviousXssInString( $value );
+	}
+
+	public static function obviousXssInString( $value ) {
+		return ( strpos( $value, '>' ) !== false ) ||
+			( strpos( $value, '<' ) !== false );
 	}
 
 	/**

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Wikimedia Foundation
  *
@@ -16,7 +15,12 @@
  * GNU General Public License for more details.
  *
  */
+
 use Psr\Log\LogLevel;
+use SmashPig\CrmLink\Messages\SourceFields;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingProviderConfiguration;
+use Wikimedia\TestingAccessWrapper;
 
 /**
  *
@@ -28,6 +32,13 @@ use Psr\Log\LogLevel;
 class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends DonationInterfaceTestCase {
 	public function setUp() {
 		parent::setUp();
+
+		TestingContext::get()->providerConfigurationOverride =
+			TestingProviderConfiguration::createForProvider(
+				'globalcollect',
+				$this->smashPigGlobalConfig
+			);
+
 
 		$this->setMwGlobals( array(
 			'wgGlobalCollectGatewayEnabled' => true,
@@ -98,7 +109,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		//no data on construct, do not generate Order IDs
 		$gateway = $this->getFreshGatewayObject( null, array ( 'order_id_meta' => array ( 'generate' => FALSE ) ) );
 		$this->assertFalse( $gateway->getOrderIDMeta( 'generate' ), 'The order_id meta generate setting override is not working properly. Deferred order_id generation may be broken.' );
-		$this->assertNull( $gateway->getData_Unstaged_Escaped( 'order_id' ), 'Failed asserting that an absent order id is left as null, when not generating our own' );
+		$this->assertEmpty( $gateway->getData_Unstaged_Escaped( 'order_id' ), 'Failed asserting that an absent order id is left as null, when not generating our own' );
 
 		$data = array_merge( $this->getDonorTestData(), $this->dummy_utm_data );
 		$data['order_id'] = '66666';
@@ -112,34 +123,6 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		$this->assertEquals( $gateway->getData_Unstaged_Escaped( 'order_id' ), '777777', 'loadDataAndReInit failed to stick OrderID on second batch item' );
 
 		$this->verifyNoLogErrors();
-	}
-
-	public function testGCFormLoad() {
-		$init = $this->getDonorTestData( 'US' );
-		unset( $init['order_id'] );
-		$init['payment_method'] = 'cc';
-		$init['payment_submethod'] = 'visa';
-		$init['ffname'] = 'cc-vmad';
-
-		$assertNodes = array (
-			'submethod-mc' => array (
-				'nodename' => 'input'
-			),
-			'selected-amount' => array (
-				'nodename' => 'span',
-				'innerhtmlmatches' => '/^\s*' .
-					str_replace( '$', '\$',
-						Amount::format( 1.55, 'USD', $init['language'] . '_' . $init['country'] )
-					).
-					'\s*$/',
-			),
-			'state' => array (
-				'nodename' => 'select',
-				'selected' => 'CA',
-			),
-		);
-
-		$this->verifyFormOutput( 'GlobalCollectGateway', $init, $assertNodes, true );
 	}
 
 	/**
@@ -164,7 +147,10 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		$this->assertEquals( false, $result->getCommunicationStatus(), "Error code $code should mean status of do_transaction is false" );
 		$errors = $result->getErrors();
 		$this->assertFalse( empty( $errors ), 'Orphan adapter needs to see the errors to consider it rectified' );
-		$this->assertTrue( array_key_exists( '1000001', $errors ), 'Orphan adapter needs error 1000001 to consider it rectified' );
+		$finder = function( $error ) {
+			return $error->getErrorCode() == '1000001';
+		};
+		$this->assertNotEmpty( array_filter( $errors, $finder ), 'Orphan adapter needs error 1000001 to consider it rectified' );
 		$loglines = $this->getLogMatches( LogLevel::INFO, "/Got error code $code, not retrying to avoid MasterCard fines./" );
 		$this->assertNotEmpty( $loglines, "GC Error $code is not generating the expected payments log error" );
 	}
@@ -201,5 +187,26 @@ class DonationInterface_Adapter_GlobalCollect_Orphans_GlobalCollectTest extends 
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
 		$this->assertEquals( 40, $exposed->risk_score,
 			'Risk score was incremented correctly.' );
+		$message = DonationQueue::instance()->pop( 'payments-antifraud' );
+		SourceFields::removeFromMessage( $message );
+		$expected = array(
+			'validation_action' => 'review',
+			'risk_score' => 40,
+			'score_breakdown' => array(
+				// FIXME: need to enable utm / email / country checks ???
+				'initial' => 0,
+				'getCVVResult' => 10,
+				'getAVSResult' => 30,
+			),
+			'user_ip' => null, // FIXME
+			'gateway_txn_id' => '55555',
+			'date' => $message['date'],
+			'server' => gethostname(),
+			'gateway' => 'globalcollect',
+			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
+			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
+			'payment_method' => 'cc',
+		);
+		$this->assertEquals( $expected, $message );
 	}
 }

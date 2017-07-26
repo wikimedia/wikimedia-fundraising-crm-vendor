@@ -55,7 +55,7 @@ class GatewayPageTest extends DonationInterfaceTestCase {
 		$externalData = array_merge(
 			array(
 				'amount' => '200',
-				'currency_code' => 'BBD',
+				'currency' => 'BBD',
 				'contribution_tracking_id' => mt_rand( 10000, 10000000 ),
 			),
 			$extra
@@ -77,15 +77,13 @@ class GatewayPageTest extends DonationInterfaceTestCase {
 		TestingGenericAdapter::$fakeGlobals['NotifyOnConvert'] = true;
 		$this->setUpAdapter();
 
-		$this->page->validateForm();
+		$this->assertFalse( $this->adapter->validatedOK() );
 
-		$this->assertTrue( $this->adapter->validatedOK() );
-
-		$manualErrors = $this->adapter->getManualErrors();
-		$msg = $this->page->msg( 'donate_interface-fallback-currency-notice', 'USD' )->text();
-		$this->assertEquals( $msg, $manualErrors['general'] );
+		$errors = $this->adapter->getErrorState()->getErrors();
+		$msgKey = 'donate_interface-fallback-currency-notice';
+		$this->assertEquals( $msgKey, $errors[0]->getMessageKey() );
 		$this->assertEquals( 100, $this->adapter->getData_Unstaged_Escaped( 'amount' ) );
-		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency_code' ) );
+		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency' ) );
 	}
 
 	public function testCurrencyFallbackIntermediateConversion() {
@@ -95,52 +93,51 @@ class GatewayPageTest extends DonationInterfaceTestCase {
 		// FIXME: Relies on app default exchange rate.  Set explicitly instead.
 		$this->setUpAdapter();
 
-		$this->page->validateForm();
-
-		$manualErrors = $this->adapter->getManualErrors();
-		$msg = $this->page->msg( 'donate_interface-fallback-currency-notice', 'OMR' )->text();
-		$this->assertEquals( $msg, $manualErrors['general'] );
+		$errors = $this->adapter->getErrorState()->getErrors();
+		$msgKey = 'donate_interface-fallback-currency-notice';
+		$this->assertEquals( $msgKey, $errors[0]->getMessageKey() );
 		$this->assertEquals( 38, $this->adapter->getData_Unstaged_Escaped( 'amount' ) );
-		$this->assertEquals( 'OMR', $this->adapter->getData_Unstaged_Escaped( 'currency_code' ) );
+		$this->assertEquals( 'OMR', $this->adapter->getData_Unstaged_Escaped( 'currency' ) );
 	}
 
 	public function testCurrencyFallbackWithoutNotification() {
 		TestingGenericAdapter::$fakeGlobals['NotifyOnConvert'] = false;
 		$this->setUpAdapter();
 
-		$this->page->validateForm();
-
 		$this->assertTrue( $this->adapter->validatedOK() );
 
-		$manualErrors = $this->adapter->getManualErrors();
-		$this->assertEquals( null, $manualErrors['general'] );
+		$errorState = $this->adapter->getErrorState();
+		$this->assertFalse( $errorState->hasErrors() );
 		$this->assertEquals( 100, $this->adapter->getData_Unstaged_Escaped( 'amount' ) );
-		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency_code' ) );
+		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency' ) );
 	}
 
 	public function testCurrencyFallbackAlwaysNotifiesIfOtherErrors() {
 		TestingGenericAdapter::$fakeGlobals['NotifyOnConvert'] = false;
 		$this->setUpAdapter( array( 'email' => 'notanemail' ) );
 
-		$this->page->validateForm();
-
-		$manualErrors = $this->adapter->getManualErrors();
-		$msg = $this->page->msg( 'donate_interface-fallback-currency-notice', 'USD' )->text();
-		$this->assertEquals( $msg, $manualErrors['general'] );
+		$errors = $this->adapter->getErrorState()->getErrors();
+		$msgKey = 'donate_interface-fallback-currency-notice';
+		$foundError = false;
+		foreach( $errors as $error ) {
+			if ( $error->getField() === 'currency' ) {
+				$this->assertEquals( $msgKey, $error->getMessageKey() );
+				$foundError = true;
+			}
+		}
+		$this->assertTrue( $foundError );
 		$this->assertEquals( 100, $this->adapter->getData_Unstaged_Escaped( 'amount' ) );
-		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency_code' ) );
+		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency' ) );
 	}
 
 	public function testNoFallbackForSupportedCurrency() {
 		TestingGenericAdapter::$acceptedCurrencies[] = 'BBD';
 		$this->setUpAdapter();
 
-		$this->page->validateForm();
-
-		$manualErrors = $this->adapter->getManualErrors();
-		$this->assertEquals( null, $manualErrors['general'] );
+		$errorState = $this->adapter->getErrorState();
+		$this->assertFalse( $errorState->hasErrors() );
 		$this->assertEquals( 200, $this->adapter->getData_Unstaged_Escaped( 'amount' ) );
-		$this->assertEquals( 'BBD', $this->adapter->getData_Unstaged_Escaped( 'currency_code' ) );
+		$this->assertEquals( 'BBD', $this->adapter->getData_Unstaged_Escaped( 'currency' ) );
 	}
 
 	public function testCurrencyFallbackByCountry() {
@@ -150,15 +147,13 @@ class GatewayPageTest extends DonationInterfaceTestCase {
 			'FallbackCurrency' => false,
 			'FallbackCurrencyByCountry' => true,
 		);
-		$this->setUpAdapter();
-		$this->adapter->addRequestData( array(
+		$extra = array(
 			'country' => 'US',
-		) );
-
-		$this->page->validateForm();
+		);
+		$this->setUpAdapter( $extra );
 
 		$this->assertEquals( 100, $this->adapter->getData_Unstaged_Escaped( 'amount' ) );
-		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency_code' ) );
+		$this->assertEquals( 'USD', $this->adapter->getData_Unstaged_Escaped( 'currency' ) );
 	}
 
 	/**
@@ -176,11 +171,12 @@ class GatewayPageTest extends DonationInterfaceTestCase {
 		preg_match( '/Redirecting for transaction: (.*)$/', $logged[0], $matches );
 		$detailString = $matches[1];
 		$expected = array(
-			'currency_code' => 'USD',
+			'currency' => 'USD',
 			'payment_submethod' => '',
-			'fname' => 'Firstname',
-			'lname' => 'Surname',
-			'amount' => '1.55',
+			'first_name' => 'Firstname',
+			'last_name' => 'Surname',
+			'gross' => '1.55',
+			'fee' => 0,
 			'language' => 'en',
 			'email' => 'nobody@wikimedia.org',
 			'country' => 'US',
@@ -192,18 +188,16 @@ class GatewayPageTest extends DonationInterfaceTestCase {
 			'gateway_account' => 'testing',
 			'gateway_txn_id' => false,
 			'response' => false,
-			'street' => '123 Fake Street',
+			'street_address' => '123 Fake Street',
 			'city' => 'San Francisco',
-			'state' => 'CA',
+			'state_province' => 'CA',
 			'postal_code' => '94105',
-			'php-message-class' => 'SmashPig\CrmLink\Messages\DonationInterfaceMessage',
 		);
 		$actual = json_decode( $detailString, true );
 		// TODO: when tests use PHPUnit 4.4
 		// $this->assertArraySubset( $expected, $actual, false, 'Logged the wrong stuff' );
 		$expected['order_id'] = $actual['contribution_tracking_id'];
 		unset( $actual['contribution_tracking_id'] );
-		unset( $actual['correlation-id'] );
 		unset( $actual['date'] );
 		$this->assertEquals( $expected, $actual, 'Logged the wrong stuff!' );
 	}
