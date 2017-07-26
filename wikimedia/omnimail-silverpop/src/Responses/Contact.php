@@ -82,7 +82,7 @@ class Contact {
    * @return mixed
    */
   public function getOptInSource() {
-    return $this->data['opt_in_details'];
+    return (string) $this->data['opt_in_details'];
   }
 
   /**
@@ -134,6 +134,10 @@ class Contact {
    */
   public function setContactReference($contactReference) {
     $this->contactReference = $contactReference;
+  }
+
+  public function getCustomData($key) {
+    return (string) $this->data[$key];
   }
 
   /**
