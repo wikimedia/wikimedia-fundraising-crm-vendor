@@ -75,7 +75,7 @@ class Contact {
    * @return false|string
    */
   public function getOptOutIsoDateTime() {
-    return (date('Y-m-d H:i:s', $this->getOptOutTimestamp()));
+    return (empty($this->getOptOutTimestamp()) ? FALSE : date('Y-m-d H:i:s', $this->getOptOutTimestamp()));
   }
 
   /**

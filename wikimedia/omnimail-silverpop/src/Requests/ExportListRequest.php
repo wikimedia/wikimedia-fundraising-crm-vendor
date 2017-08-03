@@ -23,6 +23,31 @@ class ExportListRequest extends SilverpopBaseRequest
   protected $groupIdentifier;
 
   /**
+   * Specifies which contacts to export. Valid values are:
+   * - ALL – export entire database. System columns will not be exported by default.
+   * - OPT_IN – export only currently opted-in contacts.
+   * - OPT_OUT – export only currently opted-out contacts.
+   * - UNDELIVERABLE – export only contacts who are currently marked as undeliverable.
+   *
+   * @var string
+   */
+  protected $exportType;
+
+  /**
+   * @return string
+   */
+  public function getExportType() {
+    return $this->exportType;
+  }
+
+  /**
+   * @param string $exportType
+   */
+  public function setExportType($exportType) {
+    $this->exportType = $exportType;
+  }
+
+  /**
    * @return mixed
    */
   public function getGroupIdentifier() {
@@ -108,7 +133,8 @@ class ExportListRequest extends SilverpopBaseRequest
     $result = $this->silverPop->exportList(
       $this->getGroupIdentifier(),
       $this->getStartTimeStamp(),
-      $this->getEndTimeStamp()
+      $this->getEndTimeStamp(),
+      $this->getExportType()
     );
     $this->setRetrievalParameters(array(
       'jobId' => (string) $result['jobId'],
@@ -129,6 +155,7 @@ class ExportListRequest extends SilverpopBaseRequest
       'includeTest' => FALSE,
       'startTimeStamp' => strtotime('1 week ago'),
       'endTimeStamp' => strtotime('now'),
+      'exportType' => 'ALL'
     );
   }
 
