@@ -1887,68 +1887,6 @@
         "homepage": "https://symfony.com"
     },
     {
-        "name": "wikimedia/smash-pig",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "c188e2e90c4a753d17ca8e9ecbd58aa943b5fce2"
-        },
-        "require": {
-            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-            "coderkungfu/php-queue": "dev-master",
-            "corneltek/getoptionkit": "^2.5",
-            "php": ">=5.3.3",
-            "phpmailer/phpmailer": "^5.2",
-            "predis/predis": "^1.1",
-            "psr/cache": "^1.0",
-            "symfony/event-dispatcher": "^2.1",
-            "symfony/http-foundation": "^2.1",
-            "symfony/yaml": "^2.8"
-        },
-        "require-dev": {
-            "jakub-onderka/php-parallel-lint": "^0.9",
-            "phpunit/phpunit": "^4.8"
-        },
-        "time": "2017-08-03T18:29:58+00:00",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "psr-4": {
-                "SmashPig\\": "./"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "authors": [
-            {
-                "name": "Katie Horn",
-                "email": "khorn@wikimedia.org"
-            },
-            {
-                "name": "Matthew Walker",
-                "email": "mwalker@wikimedia.org"
-            },
-            {
-                "name": "Adam Roses Wight",
-                "email": "awight@wikimedia.org"
-            },
-            {
-                "name": "Elliott Eggleston",
-                "email": "eeggleston@wikimedia.org"
-            }
-        ],
-        "description": "The open source PHP flexible payments library and frontend/backend mediator.",
-        "homepage": "http://smashpig.org",
-        "keywords": [
-            "donations",
-            "payments"
-        ]
-    },
-    {
         "name": "wikimedia/omnimail-silverpop",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
@@ -1995,6 +1933,68 @@
             "mail",
             "omnimail",
             "silverpop"
+        ]
+    },
+    {
+        "name": "wikimedia/smash-pig",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
+            "reference": "f7b8b3b1fcbe1bb8ece2de5968f653891661f1b9"
+        },
+        "require": {
+            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+            "coderkungfu/php-queue": "dev-master",
+            "corneltek/getoptionkit": "^2.5",
+            "php": ">=5.3.3",
+            "phpmailer/phpmailer": "^5.2",
+            "predis/predis": "^1.1",
+            "psr/cache": "^1.0",
+            "symfony/event-dispatcher": "^2.1",
+            "symfony/http-foundation": "^2.1",
+            "symfony/yaml": "^2.8"
+        },
+        "require-dev": {
+            "jakub-onderka/php-parallel-lint": "^0.9",
+            "phpunit/phpunit": "^4.8"
+        },
+        "time": "2017-08-22T16:37:45+00:00",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "SmashPig\\": "./"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0"
+        ],
+        "authors": [
+            {
+                "name": "Katie Horn",
+                "email": "khorn@wikimedia.org"
+            },
+            {
+                "name": "Matthew Walker",
+                "email": "mwalker@wikimedia.org"
+            },
+            {
+                "name": "Adam Roses Wight",
+                "email": "awight@wikimedia.org"
+            },
+            {
+                "name": "Elliott Eggleston",
+                "email": "eeggleston@wikimedia.org"
+            }
+        ],
+        "description": "The open source PHP flexible payments library and frontend/backend mediator.",
+        "homepage": "http://smashpig.org",
+        "keywords": [
+            "donations",
+            "payments"
         ]
     }
 ]
