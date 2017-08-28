@@ -20,6 +20,7 @@
 use ForceUTF8\Encoding;
 use MediaWiki\Session\SessionManager;
 use Psr\Log\LogLevel;
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use Symfony\Component\Yaml\Parser;
 
@@ -447,6 +448,7 @@ abstract class GatewayAdapter
 			// Always stage email address first, to set default if missing
 			new DonorEmail(),
 			new DonorFullName(),
+			new CountryValidation(),
 			new Amount(),
 			new AmountInCents(),
 			new StreetAddress(),
@@ -2107,7 +2109,7 @@ abstract class GatewayAdapter
 			// FIXME: Dispatch "freeform" messages transparently as well.
 			// TODO: write test
 			$this->logger->info( 'Pushing transaction to payments-init queue.' );
-			DonationQueue::instance()->push( $transaction, 'payments-init' );
+			QueueWrapper::push( 'payments-init' , $transaction );
 		} catch ( Exception $e ) {
 			$this->logger->error( 'Unable to send payments-init message' );
 		}
@@ -2256,13 +2258,13 @@ abstract class GatewayAdapter
 
 	protected function pushMessage( $queue ) {
 		$this->logger->info( "Pushing transaction to queue [$queue]" );
-		DonationQueue::instance()->push( $this->getQueueDonationMessage(), $queue );
+		QueueWrapper::push( $queue, $this->getQueueDonationMessage() );
 	}
 
 	protected function sendPendingMessage() {
 		$order_id = $this->getData_Unstaged_Escaped( 'order_id' );
 		$this->logger->info( "Sending donor details for $order_id to pending queue" );
-		DonationQueue::instance()->push( $this->getQueueDonationMessage(), 'pending' );
+		QueueWrapper::push( 'pending', $this->getQueueDonationMessage() );
 	}
 
 	/**
@@ -2355,29 +2357,37 @@ abstract class GatewayAdapter
 	 * all the per-country / per-gateway cases can be expressed declaratively
 	 * in payment method / submethod metadata.  If that's the case, move this
 	 * function (to DataValidator?)
+	 * @param array|null $knownData if provided, used to determine fields that
+	 *  depend on country or payment method. Falls back to unstaged data.
 	 * @return array of field names (empty if no payment method set)
 	 */
-	public function getRequiredFields() {
+	public function getRequiredFields( $knownData = null ) {
+		if ( $knownData === null ) {
+			$knownData = $this->getData_Unstaged_Escaped();
+		}
 		$required_fields = array();
 		$validation = array();
 
 		// Add any country-specific required fields
-		if ( isset( $this->config['country_fields'] ) ) {
-			$country = $this->getData_Unstaged_Escaped( 'country' );
-			if ( $country && isset( $this->config['country_fields'][$country] ) ) {
+		if (
+			isset( $this->config['country_fields'] ) &&
+			!empty( $knownData['country'] )
+		) {
+			$country = $knownData['country'];
+			if ( isset( $this->config['country_fields'][$country] ) ) {
 				$validation = $this->config['country_fields'][$country];
 			}
 		}
 
-		if ( $this->getPaymentMethod() ) {
-			$methodMeta = $this->getPaymentMethodMeta();
+		if ( !empty( $knownData['payment_method'] ) ) {
+			$methodMeta = $this->getPaymentMethodMeta( $knownData['payment_method'] );
 			if ( isset( $methodMeta['validation'] ) ) {
 				$validation = $methodMeta['validation'] + $validation;
 			}
 		}
 
-		if ( $this->getPaymentSubmethod() ) {
-			$submethodMeta = $this->getPaymentSubmethodMeta();
+		if ( !empty( $knownData['payment_submethod'] ) ) {
+			$submethodMeta = $this->getPaymentSubmethodMeta( $knownData['payment_submethod'] );
 			if ( isset( $submethodMeta['validation'] ) ) {
 				// submethod validation can override method validation
 				// TODO: child method anything should supersede parent method
@@ -2401,9 +2411,11 @@ abstract class GatewayAdapter
 						//however, that's not happening in this class in the code I'm replacing, so...
 						//TODO: Something clever in the DataValidator with data groups like these.
 					);
-					$country = $this->getData_Unstaged_Escaped( 'country' );
-					if ( $country && Subdivisions::getByCountry( $country ) ) {
-						$check_not_empty[] = 'state_province';
+					if ( !empty( $knownData['country'] ) ) {
+						$country = $knownData['country'];
+						if ( $country && Subdivisions::getByCountry( $country ) ) {
+							$check_not_empty[] = 'state_province';
+						}
 					}
 					break;
 				case 'creditCard' :
@@ -2967,7 +2979,6 @@ abstract class GatewayAdapter
 				'PaymentForms',
 				'numAttempt',
 				'order_status', //for post-payment activities
-				'processed_requests', //for post-payment activities
 				'sequence',
 			);
 			$preservedData = array();
@@ -3479,7 +3490,11 @@ abstract class GatewayAdapter
 			}
 
 			$this->session_ensure();
-			$sequence = $this->session_getData( 'sequence' ) ?: 0;
+			$sequence = $this->session_getData( 'sequence' );
+			if ( !$sequence ) {
+				$sequence = 1;
+				WmfFramework::setSessionValue( 'sequence', $sequence );
+			}
 
 			return "{$ctid}.{$sequence}";
 		}
@@ -3509,6 +3524,20 @@ abstract class GatewayAdapter
 		// Add new Order ID to the session.
 		$this->session_addDonorData();
 		return $id;
+	}
+
+	protected function ensureUniqueOrderID() {
+		// If this is not our first call, get a fresh order ID
+		// FIXME: This is still too complicated. We want to maintain
+		// a consistent order ID from the start of do_transaction till
+		// the start of at least the next transaction (if not longer).
+		// For that reason, we're not regenerating the order ID at the
+		// same time as we increment the sequence number. We should
+		// be able to achieve that more simply.
+		$sequenceNum = $this->session_getData( 'sequence' );
+		if ( $sequenceNum && $sequenceNum > 1 ) {
+			$this->regenerateOrderID();
+		}
 	}
 
 	public function getOrderIDMeta( $key = false ) {

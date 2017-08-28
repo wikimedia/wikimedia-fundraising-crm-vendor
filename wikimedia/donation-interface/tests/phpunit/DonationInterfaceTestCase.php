@@ -50,10 +50,6 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 */
 	protected $gatewayAdapter;
 
-	/**
-	 * @var TestingDonationLogger
-	 */
-	protected $testLogger;
 	protected $testAdapterClass = TESTS_ADAPTER_DEFAULT;
 	protected $smashPigGlobalConfig;
 
@@ -65,8 +61,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	public function __construct( $name = null, array $data = array(), $dataName = '' ) {
 
 		//Just in case you got here without running the configuration...
-		global $wgDonationInterfaceTestMode;
-		$wgDonationInterfaceTestMode = true;
+		global $wgDonationInterfaceTest;
+		$wgDonationInterfaceTest = true;
 
 		parent::__construct( $name, $data, $dataName );
 	}
@@ -74,14 +70,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	protected function setUp() {
 		// TODO: Use SmashPig dependency injection instead.  Also override
 		// SmashPig core logger.
-		$this->testLogger = new TestingDonationLogger();
-		DonationLoggerFactory::$overrideLogger = $this->testLogger;
-		$this->setMwGlobals( array(
-			'wgDonationInterfaceEnableQueue' => true,
-			'wgDonationInterfaceDefaultQueueServer' => array(
-				'type' => 'TestingQueue',
-			),
-		) );
+		DonationLoggerFactory::$overrideLogger = new TestingDonationLogger();
 		// Replace real SmashPig context with test version that lets us
 		// override provider configurations that may be set in code
 		$this->smashPigGlobalConfig = TestingGlobalConfiguration::create();
@@ -93,7 +82,6 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 
 	protected function tearDown() {
 		$this->resetAllEnv();
-		TestingQueue::clearAll();
 		DonationLoggerFactory::$overrideLogger = null;
 		parent::tearDown();
 	}
@@ -120,6 +108,18 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		RequestContext::getMain()->setLanguage( $language );
 		// BackCompat
 		$this->setMwGlobals( 'wgLang', RequestContext::getMain()->getLanguage() );
+	}
+
+	/**
+	 * @param string $provider
+	 * @return TestingProviderConfiguration
+	 */
+	protected function setSmashPigProvider( $provider ) {
+		$providerConfig = TestingProviderConfiguration::createForProvider(
+			$provider, $this->smashPigGlobalConfig
+		);
+		TestingContext::get()->providerConfigurationOverride = $providerConfig;
+		return $providerConfig;
 	}
 
 	/**
@@ -517,6 +517,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		}
 		// Reset SmashPig context
 		Context::set( null );
+		// Clear out our HashBagOStuff, used for testing
+		wfGetMainCache()->clear();
 	}
 
 	/**
@@ -595,7 +597,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 			unset( $perform_these_checks['headers'] );
 
 			$input_node = $dom_thingy->getElementById( $id );
-			$this->assertNotNull( $input_node, "Couldn't find the '$id' element" );
+			$this->assertNotNull( $input_node, "Couldn't find the '$id' element in html. Log entries: \n" .
+				print_r( DonationLoggerFactory::$overrideLogger->messages, true ) . "\n\nHTML:\n$form_html" );
 			foreach ( $checks as $name => $expected ) {
 				switch ( $name ) {
 					case 'nodename':
@@ -659,7 +662,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * Asserts that there are no log entries of LOG_ERR or worse.
 	 */
 	function verifyNoLogErrors( ) {
-		$log = $this->testLogger->messages;
+		$log = DonationLoggerFactory::$overrideLogger->messages;
 
 		$this->assertTrue( is_array( $log ), "Missing the test log" );
 
@@ -688,8 +691,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * @return array All log lines that match $match.
 	 *     FIXME: Or false.  Return an empty array or throw an exception instead.
 	 */
-	public function getLogMatches( $log_level, $match ) {
-		$log = $this->testLogger->messages;
+	public static function getLogMatches( $log_level, $match ) {
+		$log = DonationLoggerFactory::$overrideLogger->messages;
 		if ( !array_key_exists( $log_level, $log ) ) {
 			return false;
 		}
@@ -709,5 +712,14 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 			$innerHTML .= $child->ownerDocument->saveXML( $child );
 		}
 		return $innerHTML;
+	}
+
+	public static function unsetVariableFields( &$message ) {
+		$fields = array(
+			'date', 'source_enqueued_time', 'source_host', 'source_run_id', 'source_version', 'gateway_account'
+		);
+		foreach ( $fields as $field ) {
+			unset( $message[$field] );
+		}
 	}
 }

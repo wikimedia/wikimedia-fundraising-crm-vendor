@@ -14,6 +14,7 @@
 		"Dylan Kozlowski",
 		"Casey Dentinger"
 	],
+	"license-name": "GPL-2.0",
 	"url": "https://www.mediawiki.org/wiki/Extension:DonationInterface",
 	"type": "specialpage",
 	"requires": {
@@ -25,6 +26,8 @@
 		"SystemStatus": "SystemStatus",
 		"GlobalCollectGateway": "GlobalCollectGateway",
 		"GlobalCollectGatewayResult": "GlobalCollectGatewayResult",
+		"IngenicoGateway": "IngenicoGateway",
+		"IngenicoGatewayResult": "IngenicoGatewayResult",
 		"AmazonGateway": "AmazonGateway",
 		"AdyenGateway": "AdyenGateway",
 		"AdyenGatewayResult": "AdyenGatewayResult",
@@ -56,6 +59,7 @@
 		"GatewayAliases": "DonationInterface.alias.php",
 		"AmazonGatewayAlias": "amazon_gateway/amazon_gateway.alias.php",
 		"GlobalCollectGatewayAlias": "globalcollect_gateway/globalcollect_gateway.alias.php",
+		"IngenicoGatewayAlias": "ingenico_gateway/ingenico_gateway.alias.php",
 		"AdyenGatewayAlias": "adyen_gateway/adyen_gateway.alias.php",
 		"AstroPayGatewayAlias": "astropay_gateway/astropay_gateway.alias.php",
 		"PaypalGatewayAlias": "paypal_gateway/paypal_gateway.alias.php"
@@ -67,6 +71,7 @@
 		"FiscalNumber": "gateway_common/FiscalNumber.php",
 		"ClientSideValidationHelper": "gateway_common/ClientSideValidationHelper.php",
 		"ContributionTrackingPlusUnique": "gateway_common/ContributionTrackingPlusUnique.php",
+		"CountryValidation": "gateway_common/CountryValidation.php",
 		"CurrencyRates": "gateway_common/CurrencyRates.php",
 		"CurrencyRatesModule": "modules/CurrencyRatesModule.php",
 		"DonationData": "gateway_common/DonationData.php",
@@ -74,7 +79,6 @@
 		"DonationLoggerFactory": "gateway_common/DonationLoggerFactory.php",
 		"DonationLogProcessor": "gateway_common/DonationLogProcessor.php",
 		"DonationProfiler": "gateway_common/DonationProfiler.php",
-		"DonationQueue": "gateway_common/DonationQueue.php",
 		"DonorEmail": "gateway_common/DonorEmail.php",
 		"DonorFullName": "gateway_common/DonorFullName.php",
 		"DonorLanguage": "gateway_common/DonorLanguage.php",
@@ -114,8 +118,13 @@
 		"GlobalCollectGateway": "globalcollect_gateway/globalcollect_gateway.body.php",
 		"GlobalCollectGatewayResult": "globalcollect_gateway/globalcollect_resultswitcher.body.php",
 		"GlobalCollectAdapter": "globalcollect_gateway/globalcollect.adapter.php",
+		"IngenicoGateway": "ingenico_gateway/ingenico_gateway.body.php",
+		"IngenicoGatewayResult": "ingenico_gateway/ingenico_resultswitcher.body.php",
+		"IngenicoAdapter": "ingenico_gateway/ingenico.adapter.php",
 		"GlobalCollectOrphanAdapter": "globalcollect_gateway/orphan.adapter.php",
 		"GlobalCollectOrphanRectifier": "globalcollect_gateway/GlobalCollectOrphanRectifier.php",
+		"IngenicoOrphanAdapter": "ingenico_gateway/orphan.adapter.php",
+		"IngenicoOrphanRectifier": "ingenico_gateway/IngenicoOrphanRectifier.php",
 		"IngenicoFinancialNumber": "globalcollect_gateway/IngenicoFinancialNumber.php",
 		"IngenicoLanguage": "globalcollect_gateway/IngenicoLanguage.php",
 		"IngenicoMethodCodec": "globalcollect_gateway/IngenicoMethodCodec.php",
@@ -201,6 +210,10 @@
 		},
 		"ext.donationinterface.ingenico.scripts": {
 			"scripts": "globalcollect_gateway/forms/js/ingenico.js",
+			"dependencies": "ext.donationInterface.forms"
+		},
+		"ext.donationinterface.paypal.scripts": {
+			"scripts": "paypal_gateway/express_checkout/forms/js/paypal.js",
 			"dependencies": "ext.donationInterface.forms"
 		},
 		"ext.donationinterface.amazon.styles": {
@@ -371,19 +384,6 @@
 		"AdyenGatewayMaxRiskScore": 95,
 		"AstroPayGatewayURL": "https://astropaycard.com/",
 		"AstroPayGatewayTestingURL": "https://sandbox.astropaycard.com/",
-		"DonationInterfaceDefaultQueueServer": {
-			"type": "PHPQueue\\Backend\\PDO",
-			"connection_string": "mysql:host=localhost;dbname=payment_queues",
-			"_merge_strategy": "array_plus"
-		},
-		"DonationInterfaceQueues": {
-			"donations": [],
-			"pending": [],
-			"payments-antifraud": [],
-			"payments-init": [],
-			"banner-history": [],
-			"_merge_strategy": "array_plus"
-		},
 		"DonationInterfaceCustomFiltersActionRanges": {
 			"process": [
 				0,
@@ -426,13 +426,13 @@
 		"DonationInterfaceUtmCampaignMap": [],
 		"DonationInterfaceUtmMediumMap": [],
 		"DonationInterfaceUtmSourceMap": [],
-		"DonationInterfaceEnableQueue": false,
 		"DonationInterfaceEnableConversionLog": false,
 		"DonationInterfaceEnableMinfraud": false,
 		"DonationInterfaceMinfraudWeight": 100,
 		"DonationInterfaceMinfraudErrorScore": 50,
 		"DonationInterfaceEnableBannerHistoryLog": false,
 		"GlobalCollectGatewayEnabled": false,
+		"IngenicoGatewayEnabled": false,
 		"AmazonGatewayEnabled": false,
 		"AdyenGatewayEnabled": false,
 		"AstroPayGatewayEnabled": false,
@@ -449,6 +449,8 @@
 		"DonationInterfaceGatewayAdapters": {
 			"globalcollect": "GlobalCollectAdapter",
 			"globalcollect_orphan": "GlobalCollectOrphanAdapter",
+			"ingenico": "IngenicoAdapter",
+			"ingenico_orphan": "IngenicoOrphanAdapter",
 			"amazon": "AmazonAdapter",
 			"adyen": "AdyenAdapter",
 			"astropay": "AstroPayAdapter",

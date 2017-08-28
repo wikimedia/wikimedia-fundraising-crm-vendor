@@ -200,7 +200,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				'NOSHIPPING' => 1,
 				'L_BILLINGTYPE0' => 'RecurringPayments',
 				// FIXME: Sad!  The thank-you message would be perfect here,
-				// but it seems the exlamation mark is not supported, even when
+				// but it seems the exclamation mark is not supported, even when
 				// urlencoded properly.
 				//'L_BILLINGAGREEMENTDESCRIPTION0' => WmfFramework::formatMessage( 'donate_interface-donate-error-thank-you-for-your-support' ),
 				'L_BILLINGAGREEMENTDESCRIPTION0' => WmfFramework::formatMessage( 'donate_interface-monthly-donation-description' ),
@@ -343,8 +343,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 			'response' => array(
 				# FIXME: Make sure this gets passed as subscription_id in the message
 				'PROFILEID',
-				'PROFILESTATUS',
-				'TRANSACTIONID',
+				'PROFILESTATUS'
 			),
 		);
 
@@ -408,20 +407,27 @@ class PaypalExpressAdapter extends GatewayAdapter {
 			case 'CreateRecurringPaymentsProfile':
 				$this->checkResponseAck( $response );
 
-				// Grab the subscription ID.
+				// Grab the subscription ID
 				$this->addResponseData( $this->unstageKeys( $response ) );
 
-				// FIXME: Not a satisfying ending.  Parse the PROFILESTATUS
-				// response and sort it into complete or pending.
-				$this->finalizeInternalStatus( FinalStatus::COMPLETE );
+				// We've created a subscription, but we haven't got an initial
+				// payment yet, so we leave the details in the pending queue.
+				// The IPN listener will push the donation through to Civi when
+				// it gets notifications from PayPal.
+				// TODO: it would be nice to send the subscr_start message to
+				// the recurring queue here.
+				$this->finalizeInternalStatus( FinalStatus::PENDING );
 				$this->postProcessDonation();
 				break;
 			case 'SetExpressCheckout':
 			case 'SetExpressCheckout_recurring':
 				$this->checkResponseAck( $response );
 				$this->addResponseData( $this->unstageKeys( $response ) );
-				$this->transaction_response->setRedirect(
-					$this->account_config['RedirectURL'] . $response['TOKEN'] );
+				$redirectUrl = $this->account_config['RedirectURL'] . $response['TOKEN'];
+				$this->transaction_response->setRedirect( $redirectUrl );
+				$this->transaction_response->setData( array(
+					'FORMACTION' => $redirectUrl
+				) );
 				break;
 			case 'GetExpressCheckoutDetails':
 				$this->checkResponseAck( $response );
@@ -441,20 +447,15 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				$this->checkResponseAck( $response );
 
 				$this->addResponseData( $this->unstageKeys( $response ) );
-				// FIXME: Silly.
+				// FIXME: Silly to store this thing in two places (and say this twice).
+				// See comment in CreateRecurringPaymentsProfile case
 				$this->transaction_response->setGatewayTransactionId(
 					$this->getData_Unstaged_Escaped( 'gateway_txn_id' ) );
 				$status = $this->findCodeAction( 'DoExpressCheckoutPayment',
 					'PAYMENTINFO_0_ERRORCODE', $response['PAYMENTINFO_0_ERRORCODE'] );
-				// For recurring payments, we don't want to finalize or send the queue
-				// message just yet
-				if (
-					$status === FinalStatus::FAILED ||
-					!$this->getData_Unstaged_Escaped( 'recurring' )
-				) {
-					$this->finalizeInternalStatus( $status );
-					$this->postProcessDonation();
-				}
+
+				$this->finalizeInternalStatus( $status );
+				$this->postProcessDonation();
 				break;
 			}
 
@@ -484,7 +485,8 @@ class PaypalExpressAdapter extends GatewayAdapter {
 					case '10486':
 						// Donor's first funding method failed, but they might have another
 						$this->transaction_response->setRedirect(
-							$this->account_config['RedirectURL'] . $response['TOKEN']
+							$this->account_config['RedirectURL'] .
+							$this->getData_Unstaged_Escaped( 'gateway_session_id' )
 						);
 						$fatal = false;
 						break;
@@ -540,29 +542,22 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				ResponseCodes::UNKNOWN );
 		}
 
-		// One-time payment, or initial payment in a subscription.
-		$resultData = $this->do_transaction( 'DoExpressCheckoutPayment' );
-		if ( !$resultData->getCommunicationStatus() ) {
-			$this->finalizeInternalStatus( FinalStatus::FAILED );
-			return PaymentResult::newFailure();
-		}
-
-		// Silly conditional. What we really want to know is if the
-		// DoExpressCheckoutPayment txn was successful.
-		if (
-			!$resultData->getRedirect() &&
-			!$resultData->getErrors() &&
-			$this->getData_Unstaged_Escaped( 'recurring' )
-		) {
+		if ( $this->getData_Unstaged_Escaped( 'recurring' ) ) {
 			// Set up recurring billing agreement.
 			$this->addRequestData( array(
-				// Start in a month; we're making today's payment as an one-time charge.
-				'date' => time() + 30 * 24 * 3600, // FIXME: calendar month
+				'date' => time()
 			) );
 			$resultData = $this->do_transaction( 'CreateRecurringPaymentsProfile' );
 			if ( !$resultData->getCommunicationStatus() ) {
 				throw new ResponseProcessingException(
 					'Failed to create a recurring profile', ResponseCodes::UNKNOWN );
+			}
+		} else {
+			// One-time payment, or initial payment in a subscription.
+			$resultData = $this->do_transaction( 'DoExpressCheckoutPayment' );
+			if ( !$resultData->getCommunicationStatus() ) {
+				$this->finalizeInternalStatus( FinalStatus::FAILED );
+				return PaymentResult::newFailure();
 			}
 		}
 		return PaymentResult::fromResults(

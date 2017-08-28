@@ -1662,57 +1662,6 @@
         "homepage": "http://github.com/c9s/GetOptionKit"
     },
     {
-        "name": "wikimedia/donation-interface",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "b6eb7d3c689fd2a612f522d43cfd7d6b68218d02"
-        },
-        "require": {
-            "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
-            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-            "coderkungfu/php-queue": "dev-master",
-            "minfraud/http": "^1.70",
-            "monolog/monolog": "~1.18.2",
-            "neitanod/forceutf8": "^2.0",
-            "predis/predis": "^1.1",
-            "psr/log": "^1.0",
-            "symfony/yaml": "^2.8",
-            "wikimedia/smash-pig": "dev-master",
-            "zordius/lightncandy": "0.23"
-        },
-        "require-dev": {
-            "jakub-onderka/php-parallel-lint": "0.9.2",
-            "wikimedia/testing-access-wrapper": "~1.0"
-        },
-        "time": "2017-07-12T20:59:10+00:00",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "classmap": [
-                "adyen_gateway",
-                "amazon_gateway",
-                "astropay_gateway",
-                "extras",
-                "gateway_common",
-                "gateway_forms",
-                "globalcollect_gateway",
-                "paypal_gateway",
-                "DonationInterface.class.php"
-            ],
-            "files": [
-                "gateway_common/WmfFramework.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0"
-        ],
-        "description": "Wikimedia Foundation payment processing library"
-    },
-    {
         "name": "symfony/event-dispatcher",
         "version": "v2.8.26",
         "version_normalized": "2.8.26.0",
@@ -1996,5 +1945,56 @@
             "donations",
             "payments"
         ]
+    },
+    {
+        "name": "wikimedia/donation-interface",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
+            "reference": "de827ca5d01b688c01b328810f7e323841fe2abb"
+        },
+        "require": {
+            "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
+            "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+            "coderkungfu/php-queue": "dev-master",
+            "minfraud/http": "^1.70",
+            "monolog/monolog": "~1.18.2",
+            "neitanod/forceutf8": "^2.0",
+            "predis/predis": "^1.1",
+            "psr/log": "^1.0",
+            "symfony/yaml": "^2.8",
+            "wikimedia/smash-pig": "dev-master",
+            "zordius/lightncandy": "0.23"
+        },
+        "require-dev": {
+            "jakub-onderka/php-parallel-lint": "0.9.2",
+            "wikimedia/testing-access-wrapper": "~1.0"
+        },
+        "time": "2017-08-14T07:04:04+00:00",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "classmap": [
+                "adyen_gateway",
+                "amazon_gateway",
+                "astropay_gateway",
+                "extras",
+                "gateway_common",
+                "gateway_forms",
+                "globalcollect_gateway",
+                "paypal_gateway",
+                "DonationInterface.class.php"
+            ],
+            "files": [
+                "gateway_common/WmfFramework.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0"
+        ],
+        "description": "Wikimedia Foundation payment processing library"
     }
 ]

@@ -37,17 +37,27 @@ class DonationApi extends ApiBase {
 			return;
 		}
 
-		if ( $this->gateway == 'globalcollect' ) {
-			switch ( $method ) {
-				// TODO: add other iframe payment methods
-				case 'cc':
-					$result = $gatewayObj->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
-					break;
-				default:
-					$result = $gatewayObj->do_transaction( 'TEST_CONNECTION' );
-			}
-		} elseif ( $this->gateway == 'adyen' ) {
-			$result = $gatewayObj->do_transaction( 'donate' );
+		switch( $this->gateway ) {
+			case 'globalcollect':
+				switch ( $method ) {
+					// TODO: add other iframe payment methods
+					case 'cc':
+						$result = $gatewayObj->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
+						break;
+					default:
+						$result = $gatewayObj->do_transaction( 'TEST_CONNECTION' );
+				}
+				break;
+			case 'ingenico':
+				$result = $gatewayObj->do_transaction( 'createHostedCheckout' );
+				break;
+			case 'adyen':
+				$result = $gatewayObj->do_transaction( 'donate' );
+				break;
+			case 'paypal_ec':
+				$gatewayObj->doPayment();
+				$result = $gatewayObj->getTransactionResponse();
+				break;
 		}
 
 		// $normalizedData = $gatewayObj->getData_Unstaged_Escaped();
@@ -59,6 +69,7 @@ class DonationApi extends ApiBase {
 			$outputResult['status'] = $result->getCommunicationStatus();
 		}
 
+		$errors = $result->getErrors();
 		$data = $result->getData();
 		if ( !empty( $data ) ) {
 			if ( array_key_exists( 'PAYMENT', $data )
@@ -68,6 +79,9 @@ class DonationApi extends ApiBase {
 			}
 			if ( array_key_exists( 'FORMACTION', $data ) ) {
 				$outputResult['formaction'] = $data['FORMACTION'];
+				if ( empty( $errors ) ) {
+					$gatewayObj->logPending();
+				}
 			}
 			if ( array_key_exists( 'gateway_params', $data ) ) {
 				$outputResult['gateway_params'] = $data['gateway_params'];
@@ -79,7 +93,6 @@ class DonationApi extends ApiBase {
 				$outputResult['orderid'] = $data['ORDERID'];
 			}
 		}
-		$errors = $result->getErrors();
 		if ( !empty( $errors ) ) {
 			$outputResult['errors'] = $this->serializeErrors( $errors, $gatewayObj );
 			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );

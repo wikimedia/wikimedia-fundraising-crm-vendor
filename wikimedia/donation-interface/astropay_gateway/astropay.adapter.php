@@ -199,10 +199,7 @@ class AstroPayAdapter extends GatewayAdapter {
 	}
 
 	function doPayment() {
-		// If this is not our first NewInvoice call, get a fresh order ID
-		if ( $this->session_getData( 'sequence' ) ) {
-			$this->regenerateOrderID();
-		}
+		$this->ensureUniqueOrderID();
 
 		$transaction_result = $this->do_transaction( 'NewInvoice' );
 		$this->runAntifraudFilters();
@@ -220,8 +217,8 @@ class AstroPayAdapter extends GatewayAdapter {
 	 * Overriding parent method to add fiscal number
 	 * @return array of required field names
 	 */
-	public function getRequiredFields() {
-		$fields = parent::getRequiredFields();
+	public function getRequiredFields( $knownData = null ) {
+		$fields = parent::getRequiredFields( $knownData );
 		$noFiscalRequired = array( 'MX', 'PE' );
 		$country = $this->getData_Unstaged_Escaped( 'country' );
 		if ( !in_array( $country, $noFiscalRequired ) ) {

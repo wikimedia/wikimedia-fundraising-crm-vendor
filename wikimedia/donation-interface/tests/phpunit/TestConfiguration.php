@@ -52,7 +52,7 @@ define( 'TESTS_GATEWAY_DEFAULT', 'GlobalCollectGateway' );
  */
 define( 'TESTS_ADAPTER_DEFAULT', 'TestingGlobalCollectAdapter' );
 
-global $wgDonationInterfaceTestMode,
+global $wgDonationInterfaceTest,
 	$wgDonationInterfaceMerchantID,
 	$wgDonationInterfaceGatewayAdapters,
 	$wgDonationInterfaceAllowedHtmlForms,
@@ -84,14 +84,19 @@ global $wgDonationInterfaceTestMode,
 	$wgDonationInterfaceCustomFiltersSrcRules,
 	$wgDonationInterfaceCustomFiltersFunctions,
 	$wgGlobalCollectGatewayCustomFiltersFunctions,
+	$wgIngenicoGatewayCustomFiltersFunctions,
 	$wgDonationInterfaceCountryMap,
 	$wgDonationInterfaceUtmCampaignMap,
 	$wgDonationInterfaceUtmSourceMap,
 	$wgDonationInterfaceUtmMediumMap,
-	$wgDonationInterfaceEmailDomainMap;
+	$wgDonationInterfaceEmailDomainMap,
+	$wgMainCacheType;
+
+$wgMainCacheType = 'hash';
 
 $wgDonationInterfaceGatewayAdapters = array(
 	'globalcollect'=> 'TestingGlobalCollectAdapter',
+	'ingenico' => 'IngenicoAdapter',
 	'amazon'=> 'TestingAmazonAdapter',
 	'adyen'=> 'TestingAdyenAdapter',
 	'astropay'=> 'TestingAstroPayAdapter',
@@ -102,7 +107,7 @@ $wgDonationInterfaceGatewayAdapters = array(
  * Make sure the test setup is used, else we'll have the wrong classes.
  */
 /** DonationInterface General Settings **/
-$wgDonationInterfaceTestMode = true;
+$wgDonationInterfaceTest = true;
 $wgDonationInterfaceMerchantID = 'test';
 
 $wgDonationInterfaceThankYouPage = 'https://wikimediafoundation.org/wiki/Thank_You';
@@ -113,7 +118,6 @@ $wgGlobalCollectGatewayAccountInfo = array();
 $wgGlobalCollectGatewayAccountInfo['test'] = array(
 	'MerchantID' => 'test',
 );
-
 
 /** Paypal **/
 $wgPaypalGatewayAccountInfo = array();
@@ -218,6 +222,8 @@ $wgGlobalCollectGatewayCustomFiltersFunctions = array(
 	'getCVVResult' => 20,
 	'getAVSResult' => 25,
 ) + $customFilters;
+
+$wgIngenicoGatewayCustomFiltersFunctions = $wgGlobalCollectGatewayCustomFiltersFunctions;
 
 $wgDonationInterfaceCountryMap = array (
 	'US' => 40,

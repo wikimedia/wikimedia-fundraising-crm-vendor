@@ -402,7 +402,7 @@ class DonationData implements LogPrefixProvider {
 
 		if ( $this->isSomething( 'country' ) ) {
 			$country = strtoupper( $this->getVal( 'country' ) );
-			if ( DataValidator::is_valid_iso_country_code( $country ) ) {
+			if ( CountryValidation::isValidIsoCode( $country ) ) {
 				$regen = false;
 			} else {
 				//check to see if it's one of those other codes that comes out of CN, for the logs
@@ -438,7 +438,7 @@ class DonationData implements LogPrefixProvider {
 			}
 
 			//still nothing good? Give up.
-			if ( !DataValidator::is_valid_iso_country_code( $country ) ) {
+			if ( !CountryValidation::isValidIsoCode( $country ) ) {
 				$country = 'XX';
 			}
 		}
@@ -910,10 +910,7 @@ class DonationData implements LogPrefixProvider {
 
 	/**
 	 * Returns an array of field names we typically send out in a queue
-	 * message. Note: These are field names from the FORM... not the field
-	 * names that will appear in the message.
-	 * TODO: Consider moving the mapping for donation data from DonationQueue
-	 * to somewhere in DonationData.
+	 * message.
 	 */
 	public static function getMessageFields() {
 		return array(

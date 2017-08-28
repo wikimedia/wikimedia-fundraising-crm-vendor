@@ -1,23 +1,19 @@
 <?php
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
 /**
  * @group Amazon
+ * @group DonationInterface
+ * @group DonationInterfaceApi
+ * @group Fundraising
  * @group medium
  */
-class AmazonApiTest extends ApiTestCase {
+class AmazonApiTest extends DonationInterfaceApiTestCase {
 	public function setUp() {
 		parent::setUp();
-		$config = TestingGlobalConfiguration::create();
-		TestingContext::init( $config );
 		TestingAmazonAdapter::$mockClient = new MockAmazonClient();
-		$this->setMwGlobals( array(
-			'wgDonationInterfaceEnableQueue' => true,
-			'wgDonationInterfaceDefaultQueueServer' => array(
-				'type' => 'TestingQueue',
-			),
-		) );
 	}
 
 	public function tearDown() {
@@ -49,12 +45,12 @@ class AmazonApiTest extends ApiTestCase {
 		$this->assertEquals( 'https://wikimediafoundation.org/wiki/Thank_You/en?country=US', $redirect );
 		$mockClient = TestingAmazonAdapter::$mockClient;
 		$setOrderReferenceDetailsArgs = $mockClient->calls['setOrderReferenceDetails'][0];
-		$oid = $session['Donor']['contribution_tracking_id'] . '-0';
+		$oid = $session['Donor']['contribution_tracking_id'] . '-1';
 		$this->assertEquals( $oid, $setOrderReferenceDetailsArgs['seller_order_id'], 'Did not set order id on order reference' );
 		$this->assertEquals( $params['amount'], $setOrderReferenceDetailsArgs['amount'], 'Did not set amount on order reference' );
 
 		$this->assertEquals( $params['currency'], $setOrderReferenceDetailsArgs['currency_code'], 'Did not set currency code on order reference' );
-		$message = DonationQueue::instance()->pop( 'donations' );
+		$message = QueueWrapper::getQueue( 'donations' )->pop();
 		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
 		$this->assertEquals( 'S01-0391295-0674065-C095112', $message['gateway_txn_id'], 'Queue message has wrong txn ID' );
 	}

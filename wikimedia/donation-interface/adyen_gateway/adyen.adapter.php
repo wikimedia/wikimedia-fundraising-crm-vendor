@@ -30,8 +30,8 @@ class AdyenAdapter extends GatewayAdapter {
 		return 'namevalue';
 	}
 
-	public function getRequiredFields() {
-		$fields = parent::getRequiredFields();
+	public function getRequiredFields( $knownData = null ) {
+		$fields = parent::getRequiredFields( $knownData );
 		$fields[] = 'payment_submethod';
 		return $fields;
 	}
@@ -153,11 +153,7 @@ class AdyenAdapter extends GatewayAdapter {
 	 * is never used at all.
 	 */
 	function do_transaction( $transaction ) {
-		// If this is not our first call, get a fresh order ID
-		// FIXME: This is repeated in three places. Maybe always regenerate in incrementSequenceNumber?
-		if ( $this->session_getData( 'sequence' ) ) {
-			$this->regenerateOrderID();
-		}
+		$this->ensureUniqueOrderID();
 		$this->session_addDonorData();
 		$this->setCurrentTransaction( $transaction );
 
@@ -165,7 +161,7 @@ class AdyenAdapter extends GatewayAdapter {
 		if ( !$this->validatedOK() ){
 			//If the data didn't validate okay, prevent all data transmissions.
 			$response = $this->getFailedValidationResponse();
-			$this->logger->info( "Failed Validation. Aborting $transaction " . print_r( $this->errors, true ) );
+			$this->logger->info( "Failed Validation. Aborting $transaction " . print_r( $this->errorState, true ) );
 			return $response;
 		}
 		$this->transaction_response = new PaymentTransactionResponse();
@@ -196,10 +192,9 @@ class AdyenAdapter extends GatewayAdapter {
 						'FORMACTION' => $formaction,
 						'gateway_params' => $requestParams,
 					) );
-					$this->logger->info( "launching external iframe request: " . print_r( $requestParams, true )
+					$this->logger->info(
+						"launching external iframe request: " . print_r( $requestParams, true )
 					);
-					$this->logPaymentDetails();
-					$this->sendPendingMessage();
 					break;
 			}
 		}
