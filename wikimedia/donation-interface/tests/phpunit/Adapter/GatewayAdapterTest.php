@@ -85,7 +85,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 
 		$this->assertInstanceOf( TESTS_ADAPTER_DEFAULT, $gateway );
 
-		$this->resetAllEnv();
+		self::resetAllEnv();
 		$gateway = $this->getFreshGatewayObject( $options = array() );
 		$this->assertInstanceOf( TESTS_ADAPTER_DEFAULT, $gateway, "Having trouble constructing a blank adapter." );
 	}
@@ -333,6 +333,14 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$this->assertEquals( 'reject', $gateway->getValidationAction(), 'Unable to escalate action' );
 		$gateway->setValidationAction( 'process' );
 		$this->assertEquals( 'reject', $gateway->getValidationAction(), 'De-escalating action without reset!' );
+	}
+
+	public function testRectifyOrphan(){
+        $orphan = $this->createOrphan(array('gateway' => 'donation'));
+		$gateway = $this->getFreshGatewayObject($orphan);
+		//FIXME: dummy communication status, currently returns false because orpphan can't be rectifiied!
+		$is_rectified = $gateway->rectifyOrphan();
+		$this->assertEquals(PaymentResult::newEmpty(), $is_rectified, 'rectifyOrphan did not return empty PaymentResult');
 	}
 }
 

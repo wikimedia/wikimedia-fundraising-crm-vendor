@@ -71,7 +71,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 
 		$rectifier = new GlobalCollectOrphanRectifier();
 		$this->gateway = $rectifier->getAdapter();
-		$this->gateway->setDummyGatewayResponseCode( self::STATUS_PENDING );
+		TestingGlobalCollectOrphanAdapter::setDummyGatewayResponseCode( self::STATUS_PENDING );
 		$rectifier->processOrphans();
 
 		$fetched = $this->pendingDb->fetchMessageByGatewayOrderId(
@@ -92,7 +92,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 
 		$rectifier = new GlobalCollectOrphanRectifier();
 		$this->gateway = $rectifier->getAdapter();
-		$this->gateway->setDummyGatewayResponseCode( self::STATUS_PENDING_POKE );
+		TestingGlobalCollectOrphanAdapter::setDummyGatewayResponseCode( self::STATUS_PENDING_POKE );
 		$rectifier->processOrphans();
 
 		$fetched = $this->pendingDb->fetchMessageByGatewayOrderId(
@@ -117,7 +117,7 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 
 		$rectifier = new GlobalCollectOrphanRectifier();
 		$this->gateway = $rectifier->getAdapter();
-		$this->gateway->setDummyGatewayResponseCode( self::STATUS_COMPLETE );
+		TestingGlobalCollectOrphanAdapter::setDummyGatewayResponseCode( self::STATUS_COMPLETE );
 		$rectifier->processOrphans();
 
 		$fetched = $this->pendingDb->fetchMessageByGatewayOrderId(
@@ -157,28 +157,9 @@ class DonationInterface_Adapter_GlobalCollect_Orphan_Rectifier_Test
 
 	/**
 	 * Create an orphaned tranaction and store it to the pending database.
-	 *
-	 * TODO: Reuse SmashPigBaseTest#createMessage
 	 */
 	public function createOrphan( $overrides = array() ) {
-		$uniq = mt_rand();
-		$message = $overrides + array(
-			'contribution_tracking_id' => $uniq,
-			'country' => 'US',
-			'first_name' => 'Flighty',
-			'last_name' => 'Dono',
-			'email' => 'test+wmf@eff.org',
-			'gateway' => 'globalcollect',
-			'gateway_txn_id' => "txn-{$uniq}",
-			'order_id' => "order-{$uniq}",
-			'gateway_account' => 'default',
-			'payment_method' => 'cc',
-			'payment_submethod' => 'mc',
-			// Defaults to a magic 25 minutes ago, within the process window.
-			'date' => time() - 25 * 60,
-			'gross' => 123,
-			'currency' => 'EUR',
-		);
+	    $message = parent::createOrphan($overrides);
 		$this->pendingDb->storeMessage( $message );
 		return $message;
 	}

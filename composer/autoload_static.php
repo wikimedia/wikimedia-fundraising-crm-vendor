@@ -27,6 +27,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             'Wikimedia\\Composer\\' => 19,
         ),
+        'T' => 
+        array (
+            'Twig\\' => 5,
+        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Php55\\' => 23,
@@ -84,6 +88,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Wikimedia\\Composer\\' => 
         array (
             0 => __DIR__ . '/..' . '/wikimedia/composer-merge-plugin/src',
+        ),
+        'Twig\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/twig/twig/src',
         ),
         'Symfony\\Polyfill\\Php55\\' => 
         array (
@@ -245,7 +253,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'CountryCodes' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/includes/CountryCodes.php',
         'CountryValidation' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/CountryValidation.php',
         'CreditCardFraudDetection' => __DIR__ . '/..' . '/minfraud/http/src/CreditCardFraudDetection.php',
-        'CurrencyRates' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/CurrencyRates.php',
         'DataValidator' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DataValidator.php',
         'DonationApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/donation.api.php',
         'DonationData' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationData.php',
@@ -299,7 +306,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'LogPrefixProvider' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LogPrefixProvider.php',
         'MessageUtils' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/MessageUtils.php',
         'MustacheErrorForm' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',
-        'NationalCurrencies' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/NationalCurrencies.php',
         'PHPMailer' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmailer.php',
         'PHPMailerOAuth' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauth.php',
         'PHPMailerOAuthGoogle' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauthgoogle.php',
