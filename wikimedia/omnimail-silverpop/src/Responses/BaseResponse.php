@@ -38,6 +38,28 @@ abstract class BaseResponse extends \arrayObject implements ResponseInterface
    */
   protected $endPoint;
 
+
+  /**
+   * Offset from start of csv file.
+   *
+   * @var int
+   */
+  protected $offset = 0;
+
+  /**
+   * @return int
+   */
+  public function getOffset() {
+    return $this->offset;
+  }
+
+  /**
+   * @param int $offset
+   */
+  public function setOffset($offset) {
+    $this->offset = $offset;
+  }
+
   /**
    * @return string
    */

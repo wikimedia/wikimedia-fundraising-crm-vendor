@@ -1276,55 +1276,6 @@
         "homepage": "http://github.com/c9s/GetOptionKit"
     },
     {
-        "name": "wikimedia/omnimail-silverpop",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-            "reference": "c3248b3932e62cd2812aa3502d875b7c12c25c66"
-        },
-        "require": {
-            "league/csv": "^8.0",
-            "mrmarkfrench/silverpop-php-connector": "dev-master",
-            "omnimail/omnimail": "dev-master",
-            "phpseclib/phpseclib": "~2.0"
-        },
-        "require-dev": {
-            "guzzlehttp/guzzle": "*"
-        },
-        "time": "2017-07-27T02:53:46+00:00",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "psr-4": {
-                "Omnimail\\Silverpop\\": "src"
-            }
-        },
-        "autoload-dev": {
-            "psr-4": {
-                "Omnimail\\Silverpop\\Tests\\": "test/tests"
-            }
-        },
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Eileen McNaughton",
-                "email": "emcnaughton@wikimedia.org"
-            }
-        ],
-        "description": "Silverpop plugin for Omnimail",
-        "keywords": [
-            "delivery",
-            "email",
-            "mail",
-            "omnimail",
-            "silverpop"
-        ]
-    },
-    {
         "name": "wikimedia/smash-pig",
         "version": "dev-master",
         "version_normalized": "9999999-dev",
@@ -2018,5 +1969,114 @@
             "GPL-2.0"
         ],
         "description": "Wikimedia Foundation payment processing library"
+    },
+    {
+        "name": "symfony/polyfill-php54",
+        "version": "v1.5.0",
+        "version_normalized": "1.5.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/polyfill-php54.git",
+            "reference": "b7763422a5334c914ef0298ed21b253d25913a6e"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/polyfill-php54/zipball/b7763422a5334c914ef0298ed21b253d25913a6e",
+            "reference": "b7763422a5334c914ef0298ed21b253d25913a6e",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.3"
+        },
+        "time": "2017-06-14T15:44:48+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.5-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Symfony\\Polyfill\\Php54\\": ""
+            },
+            "files": [
+                "bootstrap.php"
+            ],
+            "classmap": [
+                "Resources/stubs"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Nicolas Grekas",
+                "email": "p@tchwork.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
+            }
+        ],
+        "description": "Symfony polyfill backporting some PHP 5.4+ features to lower PHP versions",
+        "homepage": "https://symfony.com",
+        "keywords": [
+            "compatibility",
+            "polyfill",
+            "portable",
+            "shim"
+        ]
+    },
+    {
+        "name": "wikimedia/omnimail-silverpop",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
+            "reference": "45eaa193c3353bcceb27bb2676da08598fd57686"
+        },
+        "require": {
+            "league/csv": "^8.0",
+            "mrmarkfrench/silverpop-php-connector": "dev-master",
+            "omnimail/omnimail": "dev-master",
+            "phpseclib/phpseclib": "~2.0"
+        },
+        "require-dev": {
+            "guzzlehttp/guzzle": "*"
+        },
+        "time": "2017-09-12T23:04:53+00:00",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "Omnimail\\Silverpop\\": "src"
+            }
+        },
+        "autoload-dev": {
+            "psr-4": {
+                "Omnimail\\Silverpop\\Tests\\": "test/tests"
+            }
+        },
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Eileen McNaughton",
+                "email": "emcnaughton@wikimedia.org"
+            }
+        ],
+        "description": "Silverpop plugin for Omnimail",
+        "keywords": [
+            "delivery",
+            "email",
+            "mail",
+            "omnimail",
+            "silverpop"
+        ]
     }
 ]

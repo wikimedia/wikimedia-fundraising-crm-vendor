@@ -119,6 +119,7 @@ class GroupMembersResponse extends BaseResponse
     $filterOutRow = function ($row, $rowIndex) {
       return $rowIndex != 0;
     };
+    $this->reader->setOffset($this->getOffset());
     $this->reader->addFilter($filterOutRow);
 
     $formatFunction = function ($row) {
@@ -179,6 +180,7 @@ class GroupMembersResponse extends BaseResponse
   public function setCsvReader() {
     $csvFile = $this->downloadCsv();
     $this->reader = Reader::createFromPath($csvFile);
+    $this->reader->setOffset($this->getOffset());
   }
 
   /**

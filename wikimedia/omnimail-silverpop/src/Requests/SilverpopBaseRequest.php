@@ -65,6 +65,28 @@ abstract class SilverpopBaseRequest extends BaseRequest implements RequestInterf
   protected $developerMode;
 
   /**
+   * Offset from start of csv file.
+   *
+   * @var int
+   */
+  protected $offset = 0;
+
+
+  /**
+   * @return int
+   */
+  public function getOffset() {
+    return $this->offset;
+  }
+
+  /**
+   * @param int $offset
+   */
+  public function setOffset($offset) {
+    $this->offset = $offset;
+  }
+
+  /**
    * @return bool
    */
   public function isDeveloperMode() {
