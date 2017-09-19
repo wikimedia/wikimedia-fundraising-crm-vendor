@@ -2,7 +2,6 @@
 
 namespace SmashPig\Tests;
 
-
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\UtcDate;
 
@@ -16,12 +15,6 @@ class PaymentsInitialDatabaseTest extends BaseSmashPigUnitTestCase {
 	public function setUp() {
 		parent::setUp();
 		$this->db = PaymentsInitialDatabase::get();
-	}
-
-	public function tearDown() {
-		TestingDatabase::clearStatics( $this->db );
-
-		parent::tearDown();
 	}
 
 	public static function generateTestMessage() {

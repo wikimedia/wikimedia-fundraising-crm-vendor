@@ -74,7 +74,6 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 	 * @covers GatewayAdapter::defineTransactions
 	 */
 	public function testConstructor() {
-
 		$options = $this->getDonorTestData();
 		$class = $this->testAdapterClass;
 
@@ -91,12 +90,93 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 	}
 
 	/**
+	 * Test that the required fields are read out of country_fields.yaml
+	 * @dataProvider getRequiredFields
+	 * @param string $country test donor country
+	 * @param array $fields expected required fields
+	 */
+	public function testRequiredFields( $country, $fields ) {
+		$init = $this->getDonorTestData( $country );
+		$init['contribution_tracking_id'] = '45931210';
+		$init['payment_method'] = 'cc';
+		$this->setUpRequest( $init, array( 'Donor' => $init ) );
+		$gateway = $this->getFreshGatewayObject( $init );
+		$requiredFields = $gateway->getRequiredFields();
+		$this->assertArrayEquals( $fields, $requiredFields );
+	}
+
+	public function getRequiredFields() {
+		return array(
+			array( 'AU', array(
+				'country', 'first_name', 'last_name',
+				'email', 'state_province'
+			) ),
+			array( 'ES', array(
+				'country', 'first_name', 'last_name',
+				'email'
+			) ),
+			array( 'US', array(
+				'country', 'first_name', 'last_name',
+				'email', 'street_address', 'city',
+				'postal_code', 'state_province'
+			) ),
+		);
+	}
+
+	/**
+	 * Load an alternate yaml file based on 'variant'
+	 */
+	public function testVariantConfig() {
+		$this->setMwGlobals( array(
+			'wgDonationInterfaceVariantConfigurationDirectory' =>
+				__DIR__ . '/../includes/variants'
+		) );
+		$init = $this->getDonorTestData( 'US' );
+		$init['contribution_tracking_id'] = '45931210';
+		$init['payment_method'] = 'cc';
+		$init['variant'] = 'nostate';
+		$this->setUpRequest( $init, array( 'Donor' => $init ) );
+		$gateway = $this->getFreshGatewayObject(
+			$init, array( 'variant' => 'nostate' )
+		);
+		// The 'nostate' variant requires fewer fields in the US
+		$requiredFields = $gateway->getRequiredFields();
+		$this->assertEquals( array(
+			'country', 'first_name', 'last_name',
+			'email', 'street_address', 'postal_code'
+		), $requiredFields );
+	}
+
+	/**
+	 * Don't allow directory traversal via 'variant'
+	 */
+	public function testIllegalVariantConfig() {
+		$this->setMwGlobals( array(
+			'wgDonationInterfaceVariantConfigurationDirectory' =>
+				__DIR__ . '/../includes/variants'
+		) );
+		$init = $this->getDonorTestData( 'US' );
+		$init['contribution_tracking_id'] = '45931210';
+		$init['payment_method'] = 'cc';
+		$init['variant'] = '../notallowedvariants/nostate';
+		$this->setUpRequest( $init, array( 'Donor' => $init ) );
+		$gateway = $this->getFreshGatewayObject(
+			$init, array( 'variant' => '../notallowedvariants/nostate' )
+		);
+		$requiredFields = $gateway->getRequiredFields();
+		$this->assertArrayEquals( array(
+			'country', 'first_name', 'last_name',
+			'email', 'street_address', 'city',
+			'postal_code', 'state_province'
+		), $requiredFields );
+	}
+
+	/**
 	 *
 	 * @covers GatewayAdapter::__construct
 	 * @covers DonationData::__construct
 	 */
 	public function testConstructorHasDonationData() {
-
 		$_SERVER['REQUEST_URI'] = '/index.php/Special:GlobalCollectGateway?form_name=TwoStepAmount';
 
 		$options = $this->getDonorTestData();
@@ -143,7 +223,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$session = $firstRequest->getSessionArray();
 		$this->assertEquals( 'globalcollect', $session['Donor']['gateway'], 'Test setup failed.' );
 
-		//Then simulate switching to Adyen
+		// Then simulate switching to Adyen
 		$session['sequence'] = 2;
 		unset( $init['order_id'] );
 
@@ -182,7 +262,6 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$gateway->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
 		$donorData = $secondRequest->getSessionData( 'Donor' );
 		$this->assertEquals( '1', $donorData['recurring'], 'Test setup failed.' );
-
 
 		$this->assertNotEquals( $oneTimeOrderId, $recurOrderId,
 			'Order ID was not regenerated on recurring switch!' );
@@ -259,7 +338,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 	public function testGetFallbackFailPage() {
 		$this->setMwGlobals( array(
 			'wgDonationInterfaceRapidFail' => false,
-			'wgDonationInterfaceFailPage' => 'Main_Page', //coz we know it exists
+			'wgDonationInterfaceFailPage' => 'Main_Page', // coz we know it exists
 		) );
 		$options = $this->getDonorTestData( 'US' );
 		$gateway = $this->getFreshGatewayObject( $options );
@@ -321,7 +400,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 
 		$gateway = $this->getFreshGatewayObject( $init );
 		$result = $gateway->getScoreName();
-		$this->assertNotEquals( 0, $result, 'Bad name not detected');
+		$this->assertNotEquals( 0, $result, 'Bad name not detected' );
 	}
 
 	public function TestSetValidationAction() {
@@ -335,12 +414,11 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		$this->assertEquals( 'reject', $gateway->getValidationAction(), 'De-escalating action without reset!' );
 	}
 
-	public function testRectifyOrphan(){
-        $orphan = $this->createOrphan(array('gateway' => 'donation'));
-		$gateway = $this->getFreshGatewayObject($orphan);
-		//FIXME: dummy communication status, currently returns false because orpphan can't be rectifiied!
+	public function testRectifyOrphan() {
+		$orphan = $this->createOrphan( array( 'gateway' => 'donation' ) );
+		$gateway = $this->getFreshGatewayObject( $orphan );
+		// FIXME: dummy communication status, currently returns false because orpphan can't be rectifiied!
 		$is_rectified = $gateway->rectifyOrphan();
-		$this->assertEquals(PaymentResult::newEmpty(), $is_rectified, 'rectifyOrphan did not return empty PaymentResult');
+		$this->assertEquals( PaymentResult::newEmpty(), $is_rectified, 'rectifyOrphan did not return empty PaymentResult' );
 	}
 }
-

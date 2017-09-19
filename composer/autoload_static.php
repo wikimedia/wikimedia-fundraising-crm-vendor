@@ -7,13 +7,13 @@ namespace Composer\Autoload;
 class ComposerStaticInit713b445f683293f4a04a72f73555246e
 {
     public static $files = array (
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         'e40631d46120a9c38ea139981f8dab26' => __DIR__ . '/..' . '/ircmaxell/password-compat/lib/password.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
         'edc6464955a37aa4d5fbf39d40fb6ee7' => __DIR__ . '/..' . '/symfony/polyfill-php55/bootstrap.php',
-        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         'bf34263f834e2781b79cae4d55a1d350' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
     );
@@ -41,6 +41,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'SmashPig\\' => 9,
             'SilverpopConnector\\' => 19,
         ),
+        'R' => 
+        array (
+            'Respect\\Validation\\' => 19,
+        ),
         'P' => 
         array (
             'Psr\\Log\\' => 8,
@@ -57,6 +61,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'M' => 
         array (
             'Monolog\\' => 8,
+            'MaxMind\\WebService\\' => 19,
+            'MaxMind\\Exception\\' => 18,
+            'MaxMind\\Db\\' => 11,
+            'MaxMind\\' => 8,
         ),
         'L' => 
         array (
@@ -73,6 +81,11 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
             'GetOptionKit\\' => 13,
+            'GeoIp2\\' => 7,
+        ),
+        'C' => 
+        array (
+            'Composer\\CaBundle\\' => 18,
         ),
         'A' => 
         array (
@@ -121,6 +134,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector',
         ),
+        'Respect\\Validation\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/respect/validation/library',
+        ),
         'Psr\\Log\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
@@ -154,6 +171,22 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
         ),
+        'MaxMind\\WebService\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/WebService',
+        ),
+        'MaxMind\\Exception\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/Exception',
+        ),
+        'MaxMind\\Db\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
+        ),
+        'MaxMind\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/minfraud/src',
+        ),
         'League\\Csv\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/csv/src',
@@ -181,6 +214,14 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'GetOptionKit\\' => 
         array (
             0 => __DIR__ . '/..' . '/corneltek/getoptionkit/src',
+        ),
+        'GeoIp2\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
+        ),
+        'Composer\\CaBundle\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
         ),
         'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 
         array (
@@ -249,10 +290,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'BlankAddressFields' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
         'CleanupRecurringLength' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
         'ClientSideValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
+        'ConfigurationReader' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
         'ContributionTrackingPlusUnique' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
         'CountryCodes' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/includes/CountryCodes.php',
         'CountryValidation' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/CountryValidation.php',
-        'CreditCardFraudDetection' => __DIR__ . '/..' . '/minfraud/http/src/CreditCardFraudDetection.php',
         'DataValidator' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DataValidator.php',
         'DonationApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/donation.api.php',
         'DonationData' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationData.php',
@@ -294,7 +335,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'GlobalCollectOrphanAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/orphan.adapter.php',
         'GlobalCollectOrphanRectifier' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/GlobalCollectOrphanRectifier.php',
         'GlobalCollectRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/scripts/refund.php',
-        'HTTPBase' => __DIR__ . '/..' . '/minfraud/http/src/HTTPBase.php',
         'IngenicoFinancialNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoFinancialNumber.php',
         'IngenicoLanguage' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoLanguage.php',
         'IngenicoMethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoMethodCodec.php',

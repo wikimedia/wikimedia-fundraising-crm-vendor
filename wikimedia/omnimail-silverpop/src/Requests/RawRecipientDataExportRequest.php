@@ -109,10 +109,10 @@ class RawRecipientDataExportRequest extends BaseRequest
   protected function requestData() {
     $dates = array();
     if ($this->getStartTimeStamp()) {
-      $dates['EVENT_DATE_START'] = date('m/d/Y h:i:s', $this->getStartTimeStamp());
+      $dates['EVENT_DATE_START'] = date('m/d/Y H:i:s', $this->getStartTimeStamp());
     }
     if ($this->getEndTimeStamp()) {
-      $dates['EVENT_DATE_END'] = date('m/d/Y h:i:s', $this->getEndTimeStamp());
+      $dates['EVENT_DATE_END'] = date('m/d/Y H:i:s', $this->getEndTimeStamp());
     }
     $result = $this->silverPop->rawRecipientDataExport(
       $this->getMailingIdentifier(),

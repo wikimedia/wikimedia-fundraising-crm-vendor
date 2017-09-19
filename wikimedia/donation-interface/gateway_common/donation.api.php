@@ -37,7 +37,7 @@ class DonationApi extends ApiBase {
 			return;
 		}
 
-		switch( $this->gateway ) {
+		switch ( $this->gateway ) {
 			case 'globalcollect':
 				switch ( $method ) {
 					// TODO: add other iframe payment methods
@@ -106,7 +106,7 @@ class DonationApi extends ApiBase {
 
 	protected function serializeErrors( $errors, GatewayAdapter $adapter ) {
 		$serializedErrors = array();
-		foreach( $errors as $error ) {
+		foreach ( $errors as $error ) {
 			if ( $error instanceof ValidationError ) {
 				$message = WmfFramework::formatMessage(
 					$error->getMessageKey(),
@@ -183,6 +183,7 @@ class DonationApi extends ApiBase {
 	 */
 	protected function getGatewayObject() {
 		$className = DonationInterface::getAdapterClassForGateway( $this->gateway );
-		return new $className();
+		$variant = $this->getRequest()->getVal( 'variant' );
+		return new $className( array( 'variant' => $variant ) );
 	}
 }

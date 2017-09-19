@@ -1,10 +1,8 @@
 <?php
 namespace SmashPig\PaymentProviders\Ingenico\Tests;
 
-use PHPUnit_Framework_MockObject_MockObject;
 use Psr\Cache\CacheItemPoolInterface;
 use SmashPig\Core\Context;
-use SmashPig\Core\Http\CurlWrapper;
 use SmashPig\PaymentProviders\Ingenico\IdealStatusProvider;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
@@ -12,11 +10,6 @@ use SmashPig\Tests\BaseSmashPigUnitTestCase;
  * @group Ingenico
  */
 class IdealStatusProviderTest extends BaseSmashPigUnitTestCase {
-
-	/**
-	 * @var PHPUnit_Framework_MockObject_MockObject
-	 */
-	protected $curlWrapper;
 
 	/**
 	 * @var IdealStatusProvider
@@ -46,7 +39,7 @@ class IdealStatusProviderTest extends BaseSmashPigUnitTestCase {
 			),
 			'availability-url' => 'http://example.org/undocumented/api/GetIssuers'
 		) );
-		$this->setUpResponse(__DIR__ . "/../Data/availability.response", 200);
+		$this->setUpResponse( __DIR__ . "/../Data/availability.response", 200 );
 	}
 
 	public function testGetBankStatus() {

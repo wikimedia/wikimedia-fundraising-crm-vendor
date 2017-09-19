@@ -22,8 +22,7 @@
 		]
 	},
 	"require": {
-		"coderkungfu/php-queue": "dev-master",
-		"minfraud/http": "^1.70",
+		"maxmind/minfraud": "^1.4",
 		"monolog/monolog": "~1.18.2",
 		"neitanod/forceutf8": "^2.0",
 		"php": ">=5.4",
@@ -32,11 +31,12 @@
 		"zordius/lightncandy": "0.23",
 		"amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
 		"symfony/yaml": "^2.8",
-		"wikimedia/smash-pig": "dev-master",
+		"wikimedia/smash-pig": "^0.5",
 		"addshore/psr-6-mediawiki-bagostuff-adapter": "0.1"
 	},
 	"require-dev": {
 		"jakub-onderka/php-parallel-lint": "0.9.2",
+		"mediawiki/mediawiki-codesniffer": "0.11.0",
 		"wikimedia/testing-access-wrapper": "~1.0"
 	},
 	"repositories": [
@@ -50,6 +50,8 @@
 		"prepend-autoloader": false
 	},
 	"scripts": {
+		"phpcs": "phpcs -p -s",
+		"fix": "phpcbf",
 		"test": [
 			"parallel-lint . --exclude vendor",
 			"php tests/phpunit/LintYaml.php"

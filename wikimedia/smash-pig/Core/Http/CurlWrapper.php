@@ -67,13 +67,21 @@ class CurlWrapper {
 				$errno = curl_errno( $ch );
 				$err = curl_error( $ch );
 
-				Logger::alert(
-					"cURL transaction to {$url} failed: ($errno) $err.  " .
+				Logger::warning(
+					"cURL transaction to {$url} failed: ($errno) $err. " .
 					"cURL verbose logging: $logged"
 				);
 			}
 			$tries++;
 			if ( $tries >= $loopCount ) {
+				if ( $continue ) {
+					// We ran out of retries, but apparently still haven't got
+					// anything good. Squawk.
+					Logger::alert(
+						"cURL transaction to {$url} failed {$loopCount} times! " .
+						'Please see previous warning-level logs for details.'
+					);
+				}
 				$continue = false;
 			}
 		} while ( $continue ); // End while cURL transaction hasn't returned something useful
@@ -106,7 +114,7 @@ class CurlWrapper {
 			CURLOPT_VERBOSE => true,
 			CURLOPT_STDERR => $logStream,
 		);
-		switch( $method ) {
+		switch ( $method ) {
 			case 'PUT':
 				$options[CURLOPT_PUT] = 1;
 				break;
@@ -131,14 +139,14 @@ class CurlWrapper {
 
 	public static function parseResponse( $response, $curlInfo ) {
 		$header_size = $curlInfo['header_size'];
-		$header = substr($response, 0, $header_size);
-		$body = substr($response, $header_size);
-		$header = str_replace("\r", "", $header);
+		$header = substr( $response, 0, $header_size );
+		$body = substr( $response, $header_size );
+		$header = str_replace( "\r", "", $header );
 		$headerLines = explode( "\n", $header );
 		$responseHeaders = array();
-		foreach( $headerLines as $line ) {
+		foreach ( $headerLines as $line ) {
 			if ( strstr( $line, ': ' ) !== false ) {
-				$line = rtrim($line);
+				$line = rtrim( $line );
 				list( $name, $value ) = explode( ': ', $line, 2 );
 				$responseHeaders[$name] = $value;
 			}

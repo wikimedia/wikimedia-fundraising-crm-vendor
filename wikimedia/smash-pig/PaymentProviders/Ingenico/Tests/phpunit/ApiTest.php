@@ -3,7 +3,6 @@
 namespace SmashPig\PaymentProviders\Ingenico\Tests;
 
 use DateTime;
-use PHPUnit_Framework_MockObject_MockObject;
 use SmashPig\PaymentProviders\Ingenico\Api;
 use SmashPig\PaymentProviders\Ingenico\Authenticator;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
@@ -12,11 +11,6 @@ use SmashPig\Tests\BaseSmashPigUnitTestCase;
  * @group Ingenico
  */
 class ApiTest extends BaseSmashPigUnitTestCase {
-
-	/**
-	 * @var PHPUnit_Framework_MockObject_MockObject
-	 */
-	protected $curlWrapper;
 
 	/**
 	 * @var Authenticator
@@ -45,7 +39,7 @@ class ApiTest extends BaseSmashPigUnitTestCase {
 	}
 
 	public function testCreateRequest() {
-		$headerVerification = function( $headers ) {
+		$headerVerification = function ( $headers ) {
 			$date = new DateTime( $headers['Date'] );
 			return $date !== null &&
 				$headers['Content-Type'] === 'application/json';

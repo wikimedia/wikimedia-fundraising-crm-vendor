@@ -18,14 +18,8 @@ class PendingDatabaseTest extends BaseSmashPigUnitTestCase {
 		$this->db = PendingDatabase::get();
 	}
 
-	public function tearDown() {
-		TestingDatabase::clearStatics( $this->db );
-
-		parent::tearDown();
-	}
-
 	protected static function getTestMessage( $uniq = null ) {
-		if ( !$uniq ) { 
+		if ( !$uniq ) {
 			$uniq = mt_rand();
 		}
 		return array(

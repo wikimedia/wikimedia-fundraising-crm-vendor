@@ -2,7 +2,6 @@
 
 namespace SmashPig\Tests;
 
-
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 
@@ -23,13 +22,6 @@ class SmashPigDatabaseTest extends BaseSmashPigUnitTestCase {
 
 		$this->pendingDb = PendingDatabase::get();
 		$this->paymentsInitialDb = PaymentsInitialDatabase::get();
-	}
-
-	public function tearDown() {
-		TestingDatabase::clearStatics( $this->paymentsInitialDb );
-		TestingDatabase::clearStatics( $this->pendingDb );
-
-		parent::tearDown();
 	}
 
 	public function testDifferentDatabases() {

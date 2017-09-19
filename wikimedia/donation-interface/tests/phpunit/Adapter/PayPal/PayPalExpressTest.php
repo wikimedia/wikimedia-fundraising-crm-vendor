@@ -7,9 +7,10 @@
  * TIMESTAMP=2016%2d05%2d03T21%3a43%3a20Z&CORRELATIONID=f624ed5aa5db0&ACK=Failure&VERSION=124&BUILD=21669447&L_ERRORCODE0=10412&L_SHORTMESSAGE0=Duplicate%20invoice&L_LONGMESSAGE0=Payment%20has%20already%20been%20made%20for%20this%20InvoiceID%2e&L_SEVERITYCODE0=Error
  */
 
+use Psr\Log\LogLevel;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\PaymentProviders\PayPal\Tests\PayPalTestConfiguration;
 use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingProviderConfiguration;
 
 /**
  *
@@ -23,8 +24,8 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 
 	public function setUp() {
 		parent::setUp();
-		TestingContext::get()->providerConfigurationOverride = PayPalTestConfiguration::get(
-			$this->smashPigGlobalConfig
+		TestingContext::get()->providerConfigurationOverride = TestingProviderConfiguration::createForProvider(
+			'paypal', $this->smashPigGlobalConfig
 		);
 		$this->setMwGlobals( array(
 			'wgDonationInterfaceCancelPage' => 'https://example.com/tryAgain.php',
@@ -53,24 +54,64 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 			$result->getRedirect(),
 			'Wrong redirect for PayPal EC payment setup'
 		);
+		$this->assertEquals( 1, count( $gateway->curled ), 'Should have made 1 API call' );
+		$apiCall = $gateway->curled[0];
+		$parsed = [];
+		parse_str( $apiCall, $parsed );
+		$actualReturn = $parsed['RETURNURL'];
+		$parsedReturn = [];
+		parse_str( parse_url( $actualReturn, PHP_URL_QUERY ), $parsedReturn );
+		$this->assertEquals(
+			[
+				'title' => 'Special:PaypalExpressGatewayResult',
+				'order_id' => $init['contribution_tracking_id'] . '.1',
+				'wmf_token' => $gateway->token_getSaltedSessionToken()
+			],
+			$parsedReturn
+		);
+		unset( $parsed['RETURNURL'] );
+		$expected = [
+			'USER' => 'phpunittesting@wikimedia.org',
+			'PWD' => '9876543210',
+			'VERSION' => '204',
+			'METHOD' => 'SetExpressCheckout',
+			'CANCELURL' => 'https://example.com/tryAgain.php/fr',
+			'REQCONFIRMSHIPPING' => '0',
+			'NOSHIPPING' => '1',
+			'LOCALECODE' => 'fr_US',
+			'L_PAYMENTREQUEST_0_AMT0' => '1.55',
+			'L_PAYMENTREQUEST_0_DESC0' => 'Donation to the Wikimedia Foundation',
+			'PAYMENTREQUEST_0_AMT' => '1.55',
+			'PAYMENTREQUEST_0_CURRENCYCODE' => 'USD',
+			'PAYMENTREQUEST_0_CUSTOM' => $init['contribution_tracking_id'],
+			'PAYMENTREQUEST_0_DESC' => 'Donation to the Wikimedia Foundation',
+			'PAYMENTREQUEST_0_INVNUM' => $init['contribution_tracking_id'] . '.1',
+			'PAYMENTREQUEST_0_ITEMAMT' => '1.55',
+			'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
+			'PAYMENTREQUEST_0_PAYMENTREASON' => 'None',
+			'SIGNATURE' => 'ABCDEFGHIJKLMNOPQRSTUV-ZXCVBNMLKJHGFDSAPOIUYTREWQ',
+		];
+		$this->assertEquals(
+			$expected, $parsed
+		);
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNotEmpty( $message, 'Missing pending message' );
 		self::unsetVariableFields( $message );
 		$expected = array(
 			'country' => 'US',
 			'fee' => '0',
-		    'gateway' => 'paypal_ec',
-		    'gateway_txn_id' => null,
-		    'language' => 'fr',
-		    'contribution_tracking_id' => $init['contribution_tracking_id'],
-		    'order_id' => $init['contribution_tracking_id'] . '.1',
-		    'utm_source' => 'CD1234_FR..paypal',
-		    'currency' => 'USD',
-		    'email' => '',
-		    'gross' => '1.55',
-		    'recurring' => '',
-		    'response' => false,
-		    'utm_medium' => 'sitenotice',
+			'gateway' => 'paypal_ec',
+			'gateway_txn_id' => null,
+			'language' => 'fr',
+			'contribution_tracking_id' => $init['contribution_tracking_id'],
+			'order_id' => $init['contribution_tracking_id'] . '.1',
+			'utm_source' => 'CD1234_FR..paypal',
+			'currency' => 'USD',
+			'email' => '',
+			'gross' => '1.55',
+			'recurring' => '',
+			'response' => false,
+			'utm_medium' => 'sitenotice',
 			'payment_method' => 'paypal',
 			'payment_submethod' => '',
 			'gateway_session_id' => 'EC-8US12345X1234567U',
@@ -105,6 +146,47 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 			'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=EC-8US12345X1234567U',
 			$result->getRedirect(),
 			'Wrong redirect for PayPal EC payment setup'
+		);
+		$this->assertEquals( 1, count( $gateway->curled ), 'Should have made 1 API call' );
+		$apiCall = $gateway->curled[0];
+		$parsed = [];
+		parse_str( $apiCall, $parsed );
+		$actualReturn = $parsed['RETURNURL'];
+		$parsedReturn = [];
+		parse_str( parse_url( $actualReturn, PHP_URL_QUERY ), $parsedReturn );
+		$this->assertEquals(
+			[
+				'title' => 'Special:PaypalExpressGatewayResult',
+				'order_id' => $init['contribution_tracking_id'] . '.1',
+				'recurring' => '1',
+				'wmf_token' => $gateway->token_getSaltedSessionToken()
+			],
+			$parsedReturn
+		);
+		unset( $parsed['RETURNURL'] );
+		$expected = [
+			'USER' => 'phpunittesting@wikimedia.org',
+			'PWD' => '9876543210',
+			'VERSION' => '204',
+			'METHOD' => 'SetExpressCheckout',
+			'CANCELURL' => 'https://example.com/tryAgain.php/fr',
+			'REQCONFIRMSHIPPING' => '0',
+			'NOSHIPPING' => '1',
+			'LOCALECODE' => 'fr_US',
+			'L_PAYMENTREQUEST_0_AMT0' => '1.55',
+			'PAYMENTREQUEST_0_AMT' => '1.55',
+			'PAYMENTREQUEST_0_CURRENCYCODE' => 'USD',
+			'L_BILLINGTYPE0' => 'RecurringPayments',
+			'L_BILLINGAGREEMENTDESCRIPTION0' => 'Monthly donation to the Wikimedia Foundation',
+			'L_BILLINGAGREEMENTCUSTOM0' => $init['contribution_tracking_id'] . '.1',
+			'L_PAYMENTREQUEST_0_NAME0' => 'Monthly donation to the Wikimedia Foundation',
+			'L_PAYMENTREQUEST_0_QTY0' => '1',
+			'MAXAMT' => '1.55',
+			'PAYMENTREQUEST_0_ITEMAMT' => '1.55',
+			'SIGNATURE' => 'ABCDEFGHIJKLMNOPQRSTUV-ZXCVBNMLKJHGFDSAPOIUYTREWQ',
+		];
+		$this->assertEquals(
+			$expected, $parsed
 		);
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNotEmpty( $message, 'Missing pending message' );
@@ -157,7 +239,7 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		$message = QueueWrapper::getQueue( 'donations' )->pop();
 		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
 		self::unsetVariableFields( $message );
-		$expected = array (
+		$expected = array(
 			'contribution_tracking_id' => $init['contribution_tracking_id'],
 			'country' => 'US',
 			'fee' => '0',
@@ -233,6 +315,67 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		);
 	}
 
+	/**
+	 * Check that we don't send donors to the fail page for warnings
+	 */
+	function testProcessDonorReturnWarning() {
+		$init = $this->getDonorTestData( 'US' );
+		$init['contribution_tracking_id'] = '45931210';
+		$this->setUpRequest( $init, array( 'Donor' => $init ) );
+
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway::setDummyGatewayResponseCode( array(
+			'OK', // For GetExpressCheckoutDetails
+			'11607' // For DoExpressCheckoutPayment
+		) );
+		$result = $gateway->processDonorReturn( array(
+			'token' => 'EC%2d2D123456D9876543U',
+			'PayerID' => 'ASDASD'
+		) );
+
+		$this->assertFalse( $result->isFailed() );
+		$message = QueueWrapper::getQueue( 'donations' )->pop();
+		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
+		self::unsetVariableFields( $message );
+		$expected = array(
+			'contribution_tracking_id' => $init['contribution_tracking_id'],
+			'country' => 'US',
+			'fee' => '0',
+			'gateway' => 'paypal_ec',
+			'gateway_txn_id' => '33N12345BB123456D',
+			'gateway_session_id' => 'EC-4V987654XA123456V',
+			'language' => 'en',
+			'order_id' => $init['contribution_tracking_id'] . '.1',
+			'payment_method' => 'paypal',
+			'payment_submethod' => '',
+			'response' => false,
+			'user_ip' => '127.0.0.1',
+			'utm_source' => '..paypal',
+			'city' => 'San Francisco',
+			'currency' => 'USD',
+			'email' => 'donor@generous.net',
+			'first_name' => 'Fezziwig',
+			'gross' => '1.55',
+			'last_name' => 'Fowl',
+			'recurring' => '',
+			'state_province' => 'CA',
+			'street_address' => '123 Fake Street',
+			'postal_code' => '94105',
+			'source_name' => 'DonationInterface',
+			'source_type' => 'payments',
+		);
+		$this->assertEquals( $expected, $message );
+
+		$this->assertNull(
+			QueueWrapper::getQueue( 'donations' )->pop(),
+			'Sending extra messages to donations queue!'
+		);
+		$matches = self::getLogMatches(
+			LogLevel::WARNING, '/Transaction succeeded with warning.*/'
+		);
+		$this->assertNotEmpty( $matches );
+	}
+
 	public function testProcessDonorReturnRecurringRetry() {
 		$init = $this->getDonorTestData( 'US' );
 		$init['contribution_tracking_id'] = '45931210';
@@ -276,7 +419,7 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		);
 		$assertNodes = array(
 			'headers' => array(
-				'Location' => function( $location ) use ( $init ) {
+				'Location' => function ( $location ) use ( $init ) {
 					// Do this after the real processing to avoid side effects
 					$gateway = $this->getFreshGatewayObject( $init );
 					$url = ResultPages::getThankYouPage( $gateway );
@@ -320,7 +463,7 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		);
 		$assertNodes = array(
 			'headers' => array(
-				'Location' => function( $location ) use ( $init ) {
+				'Location' => function ( $location ) use ( $init ) {
 					// Do this after the real processing to avoid side effects
 					$gateway = $this->getFreshGatewayObject( $init );
 					$url = ResultPages::getThankYouPage( $gateway );
@@ -336,10 +479,10 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		$this->assertEmpty( $messages );
 	}
 
-	public function testShouldRectifyOrphan(){
-	    $message = $this->createOrphan(array('gateway' => 'paypal', 'payment_method' => 'paypal'));
-	    $this->gatewayAdapter = $this->getFreshGatewayObject($message);
-	    $result = $this->gatewayAdapter->shouldRectifyOrphan();
-	    $this->assertEquals($result, true, 'shouldRectifyOrphan returning false.');
-    }
+	public function testShouldRectifyOrphan() {
+		$message = $this->createOrphan( array( 'gateway' => 'paypal', 'payment_method' => 'paypal' ) );
+		$this->gatewayAdapter = $this->getFreshGatewayObject( $message );
+		$result = $this->gatewayAdapter->shouldRectifyOrphan();
+		$this->assertEquals( $result, true, 'shouldRectifyOrphan returning false.' );
+	}
 }
