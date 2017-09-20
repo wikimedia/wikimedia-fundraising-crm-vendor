@@ -9,7 +9,7 @@ namespace Omnimail\Silverpop\Requests;
 
 use Omnimail\Silverpop\Responses\RecipientsResponse;
 
-class RawRecipientDataExportRequest extends BaseRequest
+class RawRecipientDataExportRequest extends SilverpopBaseRequest
 {
 
   protected $retrievalParameters;
@@ -83,6 +83,7 @@ class RawRecipientDataExportRequest extends BaseRequest
     $response = new RecipientsResponse(array());
     $response->setRetrievalParameters($this->getRetrievalParameters());
     $response->setSilverpop($this->silverPop);
+    $response->setOffset($this->getOffset());
     $response->setContactReferenceField($this->getContactReferenceField());
     return $response;
   }

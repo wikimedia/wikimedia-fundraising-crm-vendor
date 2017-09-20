@@ -112,6 +112,7 @@ class RecipientsResponse extends BaseResponse
       return $rowIndex != 0;
     };
     $this->reader->addFilter($filterOutRow);
+    $this->reader->setOffset($this->getOffset());
 
     $formatFunction = function ($row) {
       if (isset($row['email'])) {
