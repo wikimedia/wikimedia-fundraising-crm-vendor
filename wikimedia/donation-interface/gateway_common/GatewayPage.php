@@ -153,10 +153,13 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	protected function handleRequest() {
 		// TODO: remove conditional when we have a dedicated error render
 		// page and move addModule to Mustache#getResources
-		if( $this->adapter->getFormClass() === 'Gateway_Form_Mustache' ) {
+		if ( $this->adapter->getFormClass() === 'Gateway_Form_Mustache' ) {
 			$modules = $this->adapter->getConfig( 'ui_modules' );
 			if ( !empty( $modules['scripts'] ) ) {
 				$this->getOutput()->addModules( $modules['scripts'] );
+			}
+			if ( $this->adapter->getGlobal( 'LogClientErrors' ) ) {
+				$this->getOutput()->addModules( 'ext.donationInterface.errorLog' );
 			}
 			if ( !empty( $modules['styles'] ) ) {
 				$this->getOutput()->addModuleStyles( $modules['styles'] );
@@ -499,7 +502,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 				'ffname' => $form,
 			) );
 			$this->displayForm();
-		} elseif ( !empty( $result->getErrors() ) ) {
+		} elseif ( count( $result->getErrors() ) ) {
 			$this->displayForm();
 		} else {
 			// Success.

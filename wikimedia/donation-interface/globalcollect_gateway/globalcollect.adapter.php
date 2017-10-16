@@ -668,7 +668,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 			$order_status_results = false;
 			if ( !$cancelflag && !$problemflag ) {
-				$statusCode = $this->getData_Unstaged_Escaped( 'gateway_status' );
+				$statusCode = $this->getStatusCode( $this->getTransactionData() );
 				if ( $statusCode ) {
 					if ( is_null( $original_status_code ) ) {
 						$original_status_code = $statusCode;
@@ -743,7 +743,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 		// confirm or cancel the payment based on $cancelflag
 		if ( !$problemflag ) {
 			if ( !$cancelflag ) {
-				$final = $this->do_transaction( 'SET_PAYMENT' );
+				$final = $this->approvePayment();
 				if ( $final->getCommunicationStatus() === true ) {
 					$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 					// get the old status from the first txn, and add in the part where we set the payment.
@@ -1785,5 +1785,16 @@ class GlobalCollectAdapter extends GatewayAdapter {
 
 	protected function setGatewayTransactionId() {
 		$this->transaction_response->setGatewayTransactionId( $this->getData_Unstaged_Escaped( 'order_id' ) );
+	}
+
+	protected function approvePayment() {
+		return $this->do_transaction( 'SET_PAYMENT' );
+	}
+
+	protected function getStatusCode( $txnData ) {
+		if ( isset( $txnData['STATUSID'] ) ) {
+			return $txnData['STATUSID'];
+		}
+		return null;
 	}
 }

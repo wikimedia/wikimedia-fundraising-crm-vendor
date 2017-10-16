@@ -64,14 +64,13 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * @see MaxMind\MinFraud
 	 * @var array $minFraudClientOptions
 	 */
-	protected $minFraudClientOptions = array();
-
+	protected $minFraudClientOptions = [];
 
 	/**
-	 * License key for minfraud
-	 * @var string $minfraudLicenseKey
+	 * License key for minFraud
+	 * @var string $minFraudLicenseKey
 	 */
-	protected $minfraudLicenseKey = '';
+	protected $minFraudLicenseKey = '';
 
 	/**
 	 * Instance of Gateway_Extras_CustomFilters_MinFraud
@@ -84,6 +83,35 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * @var \Psr\Log\LoggerInterface
 	 */
 	protected $fraud_logger;
+
+	/**
+	 * Extra fields to send to minFraud. These should be our normalized field
+	 * names, not the minFraud field names.
+	 * When 'email' is specified as an extra, it means we will send the real
+	 * address instead of the md5 hash.
+	 *
+	 * See http://dev.maxmind.com/minfraud/#Input
+	 * @var string[] $enabledExtraFields
+	 */
+	protected $enabledExtraFields = [];
+
+	/**
+	 * Top level keys indicate the grouping under the minFraud scheme.
+	 * Second level keys are our field names, values are minFraud field names.
+	 * @var array $extraFieldsMap
+	 */
+	protected static $extraFieldsMap = [
+		'email' => [ 'email' => 'address' ],
+		'billing' => [
+			'first_name' => 'first_name',
+			'last_name' => 'last_name',
+			'street_address' => 'address',
+		],
+		'order' => [
+			'amount' => 'amount',
+			'currency' => 'currency'
+		]
+	];
 
 	/**
 	 * Constructor
@@ -118,8 +146,12 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 
 		// Set the minFraud API options
 		$minFraudOptions = $gateway_adapter->getGlobal( 'MinFraudClientOptions' );
-		if ( !empty( $minFraudOptions ) && is_array( $minFraudOptions ) ) {
+		if ( is_array( $minFraudOptions ) ) {
 			$this->minFraudClientOptions = $minFraudOptions;
+		}
+		$extraFields = $gateway_adapter->getGlobal( 'MinFraudExtraFields' );
+		if ( is_array( $extraFields ) ) {
+			$this->enabledExtraFields = $extraFields;
 		}
 	}
 
@@ -142,12 +174,14 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	 * @return array all parameters for the query
 	 */
 	protected function buildQuery( array $data ) {
-		return [
+		$standardQuery = [
 			'device' => $this->getDeviceParams( $data ),
 			'email' => $this->getEmailParams( $data ),
 			'billing' => $this->getBillingParams( $data ),
 			'event' => $this->getEventParams( $data ),
 		];
+		$query = $this->withExtraFields( $data, $standardQuery );
+		return $query;
 	}
 
 	protected function getDeviceParams( $data ) {
@@ -164,7 +198,6 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	}
 
 	/**
-	 * TODO: option to not MD5 the address
 	 * @param array $data
 	 * @return array
 	 */
@@ -176,13 +209,19 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	}
 
 	protected function getBillingParams( $data ) {
-		return [
-			'city' => $data['city'],
-			// FIXME: region should use the ISO 3166-2 code
-			'region' => $data['state_province'],
-			'postal' => $data['postal_code'],
-			'country' => $data['country'],
+		$map = [
+			'city' => 'city',
+			'state_province' => 'region',
+			'postal_code' => 'postal',
+			'country' => 'country'
 		];
+		$billingParams = [];
+		foreach ( $map as $ourName => $theirName ) {
+			if ( !empty( $data[$ourName] ) && $data[$ourName] !== '0' ) {
+				$billingParams[$theirName] = $data[$ourName];
+			}
+		}
+		return $billingParams;
 	}
 
 	protected function getEventParams( $data ) {
@@ -191,6 +230,18 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		];
 	}
 
+	protected function withExtraFields( $data, $query ) {
+		foreach ( self::$extraFieldsMap as $section => $fields ) {
+			foreach ( $fields as $ourName => $theirName ) {
+				if ( array_search( $ourName, $this->enabledExtraFields ) !== false ) {
+					if ( !empty( $data[$ourName] ) ) {
+						$query[$section][$theirName] = $data[$ourName];
+					}
+				}
+			}
+		}
+		return $query;
+	}
 	/**
 	 * Check to see if we can bypass minFraud check
 	 *
@@ -208,7 +259,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		if ( !isset( $localdata['data_hash'] ) || !strlen(
 				$localdata['data_hash']
 			) || !isset( $localdata['action'] ) || !strlen( $localdata['action'] ) ) {
-			return FALSE;
+			return false;
 		}
 
 		$data_hash = $localdata['data_hash']; // the data hash passed in by the form submission
@@ -217,7 +268,6 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		unset( $localdata['data_hash'] );
 		// compare the data hash to make sure it's legit
 		if ( $this->compare_hash( $data_hash, serialize( $localdata ) ) ) {
-
 			$this->gateway_adapter->setHash(
 				$this->generate_hash( $this->gateway_adapter->getData_Unstaged_Escaped() )
 			); // hash the data array
@@ -247,9 +297,9 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	protected function filter() {
 		// see if we can bypass minFraud
 		if ( $this->canBypassMinFraud() ) {
-			return TRUE;
+			return true;
 		}
-		//get globals
+		// get globals
 		$score = $this->gateway_adapter->getGlobal( 'MinFraudErrorScore' );
 		$weight = $this->gateway_adapter->getGlobal( 'MinFraudWeight' );
 		$multiplier = $weight / 100;
@@ -282,22 +332,6 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Get instance of CreditCardFraudDetection
-	 * @return CreditCardFraudDetection
-	 */
-	protected function get_ccfd() {
-		if ( !$this->ccfd ) {
-			$this->ccfd = new CreditCardFraudDetection();
-
-			// Override the minFraud API servers
-			if ( !empty( $this->minFraudServers ) && is_array( $this->minFraudServers ) ) {
-				$this->ccfd->server = $this->minFraudServers;
-			}
-		}
-		return $this->ccfd;
 	}
 
 	/**
@@ -345,7 +379,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 	}
 
 	/**
-	 * Perform the min fraud query and capture the response
+	 * Perform the minFraud query and capture the response
 	 *
 	 * @param array $query The array you would pass to minFraud in a query
 	 * @return Score result from minFraud client score() call
@@ -365,6 +399,9 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 		)->withEvent(
 			$query['event']
 		);
+		if ( !empty( $query['order'] ) ) {
+			$minFraud = $minFraud->withOrder( $query['order'] );
+		}
 		return $minFraud->score();
 	}
 

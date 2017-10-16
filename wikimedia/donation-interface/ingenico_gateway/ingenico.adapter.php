@@ -1,5 +1,6 @@
 <?php
 
+use Psr\Log\LogLevel;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class IngenicoAdapter extends GlobalCollectAdapter {
@@ -92,7 +93,7 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 			)
 		);
 
-		$this->transactions['getHostedCheckoutStatus'] = array(
+		$this->transactions['getHostedPaymentStatus'] = array(
 			'request' => array( 'hostedCheckoutId' ),
 			'response' => array(
 				'id',
@@ -113,6 +114,11 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 				'cvvResult',
 				'statusCode',
 			)
+		);
+
+		$this->transactions['approvePayment'] = array(
+			'request' => array( 'id' ),
+			'response' => array( 'statusCode' )
 		);
 	}
 
@@ -151,10 +157,15 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 			case 'createHostedCheckout':
 				$result = $provider->createHostedPayment( $data );
 				break;
-			case 'getHostedCheckoutStatus':
+			case 'getHostedPaymentStatus':
 				$result = $provider->getHostedPaymentStatus(
 					$data['hostedCheckoutId']
 				);
+				break;
+			case 'approvePayment':
+				$id = $data['id'];
+				unset( $data['id'] );
+				$result = $provider->approvePayment( $id, $data );
 				break;
 			default:
 				return false;
@@ -189,7 +200,17 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 	}
 
 	public function parseResponseErrors( $response ) {
-		return array();
+		$errors = array();
+		if ( !empty( $response['errors'] ) ) {
+			foreach ( $response['errors'] as $error ) {
+				$errors[] = new PaymentError(
+					$error['code'],
+					$error['message'],
+					LogLevel::ERROR
+				);
+			}
+		}
+		return $errors;
 	}
 
 	public function parseResponseData( $response ) {
@@ -198,8 +219,8 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 		// we can flatten in a custom way per transaction type. Or we should
 		// expand var_map to work with nested stuff.
 		$flattened = array();
-		$squashMe = function( $sourceData, $squashMe ) use ( &$flattened ) {
-			foreach( $sourceData as $key => $value ) {
+		$squashMe = function ( $sourceData, $squashMe ) use ( &$flattened ) {
+			foreach ( $sourceData as $key => $value ) {
 				if ( is_array( $value ) ) {
 					call_user_func( $squashMe, $value, $squashMe );
 				} else {
@@ -230,10 +251,10 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 
 	protected function getOrderStatusFromProcessor() {
 		// FIXME: sometimes we should use getPayment
-		return $this->do_transaction( 'getHostedCheckoutStatus' );
+		return $this->do_transaction( 'getHostedPaymentStatus' );
 	}
 
-	protected function post_process_getHostedCheckoutStatus() {
+	protected function post_process_getHostedPaymentStatus() {
 		return parent::post_process_get_orderstatus();
 	}
 
@@ -242,5 +263,13 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 		$this->transaction_response->setGatewayTransactionId(
 			$this->getData_Unstaged_Escaped( 'gateway_txn_id' )
 		);
+	}
+
+	protected function approvePayment() {
+		return $this->do_transaction( 'approvePayment' );
+	}
+
+	protected function getStatusCode( $txnData ) {
+		return $this->getData_Unstaged_Escaped( 'gateway_status' );
 	}
 }

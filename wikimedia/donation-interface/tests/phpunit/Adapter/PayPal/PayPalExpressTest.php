@@ -315,6 +315,27 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		);
 	}
 
+	/*
+	 * Check that it does not call doPayment when status is PaymentNotInitiated
+	 */
+	public function testProcessDonorReturnPaymentNotInitiated() {
+		$init = $this->getDonorTestData( 'US' );
+		$init['contribution_tracking_id'] = '45931210';
+		$this->setUpRequest( $init, array( 'Donor' => $init ) );
+
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway::setDummyGatewayResponseCode( 'Pending-OK' );
+		$paymentResult = $gateway->processDonorReturn( array(
+			'token' => 'EC%2d4V987654XA123456V',
+			'PayerID' => 'ASDASD',
+		) );
+
+		$this->assertEquals( $gateway->getAccountConfig( 'RedirectURL' ) . $gateway->getData_Unstaged_Escaped( 'gateway_session_id' ), $paymentResult->getRedirect() );
+		$this->assertEquals( FinalStatus::PENDING, $gateway->getFinalStatus() );
+		$message = QueueWrapper::getQueue( 'donations' )->pop();
+		$this->assertNull( $message, 'Should not queue a message' );
+	}
+
 	/**
 	 * Check that we don't send donors to the fail page for warnings
 	 */
@@ -484,5 +505,29 @@ class DonationInterface_Adapter_PayPal_Express_Test extends DonationInterfaceTes
 		$this->gatewayAdapter = $this->getFreshGatewayObject( $message );
 		$result = $this->gatewayAdapter->shouldRectifyOrphan();
 		$this->assertEquals( $result, true, 'shouldRectifyOrphan returning false.' );
+	}
+
+	/**
+	 * We should take the country from the donor info response, and transform
+	 * it into a real code if it's a PayPal bogon.
+	 */
+	public function testUnstageCountry() {
+		$init = $this->getDonorTestData( 'US' );
+		TestingPaypalExpressAdapter::setDummyGatewayResponseCode( [ 'C2', 'OK' ] );
+		$init['contribution_tracking_id'] = '45931210';
+		$init['gateway_session_id'] = mt_rand();
+		$init['language'] = 'pt';
+		$session = array( 'Donor' => $init );
+
+		$request = array(
+			'token' => $init['gateway_session_id'],
+			'PayerID' => 'ASdASDAS',
+			'language' => $init['language'] // FIXME: mashing up request vars and other stuff in verifyFormOutput
+		);
+		$this->setUpRequest( $request, $session );
+		$gateway = $this->getFreshGatewayObject( $init );
+		$gateway->processDonorReturn( $request );
+		$savedCountry = $gateway->getData_Unstaged_Escaped( 'country' );
+		$this->assertEquals( 'CN', $savedCountry );
 	}
 }

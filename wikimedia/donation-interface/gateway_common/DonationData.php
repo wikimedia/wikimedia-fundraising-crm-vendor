@@ -42,6 +42,8 @@ class DonationData implements LogPrefixProvider {
 		'amountGiven',
 		'amountOther',
 		'appeal',
+		'contact_id',
+		'contact_hash',
 		'email',
 		// @deprecated
 		'emailAdd',
@@ -192,26 +194,14 @@ class DonationData implements LogPrefixProvider {
 		if ( is_null( $donorData ) ) {
 			return;
 		}
-		// Transitional code, used for a few hours after deploy.
-		// Please delete before next deploy
-		$rekey = array(
-			'currency_code' => 'currency',
-			'fname' => 'first_name',
-			'lname' => 'last_name',
-			'state' => 'state_province',
-		);
 		// fields that should always overwrite with their original values
 		$overwrite = array( 'referrer', 'contribution_tracking_id' );
 		foreach ( $donorData as $key => $val ) {
-			$newKey = $key;
-			if ( isset( $rekey[$key] ) ) {
-				$newKey = $rekey[$key];
-			}
-			if ( !$this->isSomething( $newKey ) ) {
-				$this->setVal( $newKey, $val );
+			if ( !$this->isSomething( $key ) ) {
+				$this->setVal( $key, $val );
 			} else {
-				if ( in_array( $newKey, $overwrite ) ) {
-					$this->setVal( $newKey, $val );
+				if ( in_array( $key, $overwrite ) ) {
+					$this->setVal( $key, $val );
 				}
 			}
 		}
@@ -422,16 +412,21 @@ class DonationData implements LogPrefixProvider {
 
 		// try to regenerate the country if we still don't have a valid one yet
 		if ( $regen ) {
-			// If no valid country was passed, try to do GeoIP lookup
-			// Requires php5-geoip package
-			if ( function_exists( 'geoip_country_code_by_name' ) ) {
+			// If no valid country was passed, first check session.
+			$sessionCountry = $this->gateway->session_getData( 'Donor', 'country' );
+			if ( CountryValidation::isValidIsoCode( $sessionCountry ) ) {
+				$this->logger->info( "Using country code $sessionCountry from session" );
+				$country = $sessionCountry;
+			} elseif ( function_exists( 'geoip_country_code_by_name' ) ) {
+				// Then try to do GeoIP lookup
+				// Requires php5-geoip package
 				$ip = $this->getVal( 'user_ip' );
 				if ( WmfFramework::validateIP( $ip ) ) {
-					// I hate @suppression at least as much as you do, but this geoip function is being genuinely horrible.
-					// try/catch did not help me suppress the notice it emits when it can't find a host.
-					// The goggles; They do *nothing*.
-					// TODO: to change error_reporting is less worse?
-					$country = @geoip_country_code_by_name( $ip );
+					try {
+						$country = geoip_country_code_by_name( $ip );
+					} catch ( Exception $e ) {
+						// Suppressing missing database exception thrown in CI
+					}
 					if ( !$country ) {
 						$this->logger->warning( __FUNCTION__ . ": GeoIP lookup function found nothing for $ip! No country available." );
 					}
@@ -834,9 +829,11 @@ class DonationData implements LogPrefixProvider {
 
 		$tracking_data['payments_form'] = $this->getVal( 'gateway' );
 
-		// FIXME: currently 'appeal' is the only way to A/B test different CSS.
-		// Change this tracking element to 'ffname' when we restore that.
-		if ( $this->isSomething( 'appeal' ) ) {
+		// Variant is the new way to a/b test forms. Appeal is still used to
+		// render wikitext at the side, but it's almost always JimmyQuote
+		if ( $this->isSomething( 'variant' ) ) {
+			$tracking_data['payments_form'] .= '.v=' . $this->getVal( 'variant' );
+		} elseif ( $this->isSomething( 'appeal' ) ) {
 			$tracking_data['payments_form'] .= '.' . $this->getVal( 'appeal' );
 		}
 
@@ -955,6 +952,8 @@ class DonationData implements LogPrefixProvider {
 	 */
 	public static function getRetryFields() {
 		$fields = array(
+			'contact_id',
+			'contact_hash',
 			'gateway',
 			'country',
 			'currency',

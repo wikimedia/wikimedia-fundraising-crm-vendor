@@ -39,7 +39,8 @@
 	},
 	"APIModules": {
 		"di_amazon_bill": "AmazonBillingApi",
-		"donate": "DonationApi"
+		"donate": "DonationApi",
+		"logPaymentsFormError": "ClientErrorApi"
 	},
 	"MessagesDirs": {
 		"DonationInterface": [
@@ -69,6 +70,7 @@
 		"AmountInCents": "gateway_common/AmountInCents.php",
 		"ArrayHelper": "gateway_common/ArrayHelper.php",
 		"FiscalNumber": "gateway_common/FiscalNumber.php",
+		"ClientErrorApi": "gateway_common/clientError.api.php",
 		"ClientSideValidationHelper": "gateway_common/ClientSideValidationHelper.php",
 		"ConfigurationReader": "gateway_common/ConfigurationReader.php",
 		"ContributionTrackingPlusUnique": "gateway_common/ContributionTrackingPlusUnique.php",
@@ -146,6 +148,7 @@
 		"AstroPaySignature": "astropay_gateway/AstroPaySignature.php",
 		"DummyFiscalNumber": "astropay_gateway/DummyFiscalNumber.php",
 		"CleanupRecurringLength": "paypal_gateway/CleanupRecurringLength.php",
+		"PayPalCountry": "paypal_gateway/PayPalCountry.php",
 		"PaypalExpressAdapter": "paypal_gateway/express_checkout/paypal_express.adapter.php",
 		"PaypalExpressGateway": "paypal_gateway/express_checkout/paypal_express_gateway.body.php",
 		"PaypalExpressGatewayResult": "paypal_gateway/express_checkout/paypal_express_resultswitcher.body.php",
@@ -182,6 +185,9 @@
 		"donationInterface.skinOverride": {
 			"scripts": "modules/js/skinOverride.js"
 		},
+		"ext.donationInterface.errorLog": {
+			"scripts": "modules/js/ext.donationInterface.errorLog.js"
+		},
 		"ext.donationInterface.currencyRates": {
 			"class": "CurrencyRatesModule"
 		},
@@ -199,30 +205,30 @@
 			"scripts": "modules/js/ext.donationInterface.forms.js",
 			"dependencies": "ext.donationInterface.validation"
 		},
-		"ext.donationinterface.mustache.styles": {
+		"ext.donationInterface.mustache.styles": {
 			"styles": "gateway_forms/mustache/forms.css"
 		},
-		"ext.donationinterface.adyen.scripts": {
+		"ext.donationInterface.adyen.scripts": {
 			"scripts": "adyen_gateway/forms/js/adyen.js",
 			"dependencies": "ext.donationInterface.forms"
 		},
-		"ext.donationinterface.ingenico.scripts": {
+		"ext.donationInterface.ingenico.scripts": {
 			"scripts": "globalcollect_gateway/forms/js/ingenico.js",
 			"dependencies": "ext.donationInterface.forms"
 		},
-		"ext.donationinterface.ingenico-hosted": {
+		"ext.donationInterface.ingenico-hosted": {
 			"scripts": "ingenico_gateway/forms/js/ingenico.js",
 			"styles": "ingenico_gateway/forms/css/ingenico.css",
 			"dependencies": "ext.donationInterface.forms"
 		},
-		"ext.donationinterface.paypal.scripts": {
+		"ext.donationInterface.paypal.scripts": {
 			"scripts": "paypal_gateway/express_checkout/forms/js/paypal.js",
 			"dependencies": "ext.donationInterface.forms"
 		},
-		"ext.donationinterface.amazon.styles": {
+		"ext.donationInterface.amazon.styles": {
 			"styles": "amazon_gateway/amazon.css"
 		},
-		"ext.donationinterface.amazon.scripts": {
+		"ext.donationInterface.amazon.scripts": {
 			"scripts": "amazon_gateway/amazon.js",
 			"dependencies": "ext.donationInterface.validation",
 			"messages": [
@@ -374,6 +380,40 @@
 			"": 100,
 			"_merge_strategy": "array_plus"
 		},
+		"IngenicoGatewayCvvMap": {
+			"M": true,
+			"N": false,
+			"P": true,
+			"S": false,
+			"U": true,
+			"Y": false,
+			"0": true,
+			"": false,
+			"_merge_strategy": "array_plus"
+		},
+		"IngenicoGatewayAvsMap": {
+			"A": 50,
+			"B": 50,
+			"C": 50,
+			"D": 0,
+			"E": 100,
+			"F": 0,
+			"G": 50,
+			"I": 50,
+			"M": 0,
+			"N": 100,
+			"P": 50,
+			"R": 100,
+			"S": 50,
+			"U": 50,
+			"W": 50,
+			"X": 0,
+			"Y": 0,
+			"Z": 50,
+			"0": 25,
+			"": 100,
+			"_merge_strategy": "array_plus"
+		},
 		"AmazonGatewayLoginScript": "https://api-cdn.amazon.com/sdk/login1.js",
 		"PaypalGatewayURL": "https://www.paypal.com/cgi-bin/webscr",
 		"PaypalGatewayTestingURL": "https://www.sandbox.paypal.com/cgi-bin/webscr",
@@ -411,6 +451,7 @@
 		"DonationInterfaceMinFraudUserId": "",
 		"DonationInterfaceMinFraudLicenseKey": "",
 		"DonationInterfaceMinFraudClientOptions": [],
+		"DonationInterfaceMinFraudExtraFields": [],
 		"DonationInterfaceMinFraudAlarmLimit": 25000,
 		"DonationInterfaceCustomFiltersRefRules": [],
 		"DonationInterfaceCustomFiltersSrcRules": [],
@@ -450,6 +491,7 @@
 		"DonationInterfaceEnableIPVelocityFilter": false,
 		"DonationInterfaceEnableSessionVelocityFilter": false,
 		"DonationInterfaceEnableSystemStatus": false,
+		"DonationInterfaceLogClientErrors": true,
 		"DonationInterfaceGatewayAdapters": {
 			"globalcollect": "GlobalCollectAdapter",
 			"globalcollect_orphan": "GlobalCollectOrphanAdapter",
