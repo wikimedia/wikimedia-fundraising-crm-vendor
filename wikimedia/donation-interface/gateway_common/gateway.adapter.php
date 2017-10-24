@@ -1280,6 +1280,7 @@ abstract class GatewayAdapter
 		 * that association outside of this log line.
 		 */
 		$this->logger->info( "Initiating cURL for donor $email" );
+		$this->logger->info( "Data: " . print_r( $data, true) );
 
 		// Initialize cURL and construct operation (also run filter)
 		$ch = curl_init();
