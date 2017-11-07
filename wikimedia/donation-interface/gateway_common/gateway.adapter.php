@@ -1247,7 +1247,7 @@ abstract class GatewayAdapter
 	}
 
 	function setGatewayDefaults( $options = array() ) {
- }
+	}
 
 	public function getCurrencies( $options = array() ) {
 		return $this->config['currencies'];
@@ -1280,7 +1280,6 @@ abstract class GatewayAdapter
 		 * that association outside of this log line.
 		 */
 		$this->logger->info( "Initiating cURL for donor $email" );
-		$this->logger->info( "Data: " . print_r( $data, true) );
 
 		// Initialize cURL and construct operation (also run filter)
 		$ch = curl_init();
@@ -1304,7 +1303,7 @@ abstract class GatewayAdapter
 		$enableCurlVerboseLogging = $this->getGlobal( 'CurlVerboseLog' );
 
 		curl_setopt_array( $ch, $curl_opts );
-		$this->logger->info( "URL: " . $curl_opts[CURLOPT_URL]);
+
 		// As suggested in the PayPal developer forum sample code, try more than once to get a
 		// response in case there is a general network issue
 		$continue = true;
