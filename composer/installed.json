@@ -2274,7 +2274,7 @@
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "81b12c1166d91c689b4b7a9dad0f845f97ccecc1"
+            "reference": "0b70d246f754b456d6f04180f9bb02f528910f0d"
         },
         "require": {
             "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -2294,7 +2294,7 @@
             "mediawiki/mediawiki-codesniffer": "0.11.0",
             "wikimedia/testing-access-wrapper": "~1.0"
         },
-        "time": "2017-10-17T15:40:59+00:00",
+        "time": "2017-11-16T16:31:29+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
