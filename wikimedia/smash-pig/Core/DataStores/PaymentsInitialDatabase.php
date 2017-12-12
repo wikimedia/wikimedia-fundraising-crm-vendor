@@ -2,6 +2,8 @@
 namespace SmashPig\Core\DataStores;
 
 use PDO;
+use SmashPig\CrmLink\FinalStatus;
+use SmashPig\CrmLink\ValidationAction;
 
 /**
  * Data store containing finalized messages.
@@ -10,7 +12,7 @@ class PaymentsInitialDatabase extends SmashPigDatabase {
 
 	/**
 	 * Return true if the message already exists in the payments-init table,
-	 * and is marked as having failed and been rejected.
+	 * is marked as having failed, and is not up for review.
 	 *
 	 * @param array $message Payments initial message
 	 *	FIXME: Or pass ID parameters explicitly and call this
@@ -33,8 +35,8 @@ class PaymentsInitialDatabase extends SmashPigDatabase {
 	 */
 	public static function isMessageFailed( $message ) {
 		if (
-			$message['payments_final_status'] === 'failed' &&
-			$message['validation_action'] !== 'review'
+			$message['payments_final_status'] === FinalStatus::FAILED &&
+			$message['validation_action'] !== ValidationAction::REVIEW
 		) {
 			return true;
 		}
@@ -53,10 +55,10 @@ class PaymentsInitialDatabase extends SmashPigDatabase {
 			where gateway = :gateway
 				and order_id = :order_id
 			limit 1';
-		$params = array(
+		$params = [
 			'gateway' => $gatewayName,
 			'order_id' => $orderId,
-		);
+		];
 		$executed = $this->prepareAndExecute( $sql, $params );
 		$row = $executed->fetch( PDO::FETCH_ASSOC );
 		if ( !$row ) {

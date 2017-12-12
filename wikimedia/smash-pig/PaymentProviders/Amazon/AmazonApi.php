@@ -40,7 +40,8 @@ class AmazonApi {
 	public static function createIpnHandler( $headers, $body ) {
 		$config = Context::get()->getProviderConfiguration();
 		$klass = $config->val( 'ipn-handler-class' );
-		return new $klass( $headers, $body );
+		$proxy = $config->val( 'proxy' );
+		return new $klass( $headers, $body, $proxy );
 	}
 
 	/**
@@ -63,9 +64,9 @@ class AmazonApi {
 		$authorizationIds = (array)$details['IdList']['member'];
 		// Check the status of each authorization against the order reference
 		foreach ( $authorizationIds as $id ) {
-			$authResult = $this->client->getAuthorizationDetails( array(
+			$authResult = $this->client->getAuthorizationDetails( [
 				'amazon_authorization_id' => $id,
-			) )->toArray();
+			] )->toArray();
 			if ( !empty( $authResult['Error'] ) ) {
 				throw new SmashPigException( $authResult['Error']['Message'] );
 			}
@@ -108,9 +109,9 @@ class AmazonApi {
 	 */
 	protected function getOrderReferenceDetails( $orderReferenceId ) {
 		$getDetailsResult = $this->client->getOrderReferenceDetails(
-			array(
+			[
 				'amazon_order_reference_id' => $orderReferenceId,
-			)
+			]
 		)->toArray();
 		if ( !empty( $getDetailsResult['Error'] ) ) {
 			throw new SmashPigException( $getDetailsResult['Error']['Message'] );
@@ -131,14 +132,14 @@ class AmazonApi {
 		$merchantReference = $details['SellerOrderAttributes']['SellerOrderId'];
 
 		$authorizeResult = $this->client->authorize(
-			array(
+			[
 				'amazon_order_reference_id' => $orderReferenceId,
 				'authorization_amount' => $amount,
 				'currency_code' => $currency,
 				'capture_now' => true, // combine authorize and capture steps
 				'authorization_reference_id' => $merchantReference,
 				'transaction_timeout' => 0,
-			)
+			]
 		)->toArray();
 		if ( !empty( $authorizeResult['Error'] ) ) {
 			throw new SmashPigException( $authorizeResult['Error']['Message'] );
@@ -147,9 +148,9 @@ class AmazonApi {
 	}
 
 	public function cancelOrderReference( $orderReferenceId, $reason = null ) {
-		$params = array(
+		$params = [
 			'amazon_order_reference_id' => $orderReferenceId
-		);
+		];
 		if ( $reason ) {
 			$params['cancelation_reason'] = $reason;
 		}
