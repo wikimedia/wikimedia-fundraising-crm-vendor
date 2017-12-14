@@ -1,0 +1,24 @@
+{
+  "name": "jackgleeson/stats-collector",
+  "type": "library",
+  "description": "Utility to help record, analyse and export statistics across any PHP process e.g. http request, batch jobs or cli-scrpts",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Jack Gleeson",
+      "email": "me@jackgleeson.co.uk"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Statistics\\": "src/",
+      "Samples\\": "samples/"
+    }
+  },
+  "require": {
+    "dflydev/dot-access-data": "^1.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^6.4"
+  }
+}

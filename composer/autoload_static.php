@@ -38,8 +38,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'Symfony\\Component\\Yaml\\' => 23,
             'Symfony\\Component\\HttpFoundation\\' => 33,
             'Symfony\\Component\\EventDispatcher\\' => 34,
+            'Statistics\\' => 11,
             'SmashPig\\' => 9,
             'SilverpopConnector\\' => 19,
+            'Samples\\' => 8,
         ),
         'R' => 
         array (
@@ -126,6 +128,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
         ),
+        'Statistics\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jackgleeson/stats-collector/src',
+        ),
         'SmashPig\\' => 
         array (
             0 => __DIR__ . '/..' . '/wikimedia/smash-pig',
@@ -133,6 +139,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'SilverpopConnector\\' => 
         array (
             0 => __DIR__ . '/..' . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector',
+        ),
+        'Samples\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jackgleeson/stats-collector/samples',
         ),
         'Respect\\Validation\\' => 
         array (
@@ -256,6 +266,13 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'ForceUTF8\\' => 
             array (
                 0 => __DIR__ . '/..' . '/neitanod/forceutf8/src',
+            ),
+        ),
+        'D' => 
+        array (
+            'Dflydev\\DotAccessData' => 
+            array (
+                0 => __DIR__ . '/..' . '/dflydev/dot-access-data/src',
             ),
         ),
         'C' => 
