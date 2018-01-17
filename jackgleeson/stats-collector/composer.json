@@ -1,7 +1,7 @@
 {
   "name": "jackgleeson/stats-collector",
   "type": "library",
-  "description": "Utility to help record, analyse and export statistics across any PHP process e.g. http request, batch jobs or cli-scrpts",
+  "description": "Lightweight utility to record, combine, retrieve and export statistics and log data across any PHP process",
   "license": "MIT",
   "authors": [
     {
@@ -11,8 +11,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "Statistics\\": "src/",
-      "Samples\\": "samples/"
+      "Statistics\\": "src/"
     }
   },
   "require": {

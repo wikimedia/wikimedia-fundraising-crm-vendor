@@ -1,5 +1,7 @@
 <?php
 require __DIR__ . DIRECTORY_SEPARATOR . '../vendor/autoload.php';
+require __DIR__ . DIRECTORY_SEPARATOR . 'CiviCRMCollector.php';
+
 /**
  * Get an instance of the Collector
  */
@@ -64,11 +66,11 @@ $statsCollector->setNamespace("transactions")
 
 // lets get all transaction stats using the wildcard operator
 $transactions = $statsCollector->getStat("transactions.*");
-// $transactions = Array ( [0] => 10 [1] => 20 [2] => 30 [3] => 40 )
+// $transactions = Array ( [0] => 10 [1] => 40 [2] => 30 [3] => 20 )
 
 // lets get all transaction stats using the wildcard operator including their full namespace as the key
 $transactionsWithKeys = $statsCollector->getStat("transactions.*", true);
-// $transactions = Array ( [transactions.mobile] => 10 [transactions.website] => 20 [transactions.tablet] => 30 [transactions.other] => 40 )
+// $transactions = Array ( [.transactions.mobile] => 10 [.transactions.other] => 40 [.transactions.tablet] => 30 [.transactions.website] => 20 )
 
 
 // getStat() and getStats() will auto-deduplicate results if you accidentally include the same stat twice using wildcards
@@ -76,7 +78,7 @@ $transactionsWithUniqueStats = $statsCollector->getStats([
   "transactions.*",
   ".transactions.mobile",
 ]);
-// only one mobile stat of '10' is present in the result $transactionsWithUniqueStats = Array ( [0] => 10 [1] => 20 [2] => 30 [3] => 40 )
+// only one mobile stat of '10' is present in the result $transactionsWithUniqueStats = Array ( [0] => 10 [1] => 40 [2] => 30 [3] => 20 )
 
 
 /**
@@ -86,7 +88,7 @@ $transactionsWithUniqueStats = $statsCollector->getStats([
 // lets increment some stats
 $statsCollector->setNamespace("general.stats")
   ->addStat("days_on_the_earth", (33 * 365))// 12045 added to 'general.stats.days_on_the_earth'
-  ->incrementStat("days_on_the_earth", 5); // we time travel forward 24 hours.
+  ->incrementStat("days_on_the_earth", 1); // we time travel forward 24 hours.
 $daysOnEarth = $statsCollector->getStat("days_on_the_earth"); // 12046
 $daysOnEarthAbsolute = $statsCollector->getStat(".general.stats.days_on_the_earth"); // same as above 12046
 
@@ -95,7 +97,6 @@ $statsCollector->setNamespace("general.other.stats")
   ->addStat("days_until_christmas", 53)// 53 as of 11/02/2017
   ->decrementStat("days_until_christmas"); // skip 24 hours
 $daysUntilChristmas = $statsCollector->getStat("days_until_christmas"); // 52
-
 
 /**
  * Working with basic stats, aggregate functions (sum/average)
@@ -147,7 +148,7 @@ $averageVisitsPerMonth = $statsCollector->getStatsAverage([
   'dec',
 ]); //648.58333333333
 
-$averageVisitsPerMonthWildcard = $statsCollector->getStatAverage("month.*"); //648.58333333333
+$averageVisitsPerMonthWildcard = $statsCollector->getStatAverage("visits.month.*"); //648.58333333333
 
 
 /**
@@ -173,18 +174,15 @@ $statsCollector->setNamespace("users")
 
 $averageHeights = $statsCollector->getStatAverage('heights'); //172.375
 
+// clobber/overwrite existing stat when addStating to prevent compound behaviour (e.g. updating timestamps)
+$statsCollector->setNamespace("batch.jobs");
+$statsCollector->addStat("last_run", strtotime('-1 day', strtotime('now')));
+$statsCollector->addStat("last_run", strtotime('now'));
+$runTimes = $statsCollector->getStat("last_run"); //Array ( [0] => 1510593647 [1] => 1510680047 )
 
-// clobber/overwrite existing stats when adding to prevent compound behaviour (e.g. updating timestamps)
-$statsCollector->setNamespace("cart");
-$statsCollector->addStat("last_checkout_time", strtotime('-1 day', strtotime('now')));
-$statsCollector->addStat("last_checkout_time", strtotime('now'));
-$checkoutTimes = $statsCollector->getStat("last_checkout_time"); //Array ( [0] => 1510593647 [1] => 1510680047 )
-
-$options['clobber'] = true;
-$statsCollector->addStat("last_checkout_time", strtotime('-1 day', strtotime('now')), $options);
-$statsCollector->addStat("last_checkout_time", strtotime('now'), $options);
-$lastCheckoutTimeSingleResult = $statsCollector->getStat("last_checkout_time"); //1510680047
-
+$statsCollector->addStat("last_run", strtotime('-1 day', strtotime('now')));
+$statsCollector->addStat("last_run", strtotime('now'), $options = ['clobber' => true]);
+$runTimeSingleResult = $statsCollector->getStat("last_run"); //1510680136
 
 // lets take three different compound stats and work out the collective sum
 $statsCollector->setNamespace("website.referrals")
@@ -222,7 +220,7 @@ $totalReferralEntries = $statsCollector->getStatsCount([
   ".website.referrals.google",
   ".website.referrals.yahoo",
   ".website.referrals.bing",
-]); //15
+]); //10
 
 // lets get the sum of a compound stat
 $statsCollector->setNamespace("api.response")
@@ -248,17 +246,74 @@ $totalResponses = $statsCollector->getStatsSum([
   '.api.response.error',
 ]); // 151192
 
+
+/**
+ * Advanced usage. Associative arrays as stats (mapped to array-key-like output in file and metric labels in Prometheus)
+ */
+
+$winners = [
+  "sprint=8s" => 5,
+  'sprint=10s' => 9,
+  'sprint=12s' => 21,
+];
+
+$statsCollector->setNamespace("olympics.100m")->addStat("winners", $winners);
+
+$olympics100mWinnersByTime = $statsCollector->getStat('winners'); // Array ( [<10s] => 5 [10s-12s] => 9 [12s] => 21 )
+$olympics100mTotalWinners = $statsCollector->getStatSum('winners'); // 35
+
+
+/**
+ * Advanced usage. Lets increment/decrement some compound stats
+ */
+
+$statsCollector->setNamespace("users")
+  ->addStat("points", [10, 15, 20]);
+
+//lets increment all compound stat values
+$statsCollector->incrementCompoundStat("points", $increment = 5);
+
+$pointsIncrementedByFive = $statsCollector->getStat("points"); // Array ( [0] => 15 [1] => 20 [2] => 25 )
+
+//lets reset the compound stat values back to down their original values by decrementing them by 5
+$statsCollector->decrementCompoundStat("points", $decrement = 5);
+
+$pointsDecrementedByFive = $statsCollector->getStat("points"); // Array ( [0] => 10 [1] => 15 [2] => 20 )
+
+
+
 /**
  * Extending the Stats Collector with your own subject specific instance is
  * also possible by extending the AbstractCollector
  */
 
 // this instance of stats collector has a custom 'civi' root namespace
-$CiviCRMCollector = Samples\CiviCRMCollector::getInstance();
+$CiviCRMCollector = CiviCRMCollector::getInstance();
 
 $CiviCRMCollector->addStat("users.created", 500);
 $usersCreated = $CiviCRMCollector->getStat("users.created"); // 500
 
+
+/**
+ * Exporting stats
+ */
+
+//export all stats collected so far to sample_stats.stats file
+$exporter = new Statistics\Exporter\File("sample_stats");
+$exporter->path = __DIR__ . DIRECTORY_SEPARATOR . 'out'; // output path
+$exporter->export($statsCollector);
+
+// export a bunch of targeted stats
+// return as associative array of namespace=>value to pass to export() due to getWithKey() being called
+$noahsArkStats = $statsCollector->getStat("noahs.ark.passengers.*", true);
+
+// you can update $exporter->filename & $exporter->path before each export() call for a different output dir/name
+$exporter->filename = "noahs_ark_stats";
+$exporter->export($noahsArkStats);
+
+//export an entire custom collector instance.  export() takes either an array of stats or an instance of AbstractCollector.
+$exporter->filename = "civicrm_stats";
+$exporter->export($CiviCRMCollector);
 
 /**
  * Exporting stats to Prometheus exporter

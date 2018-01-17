@@ -17,7 +17,6 @@ return array(
     'Statistics\\' => array($vendorDir . '/jackgleeson/stats-collector/src'),
     'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
     'SilverpopConnector\\' => array($vendorDir . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector'),
-    'Samples\\' => array($vendorDir . '/jackgleeson/stats-collector/samples'),
     'Respect\\Validation\\' => array($vendorDir . '/respect/validation/library'),
     'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),

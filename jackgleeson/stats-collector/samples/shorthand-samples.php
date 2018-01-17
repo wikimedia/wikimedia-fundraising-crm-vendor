@@ -1,10 +1,11 @@
 <?php
 require __DIR__ . DIRECTORY_SEPARATOR . '../vendor/autoload.php';
+require __DIR__ . DIRECTORY_SEPARATOR . 'CiviCRMCollector.php';
+
 /**
  * Get an instance of the Collector
  */
 $stats = Statistics\Collector\Collector::getInstance();
-
 /**
  * Setting & Getting stats
  */
@@ -15,7 +16,9 @@ $users = $stats->get("users"); // 45
 $usersWithNamespaceInKey = $stats->getWithKey("users"); // Array ( [root.users] => 45 )
 
 // define a new default namespace and add stats to it
-$stats->ns("website")->add("clicks", 30)->add("banner.views", 20);
+$stats->ns("website")
+  ->add("clicks", 30)
+  ->add("banner.views", 20);
 // also add a sub-namespace to the current 'website' namespace (in a relative fashion)
 
 // get single stat by relative (resolves to website.clicks due to last set namespace being "website" on line 18)
@@ -59,11 +62,11 @@ $stats->ns("transactions")
 
 // lets get all transaction stats using the wildcard operator
 $transactions = $stats->get("transactions.*");
-// $transactions = Array ( [0] => 10 [1] => 20 [2] => 30 [3] => 40 )
+// $transactions = Array ( [0] => 10 [1] => 40 [2] => 30 [3] => 20 )
 
 // lets get all transaction stats using the wildcard operator including their full namespace as the key
 $transactionsWithKeys = $stats->getWithKey("transactions.*");
-// $transactions = Array ( [transactions.mobile] => 10 [transactions.website] => 20 [transactions.tablet] => 30 [transactions.other] => 40 )
+// $transactions = Array ( [.transactions.mobile] => 10 [.transactions.website] => 20 [.transactions.tablet] => 30 [.transactions.other] => 40 )
 
 
 // get() will auto-deduplicate results if you accidentally include the same stat twice using wildcards
@@ -99,7 +102,11 @@ $daysUntilChristmas = $stats->get("days_until_christmas"); // 52
 
 // lets add a bunch of stats and sum them
 $stats->ns("noahs.ark.passengers")
-  ->add("humans", 2)->add("aliens", 0)->add("animal.cats", 3)->add("animal.dogs", 6)->add("animal.chickens", 25);
+  ->add("humans", 2)
+  ->add("aliens", 0)
+  ->add("animal.cats", 3)
+  ->add("animal.dogs", 6)
+  ->add("animal.chickens", 25);
 
 // total number of passengers on noahs ark
 $numberOfTotalPassengers = $stats->sum("noahs.ark.passengers.*"); // 36
@@ -123,8 +130,6 @@ $stats->ns("visits.month")
 // you could use a wildcard to get the sum of visits by targeting  'visits.month.*'
 $visitsForTheYearWildcard = $stats->sum(".visits.month.*"); ////7783
 
-$averageVisitsPerMonthWildcard = $stats->avg("month.*"); //648.58333333333
-
 
 /**
  * Working with compound stats (averages/sum/count)
@@ -147,14 +152,14 @@ $stats->ns("users")
 $averageHeights = $stats->avg('heights'); //172.375
 
 // clobber/overwrite existing stat when adding to prevent compound behaviour (e.g. updating timestamps)
-$stats->ns("cart");
-$stats->add("last_checkout_time", strtotime('-1 day', strtotime('now')));
-$stats->add("last_checkout_time", strtotime('now'));
-$checkoutTimes = $stats->get("last_checkout_time"); //Array ( [0] => 1510593647 [1] => 1510680047 )
+$stats->ns("batch.jobs");
+$stats->add("last_run", strtotime('-1 day', strtotime('now')));
+$stats->add("last_run", strtotime('now'));
+$runTimes = $stats->get("last_run"); //Array ( [0] => 1510593647 [1] => 1510680047 )
 
-$stats->clobber("last_checkout_time", strtotime('-1 day', strtotime('now')));
-$stats->clobber("last_checkout_time", strtotime('now'));
-$lastCheckoutTimeSingleResult = $stats->get("last_checkout_time"); //1510680136
+$stats->clobber("last_run", strtotime('-1 day', strtotime('now')));
+$stats->clobber("last_run", strtotime('now'));
+$runTimeSingleResult = $stats->get("last_run"); //1510680136
 
 // lets take three different compound stats and work out the collective sum
 $stats->ns("website.referrals")
@@ -182,7 +187,6 @@ $totalReferralsAbsolute = $stats->sum([
   '.website.referrals.bing',
 ]); // 4089
 
-
 // Lets count how many values there are in a namespace
 // (count will return the number of values, not the sum of the values)
 $googleReferralEntryCount = $stats->count(".website.referrals.google"); //4
@@ -192,7 +196,7 @@ $totalReferralEntries = $stats->count([
   ".website.referrals.google",
   ".website.referrals.yahoo",
   ".website.referrals.bing",
-]); //15
+]); //10
 
 // lets get the sum of a compound stat
 $stats->ns("api.response")
@@ -210,17 +214,72 @@ $totalResponses = $stats->sum([
   '.api.response.error',
 ]); // 151192
 
+
+/**
+ * Advanced usage. Associative arrays as values (mapped to metric labels in Prometheus)
+ */
+
+$winners = [
+  "sprint=8s" => 5,
+  'sprint=10s' => 9,
+  'sprint=12s' => 21
+];
+
+$stats->setNamespace("olympics.100m")->add("winners", $winners);
+
+$olympic100mWinners = $stats->get('winners'); // Array ( [<10s] => 5 [10s-12s] => 9 [12s+] => 21 )
+$totalOlympic100mWinners = $stats->sum('winners'); // 35
+
+/**
+ * Advanced usage. Lets increment/decrement some compound stats
+ */
+
+$stats->ns("users")
+  ->add("points", [10, 15, 20]);
+
+//lets increment all compound stat values
+$stats->incCpd("points", $increment = 5);
+
+$pointsIncrementedByFive = $stats->get("points"); // Array ( [0] => 15 [1] => 20 [2] => 25 )
+
+//lets reset the compound stat values back to down their original values by decrementing them by 5
+$stats->decCpd("points", $decrement = 5);
+
+$pointsDecrementedByFive = $stats->get("points"); // Array ( [0] => 10 [1] => 15 [2] => 20 )
+
+
 /**
  * Extending the Stats Collector with your own subject specific instance is
  * also possible by extending the AbstractCollector
  */
 
 // this instance of stats collector has a custom 'civi' root namespace
-$CiviCRMCollector = Samples\CiviCRMCollector::getInstance();
+$CiviCRMCollector = CiviCRMCollector::getInstance();
 
 $CiviCRMCollector->add("users.created", 500);
 $usersCreated = $CiviCRMCollector->get("users.created"); // 500
 
+
+/**
+ * Exporting stats
+ */
+
+//export all stats collected so far to sample_stats.stats file
+$exporter = new Statistics\Exporter\File("sample_stats");
+$exporter->path = __DIR__ . DIRECTORY_SEPARATOR . 'out'; // output path
+$exporter->export($stats);
+
+// export a bunch of targeted stats
+// return as associative array of namespace=>value to pass to export() due to getWithKey() being called
+$noahsArkStats = $stats->getWithKey("noahs.ark.passengers.*");
+
+// you can update $exporter->filename & $exporter->path before each export() call for a different output dir/name
+$exporter->filename = "noahs_ark_stats";
+$exporter->export($noahsArkStats);
+
+//export an entire custom collector instance.  export() takes either an array of stats or an instance of AbstractCollector.
+$exporter->filename = "civicrm_stats";
+$exporter->export($CiviCRMCollector);
 
 /**
  * Exporting stats to Prometheus exporter

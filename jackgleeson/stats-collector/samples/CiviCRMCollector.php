@@ -1,11 +1,19 @@
 <?php
 
-namespace Samples;
+use Statistics\Collector\AbstractCollector;
 
-use Statistics\Collector\Collector;
-
-class CiviCRMCollector extends Collector
+class CiviCRMCollector extends AbstractCollector
 {
 
     protected $defaultNamespace = "civi";
+
+    /**
+     * Return the default namespace to be used if a custom namespace is not set.
+     *
+     * @return string
+     */
+    protected function getDefaultNamespace()
+    {
+        return $this->defaultNamespace;
+    }
 }

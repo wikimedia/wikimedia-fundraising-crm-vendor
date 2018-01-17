@@ -1,39 +1,22 @@
 <?php
 
-
 namespace Statistics\Collector;
 
 use Dflydev\DotAccessData\Data as Container;
+use Statistics\Helper\ArrayHelper;
+use Statistics\Helper\MathHelper;
+use Statistics\Helper\TypeHelper;
+use Statistics\Collector\Traits\CollectorShorthand;
+use Statistics\Collector\Traits\SingletonInheritance;
 use Statistics\Exception\StatisticsCollectorException;
 
-/**
- * Statistics Collector
- *
- * This utility is designed to allow simple namespace structured key/value
- * storage for statistics recording during the lifecycle of a request or
- * process.
- *
- * Recorded statistics can then be exported via a backend specific exporter
- * class to file, log, db, queue, other.
- *
- * Reportable stats are stored in defined namespaces. The namespace
- * structure/convention/naming is entirely up to the user e.g.
- * queue.emails.inbox , civi.user.unsubscribed, server1.website.clicks are all
- * acceptable
- *
- */
-abstract class AbstractCollector implements iCollector
+abstract class AbstractCollector implements iCollector, iCollectorShorthand, iSingleton
 {
 
-    /**
-     * Singleton instances container
-     *
-     * @var array
-     */
-    protected static $instances = [];
+    use CollectorShorthand, SingletonInheritance;
 
     /**
-     * namespace separator
+     * Namespace separator
      */
     const SEPARATOR = '.';
 
@@ -43,14 +26,14 @@ abstract class AbstractCollector implements iCollector
     const WILDCARD = '*';
 
     /**
+     * Wildcard operator
+     */
+    const TIMERS_NS = 'timer';
+
+    /**
      * @var null|string
      */
     protected $namespace = null;
-
-    /**
-     * @var string
-     */
-    protected $defaultNamespace = "root";
 
     /**
      * Container for stats data
@@ -59,271 +42,18 @@ abstract class AbstractCollector implements iCollector
      */
     protected $container;
 
-    private $populatedNamespaces = [];
-
-
     /**
-     * Add some Singleton visibility restrictions to avoid inconsistencies.
+     * Array of populated leaf node paths
+     *
+     * @var array
      */
-
-    private function __construct()
-    {
-    }
-
-    private function __clone()
-    {
-    }
-
-    public function __sleep()
-    {
-        return [];
-    }
-
-    public function __wakeup()
-    {
-        return [];
-    }
+    protected $populatedNamespaces = [];
 
     /**
-     * It is possible this singleton will be extended to allow subject specific
-     * conveniences for statistics collection e.g. a fixed default namespace of
-     * "queue." in QueueStatsCollector
+     * Record a statistic to a namespace
      *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public static function getInstance()
-    {
-        $class = get_called_class(); // late-static-bound class name
-        if (!isset(self::$instances[$class])) {
-            self::$instances[$class] = new static;
-            self::$instances[$class]->containerSetup();
-        }
-        return self::$instances[$class];
-    }
-
-    /**
-     * Empty singleton instances.
-     * This method is workaround to add singleton testability as explained here
-     * https://gonzalo123.com/2012/09/24/the-reason-why-singleton-is-a-problem-with-phpunit/
-     */
-    public static function tearDown($all = false)
-    {
-        if ($all === false) {
-            $class = get_called_class();
-            unset(static::$instances[$class]);
-        } else {
-            static::$instances = [];
-        }
-        return true;
-    }
-
-    /**
-     * Alias method for getting stats
      *
-     * @see AbstractCollector::getStat()
-     * @see AbstractCollector::getStats()
-     *
-     * @param $namespace
-     * @param bool $withKeys
-     * @param null $default
-     *
-     * @return array|mixed
-     */
-    public function get($namespace, $withKeys = false, $default = null)
-    {
-        if (is_array($namespace)) {
-            return $this->getStats($namespace, $withKeys, $default);
-        } else {
-            return $this->getStat($namespace, $withKeys, $default);
-        }
-    }
-
-    /**
-     * Alias method for getting stats with keys
-     *
-     * @see AbstractCollector::getStat()
-     * @see AbstractCollector::getStats()
-     *
-     * @param $namespace
-     * @param null $default
-     *
-     * @return array|mixed
-     */
-    public function getWithKey($namespace, $default = null)
-    {
-        if (is_array($namespace)) {
-            return $this->getStats($namespace, true, $default);
-        } else {
-            return $this->getStat($namespace, true, $default);
-        }
-    }
-
-    /**
-     * Alias method for adding stats
-     *
-     * @see AbstractCollector::addStat()
-     *
-     * @param $name
-     * @param $value
-     * @param array $options
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public function add($name, $value, $options = [])
-    {
-        return $this->addStat($name, $value, $options);
-    }
-
-    /**
-     * Alias method for overwriting stats
-     *
-     * @see AbstractCollector::addStat()
-     *
-     * @param $name
-     * @param $value
-     * @param array $options
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public function clobber($name, $value, $options = [])
-    {
-        $options['clobber'] = true;
-        return $this->addStat($name, $value, $options);
-    }
-
-    /**
-     * Alias method for removing stats
-     *
-     * @see AbstractCollector::removeStat()
-     *
-     * @param $namespace
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public function del($namespace)
-    {
-        return $this->removeStat($namespace);
-    }
-
-    /**
-     * Alias method for incrementing stats
-     *
-     * @see AbstractCollector::incrementStat()
-     *
-     * @param $namespace
-     * @param int|float $increment
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public function inc($namespace, $increment = 1)
-    {
-        return $this->incrementStat($namespace, $increment);
-    }
-
-    /**
-     * Alias method for decrementing stats
-     *
-     * @see AbstractCollector::decrementStat()
-     *
-     * @param $namespace
-     * @param int|float $decrement
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public function dec($namespace, $decrement = -1)
-    {
-        return $this->decrementStat($namespace, $decrement);
-    }
-
-    /**
-     * Alias method for averaging stats
-     *
-     * @see AbstractCollector::getStatsAverage()
-     * @see AbstractCollector::getStatAverage()
-     *
-     * @param $namespace
-     *
-     * @return float|int
-     */
-    public function avg($namespace)
-    {
-        if (is_array($namespace)) {
-            return $this->getStatsAverage($namespace);
-        } else {
-            return $this->getStatAverage($namespace);
-        }
-    }
-
-    /**
-     * Alias method for getting the sum of stats
-     *
-     * @see AbstractCollector::getStatsSum()
-     * @see AbstractCollector::getStatSum()
-     *
-     * @param array $namespace
-     *
-     * @return float|int
-     */
-    public function sum($namespace)
-    {
-        if (is_array($namespace)) {
-            return $this->getStatsSum($namespace);
-        } else {
-            return $this->getStatSum($namespace);
-        }
-    }
-
-    /**
-     * Alias method for counting the number of stats for a given namespace
-     *
-     * @see AbstractCollector::getStatsCount()
-     * @see AbstractCollector::getStatCount()
-     *
-     * @param $namespace
-     *
-     * @return int
-     */
-    public function count($namespace)
-    {
-        if (is_array($namespace)) {
-            return $this->getStatsCount($namespace);
-        } else {
-            return $this->getStatCount($namespace);
-        }
-    }
-
-    /**
-     * Alias method for returning all stats
-     *
-     * @see AbstractCollector::getAllStats()
-     * @return array
-     */
-    public function all()
-    {
-        return $this->getAllStats();
-    }
-
-    /**
-     * Alias method for setting the current namespace
-     *
-     * @see AbstractCollector::setNamespace()
-     *
-     * @param $namespace
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    public function ns($namespace)
-    {
-        return $this->setNamespace($namespace);
-    }
-
-    /**
-     * Record a statistic for a subject
-     *
-     * TODO:
-     * - workout how to handle backend specific types as values
-     *
-     * @param string $name name of statistic to be added to namespace
+     * @param string $name name of statistic namespace
      * @param mixed $value
      * @param array $options
      *
@@ -331,22 +61,13 @@ abstract class AbstractCollector implements iCollector
      */
     public function addStat($name, $value, $options = [])
     {
-        // we auto-flatten any multi-dimensional arrays
-        if (!array_key_exists("flatten", $options)) {
-            $options['flatten'] = true;
-        }
-
-        // if true, we overwrite existing value
-        if (!array_key_exists("clobber", $options)) {
-            $options['clobber'] = false;
-        }
-
+        $options = array_merge($this->getDefaultAddValueToNamespaceOptions(), $options);
         $this->addValueToNamespace($name, $value, $options);
         return $this;
     }
 
     /**
-     * Delete a statistic
+     * Remove a statistic namespace
      *
      * @param string $namespace
      *
@@ -355,16 +76,42 @@ abstract class AbstractCollector implements iCollector
      */
     public function removeStat($namespace)
     {
-        if (strpos($namespace, static::WILDCARD) !== false) {
+        if ($this->isWildcardNamespace($namespace)) {
             throw new StatisticsCollectorException("Wildcard usage forbidden when removing stats (to protect you from yourself!)");
         }
 
-        if ($this->checkExists($namespace) === true) {
+        if ($this->exists($namespace) === true) {
             $this->removeValueFromNamespace($namespace);
         } else {
             throw new StatisticsCollectorException("Attempting to remove a statistic that does not exist: " . $namespace);
         }
         return $this;
+    }
+
+    /**
+     * Check that a stats namespace exists
+     *
+     * @param string $namespace
+     *
+     * @return bool
+     */
+    public function exists($namespace)
+    {
+        $resolvedNamespaces = $this->getTargetNamespaces($namespace, false);
+        if ((new TypeHelper())->isArray($resolvedNamespaces)) {
+            if (count($resolvedNamespaces) > 0) {
+                foreach ($resolvedNamespaces as $namespace) {
+                    if ($this->getStatsContainer()->has($namespace) === false) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return $this->getStatsContainer()->has($resolvedNamespaces);
+        }
     }
 
     /**
@@ -378,20 +125,89 @@ abstract class AbstractCollector implements iCollector
      */
     public function incrementStat($namespace, $increment = 1)
     {
-        if ($this->checkExists($namespace) !== true) {
+        if ($this->exists($namespace) !== true) {
             $this->addStat($namespace, 0);
         }
 
         $currentValue = $this->getStat($namespace);
-        if ($this->is_incrementable($currentValue)) {
-            $this->updateValueAtNamespace($namespace,
-              $currentValue + $increment);
+
+        if ($this->isIncrementable($currentValue)) {
+            $options['clobber'] = true;
+            $this->addStat($namespace, $currentValue + $increment, $options);
             return $this;
         } else {
             throw new StatisticsCollectorException("Attempted to increment a value which cannot be incremented! (" . $namespace . ":" . gettype($currentValue) . ")");
         }
     }
 
+    /**
+     * Increment the values of a compound stat either by supplying:
+     * 1) a single int or float to be incremented across all stat values
+     * 2) key=>value array to be used to increment specific compound stat values with a specific increment
+     *
+     * @param string $namespace
+     * @param int|float|array $increment default 1
+     *
+     * @return \Statistics\Collector\AbstractCollector
+     * @throws StatisticsCollectorException
+     */
+    public function incrementCompoundStat($namespace, $increment = 1)
+    {
+        $typeHelper = new TypeHelper();
+
+        //if the namespace doesn't exist we create the correct compound stat with values of '0'
+        if ($this->exists($namespace) !== true) {
+            if ($typeHelper->isArray($increment)) {
+                // if array of increments is supplied we create a default compound stat using array keys with value of '0'
+                $default = array_fill_keys(array_keys($increment), 0);
+            } else {
+                //if float|int is supplied we create default compound stat with value of '0'
+                $default = [0];
+            }
+            $this->addStat($namespace, $default);
+        }
+
+        // get current compound stat values to check it is compound and if so begin incrementing
+        $currentValues = $this->getStat($namespace);
+        if (!$typeHelper->isArray($currentValues)) {
+            throw new StatisticsCollectorException("The stat you are trying to increment is not a compound stat, instead use incrementStat(). $namespace=$currentValues(" . gettype($currentValues) . ")");
+        }
+
+        // check we have either an int|float or an array of int|floats.
+        if ($typeHelper->isIntOrFloatRecursive($increment)) {
+            if ($typeHelper->isArray($increment)) {
+                // if $increment is an array, we match (or add) the keys in $increment to the keys in $currentValues and
+                // increment $currentValues[$increment_key] with the corresponding $increment value.
+                $keys = array_keys($increment);
+            } else {
+                // if $increment is an int|float, we loop through the $currentValues and increment all values
+                // with the value of $increment
+                $keys = array_keys($currentValues);
+            }
+
+            for ($i = 0; $i < count($keys); $i++) {
+                // if key is not set, we add it with a default of '0'
+                if (!array_key_exists($keys[$i], $currentValues)) {
+                    $currentValues[$keys[$i]] = 0;
+                }
+
+                if ($this->isIncrementable($currentValues[$keys[$i]])) {
+                    $incrementer = ($typeHelper->isArray($increment)) ? $increment[$keys[$i]] : $increment;
+                    $currentValues[$keys[$i]] += $incrementer;
+                } else {
+                    throw new StatisticsCollectorException("Attempting to increment a compound value which cannot be incremented! (" . $namespace . "[" . $keys[$i] . "]=\"" . $currentValues[$keys[$i]] . "\":" . gettype($currentValues[$keys[$i]]) . ")");
+                }
+            }
+        } else {
+            throw new StatisticsCollectorException("Attempting to increment a compound stat with a value which is not a float or integer!");
+        }
+
+        // finally assign the new compound stat values to the stat namespace
+        $updatedCompoundStat = $currentValues;
+        $options['clobber'] = true;
+        $this->addStat($namespace, $updatedCompoundStat, $options);
+        return $this;
+    }
 
     /**
      * Decrement a statistic
@@ -404,44 +220,181 @@ abstract class AbstractCollector implements iCollector
      */
     public function decrementStat($namespace, $decrement = -1)
     {
-        if ($this->checkExists($namespace) !== true) {
+        if ($this->exists($namespace) !== true) {
             $this->addStat($namespace, 0);
         }
 
         $currentValue = $this->getStat($namespace);
-        if ($this->is_incrementable($currentValue)) {
-            $this->updateValueAtNamespace($namespace,
-              $currentValue - abs($decrement));
+
+        if ($this->isDecrementable($currentValue)) {
+            $options['clobber'] = true;
+            $this->addStat($namespace, $currentValue - abs($decrement), $options);
             return $this;
         } else {
             throw new StatisticsCollectorException("Attempted to decrement a value which cannot be decremented! (" . $namespace . ":" . gettype($currentValue) . ")");
         }
     }
 
-
     /**
-     * Retrieve statistic for a given namespace
+     * Decrement the values of a compound stat either by supplying:
+     * 1) a single int or float to be decremented across all stat values
+     * 2) key=>value array to be used to decrement specific compound stat values with a specific decrement
      *
      * @param string $namespace
-     * @param bool $withKeys
-     * @param mixed $default default value to be returned if stat $namespace
-     *   empty
+     * @param int|float|array $decrement default 1
      *
+     * @return \Statistics\Collector\AbstractCollector
+     * @throws StatisticsCollectorException
+     */
+    public function decrementCompoundStat($namespace, $decrement = 1)
+    {
+        $typeHelper = new TypeHelper();
+
+        //if the namespace doesn't exist we create the correct compound stat with values of '0'
+        if ($this->exists($namespace) !== true) {
+            if ($typeHelper->isArray($decrement)) {
+                // if array of decrements is supplied we create a default compound stat using array keys with value of '0'
+                $default = array_fill_keys(array_keys($decrement), 0);
+            } else {
+                //if float|int is supplied we create default compound stat with value of '0'
+                $default = [0];
+            }
+            $this->addStat($namespace, $default);
+        }
+
+        // get current compound stat values to check it is compound and if so begin decrementing
+        $currentValues = $this->getStat($namespace);
+        if (!$typeHelper->isArray($currentValues)) {
+            throw new StatisticsCollectorException("The stat you are trying to decrement is not a compound stat, instead use decrementStat(). $namespace=$currentValues(" . gettype($currentValues) . ")");
+        }
+
+        // check we have either an int|float or an array of int|floats.
+        if ($typeHelper->isIntOrFloatRecursive($decrement)) {
+            if ($typeHelper->isArray($decrement)) {
+                // if $decrement is an array, we match (or add) the keys in $decrement to the keys in $currentValues and
+                // decrement $currentValues[$decrement_key] with the corresponding $decrement value.
+                $keys = array_keys($decrement);
+            } else {
+                // if $decrement is an int|float, we loop through the $currentValues and decrement all values
+                // with the value of $decrement
+                $keys = array_keys($currentValues);
+            }
+
+            for ($i = 0; $i < count($keys); $i++) {
+                // if key is not set, we add it with a default of '0'
+                if (!array_key_exists($keys[$i], $currentValues)) {
+                    $currentValues[$keys[$i]] = 0;
+                }
+
+                if ($this->isdecrementable($currentValues[$keys[$i]])) {
+                    $decrementer = ($typeHelper->isArray($decrement)) ? $decrement[$keys[$i]] : $decrement;
+                    $currentValues[$keys[$i]] -= abs($decrementer);
+                } else {
+                    throw new StatisticsCollectorException("Attempting to decrement a compound value which cannot be decremented! (" . $namespace . "[" . $keys[$i] . "]=\"" . $currentValues[$keys[$i]] . "\":" . gettype($currentValues[$keys[$i]]) . ")");
+                }
+            }
+        } else {
+            throw new StatisticsCollectorException("Attempting to decrement a compound stat with a value which is not a float or integer!");
+        }
+
+        // finally assign the new compound stat values to the stat namespace
+        $updatedCompoundStat = $currentValues;
+        $options['clobber'] = true;
+        $this->addStat($namespace, $updatedCompoundStat, $options);
+        return $this;
+    }
+
+    /**
+     * Record a timestamp to serve as the start of a time period to be timed
+     *
+     * @param $namespace
+     * @param mixed $customTimestamp
+     * @param bool $useTimerNamespacePrefix
+     */
+    public function startTimer($namespace, $customTimestamp = null, $useTimerNamespacePrefix = true)
+    {
+        if ($customTimestamp === null) {
+            $start = microtime(true);
+        } else {
+            $start = $customTimestamp;
+        }
+        $namespace = ($useTimerNamespacePrefix === true) ? static::TIMERS_NS . static::SEPARATOR . $namespace : $namespace;
+        $this->addStat($namespace, ['start' => $start]);
+    }
+
+    /**
+     * Record a timestamp to serve as the end of a pre-existing time-period and then calculate the difference between
+     * the two timestamps recorded
+     *
+     * @param $namespace
+     * @param mixed $customTimestamp
+     * @param bool $useTimerNamespacePrefix
+     *
+     * @throws \Statistics\Exception\StatisticsCollectorException
+     */
+    public function endTimer($namespace, $customTimestamp = null, $useTimerNamespacePrefix = true)
+    {
+        if ($customTimestamp === null) {
+            $end = microtime(true);
+        } else {
+            $end = $customTimestamp;
+        }
+
+        $namespace = ($useTimerNamespacePrefix === true) ? static::TIMERS_NS . static::SEPARATOR . $namespace : $namespace;
+        if ($this->exists($namespace) && is_array($this->getStat($namespace)) && isset($this->getStat($namespace)['start'])) {
+            $this->addStat($namespace, [
+              'end' => $end,
+              'diff' => $end - $this->getStat($namespace)['start'],
+            ]);
+        } else {
+            throw new StatisticsCollectorException("Unable to find start timestamp for \"$namespace\"");
+        }
+    }
+
+    /**
+     * Return the difference of a recorded start and end timestamp (including microseconds)
+     *
+     * @param $namespace
+     * @param bool $useTimerNamespacePrefix
+     *
+     * @return float time difference
+     * @throws \Statistics\Exception\StatisticsCollectorException
+     */
+    public function getTimerDiff($namespace, $useTimerNamespacePrefix = true)
+    {
+        $namespace = ($useTimerNamespacePrefix === true) ? static::TIMERS_NS . static::SEPARATOR . $namespace : $namespace;
+        if ($this->exists($namespace) && is_array($this->getStat($namespace)) && isset($this->getStat($namespace)['diff'])) {
+            return $this->getStat($namespace)['diff'];
+        } else {
+            throw new StatisticsCollectorException("Unable to find start timestamp for \"$namespace\"");
+        }
+    }
+
+    /**
+     * Retrieve the statistic value for a given namespace.
+     *
+     * Wildcard searches and arrays of namespace targets will be forwarded to getStats()
+     *
+     * @param mixed $namespace
+     * @param bool $withKeys
+     * @param mixed $default default value to be returned if stat $namespace is empty
+     *
+     * @see \Statistics\Collector\AbstractCollector::getStats()
      * @return mixed
      */
     public function getStat($namespace, $withKeys = false, $default = null)
     {
-        // send wildcards and multi-namespaces to the plural method
-        if (strpos($namespace, static::WILDCARD) !== false ||
-          is_array($namespace)
-        ) {
+        if (is_array($namespace)) {
+            return $this->getStats($namespace, $withKeys, $default);
+        }
+
+        if ($this->isWildcardNamespace($namespace)) {
             return $this->getStats([$namespace], $withKeys, $default);
         }
 
-        if ($this->checkExists($namespace) === true) {
-            $resolvedNamespace = $this->getTargetNamespaces($namespace);
-
+        if ($this->exists($namespace) === true) {
             if ($withKeys === true) {
+                $resolvedNamespace = $this->getTargetNamespaces($namespace);
                 $value[$resolvedNamespace] = $this->getValueFromNamespace($namespace);
             } else {
                 $value = $this->getValueFromNamespace($namespace);
@@ -454,35 +407,50 @@ abstract class AbstractCollector implements iCollector
             }
         }
         return $value;
-
     }
 
     /**
-     * Retrieve a collection of statistics with an array of subject namespaces
+     * Retrieve a collection of statistics for an array of given namespaces
      *
      * @param array $namespaces
      * @param bool $withKeys
-     * @param mixed $default default value to be returned if stat $namespace
-     *   empty
+     * @param mixed $default default value to be returned if stat $namespace is empty
      *
-     * @return array
+     * @return mixed
      */
-    public function getStats(
-      array $namespaces,
-      $withKeys = false,
-      $default = null
-    ) {
+    public function getStats(array $namespaces, $withKeys = false, $default = null)
+    {
         $resolvedNamespaces = $this->getTargetNamespaces($namespaces, true);
-        if (!is_array($resolvedNamespaces)) {
+        if ((new TypeHelper())->isNotArray($resolvedNamespaces)) {
             $resolvedNamespaces = [$resolvedNamespaces];
         }
 
-        //iterate over $namespaces and retrieve values
         $stats = [];
         foreach ($resolvedNamespaces as $namespace) {
             $stat = $this->getStat($namespace, $withKeys, $default);
-            $stats = array_merge($stats, (is_array($stat) ? $stat : [$stat]));
+            if ($withKeys === true) {
+                $stats[$namespace] = array_values($stat)[0];
+            } else {
+                $stats[] = $stat;
+            }
         }
+
+        if (count($stats) === 0) {
+            if (count($namespaces) > 1) {
+                if ($withKeys === false) {
+                    return array_fill(0, count($namespaces), $default);
+                } else {
+                    array_fill_keys(array_keys($namespaces), $default);
+                }
+            } else {
+                return $default;
+            }
+        }
+
+        if (count($stats) === 1 && $withKeys === false) {
+            return array_values($stats)[0];
+        }
+
         return $stats;
     }
 
@@ -496,7 +464,10 @@ abstract class AbstractCollector implements iCollector
     public function getStatCount($namespace)
     {
         $value = $this->getStat($namespace);
-        return count($value);
+        if ((new TypeHelper())->isArray($value)) {
+            $value = (new ArrayHelper())->flatten($value);
+        }
+        return (new MathHelper)->count($value);
     }
 
     /**
@@ -520,85 +491,135 @@ abstract class AbstractCollector implements iCollector
      * @param $namespace
      *
      * @return float|int
+     * @throws \Statistics\Exception\StatisticsCollectorException
      */
     public function getStatAverage($namespace)
     {
-        $value = $this->getStat($namespace);
-        return $this->calculateStatsAverage($value);
+        try {
+            $value = $this->getStat($namespace);
+            if ((new TypeHelper())->isArray($value)) {
+                $value = (new ArrayHelper())->flatten($value);
+            }
+            return $this->calculateStatsAverage($value);
+        } catch (StatisticsCollectorException $e) {
+            throw new StatisticsCollectorException(
+              "An error occurred with \"" . $namespace . "\" - " . ($e->getMessage()),
+              $e->getCode(),
+              $e
+            );
+        }
     }
 
     /**
      * @param array $namespaces
      *
      * @return float|int
+     * @throws \Statistics\Exception\StatisticsCollectorException
      */
     public function getStatsAverage(array $namespaces)
     {
-        $allStats = [];
-        foreach ($namespaces as $namespace) {
-            $value = $this->getStat($namespace);
-            if (!is_array($value)) {
-                $value = [$value];
+        try {
+            $allStats = [];
+            foreach ($namespaces as $namespace) {
+                $value = $this->getStat($namespace);
+                if (!is_array($value)) {
+                    $value = [$value];
+                }
+                $allStats = array_merge($allStats, $value);
             }
-            $allStats = array_merge($allStats, $value);
+            return $this->calculateStatsAverage($allStats);
+        } catch (StatisticsCollectorException $e) {
+            $namespaceString = '';
+            foreach ($namespaces as $namespace) {
+                $namespaceString .= "\"" . $namespace . "\",";
+            }
+            throw new StatisticsCollectorException(
+              "An error occurred with " . substr($namespaceString, 0, -1) . " - " . $e->getMessage(),
+              $e->getCode(),
+              $e
+            );
         }
-        return $this->calculateStatsAverage($allStats);
-
     }
 
     /**
      * @param $namespace
      *
      * @return float|int
+     * @throws \Statistics\Exception\StatisticsCollectorException
      */
     public function getStatSum($namespace)
     {
-        $value = $this->getStat($namespace);
-        return $this->calculateStatsSum($value);
+        try {
+            $value = $this->getStat($namespace);
+            if ((new TypeHelper())->isArray($value)) {
+                $value = (new ArrayHelper())->flatten($value);
+            }
+            return $this->calculateStatsSum($value);
+        } catch (StatisticsCollectorException $e) {
+            throw new StatisticsCollectorException(
+              "An error occurred with \"" . $namespace . "\" - " . $e->getMessage(),
+              $e->getCode(),
+              $e
+            );
+        }
     }
 
     /**
      * @param array $namespaces
      *
      * @return float|int
+     * @throws \Statistics\Exception\StatisticsCollectorException
      */
     public function getStatsSum(array $namespaces)
     {
-        $totalSum = [];
-        foreach ($namespaces as $namespace) {
-            $values = $this->getStat($namespace);
-            if (!is_array($values)) {
-                $values = [$values];
+        try {
+            $totalSum = [];
+            foreach ($namespaces as $namespace) {
+                $values = $this->getStat($namespace);
+                if (!is_array($values)) {
+                    $values = [$values];
+                }
+                $totalSum = array_merge($totalSum, $values);
             }
-            $totalSum = array_merge($totalSum, $values);
+            return $this->calculateStatsSum($totalSum);
+        } catch (StatisticsCollectorException $e) {
+            $namespaceString = '';
+            foreach ($namespaces as $namespace) {
+                $namespaceString .= "\"" . $namespace . "\",";
+            }
+            throw new StatisticsCollectorException(
+              "An error occurred with " . substr($namespaceString, 0, -1) . " - " . $e->getMessage(),
+              $e->getCode(),
+              $e
+            );
         }
-        return $this->calculateStatsSum($totalSum);
     }
 
     /**
-     *  Retrieve statistics for all subject namespaces
+     *  Retrieve all recorded statistics.
      *
-     * @return array
-     * @throws StatisticsCollectorException
+     * @return array $stats array of stats with full namespace as key
      */
     public function getAllStats()
     {
-        $data = [];
+        $stats = [];
         foreach ($this->populatedNamespaces as $namespace) {
-            $data[$namespace] = $this->container->get($namespace);
+            $stats[$namespace] = $this->getStatsContainer()->get($namespace);
         }
-        return $data;
+        return $stats;
     }
 
     /**
+     * TODO: validate namespace argument
+     *
      * @param $namespace
      *
      * @return \Statistics\Collector\AbstractCollector
      */
     public function setNamespace($namespace)
     {
-        return $this->setCurrentNamespace($namespace);
-
+        $this->namespace = $namespace;
+        return $this;
     }
 
     /**
@@ -606,32 +627,71 @@ abstract class AbstractCollector implements iCollector
      *
      * @return string
      */
-    public function getCurrentNamespace()
+    public function getNamespace()
     {
         return ($this->namespace === null) ? $this->getDefaultNamespace() : $this->namespace;
     }
 
+    /**
+     * Set the default root namespace for statistics to be stored within if a custom namespace is not set.
+     *
+     * @return string
+     */
+    abstract protected function getDefaultNamespace();
 
     /**
+     * Get the default $options values to be used in conjunction with addValueToNamespace()
+     *
+     * Defaults:
+     * - flatten=true (reduce multi-dimensional arrays to a single array)
+     * - clobber=false (assigning values to an existing stat results in the value being appended to and does not
+     * overwrite).
+     *
+     * @see \Statistics\Collector\AbstractCollector::addValueToNamespace()
+     * @return array
+     */
+    protected function getDefaultAddValueToNamespaceOptions()
+    {
+        $options = [
+          'flatten' => true,
+          'clobber' => false,
+        ];
+        return $options;
+    }
+
+    /**
+     * Determine whether a namespace contains a wildcard operator
+     *
+     * @param $namespace
+     *
+     * @return bool
+     */
+    protected function isWildcardNamespace($namespace)
+    {
+        return (strpos($namespace, static::WILDCARD) !== false);
+    }
+
+    /**
+     * Determine whether a namespace contains an absolute path indicated by the fist character being a
+     * separator '.' value
+     *
+     * @param $namespace
+     *
+     * @return bool
+     */
+    protected function isAbsolutePathNamespace($namespace)
+    {
+        return (strpos($namespace, static::SEPARATOR) === 0);
+    }
+
+    /**
+     * Return an array of populated leaf node paths
+     *
      * @return array
      */
     protected function getPopulatedNamespaces()
     {
         return $this->populatedNamespaces;
-    }
-
-    /**
-     * TODO:
-     * - validate namespace argument
-     *
-     * @param $namespace
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     */
-    protected function setCurrentNamespace($namespace)
-    {
-        $this->namespace = $namespace;
-        return $this;
     }
 
     /**
@@ -642,19 +702,18 @@ abstract class AbstractCollector implements iCollector
     protected function resolveWildcardNamespace($namespace)
     {
         // clear absolute path initial '.' as not needed for wildcard
-        if (strpos($namespace, static::SEPARATOR) === 0) {
+        if ($this->isAbsolutePathNamespace($namespace)) {
             $namespace = $target = substr($namespace, 1);
         }
 
-        // add a additional namespace route by prepending the current parent ns to the wildcard query
+        // add a additional namespace route by prepending the current parent ns to the wildcard query to
         // handle relative and absolute wildcard searching
-        $additionalNamespace = $this->getCurrentNamespace() . "." . $namespace;
+        $additionalNamespace = $this->getNamespace() . "." . $namespace;
 
         $expandedPaths = [];
         foreach ($this->getPopulatedNamespaces() as $populatedNamespace) {
             if (fnmatch($namespace, $populatedNamespace) || fnmatch($additionalNamespace, $populatedNamespace)) {
                 // we convert the expanded wildcard paths to absolute paths by prepending '.'
-                // this prevents the getTargetNamespaces() from treating the namespace as a sub namespace
                 $expandedPaths[] = static::SEPARATOR . $populatedNamespace;
             }
         }
@@ -677,38 +736,47 @@ abstract class AbstractCollector implements iCollector
      */
     protected function getTargetNamespaces($namespaces, $returnAbsolute = false)
     {
+        $resolvedNamespaces = [];
         if (!is_array($namespaces)) {
             $namespaces = [$namespaces];
         }
 
-        $resolvedNamespaces = [];
         foreach ($namespaces as $namespace) {
-            if (strpos($namespace, static::WILDCARD) !== false) {
-                // wildcard
-                $wildcardPaths = $this->resolveWildcardNamespace($namespace);
-                $resolvedNamespaces = array_merge($resolvedNamespaces,
-                  $wildcardPaths);
-            } else {
-                // non-wildcard
-                if (strpos($namespace, static::SEPARATOR) === 0) {
-                    // absolute path namespace e.g. '.this.a.full.path.beginning.with.separator'
-                    $resolvedNamespaces[] = ($returnAbsolute === false) ? substr($namespace,
-                      1) : $namespace;
-                } else {
-                    // leaf-node namespace of current namespace e.g. 'dates' or
-                    // sub-namespace e.g 'sub.path.of.current.namespace'
-                    $resolvedNamespaces[] = ($returnAbsolute === false) ?
-                      $this->getCurrentNamespace() . static::SEPARATOR . $namespace :
-                      static::SEPARATOR . $this->getCurrentNamespace() . static::SEPARATOR . $namespace;
-                }
+            switch (true) {
+                case $this->isWildcardNamespace($namespace):
+                    $expandedWildcardPaths = $this->resolveWildcardNamespace($namespace);
+                    if (count($expandedWildcardPaths) > 0) {
+                        $expandedWildcardPaths = array_map(function ($path) use ($returnAbsolute) {
+                            return ($returnAbsolute === false) ? substr($path, 1) : $path;
+                        }, $expandedWildcardPaths);
+                    }
+                    $resolvedNamespaces = array_merge($resolvedNamespaces, $expandedWildcardPaths);
+                    break;
+                case $this->isAbsolutePathNamespace($namespace):
+                    $resolvedNamespaces[] = ($returnAbsolute === false) ? substr($namespace, 1) : $namespace;
+                    break;
+                default:
+                    // leaf-node of current namespace e.g. 'dates' or sub-namespace e.g 'sub.path.of.current.namespace'
+                    $expandedRelativeNodeNamespace = $this->getNamespace() . static::SEPARATOR . $namespace;
+                    $resolvedNamespaces[] = ($returnAbsolute === false) ? $expandedRelativeNodeNamespace :
+                      static::SEPARATOR . $expandedRelativeNodeNamespace;
             }
         }
 
-        return (count($resolvedNamespaces) === 1) ? $resolvedNamespaces[0] : array_unique($resolvedNamespaces);
+        if (count($resolvedNamespaces) === 1) {
+            return $resolvedNamespaces[0];
+        } else {
+            return array_unique($resolvedNamespaces);
+        }
     }
 
     /**
-     * TODO: split this method into smaller methods.
+     * Add value(s) to a namespace.
+     *
+     * If the namespace exists, the value will either be appended to or overwritten depending on $options['clobber']
+     * If the namespace is new, the value will be stored at the target namespace
+     *
+     * If $options['flatten'] is set to true, multi-dimensional arrays will be flattened to one array.
      *
      * @param string $namespace
      * @param mixed $value
@@ -718,64 +786,17 @@ abstract class AbstractCollector implements iCollector
      */
     protected function addValueToNamespace($namespace, $value, $options)
     {
-        $flatten = false;
-        if (array_key_exists("flatten", $options) &&
-          $options['flatten'] === true &&
-          is_array($value)
-        ) {
-            $flatten = true;
-            $flattenedValues = $this->arrayFlatten($value);
-        }
-
-        $clobber = false;
-        if (array_key_exists("clobber", $options) &&
-          $options['clobber'] === true
-        ) {
-            $clobber = true;
-        }
-
+        $flatten = $options['flatten'];
+        $clobber = $options['clobber'];
         $targetNS = $this->getTargetNamespaces($namespace);
 
-        // if value exists and is not to be overwritten(clobbered)
-        if ($this->container->has($targetNS) && ($clobber === false)) {
-            // need to combine the flatten behaviour and move into flatten add method
-            if ($flatten === true) {
-                $currentValue = $this->container->get($targetNS);
-                $values = (is_array($currentValue)) ?
-                  array_merge($currentValue,
-                    $flattenedValues) : array_merge([$currentValue],
-                    $flattenedValues);
-                $this->container->set($targetNS, $values);
-            } else {
-                $this->container->append($targetNS, $value);
-            }
+        if ($this->getStatsContainer()->has($targetNS) && ($clobber === false)) {
+            $this->addValueToExistingNamespace($targetNS, $value, $flatten);
+        } elseif ($this->getStatsContainer()->has($targetNS) && ($clobber === true)) {
+            $this->overwriteExistingNamespace($targetNS, $value, $flatten);
         } else {
-            // if value doesn't exist or clobber=true, create new entry with value
-            if ($flatten === true) {
-                $this->container->set($targetNS, $flattenedValues);
-            } else {
-                $this->container->set($targetNS, $value);
-            }
+            $this->addValueToNewNamespace($targetNS, $value, $flatten);
             $this->addPopulatedNamespace($targetNS);
-        }
-        return $this;
-    }
-
-    /**
-     * @param $namespace
-     * @param $value
-     *
-     * @return \Statistics\Collector\AbstractCollector
-     * @throws StatisticsCollectorException
-     * @internal param $name
-     */
-    protected function updateValueAtNamespace($namespace, $value)
-    {
-        $targetNS = $this->getTargetNamespaces($namespace);
-        if ($this->container->has($targetNS)) {
-            $this->container->set($targetNS, $value);
-        } else {
-            throw new StatisticsCollectorException("Unable to update value at " . $targetNS);
         }
         return $this;
     }
@@ -788,8 +809,8 @@ abstract class AbstractCollector implements iCollector
     protected function removeValueFromNamespace($name)
     {
         $targetNS = $this->getTargetNamespaces($name);
-        $this->container->remove($targetNS);
-        $this->removePopulatedNamespace($targetNS);
+        $this->getStatsContainer()->remove($targetNS);
+        $this->removePopulatedNamespaces($targetNS);
         return $this;
     }
 
@@ -803,29 +824,32 @@ abstract class AbstractCollector implements iCollector
     protected function getValueFromNamespace($name)
     {
         $targetNS = $this->getTargetNamespaces($name);
-        return $this->container->get($targetNS);
-    }
-
-    /**
-     * @return string
-     */
-    protected function getDefaultNamespace()
-    {
-        return $this->defaultNamespace;
+        return $this->getStatsContainer()->get($targetNS);
     }
 
     /**
      * Check to see if value can be incremented.
-     * Currently PHP only allows numbers and strings to be incremented. We only
-     * want numbers
+     * Currently PHP allows numbers and strings to be incremented. We only want numbers
      *
      * @param mixed $value
      *
      * @return bool
      */
-    protected function is_incrementable($value)
+    protected function isIncrementable($value)
     {
-        return (is_int($value) || is_float($value));
+        return (new TypeHelper())->isIntOrFloat($value);
+    }
+
+    /**
+     * Check to see if value can be negatively incremented. (forwards on to isIncrementable())
+     *
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    protected function isDecrementable($value)
+    {
+        return $this->isIncrementable($value);
     }
 
     /**
@@ -843,206 +867,180 @@ abstract class AbstractCollector implements iCollector
     }
 
     /**
-     * Remove a namespace from the populated namespaces array (typically when
-     * it becomes empty)
+     * Remove matching namespaces from the populated-namespaces array (typically when it becomes empty)
      *
      * @param $namespace
      *
      * @return bool
      */
-    protected function removePopulatedNamespace($namespace)
+    protected function removePopulatedNamespaces($namespace)
     {
-        if (($index = array_search($namespace,
-            $this->populatedNamespaces)) !== false) {
-            unset($this->populatedNamespaces[$index]);
-            $this->sortPopulatedNamespaces();
-            return true;
-        } else {
+        $targetNamespace = $namespace;
+        $matches = array_filter($this->populatedNamespaces, function ($populatedNamespace) use ($targetNamespace) {
+            if (preg_match("/^$targetNamespace(.*)/i", $populatedNamespace) === 1) {
+                return true;
+            }
             return false;
-        }
-    }
+        });
 
-    /**
-     * Check that namespace element(s) exist
-     *
-     * TODO: write the value of the non-existent namespaces for arrays of
-     * namespaces checks, out somewhere. It would be frustrating if 9/10 were valid
-     * but due to the 1 non-existent, the check fails and you don't know why.
-     *
-     * @param mixed $namespace
-     *
-     * @return bool
-     */
-    protected function checkExists($namespace)
-    {
-        $resolvedNamespace = $this->getTargetNamespaces($namespace);
-        if (is_array($resolvedNamespace)) {
-            foreach ($resolvedNamespace as $ns) {
-                if (!$this->container->has($ns)) {
-                    return false;
-                }
-            }
-        } else {
-            if (!$this->container->has($resolvedNamespace)) {
-                return false;
-            }
+        foreach (array_keys($matches) as $key) {
+            unset($this->populatedNamespaces[$key]);
         }
+
+        $this->sortPopulatedNamespaces();
         return true;
     }
 
+    /**
+     * @param  mixed $stats
+     *
+     * @return float|int
+     * @throws \Statistics\Exception\StatisticsCollectorException
+     */
     protected function calculateStatsSum($stats)
     {
-        if ($this->is_summable($stats)) {
-            switch (gettype($stats)) {
-                case "integer":
-                case "double":
-                    return $stats;
-                case "array":
-                    return $this->summate($stats);
-                default:
-                    throw new StatisticsCollectorException("Unable to return sum for this collection of values (are they all numbers?)");
-            }
-        } else {
-            throw new StatisticsCollectorException("Unable to return sum for this collection of values (are they all numbers?)");
-        }
+        $mathHelper = new MathHelper();
 
-    }
-
-    protected function calculateStatsAverage($stats)
-    {
-        if ($this->is_averageable($stats)) {
-            switch (gettype($stats)) {
-                case "integer":
-                case "double":
-                    return $stats;
-                case "array":
-                    return $this->average($stats);
-                default:
-                    throw new StatisticsCollectorException("Unable to return average for this collection of values (are they all numbers?)");
-            }
+        if ($mathHelper->isSummable($stats)) {
+            return $mathHelper->sum($stats);
         } else {
-            throw new StatisticsCollectorException("Unable to return average for this collection of values (are they all numbers?)");
+            throw new StatisticsCollectorException("Unable to return sum for supplied arguments (are the values numeric?)");
         }
     }
 
     /**
-     * sort namespaces into groups by namespace level size alphabetical order
+     * @param mixed $stats
+     *
+     * @return float|int
+     * @throws \Statistics\Exception\StatisticsCollectorException
+     */
+    protected function calculateStatsAverage($stats)
+    {
+        $mathHelper = new MathHelper();
+
+        if ($mathHelper->isAverageable($stats)) {
+            return $mathHelper->average($stats);
+        } else {
+            throw new StatisticsCollectorException("Unable to return average for supplied arguments (are the values numeric?)");
+        }
+    }
+
+    /**
+     * Sort populated namespaces first by namespace level and then alphabetical order
      *
      * @return bool
      */
     protected function sortPopulatedNamespaces()
     {
-        sort($this->populatedNamespaces, SORT_NATURAL);
         usort($this->populatedNamespaces, function ($a, $b) {
-            return strnatcmp(substr_count($a, '.'), substr_count($b, '.'));
+            //sort on namespace nesting level
+            $namespaceLevel = strnatcmp(substr_count($a, '.'), substr_count($b, '.'));
+            if ($namespaceLevel === 0) {
+                // if nesting level is equal (0), sort on alphabetical order using "natural order" algorithm
+                return strnatcmp($a, $b);
+            } else {
+                return $namespaceLevel;
+            }
         });
         return true;
     }
 
     /**
-     * TODO:
-     * - this is the same as is averageable(). refactor both into one method?
+     * Get current stats container.
      *
-     * @param mixed $value
+     * Set $this->container to be an instance of \Dflydev\DotAccessData\Data (aliased as Container) if being
+     * retrieved for the first time.
      *
-     * @return bool
+     * @see Container
      */
-    protected function is_summable($value)
-    {
-        switch (gettype($value)) {
-            case "integer":
-            case "double":
-                return true;
-            case "array":
-                foreach ($value as $v) {
-                    if ($this->is_summable($v) === false) {
-                        return false;
-                    }
-                }
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Check if value is a number or a collection of numbers available to
-     * averaged.
-     *
-     * TODO:
-     * - work out how to prevent subnamespaces of the current breaking current
-     * averaging
-     *
-     * @param $value
-     *
-     * @return bool
-     */
-    protected function is_averageable($value)
-    {
-        switch (gettype($value)) {
-            case "integer":
-            case "double":
-                return true;
-            case "array":
-                foreach ($value as $v) {
-                    if ($this->is_averageable($v) === false) {
-                        return false;
-                    }
-                }
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Get the average of a collection of values
-     *
-     * @param array $values
-     *
-     * @return float|int
-     */
-    protected function average($values = [])
-    {
-        return (count($values) > 0) ? array_sum($values) / count($values) : 0;
-    }
-
-    /**
-     * Get the sum of a collection of values
-     *
-     * @param array $values
-     *
-     * @return float|int
-     */
-    protected function summate($values = [])
-    {
-        return array_sum($values);
-    }
-
-    /**
-     * Flatten a multi-dimensional array down to a single array
-     *
-     * @param array $array
-     *
-     * @return array
-     */
-    protected function arrayFlatten($array = [])
-    {
-        $flattened = [];
-        array_walk_recursive($array, function ($a) use (&$flattened) {
-            $flattened[] = $a;
-        });
-        return $flattened;
-    }
-
-    /**
-     * During getInstance() we want to configure the container to be an
-     * instance of Container()
-     */
-    protected function containerSetup()
+    private function getStatsContainer()
     {
         if (!$this->container instanceof Container) {
             $this->container = new Container();
+        }
+        return $this->container;
+    }
+
+    /**
+     * See AbstractCollector::addValueToNamespace() for documentation
+     *
+     * @see AbstractCollector::addValueToNamespace()
+     *
+     * @param $namespace
+     * @param $value
+     * @param $flatten
+     */
+    private function addValueToExistingNamespace($namespace, $value, $flatten)
+    {
+        if (is_array($value)) {
+            $value = ($flatten === true) ? (new ArrayHelper())->flatten($value) : $value;
+            $current = $this->getStatsContainer()->get($namespace);
+            $new = (is_array($current)) ? array_merge_recursive($current, $value) : array_merge_recursive([$current],
+              $value);
+            $this->getStatsContainer()->set($namespace, $new);
+        } else {
+            $this->getStatsContainer()->append($namespace, $value);
+        }
+    }
+
+    /**
+     * See AbstractCollector::addValueToNamespace() for documentation
+     *
+     * @see AbstractCollector::addValueToNamespace()
+     *
+     * TODO:
+     * Work out a better way to handle clobbering of compound stats. We can't just preserve unaffected data as it may
+     * no longer be relevant.
+     *
+     * @param $namespace
+     * @param $value
+     * @param $flatten
+     */
+    private function overwriteExistingNamespace($namespace, $value, $flatten)
+    {
+        $typeHelper = new TypeHelper();
+        if ($typeHelper->isCompoundStat($value)) {
+            // FIXME:
+            // when clobbering compound stats we *may* need to preserve other compound stat values which are not clobbered
+            // so in this instance we just update the existing and overwrite the current values with the values
+            // supplied in the $value argument.
+
+            if ($flatten === true) {
+                $newData = (new ArrayHelper())->flatten($value);
+            } else {
+                $newData = $value;
+            }
+
+            $current = $this->getStatsContainer()->get($namespace);
+            if ($typeHelper->isCompoundStat($current)) {
+                $updatedCompoundStat = array_replace($current, $newData);
+            } else {
+                $updatedCompoundStat = array_replace([$current], $newData);
+            }
+
+            $this->getStatsContainer()->set($namespace, $updatedCompoundStat);
+        } else {
+            // overwriting scalar stats requires the same behaviour as when adding a new value
+            $this->addValueToNewNamespace($namespace, $value, $flatten);
+        }
+    }
+
+    /**
+     * See AbstractCollector::addValueToNamespace() for documentation
+     *
+     * @see AbstractCollector::addValueToNamespace()
+     *
+     * @param $namespace
+     * @param $value
+     * @param $flatten
+     */
+    private function addValueToNewNamespace($namespace, $value, $flatten)
+    {
+        if ($flatten === true && is_array($value)) {
+            $flattenedValue = (new ArrayHelper())->flatten($value);
+            $this->getStatsContainer()->set($namespace, $flattenedValue);
+        } else {
+            $this->getStatsContainer()->set($namespace, $value);
         }
     }
 

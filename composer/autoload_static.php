@@ -41,7 +41,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'Statistics\\' => 11,
             'SmashPig\\' => 9,
             'SilverpopConnector\\' => 19,
-            'Samples\\' => 8,
         ),
         'R' => 
         array (
@@ -139,10 +138,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'SilverpopConnector\\' => 
         array (
             0 => __DIR__ . '/..' . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector',
-        ),
-        'Samples\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/jackgleeson/stats-collector/samples',
         ),
         'Respect\\Validation\\' => 
         array (
