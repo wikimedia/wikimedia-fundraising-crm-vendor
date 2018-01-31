@@ -4,6 +4,7 @@ use PayWithAmazon\PaymentsClient as PwaClient;
 use PayWithAmazon\PaymentsClientInterface as PwaClientInterface;
 use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
+use SmashPig\CrmLink\FinalStatus;
 
 /**
  * Wikimedia Foundation
@@ -49,12 +50,16 @@ class AmazonAdapter extends GatewayAdapter {
 
 	// When an authorization or capture is declined, some reason codes indicate
 	// a situation where the donor can retry later or try a different card
-	protected $retry_errors = array(
+	protected $retry_reasons = array(
 		'InternalServerError',
 		'RequestThrottled',
 		'ServiceUnavailable',
 		'ProcessingFailure',
 		'InvalidPaymentMethod',
+	);
+
+	protected $pending_reasons = array(
+		'TransactionTimedOut',
 	);
 
 	function __construct( $options = array() ) {
@@ -65,6 +70,15 @@ class AmazonAdapter extends GatewayAdapter {
 				array( 'payment_method' => 'amazon' )
 			);
 		}
+		// Provide our logger instance to the SmashPig payments-client parameters.
+		// Dang, this is still really ugly.
+		Context::get()->getProviderConfiguration()->override(
+			[ 'payments-client' =>
+				[ 'constructor-parameters' =>
+					[ 0 => [ 'logger' => $this->logger ] ]
+				]
+			]
+		);
 		$this->session_addDonorData();
 	}
 
@@ -155,6 +169,8 @@ class AmazonAdapter extends GatewayAdapter {
 	 * the first place.
 	 * @param string $functionName
 	 * @param array $parameters
+	 * @throws ResponseProcessingException on call failure or error code
+	 * @return array Results of the SDK client call
 	 */
 	protected function callPwaClient( $functionName, $parameters ) {
 		$callMe = array( $this->client, $functionName );
@@ -202,6 +218,8 @@ class AmazonAdapter extends GatewayAdapter {
 	 * we can check on the capture status.  TODO: determine if capture status
 	 * check is really needed.  According to our tech contact, Amazon guarantees
 	 * that the capture will eventually succeed if the authorization succeeds.
+	 * @param bool $recurring whether the payment is recurring
+	 * @throws ResponseProcessingException
 	 */
 	protected function authorizeAndCapturePayment( $recurring = false ) {
 		if ( $recurring ) {
@@ -366,6 +384,7 @@ class AmazonAdapter extends GatewayAdapter {
 	/**
 	 * Replace decimal point with a dash to comply with Amazon's restrictions on
 	 * seller reference ID format.
+	 * @inheritdoc
 	 */
 	public function generateOrderID( $dataObj = null ) {
 		$dotted = parent::generateOrderID( $dataObj );
@@ -402,12 +421,22 @@ class AmazonAdapter extends GatewayAdapter {
 	 */
 	public function handleErrors( $exception, $resultData ) {
 		$errorCode = $exception->getErrorCode();
+		if ( array_search( $errorCode, $this->pending_reasons ) !== false ) {
+			// These reason codes mean the donation is in limbo. We can't
+			// do anything more about it right now, but donor services might
+			// push it through manually later.
+			$this->logger->info(
+				"Setting final status to pending on decline reason $errorCode"
+			);
+			$this->finalizeInternalStatus( FinalStatus::PENDING );
+			return;
+		}
 		$resultData->addError( new PaymentError(
 			$errorCode,
 			$exception->getMessage(),
 			LogLevel::ERROR
 		) );
-		if ( array_search( $errorCode, $this->retry_errors ) === false ) {
+		if ( array_search( $errorCode, $this->retry_reasons ) === false ) {
 			// Fail on anything we don't recognize as retry-able.  For example:
 			// These two may show up if we start doing asynchronous authorization
 			// 'AmazonClosed',
