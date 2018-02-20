@@ -1,6 +1,7 @@
 <?php
 
 use Psr\Log\LogLevel;
+use SmashPig\Core\PaymentError;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class IngenicoAdapter extends GlobalCollectAdapter {
@@ -180,8 +181,8 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 	}
 
 	public function do_transaction( $transaction ) {
-		$this->ensureUniqueOrderID();
 		if ( $transaction === 'createHostedCheckout' ) {
+			$this->ensureUniqueOrderID();
 			$this->incrementSequenceNumber();
 		}
 		$result = parent::do_transaction( $transaction );

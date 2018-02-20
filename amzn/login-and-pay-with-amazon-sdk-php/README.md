@@ -78,6 +78,7 @@ composer create-project amzn/login-and-pay-with-amazon-sdk-php --prefer-dist
 | CA Bundle File      | `cabundle_file`       | Default : `null`			    	   |
 | Application Name    | `application_name`    | Default : `null`			    	   |
 | Application Version | `application_version` | Default : `null`			    	   |
+| Proxy TCP           | `proxy_tcp`           | Default : `null`			    	   |
 | Proxy Host          | `proxy_host`          | Default : `null`			    	   |
 | Proxy Port          | `proxy_port`          | Default : `-1`  			    	   |
 | Proxy Username      | `proxy_username`      | Default : `null`			    	   |
@@ -136,7 +137,10 @@ $proxy['proxy_user_host'] // Hostname for the proxy
 $proxy['proxy_user_port'] // Hostname for the proxy
 $proxy['proxy_user_name'] // If your proxy requires a username
 $proxy['proxy_user_password'] // If your proxy requires a password
-
+$proxy['proxy_tcp'] // Alternative to host and port, overrides DNS for specific hosts.
+// Can indicate an IP address as a string, or key/value pairs of host -> IP address
+// $proxy['proxy_tcp'] = '12.34.56.78' will send all traffic through that IP
+// $proxy['proxy_tcp'] = array('mws.amazonservices.com' => '12.34.56.78') will proxy one host.
 $client->setProxy($proxy);
 ```
 

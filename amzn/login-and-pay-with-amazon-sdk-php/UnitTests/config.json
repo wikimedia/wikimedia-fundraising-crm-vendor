@@ -8,6 +8,7 @@
    "sandbox": true,
    "application_Name": "sdk testing",
    "application_Version": "1.0",
+   "proxy_Tcp": null,
    "proxy_Host": null,
    "proxy_Port": -1,
    "proxy_Username": null,

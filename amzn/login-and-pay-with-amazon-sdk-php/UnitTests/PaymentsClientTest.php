@@ -19,6 +19,7 @@ class PaymentsClientTest extends \PHPUnit_Framework_TestCase
                 'cabundle_file' => null,
                 'application_name' => 'sdk testing',
                 'application_version' => '1.0',
+                'proxy_tcp' => null,
                 'proxy_host' => null,
                 'proxy_port' => -1,
                 'proxy_username' => null,

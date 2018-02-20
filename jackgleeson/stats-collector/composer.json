@@ -18,6 +18,7 @@
     "dflydev/dot-access-data": "^1.1"
   },
   "require-dev": {
-    "phpunit/phpunit": "^6.4"
+    "phpunit/phpunit": "^6.4",
+    "php-coveralls/php-coveralls": "^2.0"
   }
 }

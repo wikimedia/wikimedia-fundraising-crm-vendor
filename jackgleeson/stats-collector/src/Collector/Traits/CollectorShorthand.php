@@ -166,7 +166,7 @@ trait CollectorShorthand
     }
 
     /**
-     * Shorthand alias method for recording a timestamp to serve as the start of a time period
+     * Shorthand alias method for recording a timestamp to serve as the start of a time period to be measured
      *
      * @see AbstractCollector::startTimer()
      *
@@ -181,7 +181,7 @@ trait CollectorShorthand
     }
 
     /**
-     * Shorthand alias method for recording a timestamp to serve as the end of a time period and then c
+     * Shorthand alias method for recording a timestamp to serve as the end of a time period and then
      * calculate the difference between the two timestamps recorded
      *
      * @see AbstractCollector::endTimer()

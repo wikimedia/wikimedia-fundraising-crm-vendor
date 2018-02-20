@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+2.8.0 (2018-01-18)
+------------------
+
+- The `isInEuropeanUnion` property was added to `GeoIp2\Record\Country`
+  and `GeoIp2\Record\RepresentedCountry`. This property is `true` if the
+  country is a member state of the European Union.
+
+2.7.0 (2017-10-27)
+------------------
+
+* The following new anonymizer properties were added to `GeoIp2\Record\Traits`
+  for use with GeoIP2 Precision Insights: `isAnonymous`, `isAnonymousVpn`,
+  `isHostingProvider`, `isPublicProxy`, and `isTorExitNode`.
+
 2.6.0 (2017-07-10)
 -----------------
 

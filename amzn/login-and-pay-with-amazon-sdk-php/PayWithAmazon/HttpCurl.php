@@ -11,6 +11,7 @@ class HttpCurl implements HttpCurlInterface
 {
     private $config = array();
     private $header = false;
+    private $requestHeaders = array();
     private $accessToken = null;
     private $curlResponseInfo = null;
     
@@ -29,7 +30,13 @@ class HttpCurl implements HttpCurlInterface
     {
         $this->header = true;
     }
-    
+
+    protected function addRequestHeader($ch, $header)
+    {
+        array_push($this->requestHeaders, $header);
+        curl_setopt($ch, CURLOPT_HEADER, $this->requestHeaders);
+    }
+
     /* Setter for Access token to get the user info */
     
     public function setAccessToken($accesstoken)
@@ -40,6 +47,7 @@ class HttpCurl implements HttpCurlInterface
     /* Add the common Curl Parameters to the curl handler $ch
      * Also checks for optional parameters if provided in the config
      * config['cabundle_file']
+     * config['proxy_tcp']
      * config['proxy_port']
      * config['proxy_host']
      * config['proxy_username']
@@ -61,8 +69,28 @@ class HttpCurl implements HttpCurlInterface
         
         if (!empty($userAgent))
             curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
-        
-        if ($this->config['proxy_host'] != null && $this->config['proxy_port'] != -1) {
+
+        if ($this->config['proxy_tcp'] != null) {
+            // Support TCP proxy. Use CURLOPT_RESOLVE to make sure we
+            // use the IP address set in proxy_tcp rather than what
+            // would otherwise come back from DNS.
+            $resolve = array();
+            if (is_array($this->config['proxy_tcp'])) {
+                // Only proxy traffic for specified hosts
+                foreach ($this->config['proxy_tcp'] as $proxyHost => $proxyIp) {
+                    $resolve[] = "$proxyHost:443:$proxyIp";
+                }
+            } else {
+                // Proxy whatever host we're trying to send to
+                $urlParts = parse_url($url);
+                $hostName = $urlParts['host'];
+                $resolve[] = "$hostName:443:{$this->config['proxy_tcp']}";
+            }
+            if (!empty($resolve)) {
+                curl_setopt($ch, CURLOPT_RESOLVE, $resolve);
+            }
+        }
+        elseif ($this->config['proxy_host'] != null && $this->config['proxy_port'] != -1) {
             curl_setopt($ch, CURLOPT_PROXY, $this->config['proxy_host'] . ':' . $this->config['proxy_port']);
         }
         
@@ -85,7 +113,6 @@ class HttpCurl implements HttpCurlInterface
         
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $parameters);
-        curl_setopt($ch, CURLOPT_HEADER, false);
         
         $response = $this->execute($ch);
         return $response;
@@ -102,9 +129,7 @@ class HttpCurl implements HttpCurlInterface
         
         // Setting the HTTP header with the Access Token only for Getting user info
         if ($this->header) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Authorization: bearer ' . $this->accessToken
-            ));
+            $this->addRequestHeader($ch, 'Authorization: bearer ' . $this->accessToken);
         }
         
         $response = $this->execute($ch);

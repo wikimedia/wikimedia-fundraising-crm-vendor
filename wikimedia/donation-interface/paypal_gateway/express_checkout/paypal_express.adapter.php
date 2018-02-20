@@ -1,7 +1,9 @@
 <?php
 
 use Psr\Log\LogLevel;
+use SmashPig\Core\PaymentError;
 use SmashPig\CrmLink\FinalStatus;
+use SmashPig\CrmLink\ValidationAction;
 
 /**
  * PayPal Express Checkout name value pair integration
@@ -453,7 +455,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				}
 
 				$this->runAntifraudFilters();
-				if ( $this->getValidationAction() !== 'process' ) {
+				if ( $this->getValidationAction() !== ValidationAction::PROCESS ) {
 					$this->finalizeInternalStatus( FinalStatus::FAILED );
 				}
 				break;
@@ -564,7 +566,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 		$resultData = $this->do_transaction( 'GetExpressCheckoutDetails' );
 		// FixMe: What to do outside of batch processing?
 		if ( $this->isBatchProcessor() && $this->getFinalStatus() == FinalStatus::TIMEOUT ) {
-			return PaymentResult::newEmpty();
+			return PaymentResult::newSuccess();
 		}
 		if ( !$resultData->getCommunicationStatus() ) {
 			throw new ResponseProcessingException( 'Failed to get customer details',

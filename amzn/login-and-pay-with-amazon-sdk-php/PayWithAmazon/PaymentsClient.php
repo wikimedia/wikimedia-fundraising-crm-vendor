@@ -719,7 +719,7 @@ class PaymentsClient extends BaseClient implements PaymentsClientInterface{
     public function charge($requestParameters = array()) {
 
 		$requestParameters = array_change_key_case($requestParameters, CASE_LOWER);
-		$requestParameters= $this->trimArray($requestParameters);
+		$requestParameters= ArrayUtil::trimArray($requestParameters);
 
 		$setParameters = $authorizeParameters = $confirmParameters = $requestParameters;
 

@@ -1,4 +1,7 @@
 # Stats Collector
+[![GitHub tag](https://img.shields.io/github/tag/jackgleeson/stats-collector.svg)]()
+[![Build Status](https://travis-ci.org/jackgleeson/stats-collector.svg?branch=master)](https://travis-ci.org/jackgleeson/stats-collector)
+[![Coverage Status](https://coveralls.io/repos/github/jackgleeson/stats-collector/badge.svg?branch=master)](https://coveralls.io/github/jackgleeson/stats-collector?branch=master)
 
 Record, combine, retrieve and export custom statistics and log data during the lifecycle of any PHP process. 
 
@@ -12,6 +15,7 @@ Once you have recorded some stats, you can create new stats from your data using
   - Clear separation of responsibility across general log output and statistical log output to help you stop polluting your application logs with statistical data.
 
 ### To-do
+  - Filter behaviour. ```$filteredStatsCollecter = $stats->filter($this->lessThan(50), $this->equalTo(50),...); ```
   - Import behaviour. Allow Stats Collector to import previously exported data and carry on where it left off. 
   - Add tests for helpers and improve tests by mocking collaborators
   - Add listener behaviour so that stats can be updated by updates to other stats e.g. moving averages
@@ -66,13 +70,12 @@ Array
 ```php
 $stats = Statistics\Collector\Collector::getInstance();
 
-$stats->ns("timer")->add("start", microtime(true));
+$stats->start("timer");
 // some lengthy process...
-$stats->ns("timer")->add("end", microtime(true));
-// work out execution time and add it as a new stat
-$stats->ns("timer")->add('execution_time', $stats->get("end") - $stats->get("start"));
+$stats->end("timer");
+// get the exectuion time
+$execution_time = $stats->diff('timer'); 
 
-$execution_time = $stats->ns("timer")->get("execution_time");
 ```
 ### Basic Usage: Export stats to file
 ```php

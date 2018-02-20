@@ -1,5 +1,7 @@
 <?php
 namespace PayWithAmazon;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /* Class BaseClient
  * Takes configuration information
@@ -7,6 +9,7 @@ namespace PayWithAmazon;
  * returns Response Object
  */
 
+require_once 'ArrayUtil.php';
 require_once 'ResponseParser.php';
 require_once 'HttpCurl.php';
 require_once 'Regions.php';
@@ -18,6 +21,11 @@ abstract class BaseClient
 
     // Override in concrete classes with API's service version
     protected $serviceVersion;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     // Construct User agent string based off of the application_name, application_version, PHP platform
     protected $userAgent = null;
@@ -34,12 +42,14 @@ abstract class BaseClient
 			    'cabundle_file' 	   => null,
 			    'application_name'     => null,
 			    'application_version'  => null,
+                'proxy_tcp' 	   => null,
 			    'proxy_host' 	   => null,
 			    'proxy_port' 	   => -1,
 			    'proxy_username' 	   => null,
 			    'proxy_password' 	   => null,
 			    'client_id' 	   => null,
-			    'handle_throttle' 	   => true
+			    'handle_throttle' 	   => true,
+                'logger'            => null
 			    );
 
     protected $modePath = null;
@@ -81,6 +91,17 @@ abstract class BaseClient
                 $this->checkConfigKeys($configArray);
             } else {
                 throw new \Exception('$config is of the incorrect type ' . gettype($configArray) . ' and should be of the type array');
+            }
+            if (empty($configArray['logger'])) {
+                $this->logger = new NullLogger();
+            } else {
+                if ($configArray['logger'] instanceof LoggerInterface) {
+                    $this->logger = $configArray['logger'];
+                } else {
+                    throw new \InvalidArgumentException(
+                        'Logger passed in config must implement Psr\Log\LoggerInterface'
+                    );
+                }
             }
         } else {
 	    throw new \Exception('$config cannot be null.');
@@ -127,7 +148,7 @@ abstract class BaseClient
     private function checkConfigKeys($config)
     {
         $config = array_change_key_case($config, CASE_LOWER);
-	$config = $this->trimArray($config);
+	    $config = ArrayUtil::trimArray($config);
 
         foreach ($config as $key => $value) {
             if (array_key_exists($key, $this->config)) {
@@ -214,6 +235,10 @@ abstract class BaseClient
 
         if (!empty($proxy['proxy_user_password']))
             $this->config['proxy_password'] = $proxy['proxy_user_password'];
+
+        if (!empty($proxy['proxy_tcp'])) {
+            $this->config['proxy_tcp'] = $proxy['proxy_tcp'];
+        }
     }
 
     /* Setter for $mwsServiceUrl
@@ -245,20 +270,6 @@ abstract class BaseClient
     public function getParameters()
     {
 	return trim($this->parameters);
-    }
-    
-    /* Trim the input Array key values */
-    
-    protected function trimArray($array)
-    {
-	foreach ($array as $key => $value)
-	{
-	    if(!is_array($value) && $key!=='proxy_password')
-	    {
-		$array[$key] = trim($value);
-	    }
-	}
-	return $array;
     }
 
     /* setParametersAndPost - sets the parameters array with non empty values from the requestParameters array sent to API calls.
@@ -560,6 +571,7 @@ abstract class BaseClient
                             $this->pauseOnRetry(++$retries, $statusCode);
                         }
                     } else {
+                        $this->logger->info("Returned status code $statusCode, not retrying.");
                         $shouldRetry = false;
                     }
                 } catch (\Exception $e) {
@@ -582,6 +594,7 @@ abstract class BaseClient
     {
         if ($retries <= self::MAX_ERROR_RETRY) {
             $delay = (int) (pow(4, $retries) * $this->basePause);
+            $this->logger->info("Returned status code $status on try $retries, waiting $delay microseconds.");
             usleep($delay);
         } else {
             throw new \Exception('Error Code: '. $status.PHP_EOL.'Maximum number of retry attempts - '. $retries .' reached');

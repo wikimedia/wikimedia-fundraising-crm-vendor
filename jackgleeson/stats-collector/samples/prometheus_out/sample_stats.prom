@@ -29,7 +29,7 @@ api_response_success 1322
 api_response_success 7324
 api_response_success 24922
 api_response_success 94234
-batch_jobs_last_run 1515770633
+batch_jobs_last_run 1516806135
 general_stats_days_on_the_earth 12046
 olympics_100m_winners{sprint="8s"} 5
 olympics_100m_winners{sprint="10s"} 9

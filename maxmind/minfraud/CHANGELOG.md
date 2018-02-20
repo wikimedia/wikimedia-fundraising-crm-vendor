@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+1.6.0 (2018-01-19)
+------------------
+
+* Upgraded `geoip2/geoip2` dependency. This version adds the
+  `isInEuropeanUnion` property to `MaxMind\MinFraud\Model\GeoIp2Country`
+  and `GeoIp2\Record\RepresentedCountry`. This property is `true` if the
+  country is a member state of the European Union.
+* Added the following new values to the payment processor validation:
+  * `cybersource`
+  * `transact_pro`
+  * `wirecard`
+
+1.5.0 (2017-10-30)
+------------------
+
+* TLD validation is no longer performed when validating `/email/domain` in
+  order to better accommodate new gTLDs that the validation library does
+  not yet know about.
+* Added the following new values to the payment processor validation:
+  * `bpoint`
+  * `checkout_com`
+  * `emerchantpay`
+  * `heartland`
+  * `payway`
+* Updated `geoip2/geoip2` dependency to add support for GeoIP2 Precision
+  Insights anonymizer fields.
+
 1.4.0 (2017-07-10)
 ------------------
 

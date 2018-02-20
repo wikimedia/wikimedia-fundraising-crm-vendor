@@ -183,8 +183,8 @@ class CollectorShorthandTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $expected = [
-          '.test_namespace.planets' => 8,
-          '.test_namespace.dwarf_planets' => 1,
+          'test_namespace.planets' => 8,
+          'test_namespace.dwarf_planets' => 1,
         ];
 
         $this->assertEquals($expected, $planetStats);
@@ -241,8 +241,8 @@ class CollectorShorthandTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $expected = [
-          '.test_namespace.planets' => 8,
-          '.test_namespace.dwarf_planets' => 1,
+          'test_namespace.planets' => 8,
+          'test_namespace.dwarf_planets' => 1,
         ];
 
         $this->assertEquals($expected, $planetStats);
@@ -267,7 +267,7 @@ class CollectorShorthandTest extends \PHPUnit\Framework\TestCase
         $piStat = $this->statsCollector->getWithKey("this.*.pi");
 
         $expected = [
-          '.this.is.a.really.long.namespace.path.pi' => 3.14159265359,
+          'this.is.a.really.long.namespace.path.pi' => 3.14159265359,
         ];
 
         $this->assertEquals($expected, $piStat);
@@ -322,8 +322,8 @@ class CollectorShorthandTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $expected = [
-          '.this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
-          '.this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
+          'this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
+          'this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
         ];
 
         $this->assertEquals($expected, $wildcardLeafNodes);
@@ -338,8 +338,8 @@ class CollectorShorthandTest extends \PHPUnit\Framework\TestCase
         $wildcardConstantCommonParentChildNodes = $this->statsCollector->getWithKey("this.*.math.constants.*");
 
         $expected = [
-          '.this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
-          '.this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
+          'this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
+          'this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
         ];
 
         $this->assertEquals($expected, $wildcardConstantCommonParentChildNodes);

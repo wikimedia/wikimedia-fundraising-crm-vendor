@@ -169,7 +169,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals([1 => [2, 3], 2], $stats["test_namespace.compound_stat"]);
     }
 
-    public function testCanConveryCompoundStatValueIntoCompoundValue()
+    public function testCanConvertCompoundStatValueIntoCompoundValue()
     {
         $this->statsCollector->setNamespace("test_namespace");
         $this->statsCollector->addStat("compound_stat", ["planets" => "Earth"]);
@@ -187,6 +187,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $reflectionProperty->setAccessible(true);
 
         $this->statsCollector->setNamespace("test_namespace");
+        $this->statsCollector->addStat("dwarf_planets", 1);
         $this->statsCollector->addStat("planets", 8);
 
         $numberOfPlanets = $this->statsCollector->getStat("planets");
@@ -222,8 +223,8 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $currentPopulatedNamespaces = array_flip($reflectionProperty->getValue($this->statsCollector));
 
         $expected = [
-          '.test_namespace.planets.earth' => ['radius' => '6371km'],
-          '.test_namespace.planets.mars' => ['radius' => '3390km'],
+          'test_namespace.planets.earth' => ['radius' => '6371km'],
+          'test_namespace.planets.mars' => ['radius' => '3390km'],
         ];
         //// assert that stat is set and namespace is stored within $populatedNamespaces
         $this->assertEquals($expected, $planetSizes);
@@ -409,6 +410,19 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($diff, $stats['test_namespace.timer.test']['diff']);
     }
 
+    /**
+     * @requires PHPUnit 5
+     */
+    public function testThrowsExceptionIfEndTimerIsCalledOnNonTimerStat()
+    {
+        $this->expectException(Statistics\Exception\StatisticsCollectorException::class);
+        $this->expectExceptionMessage("Unable to find start timestamp for \"timer.test\"");
+
+        $this->statsCollector->setNamespace("test_namespace");
+
+        $this->statsCollector->endTimer("test");
+    }
+
     public function testCanGetCorrectTimerDiffValue()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -424,12 +438,25 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($diff, $this->statsCollector->getTimerDiff("test"));
     }
 
+    /**
+     * @requires PHPUnit 5
+     */
+    public function testThrowsExceptionIfGetTimerDiffIsCalledOnNonTimerStat()
+    {
+        $this->expectException(Statistics\Exception\StatisticsCollectorException::class);
+        $this->expectExceptionMessage("Unable to find timer difference for \"timer.test\". Have you recorded a start timer and end timer for this stat?");
+
+        $this->statsCollector->setNamespace("test_namespace");
+
+        $this->statsCollector->getTimerDiff("test");
+    }
+
     public function testCanGetCorrectTimerDiffValueWithCustomTimestampsSupplied()
     {
         $this->statsCollector->setNamespace("test_namespace");
 
-        $start=microtime(true);
-        $end=microtime(true);
+        $start = microtime(true);
+        $end = microtime(true);
 
         $this->statsCollector->startTimer("test", $start);
         $this->statsCollector->endTimer("test", $end);
@@ -506,8 +533,8 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         ], $withKeys = true);
 
         $expected = [
-          '.test_namespace.planets' => 8,
-          '.test_namespace.dwarf_planets' => 1,
+          'test_namespace.planets' => 8,
+          'test_namespace.dwarf_planets' => 1,
         ];
 
         $this->assertEquals($expected, $planetStats);
@@ -564,8 +591,8 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         ], $withKeys = true);
 
         $expected = [
-          '.test_namespace.planets' => 8,
-          '.test_namespace.dwarf_planets' => 1,
+          'test_namespace.planets' => 8,
+          'test_namespace.dwarf_planets' => 1,
         ];
 
         $this->assertEquals($expected, $planetStats);
@@ -602,7 +629,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $piStat = $this->statsCollector->getStat("this.*.pi", $withKeys = true);
 
         $expected = [
-          '.this.is.a.really.long.namespace.path.pi' => 3.14159265359,
+          'this.is.a.really.long.namespace.path.pi' => 3.14159265359,
         ];
 
         $this->assertEquals($expected, $piStat);
@@ -658,8 +685,8 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         ], $withKeys = true);
 
         $expected = [
-          '.this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
-          '.this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
+          'this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
+          'this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
         ];
 
         $this->assertEquals($expected, $wildcardLeafNodes);
@@ -677,8 +704,8 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         ], $withKeys = true);
 
         $expected = [
-          '.this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
-          '.this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
+          'this.is.a.really.long.namespace.path.with.math.constants.golden_ratio' => 1.61803398875,
+          'this.is.a.really.long.namespace.path.with.math.constants.pi' => 3.14159265359,
         ];
 
         $this->assertEquals($expected, $wildcardConstantCommonParentChildNodes);
@@ -1419,6 +1446,29 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
           'noahs.ark.passengers.aliens' => 0,
           'noahs.ark.passengers.animals' => 99,
           'noahs.ark.passengers.humans' => 2,
+        ];
+
+        $this->assertEquals($expectStats, $allStats);
+    }
+
+    public function testAddedStatsAreReturnedOrderedByNamespaceNestingLevelAndAlphabeticalOrder()
+    {
+        $this->statsCollector->setNamespace("test_namespace");
+        $this->statsCollector->addStat("animals.zebra", 10);
+        $this->statsCollector->addStat("animals.horse", 10);
+        $this->statsCollector->addStat("animals.ape", 5);
+        $this->statsCollector->addStat("animals.cat.lion", 30);
+        $this->statsCollector->addStat("animals.cat.tiger", 40);
+
+        $allStats = $this->statsCollector->getAllStats();
+
+        //returned stats should be in order first by namespace nesting level and then alphabetical order
+        $expectStats = [
+          'test_namespace.animals.ape' => 5,
+          'test_namespace.animals.horse' => 10,
+          'test_namespace.animals.zebra' => 10,
+          'test_namespace.animals.cat.lion' => 30,
+          'test_namespace.animals.cat.tiger' => 40,
         ];
 
         $this->assertEquals($expectStats, $allStats);
