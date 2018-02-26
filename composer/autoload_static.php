@@ -7,11 +7,13 @@ namespace Composer\Autoload;
 class ComposerStaticInit713b445f683293f4a04a72f73555246e
 {
     public static $files = array (
-        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        'e40631d46120a9c38ea139981f8dab26' => __DIR__ . '/..' . '/ircmaxell/password-compat/lib/password.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
+        'ddc0a4d7e61c0286f0f8593b1903e894' => __DIR__ . '/..' . '/clue/stream-filter/src/functions.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        'e40631d46120a9c38ea139981f8dab26' => __DIR__ . '/..' . '/ircmaxell/password-compat/lib/password.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
         'edc6464955a37aa4d5fbf39d40fb6ee7' => __DIR__ . '/..' . '/symfony/polyfill-php55/bootstrap.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
@@ -74,7 +76,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'H' => 
         array (
             'Http\\Promise\\' => 13,
+            'Http\\Message\\' => 13,
+            'Http\\Discovery\\' => 15,
             'Http\\Client\\' => 12,
+            'Http\\Adapter\\Guzzle6\\' => 21,
         ),
         'G' => 
         array (
@@ -82,11 +87,19 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
             'GetOptionKit\\' => 13,
+            'Geocoder\\Provider\\Nominatim\\' => 28,
+            'Geocoder\\Provider\\MapQuest\\' => 27,
+            'Geocoder\\Provider\\GoogleMaps\\' => 29,
+            'Geocoder\\Provider\\FreeGeoIp\\' => 28,
+            'Geocoder\\Provider\\DataTable\\' => 28,
+            'Geocoder\\Http\\' => 14,
+            'Geocoder\\' => 9,
             'GeoIp2\\' => 7,
         ),
         'C' => 
         array (
             'Composer\\CaBundle\\' => 18,
+            'Clue\\StreamFilter\\' => 18,
         ),
         'A' => 
         array (
@@ -200,9 +213,22 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/php-http/promise/src',
         ),
+        'Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/message/src',
+            1 => __DIR__ . '/..' . '/php-http/message-factory/src',
+        ),
+        'Http\\Discovery\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/discovery/src',
+        ),
         'Http\\Client\\' => 
         array (
             0 => __DIR__ . '/..' . '/php-http/httplug/src',
+        ),
+        'Http\\Adapter\\Guzzle6\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/guzzle6-adapter/src',
         ),
         'GuzzleHttp\\Psr7\\' => 
         array (
@@ -220,6 +246,34 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/corneltek/getoptionkit/src',
         ),
+        'Geocoder\\Provider\\Nominatim\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geocoder-php/nominatim-provider',
+        ),
+        'Geocoder\\Provider\\MapQuest\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geocoder-php/mapquest-provider',
+        ),
+        'Geocoder\\Provider\\GoogleMaps\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geocoder-php/google-maps-provider',
+        ),
+        'Geocoder\\Provider\\FreeGeoIp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geocoder-php/free-geoip-provider',
+        ),
+        'Geocoder\\Provider\\DataTable\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/wikimedia/civicrm-data-table-provider',
+        ),
+        'Geocoder\\Http\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geocoder-php/common-http',
+        ),
+        'Geocoder\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/willdurand/geocoder',
+        ),
         'GeoIp2\\' => 
         array (
             0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
@@ -227,6 +281,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Composer\\CaBundle\\' => 
         array (
             0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
+        ),
+        'Clue\\StreamFilter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/clue/stream-filter/src',
         ),
         'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 
         array (
