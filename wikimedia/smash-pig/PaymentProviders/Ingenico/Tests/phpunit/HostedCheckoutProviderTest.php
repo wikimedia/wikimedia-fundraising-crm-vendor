@@ -2,7 +2,6 @@
 
 namespace SmashPig\PaymentProviders\Ingenico\Tests;
 
-use PHPUnit_Framework_MockObject_MockObject;
 use SmashPig\PaymentProviders\Ingenico\HostedCheckoutProvider;
 use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
@@ -74,4 +73,39 @@ class HostedCheckoutProviderTest extends BaseSmashPigUnitTestCase {
 		$response = $this->provider->getHostedPaymentStatus( $hostedPaymentId );
 		$this->assertEquals( 'PAYMENT_CREATED', $response['status'] );
 	}
+
+	/**
+	 * @dataProvider hostedPaymentStatusRejectedErrors
+	 */
+	public function testGetHostedPaymentStatusFailuresReturnErrors( $errorCode, $errorDescription ) {
+		$hostedPaymentId = 'DUMMY-ID-8915-28e5b79c889641c8ba770f1ba576c1fe';
+		$this->setUpResponse( __DIR__ . "/../Data/hostedPaymentStatusRejected$errorCode.response", 200 );
+		$this->curlWrapper->expects( $this->once() )
+			->method( 'execute' )->with(
+				$this->equalTo( "https://api-sandbox.globalcollect.com/v1/1234/hostedcheckouts/$hostedPaymentId" ),
+				$this->equalTo( 'GET' )
+			);
+
+		$response = $this->provider->getHostedPaymentStatus( $hostedPaymentId );
+		$this->assertNotEmpty( $response['errors'] );
+		$this->assertEquals( $errorCode, $response['errors'][0]['code'] );
+		$this->assertEquals( $errorDescription, $response['errors'][0]['message'] );
+	}
+
+	/**
+	 * We don't have an exhaustive list here; the codes below are the failure event
+	 * codes that we've been able to evoke so far using the Ingenico test card details
+	 */
+	public function hostedPaymentStatusRejectedErrors() {
+		return [
+			[ '430424', 'Unable to authorise' ],
+			[ '430475', 'Not authorised' ],
+			[ '430327', 'Unable to authorise' ],
+			[ '430409', 'Referred' ],
+			[ '430330', 'Not authorised' ],
+			[ '430306', 'Card expired' ],
+			[ '430260', 'Not authorised' ],
+		];
+	}
+
 }
