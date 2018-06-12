@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+1.7.0 (2018-04-10)
+------------------
+
+* Renamed MaxMind user ID to account ID in the code and added support for the
+  new `ACCOUNT_ID_REQUIRED` error code.
+* Added the following new values to the payment processor validation:
+  * `ccavenue`
+  * `ct_payments`
+  * `dalenys`
+  * `oney`
+  * `posconnect`
+* Added support for the `/device/local_time` output. This is exposed as
+  the `localTime` property on `MaxMind\MinFraud\Model\Device`.
+* Added support for the `/credit_card/is_virtual` output. This is exposed as
+  the `isVirtual` property on `MaxMind\MinFraud\Model\CreditCard`.
+* Added `payout_change` to the `/event/type` input validation.
+
+
 1.6.0 (2018-01-19)
 ------------------
 

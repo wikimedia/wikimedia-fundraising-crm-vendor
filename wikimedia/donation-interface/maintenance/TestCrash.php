@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 // XXX only deployed for a quick debuggery party
 
@@ -13,7 +14,9 @@ class TestCrash extends Maintenance {
 	public function __construct() {
 		parent::__construct();
 
-		$this->requireExtension( 'Donation Interface' );
+		if ( method_exists( $this, 'requireExtension' ) ) {
+			$this->requireExtension( 'Donation Interface' );
+		}
 		$this->addOption( 'error', 'Yell ->error and exit' );
 		$this->addOption( 'exception', 'Crash with an exception' );
 		$this->addOption( 'fatal', 'Do something unexpected' );

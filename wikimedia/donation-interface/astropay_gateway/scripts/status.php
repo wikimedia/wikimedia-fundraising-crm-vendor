@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -13,7 +14,9 @@ class AstroPayStatusQuery extends Maintenance {
 	public function __construct() {
 		parent::__construct();
 
-		$this->requireExtension( 'Donation Interface' );
+		if ( method_exists( $this, 'requireExtension' ) ) {
+			$this->requireExtension( 'Donation Interface' );
+		}
 		$this->addArg( 'id', 'Contribution tracking ID', true );
 	}
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -15,7 +16,9 @@ class GlobalCollectRefundMaintenance extends Maintenance {
 	public function __construct() {
 		parent::__construct();
 
-		$this->requireExtension( 'Donation Interface' );
+		if ( method_exists( $this, 'requireExtension' ) ) {
+			$this->requireExtension( 'Donation Interface' );
+		}
 		$this->addOption( 'file', 'Read refund detail in from a file',
 			true, true, 'f' );
 		$this->addOption( 'unsubscribe', 'Cancel the subscription this charge is a part of',
@@ -50,6 +53,7 @@ class GlobalCollectRefundMaintenance extends Maintenance {
 					'payment_submethod' => $refund[3],
 					'currency' => $refund[4],
 					'amount' => $refund[5],
+					'country' => 'US', // Stuff with default to pass validation, not actually sent in refund API call
 				),
 			);
 

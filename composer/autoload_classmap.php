@@ -99,6 +99,7 @@ return array(
     'PaypalLegacyAdapter' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy.adapter.php',
     'PaypalLegacyGateway' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy_gateway.body.php',
     'PaypalLegacyLocale' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/legacy/PaypalLegacyLocale.php',
+    'PaypalRefundMaintenance' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/scripts/refund.php',
     'ResponseCodes' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ResponseCodes.php',
     'ResponseProcessingException' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',
     'ResultPages' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ResultPages.php',

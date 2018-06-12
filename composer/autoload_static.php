@@ -11,6 +11,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'ddc0a4d7e61c0286f0f8593b1903e894' => __DIR__ . '/..' . '/clue/stream-filter/src/functions.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         'e40631d46120a9c38ea139981f8dab26' => __DIR__ . '/..' . '/ircmaxell/password-compat/lib/password.php',
@@ -37,6 +38,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             'Symfony\\Polyfill\\Php55\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Polyfill\\Ctype\\' => 23,
             'Symfony\\Component\\Yaml\\' => 23,
             'Symfony\\Component\\HttpFoundation\\' => 33,
             'Symfony\\Component\\EventDispatcher\\' => 34,
@@ -127,6 +129,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Polyfill\\Ctype\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
         ),
         'Symfony\\Component\\Yaml\\' => 
         array (
@@ -431,6 +437,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'PaypalLegacyAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy.adapter.php',
         'PaypalLegacyGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy_gateway.body.php',
         'PaypalLegacyLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/PaypalLegacyLocale.php',
+        'PaypalRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/scripts/refund.php',
         'ResponseCodes' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseCodes.php',
         'ResponseProcessingException' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',
         'ResultPages' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultPages.php',

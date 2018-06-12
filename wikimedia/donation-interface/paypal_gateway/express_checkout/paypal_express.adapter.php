@@ -134,6 +134,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				'PAYMENTREQUEST_0_ITEMAMT', // FIXME: Not clear why this is required.
 				'PAYMENTREQUEST_0_PAYMENTACTION',
 				'PAYMENTREQUEST_0_PAYMENTREASON',
+				'SOLUTIONTYPE',
 				// TODO: Investigate why can we give this as an input:
 				// PAYMENTREQUEST_n_TRANSACTIONID
 				// TODO: BUYEREMAILOPTINENABLE=1
@@ -151,6 +152,8 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				'PAYMENTREQUEST_0_DESC' => WmfFramework::formatMessage( 'donate_interface-donation-description' ),
 				'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
 				'PAYMENTREQUEST_0_PAYMENTREASON' => 'None',
+				// SOLUTIONTYPE Mark means PayPal account is required
+				'SOLUTIONTYPE' => 'Mark',
 			),
 			'response' => array(
 				'TOKEN',
@@ -191,7 +194,8 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				// 'PAYMENTREQUEST_0_PAYMENTACTION',
 				// 'PAYMENTREQUEST_0_PAYMENTREASON',
 				// // TODO: Investigate why would give this as an input:
-				// // PAYMENTREQUEST_n_TRANSACTIONID
+				// // PAYMENTREQUEST_n_TRANSACTIONID,
+				'SOLUTIONTYPE'
 			),
 			'values' => array(
 				'USER' => $this->account_config['User'],
@@ -214,6 +218,8 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				'PAYMENTREQUEST_0_DESC' => WmfFramework::formatMessage( 'donate_interface-monthly-donation-description' ),
 				'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
 				'PAYMENTREQUEST_0_PAYMENTREASON' => 'None',
+				// SOLUTIONTYPE Mark means PayPal account is required
+				'SOLUTIONTYPE' => 'Mark',
 			),
 			'response' => array(
 				'TOKEN',
@@ -348,6 +354,49 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				'PROFILEID',
 				'PROFILESTATUS'
 			),
+		);
+
+		$this->transactions['RefundTransaction'] = array(
+			'request' => array(
+				'USER',
+				'PWD',
+				'VERSION',
+				'METHOD',
+				'TRANSACTIONID'
+			),
+			'values' => array(
+				'USER' => $this->account_config['User'],
+				'PWD' => $this->account_config['Password'],
+				'VERSION' => self::API_VERSION,
+				'METHOD' => 'RefundTransaction'
+
+			),
+			'response' => array(
+				'REFUNDSTATUS',
+				'NETREFUNDAMT',
+				'GROSSREFUNDAMT'
+			)
+		);
+
+		$this->transactions['ManageRecurringPaymentsProfileStatusCancel'] = array(
+			'request' => array(
+				'USER',
+				'PWD',
+				'VERSION',
+				'METHOD',
+				'ACTION',
+				'PROFILEID'
+			),
+			'values' => array(
+				'USER' => $this->account_config['User'],
+				'PWD' => $this->account_config['Password'],
+				'VERSION' => self::API_VERSION,
+				'METHOD' => 'ManageRecurringPaymentsProfileStatus',
+				'ACTION' => 'Cancel'
+			),
+			'response' => array(
+				'PROFILEID'
+			)
 		);
 
 		// Add the Signature field to all API calls, if necessary.
@@ -630,6 +679,22 @@ class PaypalExpressAdapter extends GatewayAdapter {
 	 */
 	public function getTransactionGatewayTxnID() {
 		return $this->getData_Unstaged_Escaped( 'gateway_txn_id' );
+	}
+
+	public function doRefund() {
+		$response = $this->do_transaction( 'RefundTransaction' );
+		if ( !$response->getCommunicationStatus() ) {
+			return PaymentResult::newFailure( $response->getErrors(), FinalStatus::FAILED );
+		}
+		return PaymentResult::fromResults( $response, FinalStatus::COMPLETE );
+	}
+
+	public function cancelSubscription() {
+		$response = $this->do_transaction( 'ManageRecurringPaymentsProfileStatusCancel' );
+		if ( !$response->getCommunicationStatus() ) {
+			return PaymentResult::newFailure( $response->getErrors(), FinalStatus::FAILED );
+		}
+		return PaymentResult::fromResults( $response, FinalStatus::COMPLETE );
 	}
 
 	/*

@@ -246,7 +246,15 @@ $forms_whitelist['rcc-vm'] = array(
 $forms_whitelist['rcc'] = array(
 	'gateway' => 'globalcollect',
 	'payment_methods' => array( 'cc' => 'ALL' ),
-	'recurring'
+	'recurring',
+    'selection_weight' => 100,
+);
+
+$forms_whitelist['rcc-ingenico'] = array(
+	'gateway' => 'ingenico',
+	'payment_methods' => array( 'cc' => 'ALL' ),
+	'recurring',
+    'selection_weight' => 10,
 );
 
 /*************************
@@ -256,23 +264,27 @@ $forms_whitelist['rcc'] = array(
 $forms_whitelist['paypal'] = array(
 	'gateway' => 'paypal',
 	'payment_methods' => array( 'paypal' => 'ALL' ),
+	'selection_weight' => 10,
 );
 
 $forms_whitelist['paypal-recurring'] = array(
 	'gateway' => 'paypal',
 	'payment_methods' => array( 'paypal' => 'ALL' ),
 	'recurring',
+	'selection_weight' => 10,
 );
 
 $forms_whitelist['paypal_ec'] = array(
 	'gateway' => 'paypal_ec',
 	'payment_methods' => array( 'paypal' => 'ALL' ),
+	'selection_weight' => 100,
 );
 
 $forms_whitelist['paypal_ec-recurring'] = array(
 	'gateway' => 'paypal_ec',
 	'payment_methods' => array( 'paypal' => 'ALL' ),
 	'recurring',
+	'selection_weight' => 100,
 );
 
 /************
@@ -420,10 +432,10 @@ $forms_whitelist['adyen'] = array(
 
 $forms_whitelist['adyen-test'] = array(
 	'gateway' => 'adyen',
-	'countries' => array( '+' => array( 'CA', 'FR', 'GB', 'IL', 'JP', 'UA', 'US', ), ),
+	'countries' => array( '+' => array( 'CA', 'FR', 'GB', 'IL', 'JP', 'NL', 'UA', 'US', ), ),
 	'currencies' => array( '+' => array( 'CAD', 'EUR', 'GBP', 'ILS', 'JPY', 'UAH', 'USD', ), ),
 	'payment_methods' => array(
-		'cc' => array( 'visa', 'mc', 'amex', 'discover', 'cb', ),
+		'cc' => array( 'visa', 'mc', 'amex', 'discover', 'cb', 'jcb' ),
 	),
 	// Setting form chooser weight to zero so this form is not chosen as default
 	'selection_weight' => 0,

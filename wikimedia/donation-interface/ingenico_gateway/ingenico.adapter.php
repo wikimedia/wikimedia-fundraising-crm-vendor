@@ -2,6 +2,8 @@
 
 use Psr\Log\LogLevel;
 use SmashPig\Core\PaymentError;
+use SmashPig\CrmLink\FinalStatus;
+use SmashPig\PaymentProviders\Ingenico\HostedCheckoutProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class IngenicoAdapter extends GlobalCollectAdapter {
@@ -121,6 +123,11 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 			'request' => array( 'id' ),
 			'response' => array( 'statusCode' )
 		);
+
+		$this->transactions['cancelPayment'] = array(
+			'request' => array( 'id' ),
+			'response' => array( 'statusCode' )
+		);
 	}
 
 	/**
@@ -153,6 +160,7 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 			return false;
 		}
 
+		/** @var HostedCheckoutProvider $provider */
 		$provider = $this->getPaymentProvider();
 		switch ( $this->getCurrentTransaction() ) {
 			case 'createHostedCheckout':
@@ -168,6 +176,11 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 				unset( $data['id'] );
 				$result = $provider->approvePayment( $id, $data );
 				break;
+			case 'cancelPayment':
+				$id = $data['id'];
+				unset( $data['id'] );
+				$result = $provider->cancelPayment( $id );
+				break;
 			default:
 				return false;
 		}
@@ -181,14 +194,42 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 	}
 
 	public function do_transaction( $transaction ) {
+		$this->tuneForRecurring();
 		if ( $transaction === 'createHostedCheckout' ) {
 			$this->ensureUniqueOrderID();
 			$this->incrementSequenceNumber();
 		}
 		$result = parent::do_transaction( $transaction );
 		// Add things to session which may have been retrieved from API
-		$this->session_addDonorData();
+		if ( !$this->getFinalStatus() ) {
+			$this->session_addDonorData();
+		}
+
 		return $result;
+	}
+
+	/**
+	 * Stage: recurring
+	 * Adds the recurring payment pieces to the structure of createHostedCheckout
+	 * and getHostedPaymentStatus if the recurring field is populated.
+	 */
+	protected function tuneForRecurring() {
+		if ( $this->getData_Unstaged_Escaped( 'recurring' ) ) {
+			$this->transactions['createHostedCheckout']['request']['cardPaymentSpecificInput'] =
+				array(
+					'tokenize',
+					'isRecurring',
+					'recurringPaymentSequenceIndicator'
+				);
+			$this->transactions['createHostedCheckout']['values']['tokenize'] = true;
+			$this->transactions['createHostedCheckout']['values']['isRecurring'] = true;
+			$this->transactions['createHostedCheckout']['values']['recurringPaymentSequenceIndicator'] = 'first';
+			$desc = WmfFramework::formatMessage( 'donate_interface-monthly-donation-description' );
+			$this->transactions['createHostedCheckout']['values']['descriptor'] = $desc;
+			if ( array_search( 'tokens', $this->transactions['getHostedPaymentStatus']['response'] ) === false ) {
+				$this->transactions['getHostedPaymentStatus']['response'][] = 'tokens';
+			}
+		}
 	}
 
 	protected function getPaymentProvider() {
@@ -244,6 +285,7 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 		// FIXME: make sure we're processing the order ID we expect!
 
 		$response = $this->do_transaction( 'Confirm_CreditCard' );
+
 		return PaymentResult::fromResults(
 			$response,
 			$this->getFinalStatus()
@@ -272,5 +314,13 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 
 	protected function getStatusCode( $txnData ) {
 		return $this->getData_Unstaged_Escaped( 'gateway_status' );
+	}
+
+	public function cancel() {
+		return $this->do_transaction( 'cancelPayment' );
+	}
+
+	public function shouldRectifyOrphan() {
+		return true;
 	}
 }
