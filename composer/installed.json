@@ -3037,12 +3037,12 @@
     },
     {
         "name": "wikimedia/smash-pig",
-        "version": "v0.5.6.4",
-        "version_normalized": "0.5.6.4",
+        "version": "v0.5.6.5",
+        "version_normalized": "0.5.6.5",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "c7a93a1b158f60e5e46bc0c6ab8c113df7174a63"
+            "reference": "d6dca86f90ec6f3a00a40eff940676b04c7ab009"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3063,7 +3063,7 @@
             "mediawiki/mediawiki-codesniffer": "0.11.0",
             "phpunit/phpunit": "^5.6"
         },
-        "time": "2018-05-24T23:08:39+00:00",
+        "time": "2018-05-25T22:48:14+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
