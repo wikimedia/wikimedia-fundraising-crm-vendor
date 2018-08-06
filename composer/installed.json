@@ -2941,7 +2941,7 @@
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-            "reference": "e1d3c8bc2759a4243c02a69c2189222d6f7e8d7a"
+            "reference": "1ee2fd18c0e8a236fb559468ae300b40af5bf9fd"
         },
         "require": {
             "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -2961,7 +2961,7 @@
             "mediawiki/mediawiki-codesniffer": "0.11.0",
             "wikimedia/testing-access-wrapper": "~1.0"
         },
-        "time": "2018-05-29T22:51:30+00:00",
+        "time": "2018-07-23T16:02:11+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -2973,6 +2973,7 @@
                 "gateway_common",
                 "gateway_forms",
                 "globalcollect_gateway",
+                "ingenico_gateway",
                 "paypal_gateway",
                 "DonationInterface.class.php"
             ],
@@ -3037,12 +3038,12 @@
     },
     {
         "name": "wikimedia/smash-pig",
-        "version": "v0.5.6.5",
-        "version_normalized": "0.5.6.5",
+        "version": "v0.5.7",
+        "version_normalized": "0.5.7.0",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "d6dca86f90ec6f3a00a40eff940676b04c7ab009"
+            "reference": "dae484ae6bb0e83914f8e8502a3224c697c2f20c"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3063,7 +3064,7 @@
             "mediawiki/mediawiki-codesniffer": "0.11.0",
             "phpunit/phpunit": "^5.6"
         },
-        "time": "2018-05-25T22:48:14+00:00",
+        "time": "2018-07-18T18:18:10+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {

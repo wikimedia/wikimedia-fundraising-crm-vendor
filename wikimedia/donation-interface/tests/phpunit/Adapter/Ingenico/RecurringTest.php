@@ -40,10 +40,10 @@ class DonationInterface_Adapter_Ingenico_RecurringTest extends BaseIngenicoTestC
 			->method( 'createHostedPayment' )
 			->with( $this->callback( function ( $arg ) {
 				$this->assertArraySubset( array(
-					'cardPaymentSpecificInput' => array(
+					'cardPaymentMethodSpecificInput' => array(
 						'tokenize' => true,
-						'isRecurring' => true,
 						'recurringPaymentSequenceIndicator' => 'first',
+						'skipAuthentication' => true,
 					)
 				), $arg );
 				return true;
