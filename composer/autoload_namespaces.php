@@ -9,6 +9,8 @@ return array(
     'cogpowered\\FineDiff' => array($vendorDir . '/cogpowered/finediff/src'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'PHPQueue' => array($vendorDir . '/coderkungfu/php-queue/src'),
+    'Google_Service_' => array($vendorDir . '/google/apiclient-services/src'),
+    'Google_' => array($vendorDir . '/google/apiclient/src'),
     'ForceUTF8\\' => array($vendorDir . '/neitanod/forceutf8/src'),
     'Dflydev\\DotAccessData' => array($vendorDir . '/dflydev/dot-access-data/src'),
     'Clio' => array($vendorDir . '/clio/clio/src'),

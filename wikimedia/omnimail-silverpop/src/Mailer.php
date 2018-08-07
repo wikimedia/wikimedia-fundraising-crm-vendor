@@ -9,6 +9,7 @@ use Omnimail\MailerInterface;
 use Omnimail\Silverpop\Requests\RequestInterface;
 use Omnimail\Silverpop\Responses\ResponseInterface;
 use Omnimail\Silverpop\Responses\Offline\OfflineMailingsResponse;
+use Omnimail\Silverpop\Responses\Contact;
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,6 +52,9 @@ class Mailer extends AbstractMailer implements MailerInterface
       return array(
         'username' => array('type' => 'String', 'required' => TRUE),
         'password' => array('type' => 'String', 'required' => TRUE),
+        'clientId' => array('type' => 'String', 'required' => FALSE),
+        'clientSecret' => array('type' => 'String', 'required' => FALSE),
+        'refreshToken' => array('type' => 'String', 'required' => FALSE),
         'engage_server' => array('type' => 'String', 'required' => FALSE, 'default' => 4),
       );
     }
@@ -132,5 +136,40 @@ class Mailer extends AbstractMailer implements MailerInterface
     $class = "Omnimail\\Silverpop\\Requests\\" . $class;
     return parent::createRequest($class, $parameters);
   }
+
+  /**
+   * Get an object to manage contacts with the provider.
+   *
+   * @param array $parameters
+   *   - database_id (int)
+   *   - data (array) e.g [['Email', a@example.com']['Email', b@example.com']]
+   *
+   * @return Contact
+   */
+  public function privacyInformationRequest($parameters = [])
+  {
+    return $this->createRequest('PrivacyInformationRequest', array_merge($parameters, array(
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+      'is_use_rest' => TRUE,
+    )));
+  }
+
+    /**
+     * Get an object to manage contacts with the provider.
+     *
+     * @param array $parameters
+     *   - database_id (int)
+     *   - data (array) e.g [['Email', a@example.com']['Email', b@example.com']]
+     *
+     * @return Contact
+     */
+    public function privacyDeleteRequest($parameters = []) {
+      return $this->createRequest('PrivacyDeleteRequest', array_merge($parameters, array(
+        'credentials' => $this->getCredentials(),
+         'client' => $this->getClient(),
+          'is_use_rest' => TRUE,
+       )));
+    }
 
 }

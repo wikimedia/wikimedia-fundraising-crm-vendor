@@ -9,10 +9,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
     public static $files = array (
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
         'ddc0a4d7e61c0286f0f8593b1903e894' => __DIR__ . '/..' . '/clue/stream-filter/src/functions.php',
-        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
-        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         'e40631d46120a9c38ea139981f8dab26' => __DIR__ . '/..' . '/ircmaxell/password-compat/lib/password.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
@@ -88,6 +88,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'GuzzleHttp\\Psr7\\' => 16,
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
+            'Google\\Auth\\' => 12,
             'GetOptionKit\\' => 13,
             'Geocoder\\Provider\\Nominatim\\' => 28,
             'Geocoder\\Provider\\MapQuest\\' => 27,
@@ -97,6 +98,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'Geocoder\\Http\\' => 14,
             'Geocoder\\' => 9,
             'GeoIp2\\' => 7,
+        ),
+        'F' => 
+        array (
+            'Firebase\\JWT\\' => 13,
         ),
         'C' => 
         array (
@@ -248,6 +253,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
         ),
+        'Google\\Auth\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/google/auth/src',
+        ),
         'GetOptionKit\\' => 
         array (
             0 => __DIR__ . '/..' . '/corneltek/getoptionkit/src',
@@ -284,6 +293,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
         ),
+        'Firebase\\JWT\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
+        ),
         'Composer\\CaBundle\\' => 
         array (
             0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
@@ -318,6 +331,17 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'PHPQueue' => 
             array (
                 0 => __DIR__ . '/..' . '/coderkungfu/php-queue/src',
+            ),
+        ),
+        'G' => 
+        array (
+            'Google_Service_' => 
+            array (
+                0 => __DIR__ . '/..' . '/google/apiclient-services/src',
+            ),
+            'Google_' => 
+            array (
+                0 => __DIR__ . '/..' . '/google/apiclient/src',
             ),
         ),
         'F' => 
@@ -412,6 +436,8 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'GlobalCollectOrphanAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/orphan.adapter.php',
         'GlobalCollectOrphanRectifier' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/GlobalCollectOrphanRectifier.php',
         'GlobalCollectRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/scripts/refund.php',
+        'Google_Service_Exception' => __DIR__ . '/..' . '/google/apiclient/src/Google/Service/Exception.php',
+        'Google_Service_Resource' => __DIR__ . '/..' . '/google/apiclient/src/Google/Service/Resource.php',
         'Ingenico3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/Ingenico3DSecure.php',
         'IngenicoAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/ingenico.adapter.php',
         'IngenicoFinancialNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoFinancialNumber.php',

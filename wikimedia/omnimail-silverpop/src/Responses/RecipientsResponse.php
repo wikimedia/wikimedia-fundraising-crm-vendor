@@ -119,7 +119,7 @@ class RecipientsResponse extends BaseResponse
         $row['email'] = addslashes($row['email']);
       }
       if (isset($row['recipient_action_timestamp'])) {
-        $row['recipient_action_timestamp'] = strtotime($row['recipient_action_timestamp']);
+        $row['recipient_action_timestamp'] = strtotime($row['recipient_action_timestamp'] . ' GMT');
       }
       if (isset($row[$this->contactReferenceField])) {
         $row->contactIdentifier = $row[$this->contactReferenceField];
