@@ -10,6 +10,8 @@ namespace Omnimail\Silverpop\Requests;
 use Omnimail\Common\Credentials;
 use Omnimail\Common\Helper;
 use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
+use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
+use SilverpopConnector\SilverpopRestConnector;
 use Omnimail\Silverpop\Responses\ResponseInterface;
 use SilverpopConnector\SilverpopConnector;
 
@@ -185,13 +187,19 @@ abstract class BaseRequest implements RequestInterface
   public function __construct($parameters) {
     Helper::initialize($this, array_merge($this->getDefaultParameters(), $parameters));
     $this->silverPop = SilverpopGuzzleConnector::getInstance($this->getEndPoint());
-    if ($this->client) {
-      $this->silverPop->setClient($this->client);
-    }
     if (!empty($parameters['is_use_rest'])) {
+        $this->restConnector = SilverpopRestConnector::getInstance();
+        if (!empty($parameters['client'])) {
+            $this->restConnector->setClient($parameters['client']);
+        }
       $this->silverPop->authenticateRest($this->getCredential('client_id'), $this->getCredential('client_secret'), $this->getCredential('refresh_token'));
+      $this->setDatabaseId($this->getCredential('database_id'));
     }
     else {
+      $this->xmlConnector = SilverpopGuzzleXmlConnector::getInstance();
+      if ($this->client) {
+          $this->xmlConnector->setClient($this->client);
+      }
       $this->silverPop->authenticateXml($this->getCredential('username'), $this->getCredential('password'));
     }
   }

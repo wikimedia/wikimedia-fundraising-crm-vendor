@@ -57,7 +57,14 @@ class PrivacyInformationRequest extends SilverpopBaseRequest
    * @return GroupMembersResponse
    */
   public function getResponse() {
-    $response = new Contact($this->requestData());
+    $result = $this->requestData();
+    // @todo if we want to use this then do a lot more here. This has really only
+    // been developed as an easier-to-test variant of erase so am reluctant to
+    // make decisions now as to how to display data.
+    $optInTimestamp = $result['data']['contacts'][0]['data']['consents'][0]['consentDate'] . ' GMT';
+    $response = new Contact([
+      'opt_in_timestamp' => strtotime($optInTimestamp),
+    ]);
     return $response;
   }
 

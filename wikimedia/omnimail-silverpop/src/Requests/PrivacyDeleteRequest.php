@@ -10,9 +10,9 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
 {
 
     /**
-     * Array of emails to delete information for to honour an information deletion request.
+     * Single email or array of emails to delete information for to honour an information deletion request.
      *
-     * @var array
+     * @var array|string
      */
     protected $email;
 
@@ -65,7 +65,20 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
      * Request data from the provider.
      */
     protected function requestData() {
-        return $this->silverPop->gdpr_erasure(['data' => [['Email', $this->getEmail()]], 'database_id' => $this->getDatabaseId()]);
+        return $this->silverPop->gdpr_erasure(['data' => $this->getEmailArray(), 'database_id' => $this->getDatabaseId()]);
+    }
+
+    protected function getEmailArray() {
+      if (!is_array($this->getEmail())) {
+        return [['Email', $this->getEmail()]];
+      }
+      else {
+        $return = [];
+        foreach ($this->getEmail() as $email) {
+          $return[] = ['Email' , $email];
+        }
+      }
+      return $return;
     }
 
     /**
