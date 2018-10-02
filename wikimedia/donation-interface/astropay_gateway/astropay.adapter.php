@@ -64,7 +64,7 @@ class AstroPayAdapter extends GatewayAdapter {
 		// 8: Operation rejected by bank
 		$this->addCodeRange( 'PaymentStatus', 'result', FinalStatus::FAILED, 8 );
 		// 9: Amount Paid.  Transaction successfully concluded
-		$this->addCodeRange( 'PaymentStatus', 'result', FinalStatus::COMPLETE, 9 );
+		$this->addCodeRange( 'PaymentStatus', 'result',	 FinalStatus::COMPLETE, 9 );
 	}
 
 	/**
@@ -369,7 +369,8 @@ class AstroPayAdapter extends GatewayAdapter {
 					// this like a validation error and make amount editable.
 					$error = new ValidationError(
 						'amount',
-						'donate_interface-error-msg-limit'
+						'donate_interface-error-msg-limit',
+						[ $this->localizeGlobal( 'OtherWaysURL' ) ]
 					);
 				} elseif ( preg_match( '/param x_cpf$/i', $response['desc'] ) ) {
 					// Something wrong with the fiscal number

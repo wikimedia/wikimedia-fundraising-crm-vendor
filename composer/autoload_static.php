@@ -372,6 +372,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'AdyenGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_gateway.body.php',
         'AdyenGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_resultswitcher.body.php',
         'AdyenHostedSignature' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/AdyenHostedSignature.php',
+        'AdyenMethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/AdyenMethodCodec.php',
         'AmazonAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon.adapter.php',
         'AmazonBillingApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon.api.php',
         'AmazonGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon_gateway.body.php',

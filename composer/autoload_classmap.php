@@ -10,6 +10,7 @@ return array(
     'AdyenGateway' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen_gateway.body.php',
     'AdyenGatewayResult' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen_resultswitcher.body.php',
     'AdyenHostedSignature' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/AdyenHostedSignature.php',
+    'AdyenMethodCodec' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/AdyenMethodCodec.php',
     'AmazonAdapter' => $vendorDir . '/wikimedia/donation-interface/amazon_gateway/amazon.adapter.php',
     'AmazonBillingApi' => $vendorDir . '/wikimedia/donation-interface/amazon_gateway/amazon.api.php',
     'AmazonGateway' => $vendorDir . '/wikimedia/donation-interface/amazon_gateway/amazon_gateway.body.php',

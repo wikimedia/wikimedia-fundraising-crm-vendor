@@ -51,7 +51,7 @@ $forms_whitelist['obt-bpay'] = array(
  **********************/
 
 $forms_whitelist['cc-vmad'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'amex', 'discover' ) ),
 	'countries' => array(
 		'+' => array( 'US', ),
@@ -59,7 +59,7 @@ $forms_whitelist['cc-vmad'] = array(
 );
 
 $forms_whitelist['cc-vjma'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'jcb', 'mc', 'amex' ) ),
 	'countries' => array(
 		'+' => array( 'JP', ),
@@ -68,7 +68,7 @@ $forms_whitelist['cc-vjma'] = array(
 );
 
 $forms_whitelist['cc-jvma'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'jcb', 'visa', 'mc', 'amex' ) ),
 	'countries' => array(
 		'+' => array( 'JP', ),
@@ -77,7 +77,7 @@ $forms_whitelist['cc-jvma'] = array(
 );
 
 $forms_whitelist['cc-vmaj'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'amex', 'jcb' ) ),
 	'countries' => array(
 		'+' => array( 'AD', 'AT', 'AU', 'BE', 'BH', 'DE', 'EC', 'ES', 'FI', 'GB',
@@ -87,7 +87,7 @@ $forms_whitelist['cc-vmaj'] = array(
 );
 
 $forms_whitelist['cc-vmd'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'discover' ) ),
 	'countries' => array(
 		// Array merge with cc-vmad as fallback in case 'a' goes down
@@ -99,7 +99,7 @@ $forms_whitelist['cc-vmd'] = array(
 );
 
 $forms_whitelist['cc-vmj'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'jcb' ) ),
 	'countries' => array(
 		// Array merge with cc-vmaj as fallback in case 'a' goes down
@@ -111,7 +111,7 @@ $forms_whitelist['cc-vmj'] = array(
 );
 
 $forms_whitelist['cc-vma'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'amex' ) ),
 	'countries' => array(
 		// Array merge with cc-vmaj as fallback in case 'j' goes down
@@ -128,7 +128,7 @@ $forms_whitelist['cc-vma'] = array(
 );
 
 $forms_whitelist['cc-vm'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc' ) ),
 	'countries' => array(
 		// Array merge with cc-vmj as fallback in case 'j' goes down
@@ -150,7 +150,7 @@ $forms_whitelist['cc-vm'] = array(
 );
 
 $forms_whitelist['cc-a'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'amex' ) ),
 	'countries' => array(
 		'+' => array_merge(
@@ -161,13 +161,25 @@ $forms_whitelist['cc-a'] = array(
 );
 
 $forms_whitelist['cc'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => 'ALL' ),
 	'countries' => array( '-' => 'VN' )
 );
 
+/**
+ * FIXME: remove as soon as we know this isn't being sent by anyone.
+ */
 $forms_whitelist['cc-ingenico'] = array(
 	'gateway' => 'ingenico',
+	'payment_methods' => array( 'cc' => 'ALL' ),
+	'selection_weight' => 10,
+);
+
+/**
+ * Fallback for old Ingenico API
+ */
+$forms_whitelist['cc-globalcollect'] = array(
+	'gateway' => 'globalcollect',
 	'payment_methods' => array( 'cc' => 'ALL' ),
 	'selection_weight' => 10,
 );
@@ -177,7 +189,7 @@ $forms_whitelist['cc-ingenico'] = array(
  * In the meantime: Visa & Mastercard, USD-only.
  */
 $forms_whitelist['cc-vietnam'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc' ) ),
 	'countries' => array( '+' => 'VN' ),
 	'currencies' => array( '+' => 'USD' ),
@@ -196,7 +208,7 @@ $forms_whitelist['email-cc-vm'] = $forms_whitelist['cc-vm'];
  *************************/
 
 $forms_whitelist['rcc-vmad'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'amex', 'discover' ) ),
 	'recurring',
 	'countries' => array(
@@ -205,7 +217,7 @@ $forms_whitelist['rcc-vmad'] = array(
 );
 
 $forms_whitelist['rcc-vmaj'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'amex', 'jcb' ) ),
 	'recurring',
 	'countries' => array(
@@ -214,7 +226,7 @@ $forms_whitelist['rcc-vmaj'] = array(
 );
 
 $forms_whitelist['rcc-vmd'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'discover' ) ),
 	'recurring',
 	'countries' => array(
@@ -232,7 +244,7 @@ $forms_whitelist['rcc-vmj'] = array(
 );
 
 $forms_whitelist['rcc-vma'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc', 'amex' ) ),
 	'recurring',
 	'countries' => array(
@@ -241,7 +253,7 @@ $forms_whitelist['rcc-vma'] = array(
 );
 
 $forms_whitelist['rcc-vm'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => array( 'visa', 'mc' ) ),
 	'recurring',
 	'countries' => array(
@@ -250,14 +262,27 @@ $forms_whitelist['rcc-vm'] = array(
 );
 
 $forms_whitelist['rcc'] = array(
-	'gateway' => 'globalcollect',
+	'gateway' => 'ingenico',
 	'payment_methods' => array( 'cc' => 'ALL' ),
 	'recurring',
 	'selection_weight' => 100,
 );
 
+/**
+ * FIXME: remove as soon as we know this isn't being sent by anyone.
+ */
 $forms_whitelist['rcc-ingenico'] = array(
 	'gateway' => 'ingenico',
+	'payment_methods' => array( 'cc' => 'ALL' ),
+	'recurring',
+	'selection_weight' => 10,
+);
+
+/**
+ * Fallback for old Ingenico API
+ */
+$forms_whitelist['rcc-globalcollect'] = array(
+	'gateway' => 'globalcollect',
 	'payment_methods' => array( 'cc' => 'ALL' ),
 	'recurring',
 	'selection_weight' => 10,
@@ -429,19 +454,30 @@ $forms_whitelist['astropay-uy'] = array(
 $forms_whitelist['adyen'] = array(
 	'gateway' => 'adyen',
 	'countries' => array( '+' => array( 'IL', 'JP' ), ),
-	'currencies' => array( '+' => array( 'ILS', 'JPY' ), ),
+	'currencies' => array( '+' => array( 'ILS', 'USD' ), ),
 	'payment_methods' => array(
 		'cc' => array( 'visa', 'mc', 'amex', 'discover', 'jcb' ),
 	),
 	'selection_weight' => 110,
 );
 
+$forms_whitelist['adyen-usd'] = array(
+	'gateway' => 'adyen',
+	'countries' => array( '+' => array( 'CA', 'FR', 'GB', 'IL', 'JP', 'NL', 'UA', 'US', ), ),
+	'currencies' => array( '+' => array( 'USD', ), ),
+	'payment_methods' => array(
+		'cc' => array( 'visa', 'mc', 'amex', 'discover', 'cb', 'jcb' ),
+	),
+	// Setting form chooser weight to zero so this form is not chosen as default
+	'selection_weight' => 0,
+);
+
 $forms_whitelist['adyen-test'] = array(
 	'gateway' => 'adyen',
 	'countries' => array( '+' => array( 'CA', 'FR', 'GB', 'IL', 'JP', 'NL', 'UA', 'US', ), ),
-	'currencies' => array( '+' => array( 'CAD', 'EUR', 'GBP', 'ILS', 'JPY', 'UAH', 'USD', ), ),
+	'currencies' => array( '+' => array( 'CAD', 'EUR', 'GBP', 'JPY'. 'ILS', 'UAH', 'USD', ), ),
 	'payment_methods' => array(
-		'cc' => array( 'visa', 'mc', 'amex', 'discover', 'cb', 'jcb' ),
+		'cc' => array( 'visa', 'mc', 'amex', 'discover', 'cb' ),
 	),
 	// Setting form chooser weight to zero so this form is not chosen as default
 	'selection_weight' => 0,

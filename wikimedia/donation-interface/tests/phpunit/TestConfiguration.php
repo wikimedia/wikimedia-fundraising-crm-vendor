@@ -76,7 +76,7 @@ global $wgDonationInterfaceTest,
 	$wgAstroPayGatewayTestingURL,
 	$wgAstroPayGatewayAccountInfo,
 	$wgAstroPayGatewayFallbackCurrency,
-	$wgDonationInterfaceMinFraudUserId,
+	$wgDonationInterfaceMinFraudAccountId,
 	$wgDonationInterfaceMinFraudLicenseKey,
 	$wgDonationInterfaceMinFraudClientOptions,
 	$wgDonationInterfaceEnableMinFraud,
@@ -114,7 +114,7 @@ $wgDonationInterfaceGatewayAdapters = array(
 $wgDonationInterfaceTest = true;
 $wgDonationInterfaceMerchantID = 'test';
 
-$wgDonationInterfaceThankYouPage = 'https://wikimediafoundation.org/wiki/Thank_You';
+$wgDonationInterfaceThankYouPage = 'https://donate.wikimedia.org/wiki/Thank_You';
 
 /** GlobalCollect **/
 $wgGlobalCollectGatewayAccountInfo = array();
@@ -187,7 +187,7 @@ $wgAstroPayGatewayAccountInfo['test'] = array(
 );
 $wgAstroPayGatewayFallbackCurrency = false;
 
-$wgDonationInterfaceMinFraudUserId = 1;
+$wgDonationInterfaceMinFraudAccountId = 1;
 $wgDonationInterfaceMinFraudLicenseKey = 'testkey';
 
 $wgDonationInterfaceMinFraudClientOptions = array(

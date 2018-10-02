@@ -121,11 +121,36 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$data['appeal_text'] = $output->parse( '{{' . $appealWikiTemplate . '}}' );
 		$data['is_cc'] = ( $this->gateway->getPaymentMethod() === 'cc' );
 
+		$this->handleOptIn( $data );
 		$this->addSubmethods( $data );
 		$this->addRequiredFields( $data );
 		$this->addCurrencyData( $data );
 		$data['recurring'] = (bool)$data['recurring'];
 		return $data;
+	}
+
+	protected function handleOptIn( &$data ) {
+		// Since this value can be 1, 0, or unset, we need to make
+		// special conditionals for the mustache logic
+		if ( !isset( $data['opt_in'] ) || $data['opt_in'] === '' ) {
+			return;
+		}
+		switch ( (string)$data['opt_in'] ) {
+			case '1':
+				$data['opted_in'] = true;
+				break;
+			case '0':
+				$data['opted_out'] = true;
+				break;
+			default:
+				$logger = DonationLoggerFactory::getLogger(
+					$this->gateway,
+					'',
+					$this->gateway
+				);
+				$logger->warning( "Invalid opt_in value {$data['opt_in']}" );
+				break;
+		}
 	}
 
 	protected function addSubmethods( &$data ) {
@@ -195,9 +220,13 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			'postal_code',
 			'street_address',
 		);
+		// These are shown outside of the 'Billing information' block
+		$outside_personal_block = array(
+			'opt_in'
+		);
+		$show_personal_block = false;
 		$address_field_count = 0;
 		$required_fields = $this->gateway->getRequiredFields();
-		$data['show_personal_fields'] = !empty( $required_fields );
 		foreach ( $required_fields as $field ) {
 			$data["{$field}_required"] = true;
 
@@ -208,7 +237,11 @@ class Gateway_Form_Mustache extends Gateway_Form {
 					$address_field_count++;
 				}
 			}
+			if ( !in_array( $field, $outside_personal_block ) ) {
+				$show_personal_block = true;
+			}
 		}
+		$data['show_personal_fields'] = $show_personal_block;
 
 		if ( !empty( $data['address_required'] ) ) {
 			$classes = array(
@@ -318,12 +351,20 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	}
 
 	protected function getUrls() {
-		return array(
-			'problems_url' => $this->gateway->localizeGlobal( 'ProblemsURL' ),
-			'otherways_url' => $this->gateway->localizeGlobal( 'OtherWaysURL' ),
-			'faq_url' => $this->gateway->localizeGlobal( 'FaqURL' ),
-			'tax_url' => $this->gateway->localizeGlobal( 'TaxURL' ),
-		);
+		$map = [
+			'problems' => 'Problems',
+			'otherways' => 'OtherWays',
+			'faq' => 'Faq',
+			'tax' => 'Tax',
+			'policy' => 'Policy'
+		];
+		$urls = [];
+		foreach ( $map as $contextName => $globalName ) {
+			$urls[$contextName . '_url'] = htmlspecialchars(
+				$this->gateway->localizeGlobal( $globalName . 'URL' )
+			);
+		}
+		return $urls;
 	}
 
 	// For the following helper functions, we can't use self:: to refer to

@@ -167,7 +167,7 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 			),
 			'informationsharing' => array(
 				'nodename' => 'p',
-				'innerhtml' => wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( 'it' )->text(),
+				'innerhtmlmatches' => '~' . wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( 'it' )->text() . '~',
 			),
 			'country' => array(
 				'nodename' => 'input',
@@ -207,7 +207,7 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 			),
 			'informationsharing' => array(
 				'nodename' => 'p',
-				'innerhtml' => wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( $language )->text(),
+				'innerhtmlmatches' => '~' . wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( $language )->text() . '~',
 			),
 			'country' => array(
 				'nodename' => 'input',
@@ -249,7 +249,7 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 			),
 			'informationsharing' => array(
 				'nodename' => 'p',
-				'innerhtml' => wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( $language )->text(),
+				'innerhtmlmatches' => '~' . wfMessage( 'donate_interface-informationsharing', '.*' )->inLanguage( $language )->text() . '~',
 			),
 			'state_province' => array(
 				'nodename' => 'select',
@@ -270,7 +270,7 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 
 	/**
 	 * Test that we show an email opt-in checkbox for Great Britain
-	 *
+	 */
 	public function testGCFormLoadGB() {
 		$init = $this->getDonorTestData( 'GB' );
 		unset( $init['order_id'] );
@@ -288,5 +288,5 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		);
 
 		$this->verifyFormOutput( 'GlobalCollectGateway', $init, $assertNodes, true );
-	}*/
+	}
 }

@@ -49,14 +49,10 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 				'hostedCheckoutSpecificInput' => array(
 					'isRecurring',
 					'locale',
+					'returnCancelState',
 					'paymentProductFilters' => array(
 						'restrictTo' => array(
-							'products' => array(
-								// HACK! this array should be a simple
-								// list of payment ids, not an associative array
-								// so... use 'null' to flag that?
-								'paymentProductId' => null
-							)
+							'groups',
 						)
 					),
 					'returnUrl',
@@ -110,7 +106,11 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 			),
 			'values' => array(
 				'showResultPage' => 'false',
+				'returnCancelState' => 'true',
 				'descriptor' => WmfFramework::formatMessage( 'donate_interface-donation-description' ),
+				'groups' => array(
+					'cards',
+				)
 			),
 			'response' => array(
 				'hostedCheckoutId'
@@ -335,8 +335,36 @@ class IngenicoAdapter extends GlobalCollectAdapter {
 		return $this->do_transaction( 'approvePayment' );
 	}
 
+	/**
+	 * Get gateway status code from unstaged data.
+	 *
+	 * Note: We currently add in substitute status codes for
+	 * IN_PROGRESS and CANCELLED_BY_CONSUMER so that we can map these
+	 * to a valid \SmashPig\CrmLink\FinalStatus. Ingenico does not return a
+	 * status code for these two states, only the text description.
+	 * This behaviour should updated when globalcollect is retired.
+	 *
+	 * @param array $txnData
+	 *
+	 * @return int|null
+	 * @see \SmashPig\CrmLink\FinalStatus
+	 */
 	protected function getStatusCode( $txnData ) {
-		return $this->getData_Unstaged_Escaped( 'gateway_status' );
+		$statusCode = $this->getData_Unstaged_Escaped( 'gateway_status' );
+		if ( $statusCode == null &&
+			in_array( $txnData['status'], [ 'IN_PROGRESS', 'CANCELLED_BY_CONSUMER' ] ) ) {
+			switch ( $txnData['status'] ) {
+				case 'CANCELLED_BY_CONSUMER':
+					// maps to CANCELLED
+					$statusCode = 99999;
+					break;
+				case 'IN_PROGRESS':
+					// maps to the PENDING range
+					$statusCode = 25;
+					break;
+			}
+		}
+		return $statusCode;
 	}
 
 	public function cancel() {
