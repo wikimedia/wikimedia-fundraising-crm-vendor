@@ -26,6 +26,8 @@ var_map:
     recurring_payment_id: subscr_id
     recur_times: installments
     subscr_id: subscr_id
+    # When a message has old and new subscr_id, we will only know the old one
+    old_subscr_id: subscr_id
     # FIXME This is only true for refund messages.  Where to represent?
     #txn_id: gateway_refund_id
     mc_currency: currency
@@ -33,8 +35,8 @@ var_map:
     # FIXME rename refund_type
     reason_code: type
     #test_ipn:  # signals test mode
-    custom: contribution_tracking_id
-    rp_invoice_id: contribution_tracking_id
+    custom: order_id
+    rp_invoice_id: order_id
     payer_email: email
     first_name: first_name
     last_name: last_name
@@ -57,7 +59,9 @@ var_map:
     mc_fee: fee
 
 rejects:
-    txn_type: new_case
+    txn_type:
+        - new_case
+        - subscr_modify
 
 # txn types defined here:
 # https://developer.paypal.com/docs/classic/ipn/integration-guide/IPNandPDTVariables/#id08CTB0S055Z
@@ -97,7 +101,7 @@ messages:
             - subscr_cancel
             - subscr_eot
             - subscr_failed
-            - subscr_modify
+            # - subscr_modify ignored till we make sure Civi can handle it
             - subscr_signup
             # the following mean we got money \o/
             - subscr_payment

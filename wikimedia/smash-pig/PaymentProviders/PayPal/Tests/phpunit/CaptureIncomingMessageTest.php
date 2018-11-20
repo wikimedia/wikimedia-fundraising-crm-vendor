@@ -39,6 +39,7 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 		'express_checkout.json' => 'donations',
 		'recurring_payment_profile_created.json' => 'recurring',
 		'subscr_signup.json' => 'recurring',
+		'subscr_cancel.json' => 'recurring',
 		'subscr_payment.json' => 'recurring',
 		'recurring_payment.json' => 'recurring',
 		'refund.json' => 'refund',
@@ -157,7 +158,11 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 		} else {
 			$this->assertNotEmpty( $message );
 			if ( isset( $message['contribution_tracking_id'] ) ) {
-				$this->assertEquals( $message['contribution_tracking_id'], $message['order_id'] );
+				$ctId = $message['contribution_tracking_id'];
+				$this->assertEquals(
+					$ctId,
+					substr( $message['order_id'], 0, strlen( $ctId ) )
+				);
 			}
 
 			if ( isset( $message['supplemental_address_1'] ) ) {
@@ -231,8 +236,13 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 			$this->assertEmpty( $message );
 		} else {
 			$this->assertNotEmpty( $message );
+			// order_id should start with the ct_id
 			if ( isset( $message['contribution_tracking_id'] ) ) {
-				$this->assertEquals( $message['contribution_tracking_id'], $message['order_id'] );
+				$ctId = $message['contribution_tracking_id'];
+				$this->assertEquals(
+					$ctId,
+					substr( $message['order_id'], 0, strlen( $ctId ) )
+				);
 			}
 
 			if ( isset( $message['supplemental_address_1'] ) ) {
@@ -271,4 +281,31 @@ class CaptureIncomingMessageTest extends BaseSmashPigUnitTestCase {
 		$this->assertFalse( $validator->shouldRetry( $response ) );
 	}
 
+	/**
+	 * Test that txn_type subscr_modify is ignored
+	 */
+	public function testIgnore() {
+		$this->getCurlMock( 'VERIFIED' );
+		$payload = json_decode(
+			file_get_contents( __DIR__ . '/../Data/subscr_modify.json' ),
+			true
+		);
+		$this->capture( $payload );
+		$jobQueue = $this->config->object( 'data-store/jobs-paypal' );
+		$jobMessage = $jobQueue->pop();
+
+		$job = JsonSerializableObject::fromJsonProxy(
+			$jobMessage['php-message-class'],
+			json_encode( $jobMessage )
+		);
+
+		$success = $job->execute();
+		// Job should succeed
+		$this->assertTrue( $success );
+		// ...but not send any messages
+		foreach ( [ 'donations', 'recurring', 'refund' ] as $queue ) {
+			$msg = $this->config->object( "data-store/$queue" )->pop();
+			$this->assertNull( $msg );
+		}
+	}
 }
