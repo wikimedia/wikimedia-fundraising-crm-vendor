@@ -1602,7 +1602,7 @@
         "source": {
             "type": "git",
             "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-            "reference": "f8e78aa7eba9011680e2e827759311bdeba0006c"
+            "reference": "c7cc6c2b6ec47f517e6550388606b9240b87cb17"
         },
         "require": {
             "ext-curl": "*",
@@ -1614,7 +1614,7 @@
         "require-dev": {
             "phpunit/phpunit": "~4.4 || ^6.1"
         },
-        "time": "2018-08-02T06:25:22+00:00",
+        "time": "2019-02-05T02:40:26+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -3194,7 +3194,7 @@
         "source": {
             "type": "git",
             "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-            "reference": "87f0eb009eb7987cc6821a168cfd02ea2af12dfe"
+            "reference": "84ef15edf7fc24e226360fbd2296867f589e3980"
         },
         "require": {
             "league/csv": "^8.0",
@@ -3205,7 +3205,7 @@
         "require-dev": {
             "guzzlehttp/guzzle": "*"
         },
-        "time": "2018-08-07T23:38:27+00:00",
+        "time": "2019-02-12T02:41:47+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {

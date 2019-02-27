@@ -2,6 +2,7 @@
 
 namespace Omnimail\Silverpop\Requests;
 
+use Omnimail\Silverpop\Responses\EraseResponse;
 use Omnimail\Silverpop\Responses\GroupMembersResponse;
 use Omnimail\Silverpop\Responses\MailingsResponse;
 use Omnimail\Silverpop\Responses\Contact;
@@ -21,7 +22,28 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
      *
      * @var int
      */
-    protected $database_id;
+    protected $database_id = [];
+
+    /**
+     * Parameters for retrieving an in-progress job.
+     *
+     * @var array
+     */
+    protected $retrievalParameters = [];
+
+    /**
+     * @return array
+     */
+    public function getRetrievalParameters() {
+        return $this->retrievalParameters;
+    }
+
+    /**
+     * @param array $retrievalParameters
+     */
+    public function setRetrievalParameters($retrievalParameters) {
+        $this->retrievalParameters = $retrievalParameters;
+    }
 
     /**
      * @return int
@@ -54,10 +76,10 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
     /**
      * Get Response
      *
-     * @return GroupMembersResponse
+     * @return EraseResponse
      */
     public function getResponse() {
-        $response = new Contact($this->requestData());
+        $response = $this->requestData();
         return $response;
     }
 
@@ -65,7 +87,11 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
      * Request data from the provider.
      */
     protected function requestData() {
-        return $this->silverPop->gdpr_erasure(['data' => $this->getEmailArray(), 'database_id' => $this->getDatabaseId()]);
+        $requests = [];
+        foreach ((array) $this->getDatabaseId() as $databaseID) {
+            $requests[] = new EraseResponse($this->silverPop->gdpr_erasure(['data' => $this->getEmailArray(), 'database_id' => $databaseID, 'retrieval_parameters' => $this->getRetrievalParameters()]));
+        }
+        return $requests;
     }
 
     protected function getEmailArray() {

@@ -149,10 +149,12 @@ class Contact {
     $this->data = $data;
   }
 
+
+
   /**
    * Get Silverpop connector object.
    *
-   * @return \SilverpopConnector\SilverpopXmlConnector
+   * @return \SilverpopConnector\SilverpopConnector
    */
   protected function getSilverPop() {
     if (!$this->silverPop) {

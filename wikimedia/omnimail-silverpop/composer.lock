@@ -247,7 +247,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/silverpop-php-connector.git",
-                "reference": "16e7d5e35d5c6ce5a0621fe2c6977bd4628d5781"
+                "reference": "c7cc6c2b6ec47f517e6550388606b9240b87cb17"
             },
             "require": {
                 "ext-curl": "*",
@@ -283,7 +283,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2017-06-13 00:31:45"
+            "time": "2019-02-05T02:40:26+00:00"
         },
         {
             "name": "omnimail/omnimail",
@@ -355,7 +355,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2017-05-15 13:50:56"
+            "time": "2017-05-15T13:50:56+00:00"
         },
         {
             "name": "paragonie/random_compat",
