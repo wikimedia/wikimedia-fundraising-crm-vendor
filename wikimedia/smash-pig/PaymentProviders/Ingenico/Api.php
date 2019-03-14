@@ -7,6 +7,8 @@ use DateTimeZone;
 use SmashPig\Core\Context;
 use SmashPig\Core\Http\OutboundRequest;
 use SmashPig\Core\ApiException;
+use SmashPig\Core\Logging\Logger;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Prepares and sends requests to the Ingenico Connect API.
@@ -45,11 +47,11 @@ class Api {
 	}
 
 	/**
-	 * @param $path
+	 * @param string $path
 	 * @param string $method
-	 * @param null $data
+	 * @param array|null $data
 	 *
-	 * @return mixed
+	 * @return array|null
 	 * @throws \SmashPig\Core\ApiException
 	 */
 	public function makeApiCall( $path, $method = 'POST', $data = null ) {
@@ -59,7 +61,16 @@ class Api {
 				$path .= '?' . http_build_query( $data );
 				$data = null;
 			} else {
+				$originalData = $data;
 				$data = json_encode( $data );
+				// additional logging to catch any json_encode failures.
+				if ( $data === false ) {
+					$jsonError = json_last_error_msg();
+					Logger::debug(
+						"Unable to json_encode() request params. (" . $jsonError . ") (data: " . print_r( $originalData, true ) . ")",
+						$originalData
+					);
+				}
 			}
 		}
 		$url = $this->baseUrl . self::API_VERSION . "/{$this->merchantId}/$path";
@@ -76,25 +87,28 @@ class Api {
 		$this->authenticator->signRequest( $request );
 
 		$response = $request->execute();
-		$decodedResponse = json_decode( $response['body'], true );
+		$decodedResponseBody = json_decode( $response['body'], true );
+		$expectedEmptyBody = ( $response['status'] === Response::HTTP_NO_CONTENT );
 
-		if ( $this->isErrorResponse( $decodedResponse ) ) {
-			$this->throwApiException( $response, $decodedResponse );
+		if ( !( $expectedEmptyBody && empty( $decodedResponseBody ) ) ) {
+			if ( $this->responseBodyHasError( $decodedResponseBody ) ) {
+				$this->throwApiException( $response, $decodedResponseBody );
+			}
 		}
 
-		return $decodedResponse;
+		return $decodedResponseBody;
 	}
 
 	/**
-	 * @param $decodedResponse
+	 * @param array $decodedResponseBody
 	 *
 	 * @return bool
 	 */
-	protected function isErrorResponse( $decodedResponse ) {
-		if ( !isset( $decodedResponse ) ) {
+	protected function responseBodyHasError( $decodedResponseBody ) {
+		if ( !isset( $decodedResponseBody ) ) {
 			return true;
-		} elseif ( !empty( $decodedResponse['errorId'] )
-			&& !empty( $decodedResponse['errors'] ) ) {
+		} elseif ( !empty( $decodedResponseBody['errorId'] )
+			&& !empty( $decodedResponseBody['errors'] ) ) {
 			return true;
 		} else {
 			return false;
