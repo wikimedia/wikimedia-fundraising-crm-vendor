@@ -3194,7 +3194,7 @@
         "source": {
             "type": "git",
             "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-            "reference": "84ef15edf7fc24e226360fbd2296867f589e3980"
+            "reference": "62c0c7d6aa972d9440fe5a40d99410496c8f029f"
         },
         "require": {
             "league/csv": "^8.0",
@@ -3205,7 +3205,7 @@
         "require-dev": {
             "guzzlehttp/guzzle": "*"
         },
-        "time": "2019-02-12T02:41:47+00:00",
+        "time": "2019-05-15T01:25:25+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -3238,8 +3238,8 @@
     },
     {
         "name": "wikimedia/smash-pig",
-        "version": "v0.5.9",
-        "version_normalized": "0.5.9.0",
+        "version": "v0.5.10",
+        "version_normalized": "0.5.10.0",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
