@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * This file is part of the Geocoder package.
  * For the full copyright and license information, please view the LICENSE
@@ -10,11 +8,14 @@ declare(strict_types=1);
  * @license    MIT License
  */
 
-namespace Geocoder\Exception;
+namespace Geocoder\Provider\MapQuest;
 
-/**
- * @author William Durand <william.durand1@gmail.com>
- */
-interface Exception
+use Geocoder\Location;
+
+interface GetAddressInterface
 {
+    /**
+     * @return Location|null
+     */
+    public function getAddress();
 }
