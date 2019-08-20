@@ -9,6 +9,7 @@ namespace Omnimail\Silverpop\Responses;
 
 use phpseclib\Net\Sftp;
 use League\Csv\Reader;
+use League\Csv\Statement;
 
 class RecipientsResponse extends BaseResponse
 {
@@ -51,12 +52,14 @@ class RecipientsResponse extends BaseResponse
     $this->contactReferenceField = $contactReferenceField;
   }
 
-  /**
-   * @return \League\Csv\Reader
-   */
+    /**
+     * @return \League\Csv\Reader
+     * @throws \League\Csv\Exception
+     */
   public function getReader() {
     if (!$this->reader) {
       $this->reader = Reader::createFromPath($this->downloadCsv());
+      $this->reader->setHeaderOffset(0);
     }
     return $this->reader;
   }
@@ -105,30 +108,19 @@ class RecipientsResponse extends BaseResponse
     return ($status === 'COMPLETE');
   }
 
+  /**
+   * @return \League\Csv\ResultSet
+   * @throws \League\Csv\Exception
+   */
   public function getData() {
-    $headerRow = $this->getCsvColumns();
+    $this->setCsvReader();
+    $stmt = (new Statement())->offset($this->getOffset());
 
-    $filterOutRow = function ($row, $rowIndex) {
-      return $rowIndex != 0;
-    };
-    $this->reader->addFilter($filterOutRow);
-    $this->reader->setOffset($this->getOffset());
+    if ($this->getLimit()) {
+      $stmt->limit($this->getLimit());
+    }
 
-    $formatFunction = function ($row) {
-      if (isset($row['email'])) {
-        $row['email'] = addslashes($row['email']);
-      }
-      if (isset($row['recipient_action_timestamp'])) {
-        $row['recipient_action_timestamp'] = strtotime($row['recipient_action_timestamp'] . ' GMT');
-      }
-      if (isset($row[$this->contactReferenceField])) {
-        $row->contactIdentifier = $row[$this->contactReferenceField];
-      }
-      return new Recipient($row);
-    };
-    $keys = (array) $this->normalizeKeys($headerRow);
-    $results = $this->reader->fetchAssoc($keys, $formatFunction);
-    return $results;
+    return $stmt->process($this->reader);
   }
 
   public function isRetrievalRequired() {
@@ -171,20 +163,25 @@ class RecipientsResponse extends BaseResponse
     return $newHeaders;
   }
 
+  /**
+   * @throws \League\Csv\Exception
+   */
   public function setCsvReader() {
     $csvFile = $this->downloadCsv();
     $this->reader = Reader::createFromPath($csvFile);
+    $this->reader->setHeaderOffset(0);
   }
 
-  /**
-   * @return mixed
-   */
+    /**
+     * @return array
+     *
+     * @throws \League\Csv\Exception
+     */
   public function getCsvColumns() {
     if (!$this->reader) {
-      $this->setCsvReader();  
-    } 
-    $headerRow = $this->reader->fetchOne();
-    return $headerRow;
+      $this->setCsvReader();
+    }
+    return $this->reader->getHeader();
   }
 
 }

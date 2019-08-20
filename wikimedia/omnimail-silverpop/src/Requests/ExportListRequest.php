@@ -124,6 +124,9 @@ class ExportListRequest extends SilverpopBaseRequest
     $response->setRetrievalParameters($this->getRetrievalParameters());
     $response->setSilverpop($this->silverPop);
     $response->setOffset($this->getOffset());
+    if ($this->getLimit()) {
+      $response->setLimit($this->getLimit());
+    }
     return $response;
   }
 

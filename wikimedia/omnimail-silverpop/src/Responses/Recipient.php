@@ -62,7 +62,7 @@ class Recipient
      */
     public function getEmail()
     {
-        return (string)$this->email ?: $this->data['email'];
+        return addslashes((string) $this->email ?: $this->data['Email']);
     }
 
     /**
@@ -78,7 +78,7 @@ class Recipient
      */
     public function getRecipientAction()
     {
-        return $this->data['event_type'];
+        return $this->data['Event Type'];
     }
 
     /**
@@ -94,9 +94,9 @@ class Recipient
      */
     public function getRecipientActionTimestamp()
     {
-        return $this->data['recipient_action_timestamp'];
+        return strtotime($this->data['Event Timestamp'] . ' GMT');
     }
-    
+
     public function getRecipientActionIsoDateTime() {
         return (date('Y-m-d H:i:s', $this->getRecipientActionTimestamp()));
     }
@@ -114,7 +114,7 @@ class Recipient
      */
     public function getContactReference()
     {
-        return (string) $this->contactReference ?: $this->data['contactid'];
+        return (string) $this->contactReference ?: $this->data['ContactID'];
     }
 
     /**
@@ -130,7 +130,7 @@ class Recipient
      */
     public function getContactIdentifier()
     {
-        return $this->contactIdentifier ?: $this->data['contact_identifier'];
+        return $this->contactIdentifier ?: $this->data['Recipient Id'];
     }
 
     /**
@@ -139,6 +139,29 @@ class Recipient
     public function setContactIdentifier($contactIdentifier)
     {
         $this->contactIdentifier = $contactIdentifier;
+    }
+
+    /**
+     * @var string The field that maps to the contact reference.
+     *
+     *   In silverpop this is a totally custom field so it could be 'anything'.
+     *   We use ContactID as a default, but if you use something different you
+     *   need to set the field name.
+     */
+    protected $contactReferenceField;
+
+    /**
+     * @return string
+     */
+    public function getContactReferenceField() {
+         return empty($this->contactReferenceField) ? 'ContactID' : $this->contactReferenceField;
+    }
+
+    /**
+     * @param string $contactReferenceField
+     */
+    public function setContactReferenceField($contactReferenceField) {
+        $this->contactReferenceField = $contactReferenceField;
     }
 
     /**
@@ -153,7 +176,7 @@ class Recipient
 
     public function getMailingIdentifier()
     {
-        return (string)$this->data['mailing_identifier'];
+        return (string)$this->data['Mailing Id'];
     }
 
     /**

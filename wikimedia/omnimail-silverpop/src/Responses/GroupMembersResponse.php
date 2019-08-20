@@ -9,6 +9,7 @@ namespace Omnimail\Silverpop\Responses;
 
 use phpseclib\Net\Sftp;
 use League\Csv\Reader;
+use League\Csv\Statement;
 use Omnimail\Silverpop\Responses\Contact;
 
 class GroupMembersResponse extends BaseResponse
@@ -30,15 +31,6 @@ class GroupMembersResponse extends BaseResponse
   protected $reader;
 
   /**
-   * @var string The field that maps to the contact reference.
-   *
-   *   In silverpop this is a totally custom field so it could be 'anything'.
-   *   We use ContactID as a default, but if you use something different you
-   *   need to set the field name.
-   */
-  protected $contactReferenceField;
-
-  /**
    * @return string
    */
   public function getContactReferenceField() {
@@ -53,11 +45,16 @@ class GroupMembersResponse extends BaseResponse
   }
 
   /**
+   * Get Csv Reader object.
+   *
    * @return \League\Csv\Reader
+   *
+   * @throws \League\Csv\Exception
    */
   public function getReader() {
     if (!$this->reader) {
       $this->reader = Reader::createFromPath($this->downloadCsv());
+      $this->reader->setHeaderOffset(0);
     }
     return $this->reader;
   }
@@ -113,33 +110,19 @@ class GroupMembersResponse extends BaseResponse
     return ($status === 'COMPLETE');
   }
 
+    /**
+     * @return \League\Csv\ResultSet
+     *
+     * @throws \League\Csv\Exception
+     */
   public function getData() {
-    $headerRow = $this->getCsvColumns();
+    $stmt = (new Statement())->offset($this->getOffset());
 
-    $filterOutRow = function ($row, $rowIndex) {
-      return $rowIndex != 0;
-    };
-    $this->reader->setOffset($this->getOffset());
-    $this->reader->addFilter($filterOutRow);
+    if ($this->getLimit()) {
+      $stmt->limit($this->getLimit());
+    }
 
-    $formatFunction = function ($row) {
-      if (isset($row['email'])) {
-        $row['email'] = addslashes($row['email']);
-      }
-      if (isset($row['opt_in_date'])) {
-        $row['opt_in_timestamp'] = strtotime($row['opt_in_date']);
-      }
-      if (isset($row['opted_out_date'])) {
-        $row['opted_out_timestamp'] = strtotime($row['opted_out_date']);
-      }
-      if (isset($row[$this->contactReferenceField])) {
-        $row->contactIdentifier = $row[$this->contactReferenceField];
-      }
-      return new Contact($row);
-    };
-    $keys = (array) $this->normalizeKeys($headerRow);
-    $results = $this->reader->fetchAssoc($keys, $formatFunction);
-    return $results;
+    return $stmt->process($this->getReader());
   }
 
   public function isRetrievalRequired() {
@@ -154,44 +137,24 @@ class GroupMembersResponse extends BaseResponse
   }
 
   /**
-   * Map keys to a normalised array, intended to be generic of the provider.
-   *
-   * @param array $csvHeaders
-   *
-   * @return array
-   *   New headers, normalized to something other providers might use.
+   * @throws \League\Csv\Exception
    */
-  public function normalizeKeys($csvHeaders) {
-    $newHeaders = array();
-    $normalizedKeys = array(
-      'Email' => 'email',
-    );
-    foreach ($csvHeaders as $csvHeader) {
-      if (isset($normalizedKeys[$csvHeader])) {
-        $newHeaders[] = $normalizedKeys[$csvHeader];
-      }
-      else {
-        $newHeaders[] = strtolower(str_replace(' ', '_', $csvHeader));
-      }
-    }
-    return $newHeaders;
-  }
-
   public function setCsvReader() {
     $csvFile = $this->downloadCsv();
     $this->reader = Reader::createFromPath($csvFile);
-    $this->reader->setOffset($this->getOffset());
+    $this->reader->setHeaderOffset(0);
   }
 
-  /**
-   * @return mixed
-   */
+    /**
+     * @return mixed
+     *
+     * @throws \League\Csv\Exception
+     */
   public function getCsvColumns() {
     if (!$this->reader) {
-      $this->setCsvReader();  
-    } 
-    $headerRow = $this->reader->fetchOne();
-    return $headerRow;
+      $this->setCsvReader();
+    }
+    return $this->reader->getHeader();
   }
 
 }

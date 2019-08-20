@@ -17,7 +17,7 @@ class Contact {
   /**
    * @var array
    */
-  protected $data = array();
+  protected $data = [];
 
   /**
    * @var string
@@ -31,6 +31,28 @@ class Contact {
    */
   protected $contactIdentifier;
 
+  /**
+   * @var string The field that maps to the contact reference.
+   *
+   *   In silverpop this is a totally custom field so it could be 'anything'.
+   *   We use ContactID as a default, but if you use something different you
+   *   need to set the field name.
+   */
+  protected $contactReferenceField;
+
+  /**
+   * @return string
+   */
+  public function getContactReferenceField() {
+    return empty($this->contactReferenceField) ? 'ContactID' : $this->contactReferenceField;
+  }
+
+  /**
+   * @param string $contactReferenceField
+   */
+  public function setContactReferenceField($contactReferenceField) {
+    $this->contactReferenceField = $contactReferenceField;
+  }
 
   /**
    * @var bool
@@ -61,14 +83,14 @@ class Contact {
    * @return bool
    */
   public function isOptOut() {
-    return $this->data['opted_out'] == 'T' ? TRUE : FALSE;
+    return $this->data['Opted Out'] === 'T';
   }
 
   /**
    * @return mixed
    */
   public function getOptInTimestamp() {
-    return $this->data['opt_in_timestamp'];
+    return isset($this->data['opt_in_timestamp']) ? (string) $this->data['opt_in_timestamp'] : strtotime($this->data['Opt In Date']);
   }
 
   /**
@@ -82,14 +104,14 @@ class Contact {
    * @return mixed
    */
   public function getOptInSource() {
-    return (string) $this->data['opt_in_details'];
+    return (string) $this->data['Opt In Details'];
   }
 
   /**
    * @return mixed
    */
   public function getOptOutSource() {
-    return $this->data['opt_out_details'];
+    return $this->data['Opt Out Details'];
   }
 
   /**
@@ -101,7 +123,7 @@ class Contact {
    * @return string
    */
   public function getEmail() {
-    return (string) $this->email ?: $this->data['email'];
+    return (string) addslashes($this->email ?: $this->data['Email']);
   }
 
   /**
@@ -115,18 +137,18 @@ class Contact {
    * @return mixed
    */
   public function getOptOutTimestamp() {
-    return $this->data['opted_out_timestamp'] ?? FALSE;
+    return $this->data['Opted Out Date'] ? strtotime($this->data['Opted Out Date']) : FALSE;
   }
 
   public function getOptInIsoDateTime() {
-    return (date('Y-m-d H:i:s', $this->getOptInTimestamp()));
+    return date('Y-m-d H:i:s', $this->getOptInTimestamp());
   }
 
   /**
    * @return mixed
    */
   public function getContactReference() {
-    return (string) $this->contactReference ?: $this->data['contactid'];
+    return (string) $this->contactReference ?: $this->data['ContactID'];
   }
 
   /**
@@ -148,8 +170,6 @@ class Contact {
   public function __construct($data) {
     $this->data = $data;
   }
-
-
 
   /**
    * Get Silverpop connector object.

@@ -71,6 +71,26 @@ abstract class SilverpopBaseRequest extends BaseRequest implements RequestInterf
    */
   protected $offset = 0;
 
+    /**
+     * Rows to retrieve.
+     *
+     * @var int
+     */
+  protected $limit = 0;
+
+    /**
+     * @return int
+     */
+    public function getLimit(): int {
+        return $this->limit;
+    }
+
+    /**
+     * @param int $limit
+     */
+    public function setLimit(int $limit) {
+        $this->limit = $limit;
+    }
 
   /**
    * @return int

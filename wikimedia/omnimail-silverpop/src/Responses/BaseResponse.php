@@ -61,6 +61,27 @@ abstract class BaseResponse extends \arrayObject implements ResponseInterface
   }
 
   /**
+   * Rows to retrieve.
+   *
+   * @var int
+   */
+  protected $limit = 0;
+
+  /**
+   * @return int
+   */
+  public function getLimit(): int {
+    return $this->limit;
+  }
+
+  /**
+   * @param int $limit
+   */
+  public function setLimit(int $limit) {
+    $this->limit = $limit;
+  }
+
+  /**
    * @return string
    */
   public function getEndPoint() {
