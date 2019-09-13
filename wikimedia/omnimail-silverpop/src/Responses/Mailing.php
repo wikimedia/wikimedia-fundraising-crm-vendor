@@ -238,4 +238,24 @@ class Mailing
         return $this->silverPop;
     }
 
+    /**
+     * Get the id of the query list the mailing was sent to.
+     *
+     * @return int
+     */
+    public function getListID()
+    {
+        return (string) $this->data->ListId;
+    }
+
+    /**
+     * Get the name of the query list the mailing was sent to.
+     *
+     * @return string
+     */
+    public function getListName()
+    {
+        return (string) $this->data->ListName;
+    }
+
 }
