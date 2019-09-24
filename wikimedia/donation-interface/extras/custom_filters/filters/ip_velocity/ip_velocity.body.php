@@ -36,13 +36,13 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 
 		// first, handle the whitelist / blacklist before you do anything else.
 		if ( DataValidator::ip_is_listed( $user_ip, $this->gateway_adapter->getGlobal( 'IPWhitelist' ) ) ) {
-			$this->gateway_adapter->debugarray[] = "IP present in whitelist.";
+			$this->gateway_logger->debug( "IP present in whitelist." );
 			$this->cfo->addRiskScore( 0, 'IPWhitelist' );
 			return true;
 		}
 		// TODO: this blacklist business should happen elsewhere, and on every hit.
 		if ( DataValidator::ip_is_listed( $user_ip, $this->gateway_adapter->getGlobal( 'IPBlacklist' ) ) ) {
-			$this->gateway_adapter->debugarray[] = "IP present in blacklist.";
+			$this->gateway_logger->info( "IP $user_ip present in blacklist." );
 			$this->cfo->addRiskScore( $this->gateway_adapter->getGlobal( 'IPVelocityFailScore' ), 'IPBlacklist' );
 			return true;
 		}
@@ -50,7 +50,7 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 		$stored = $this->getCachedValue();
 
 		if ( !$stored ) { // we don't have anything in memcache for this dude yet.
-			$this->gateway_adapter->debugarray[] = "Found no memcached data for $user_ip";
+			$this->gateway_logger->debug( "IPVelocityFilter: Found no memcached data for $user_ip" );
 			$this->cfo->addRiskScore( 0, 'IPVelocityFilter' ); // want to see the explicit zero
 			return true;
 		} else {
@@ -87,7 +87,7 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 	 * If the $fail var is set and true, this denotes that the sensor has been
 	 * tripped and will cause the data to live for the (potentially longer)
 	 * duration defined in the IPVelocityFailDuration global
-	 * @param array $oldvalue The value we've just pulled from memcache for this
+	 * @param array|null $oldvalue The value we've just pulled from memcache for this
 	 * ip address
 	 * @param bool $fail If this entry was added on the filter being tripped
 	 * @param bool $toxic If we're adding this entry to penalize a toxic card
@@ -117,7 +117,7 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 	}
 
 	protected static function addNowToVelocityData( $stored = false, $timeout = false ) {
-		$new_velocity_records = array();
+		$new_velocity_records = [];
 		$nowstamp = time();
 		if ( is_array( $stored ) ) {
 			foreach ( $stored as $timestamp ) {
@@ -148,8 +148,10 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 			// We're on the first attempt, already counted in onInitialFilter
 			return true;
 		}
-		$gateway_adapter->debugarray[] = 'IP Velocity onFilter!';
-		return self::singleton( $gateway_adapter, $custom_filter_object )->filter();
+
+		$instance = self::singleton( $gateway_adapter, $custom_filter_object );
+		$instance->gateway_logger->debug( 'IP Velocity onFilter!' );
+		return $instance->filter();
 	}
 
 	/**
@@ -167,16 +169,18 @@ class Gateway_Extras_CustomFilters_IP_Velocity extends Gateway_Extras {
 		}
 
 		WmfFramework::setSessionValue( self::RAN_INITIAL, true );
-		$gateway_adapter->debugarray[] = 'IP Velocity onFilter!';
-		return self::singleton( $gateway_adapter, $custom_filter_object )->filter();
+		$instance = self::singleton( $gateway_adapter, $custom_filter_object );
+		$instance->gateway_logger->debug( 'IP Velocity onInitialFilter!' );
+		return $instance->filter();
 	}
 
 	public static function onPostProcess( GatewayType $gateway_adapter ) {
 		if ( !$gateway_adapter->getGlobal( 'EnableIPVelocityFilter' ) ) {
 			return true;
 		}
-		$gateway_adapter->debugarray[] = 'IP Velocity onPostProcess!';
-		return self::singleton( $gateway_adapter )->postProcess();
+		$instance = self::singleton( $gateway_adapter );
+		$instance->gateway_logger->debug( 'IP Velocity onPostProcess!' );
+		return $instance->postProcess();
 	}
 
 	protected static function singleton(

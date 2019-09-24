@@ -140,9 +140,17 @@ class HttpCurl implements HttpCurlInterface
     
     private function execute($ch)
     {
-        $response = '';
-        if (!$response = curl_exec($ch)) {
+        $debugLog = fopen('php://temp', 'r+');
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_STDERR, $debugLog);
+        $response = curl_exec($ch);
+        // Always read the verbose output
+        rewind($debugLog);
+        $logged = fread($debugLog, 8192);
+        fclose($debugLog);
+        if (!$response) {
             $error_msg = "Unable to post request, underlying exception of " . curl_error($ch);
+            $error_msg .= " Debug logging: $logged";
             curl_close($ch);
             throw new \Exception($error_msg);
         }

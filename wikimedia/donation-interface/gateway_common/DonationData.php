@@ -1,6 +1,8 @@
 <?php
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\PaymentData\ReferenceData\NationalCurrencies;
+use SmashPig\Core\SequenceGenerators;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 /**
  * DonationData
@@ -16,7 +18,8 @@ use SmashPig\PaymentData\ReferenceData\NationalCurrencies;
  * @author khorn
  */
 class DonationData implements LogPrefixProvider {
-	protected $normalized = array();
+	protected $normalized = [];
+	protected $dataSources = [];
 	protected $gateway;
 	protected $gatewayID;
 	/**
@@ -37,7 +40,7 @@ class DonationData implements LogPrefixProvider {
 	 * keys we want to see disappear forever, complete with
 	 * ffname and referrer for easy total destruction.
 	 */
-	protected static $fieldNames = array(
+	protected static $fieldNames = [
 		'amount',
 		'amountGiven',
 		'amountOther',
@@ -79,8 +82,6 @@ class DonationData implements LogPrefixProvider {
 		'data_hash',
 		'action',
 		'gateway',
-		'owa_session',
-		'owa_ref',
 		'descriptor',
 		'account_name',
 		'account_number',
@@ -105,7 +106,8 @@ class DonationData implements LogPrefixProvider {
 		'server_ip',
 		'variant',
 		'opt_in',
-	);
+		'employer',
+	];
 
 	/**
 	 * DonationData constructor
@@ -115,7 +117,7 @@ class DonationData implements LogPrefixProvider {
 	 * places in the request, or 'false' to gather the data the usual way.
 	 * Default is false.
 	 */
-	function __construct( GatewayType $gateway, $data = false ) {
+	public function __construct( GatewayType $gateway, $data = false ) {
 		$this->gateway = $gateway;
 		$this->gatewayID = $this->gateway->getIdentifier();
 		$this->logger = DonationLoggerFactory::getLogger( $gateway, '', $this );
@@ -133,13 +135,16 @@ class DonationData implements LogPrefixProvider {
 	 * Default is false.
 	 */
 	protected function populateData( $external_data = false ) {
-		$this->normalized = array();
+		$this->normalized = [];
 		if ( is_array( $external_data ) ) {
 			// I don't care if you're a test or not. At all.
 			$this->normalized = $external_data;
+			$this->dataSources = array_fill_keys( array_keys( $external_data ), 'external' );
 		} else {
 			foreach ( self::$fieldNames as $var ) {
-				$this->normalized[$var] = $this->sourceHarvest( $var );
+				list( $val, $source ) = $this->sourceHarvest( $var );
+				$this->normalized[$var] = $val;
+				$this->dataSources[$var] = $source;
 			}
 
 			if ( !$this->wasPosted() ) {
@@ -165,16 +170,28 @@ class DonationData implements LogPrefixProvider {
 
 	/**
 	 * Harvest a varname from its source - post, get, maybe even session eventually.
-	 * @TODO: Provide a way that gateways can override default behavior here for individual keys.
+	 * @todo Provide a way that gateways can override default behavior here for individual keys.
 	 * @param string $var The incoming var name we need to get a value for
-	 * @return mixed The final value of the var, or null if we don't actually have it.
+	 * @return array First element is the final value of the var, or null if we don't actually have it.
+	 *  Second element is the source of the value, null if nonexistant, get, or post
 	 */
 	protected function sourceHarvest( $var ) {
 		if ( $this->gateway->isBatchProcessor() ) {
-			return null;
+			return [ null, null ];
 		}
 		$ret = WmfFramework::getRequestValue( $var, null );
-		return $ret;
+		$queryValues = WmfFramework::getQueryValues();
+		// When a value is both on the QS and in POST, getRequestValue prefers POST
+		// So if it's the same as the version from getQueryValues, say the source is
+		// 'get', otherwise if there is any value at all say the source is 'post'
+		if ( isset( $queryValues[$var] ) && $ret == $queryValues[$var] ) {
+			$source = 'get';
+		} elseif ( $ret !== null ) {
+			$source = 'post';
+		} else {
+			$source = null;
+		}
+		return [ $ret, $source ];
 	}
 
 	/**
@@ -198,10 +215,11 @@ class DonationData implements LogPrefixProvider {
 			return;
 		}
 		// fields that should always overwrite with their original values
-		$overwrite = array( 'referrer', 'contribution_tracking_id' );
+		$overwrite = [ 'referrer', 'contribution_tracking_id' ];
 		foreach ( $donorData as $key => $val ) {
 			if ( !$this->isSomething( $key ) ) {
 				$this->setVal( $key, $val );
+				$this->dataSources[$key] = 'session';
 			} else {
 				if ( in_array( $key, $overwrite ) ) {
 					$this->setVal( $key, $val );
@@ -217,6 +235,15 @@ class DonationData implements LogPrefixProvider {
 	 */
 	public function getData() {
 		return $this->normalized;
+	}
+
+	/**
+	 * Returns the array of all normalized donation data.
+	 *
+	 * @return array
+	 */
+	public function getDataSources() {
+		return $this->dataSources;
 	}
 
 	/**
@@ -294,7 +321,7 @@ class DonationData implements LogPrefixProvider {
 	 * @return array An array of values matching all recalculated fields.
 	 */
 	public function getCalculatedFields() {
-		$fields = array(
+		$fields = [
 			'utm_source',
 			'amount',
 			'order_id',
@@ -304,7 +331,7 @@ class DonationData implements LogPrefixProvider {
 			'contribution_tracking_id', // sort of...
 			'currency',
 			'user_ip',
-		);
+		];
 		return $fields;
 	}
 
@@ -403,7 +430,7 @@ class DonationData implements LogPrefixProvider {
 				// check to see if it's one of those other codes that comes out of CN, for the logs
 				// If this logs annoying quantities of nothing useful, go ahead and kill this whole else block later.
 				// we're still going to try to regen.
-				$near_countries = array( 'XX', 'EU', 'AP', 'A1', 'A2', 'O1' );
+				$near_countries = [ 'XX', 'EU', 'AP', 'A1', 'A2', 'O1' ];
 				if ( !in_array( $country, $near_countries ) ) {
 					$this->logger->warning( __FUNCTION__ . ": $country is not a country, or a recognized placeholder." );
 				}
@@ -423,22 +450,15 @@ class DonationData implements LogPrefixProvider {
 			if ( CountryValidation::isValidIsoCode( $sessionCountry ) ) {
 				$this->logger->info( "Using country code $sessionCountry from session" );
 				$country = $sessionCountry;
-			} elseif ( function_exists( 'geoip_country_code_by_name' ) ) {
-				// Then try to do GeoIP lookup
-				// Requires php5-geoip package
-				$ip = $this->getVal( 'user_ip' );
-				if ( WmfFramework::validateIP( $ip ) ) {
-					try {
-						$country = geoip_country_code_by_name( $ip );
-					} catch ( Exception $e ) {
-						// Suppressing missing database exception thrown in CI
-					}
-					if ( !$country ) {
-						$this->logger->warning( __FUNCTION__ . ": GeoIP lookup function found nothing for $ip! No country available." );
-					}
-				}
 			} else {
-				$this->logger->warning( 'GeoIP lookup function is missing! No country available.' );
+				// Then try to do GeoIP lookup using Maxmind's SDK
+				$ip = $this->getVal( 'user_ip' );
+				$country = CountryValidation::lookUpCountry( $ip );
+				if ( $country && !CountryValidation::isValidIsoCode( $country ) ) {
+					$this->logger->warning(
+						"GeoIP lookup returned bogus code '$country'! No country available."
+					);
+				}
 			}
 
 			// still nothing good? Give up.
@@ -493,15 +513,23 @@ class DonationData implements LogPrefixProvider {
 	 * current contribution we're tracking.
 	 * If a contribution tracking id is already present, no new rows will be
 	 * assigned.
+	 * If we're using the contribution tracking queue, get a contribution_tracking_id
+	 * from the sequence generator. Return false because we're not creating a new record
+	 * yet, so no need to update the db.
 	 *
 	 * @return bool True if a new record was created
 	 */
 	protected function handleContributionTrackingID() {
 		if ( !$this->isSomething( 'contribution_tracking_id' ) ) {
-			$ctid = $this->saveContributionTrackingData();
-			if ( $ctid ) {
-				$this->setVal( 'contribution_tracking_id', $ctid );
+			if ( $this->gateway->getGlobal( 'EnableContributionTrackingQueue' ) ) {
+				$this->setVal( 'contribution_tracking_id', $this->getIdFromSequenceGenerator() );
 				return true;
+			} else {
+				$ctid = $this->saveContributionTrackingData();
+				if ( $ctid ) {
+					$this->setVal( 'contribution_tracking_id', $ctid );
+					return true;
+				}
 			}
 		}
 		return false;
@@ -542,13 +570,13 @@ class DonationData implements LogPrefixProvider {
 			// fail validation later, log some things.
 			// FIXME: Generalize this, be more careful with user_ip.
 			$mess = 'Non-numeric Amount.';
-			$keys = array(
+			$keys = [
 				'amount',
 				'utm_source',
 				'utm_campaign',
 				'email',
 				'user_ip', // to help deal with fraudulent traffic.
-			);
+			];
 			foreach ( $keys as $key ) {
 				$mess .= ' ' . $key . '=' . $this->getVal( $key );
 			}
@@ -621,8 +649,8 @@ class DonationData implements LogPrefixProvider {
 	 *
 	 * Intended to be used with something like array_walk.
 	 *
-	 * @param $value string The value of the array
-	 * @param $key string The key of the array
+	 * @param string &$value The value of the array
+	 * @param string $key The key of the array
 	 */
 	protected function sanitizeInput( &$value, $key ) {
 		$value = htmlspecialchars( $value, ENT_COMPAT, 'UTF-8', false );
@@ -803,7 +831,7 @@ class DonationData implements LogPrefixProvider {
 	 */
 	public function getCleanTrackingData( $unset = false ) {
 		// define valid tracking fields
-		$tracking_fields = array(
+		$tracking_fields = [
 			'note',
 			'referrer',
 			'anonymous',
@@ -814,9 +842,9 @@ class DonationData implements LogPrefixProvider {
 			'language',
 			'country',
 			'ts'
-		);
+		];
 
-		$tracking_data = array();
+		$tracking_data = [];
 
 		foreach ( $tracking_fields as $value ) {
 			if ( $this->isSomething( $value ) ) {
@@ -845,6 +873,35 @@ class DonationData implements LogPrefixProvider {
 		return $tracking_data;
 	}
 
+	public function getIdFromSequenceGenerator( $generatorName = 'contribution-tracking' ) {
+		$generator = SequenceGenerators\Factory::getSequenceGenerator( $generatorName );
+
+		$id = $generator->getNext();
+
+		return $id;
+	}
+
+	public function sendToContributionTrackingQueue( $tracking_data, $ctid = null, $queueName = 'contribution-tracking' ) {
+		if ( !$ctid ) {
+			$ctid = $this->getIdFromSequenceGenerator();
+		}
+
+		if ( !isset( $tracking_data['ts'] ) || !strlen( $tracking_data['ts'] ) ) {
+			$tracking_data['ts'] = wfTimestamp( TS_MW );
+		}
+
+		$queueMessage = [
+			'id' => $ctid,
+			'ts' => $tracking_data['ts'],
+			];
+
+		$queueMessage = $queueMessage + $tracking_data;
+
+		QueueWrapper::push( $queueName, $queueMessage );
+
+		return $queueMessage['id'];
+	}
+
 	/**
 	 * Inserts a new or updates a record in the contribution_tracking table.
 	 *
@@ -857,38 +914,46 @@ class DonationData implements LogPrefixProvider {
 		}
 		$ctid = $this->getVal( 'contribution_tracking_id' );
 		$tracking_data = $this->getCleanTrackingData( true );
-		$db = ContributionTrackingProcessor::contributionTrackingConnection();
 
-		if ( !$db ) {
-			// TODO: This might be a critical failure; do we want to throw an exception instead?
-			$this->logger->error( 'Failed to create a connect to contribution_tracking database' );
-			return false;
-		}
+		if ( $this->gateway->getGlobal( 'EnableContributionTrackingQueue' ) ) {
 
-		if ( $ctid ) {
-			// We're updating a record, but only if we actually have data to update
-			if ( count( $tracking_data ) ) {
-				$db->update(
-					'contribution_tracking',
-					$tracking_data,
-					array( 'id' => $ctid )
-				);
-			}
+			$ctid = $this->sendToContributionTrackingQueue( $tracking_data, $ctid );
+
 		} else {
-			// We need a new record
-			// set the time stamp if it's not already set
-			if ( !isset( $tracking_data['ts'] ) || !strlen( $tracking_data['ts'] ) ) {
-				$tracking_data['ts'] = $db->timestamp();
-			}
+			$db = ContributionTrackingProcessor::contributionTrackingConnection();
 
-			// Store the contribution data
-			if ( $db->insert( 'contribution_tracking', $tracking_data ) ) {
-				$ctid = $db->insertId();
-			} else {
-				$this->logger->error( 'Failed to create a new contribution_tracking record' );
+			if ( !$db ) {
+				// TODO: This might be a critical failure; do we want to throw an exception instead?
+				$this->logger->error( 'Failed to create a connect to contribution_tracking database' );
 				return false;
 			}
+
+			if ( $ctid ) {
+				// We're updating a record, but only if we actually have data to update
+				if ( count( $tracking_data ) ) {
+					$db->update(
+						'contribution_tracking',
+						$tracking_data,
+						[ 'id' => $ctid ]
+					);
+				}
+			} else {
+				// We need a new record
+				// set the time stamp if it's not already set
+				if ( !isset( $tracking_data['ts'] ) || !strlen( $tracking_data['ts'] ) ) {
+					$tracking_data['ts'] = $db->timestamp();
+				}
+
+				// Store the contribution data
+				if ( $db->insert( 'contribution_tracking', $tracking_data ) ) {
+					$ctid = $db->insertId();
+				} else {
+					$this->logger->error( 'Failed to create a new contribution_tracking record' );
+					return false;
+				}
+			}
 		}
+
 		return $ctid;
 	}
 
@@ -900,12 +965,14 @@ class DonationData implements LogPrefixProvider {
 	 *
 	 * @param array $newdata An array of data to integrate with the existing
 	 * data held by the DonationData object.
+	 * @param string $source
 	 */
-	public function addData( $newdata ) {
+	public function addData( $newdata, $source = 'internal' ) {
 		if ( is_array( $newdata ) && !empty( $newdata ) ) {
 			foreach ( $newdata as $key => $val ) {
 				if ( !is_array( $val ) ) {
 					$this->setVal( $key, $val );
+					$this->dataSources[$key] = $source;
 				}
 			}
 		}
@@ -915,9 +982,10 @@ class DonationData implements LogPrefixProvider {
 	/**
 	 * Returns an array of field names we typically send out in a queue
 	 * message.
+	 * @return array
 	 */
 	public static function getMessageFields() {
-		return array(
+		return [
 			'contribution_tracking_id',
 			'anonymous',
 			'utm_source',
@@ -949,41 +1017,66 @@ class DonationData implements LogPrefixProvider {
 			'gateway_session_id',
 			'recurring_payment_token',
 			'opt_in',
-		);
+			'employer',
+		];
+	}
+
+	/**
+	 * These fields relate to the donor contact info, not the donation.
+	 * Used to build a message for the opt-in queue when a donation fails.
+	 * @return string[] Fields relating to the donor's personal info
+	 */
+	public static function getContactFields() {
+		return [
+			'language',
+			'email',
+			'first_name',
+			'last_name',
+			'street_address',
+			'city',
+			'state_province',
+			'country',
+			'postal_code',
+		];
 	}
 
 	/**
 	 * Returns an array of field names we need in order to retry a payment
 	 * after the session has been destroyed by... overzealousness.
+	 * @return string[] Fields to preserve when retrying a payment
 	 */
 	public static function getRetryFields() {
-		$fields = array(
+		$fields = [
 			'contact_id',
 			'contact_hash',
 			'gateway',
 			'country',
 			'currency',
 			'amount',
+			'variant',
 			'language',
 			'utm_source',
 			'utm_medium',
 			'utm_campaign',
 			'payment_method',
-		);
+		];
 		return $fields;
 	}
 
 	/**
 	 * Returns an array of names of fields we store in session
+	 * @return array
 	 */
 	public static function getSessionFields() {
-		$fields = self::getMessageFields();
-		$fields[] = 'order_id';
-		$fields[] = 'appeal';
-		$fields[] = 'processor_form';
-		$fields[] = 'referrer';
-		$fields[] = 'contact_id';
-		$fields[] = 'contact_hash';
+		$fields = array_merge( self::getMessageFields(), [
+			'order_id',
+			'appeal',
+			'variant',
+			'processor_form',
+			'referrer',
+			'contact_id',
+			'contact_hash'
+		] );
 		return $fields;
 	}
 
@@ -992,9 +1085,10 @@ class DonationData implements LogPrefixProvider {
 	 * won't give us notices if we weren't even a web request.
 	 * I realize this is pretty lame.
 	 * Notices, however, are more lame.
-	 * @staticvar string $posted Keeps track so we don't have to figure it out twice.
+	 * @return bool
 	 */
 	public function wasPosted() {
+		// Keeps track so we don't have to figure it out twice.
 		static $posted = null;
 		if ( $posted === null ) {
 			$posted = ( array_key_exists( 'REQUEST_METHOD', $_SERVER ) && WmfFramework::isPosted() );

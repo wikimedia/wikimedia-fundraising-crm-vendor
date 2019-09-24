@@ -12,34 +12,56 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 	/**
 	 * We set the following public static variables for use in mustache helper
-	 * functions l10n and fieldError, which need to be static and are interpreted
-	 * without class scope under PHP 5.3's closure rules.
+	 * functions l10n and fieldError, which need to be static and are accessed
+	 * via eval()'ed code from MustacheHelper.
 	 */
+	// phpcs:disable Squiz.Classes.SelfMemberReference.NotUsed
 	public static $country;
 
 	public static $fieldErrors;
 
 	public static $baseDir;
 
+	protected static $partials = [
+		'issuers',
+		'more_info_links',
+		'opt_in',
+		'payment_amount',
+		'payment_method',
+		'personal_info',
+		'recurring_upsell',
+		'state_dropdown'
+	];
+
+	/**
+	 * @var array Keys are message keys used in templates, values are
+	 *  message keys to replace them with.
+	 */
+	public static $messageReplacements = [];
+
 	public function setGateway( GatewayType $gateway ) {
 		parent::setGateway( $gateway );
 
 		// FIXME: late binding fail?
 		self::$baseDir = dirname( $this->getTopLevelTemplate() );
+		$replacements = $gateway->getConfig( 'message_replacements' );
+		if ( $replacements ) {
+			self::$messageReplacements = $replacements;
+		}
 	}
 
 	/**
 	 * Return the rendered HTML form, using template parameters from the gateway object
 	 *
 	 * @return string
-	 * @throw RuntimeException
+	 * @throws RuntimeException
 	 */
 	public function getForm() {
 		$data = $this->getData();
 		self::$country = $data['country'];
 
 		$data = $data + $this->getErrors();
-		$data = $data + $this->getUrls();
+		$data = $data + $this->getUrlsAndEmails();
 
 		self::$fieldErrors = $data['errors']['field'];
 
@@ -48,58 +70,17 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			$this->gateway->session_pushFormName( $data['ffname'] );
 		}
 
-		$options = array(
-			'helpers' => array(
+		$options = [
+			'helpers' => [
 				'l10n' => 'Gateway_Form_Mustache::l10n',
 				'fieldError' => 'Gateway_Form_Mustache::fieldError',
-			),
-			'basedir' => array( self::$baseDir ),
+			],
+			'basedir' => [ self::$baseDir ],
 			'fileext' => self::EXTENSION,
-		);
-		return self::render( $this->getTopLevelTemplate(), $data, $options );
-	}
-
-	/**
-	 * Do the rendering. Can be made protected when we're off PHP 5.3.
-	 *
-	 * @param string $fileName full path to template file
-	 * @param array $data rendering context
-	 * @param array $options options for LightnCandy::compile function
-	 * @return string rendered template
-	 */
-	public static function render( $fileName, $data, $options = array() ) {
-		$defaultOptions = array(
-			'flags' => LightnCandy::FLAG_ERROR_EXCEPTION,
-		);
-
-		$options = $options + $defaultOptions;
-
-		if ( !file_exists( $fileName ) ) {
-			throw new RuntimeException( "Template file unavailable: [$fileName]" );
-		}
-		$template = file_get_contents( $fileName );
-		if ( $template === false ) {
-			throw new RuntimeException( "Template file unavailable: [$fileName]" );
-		}
-
-		// TODO: Use MW-core implementation once it allows helper functions
-		$code = LightnCandy::compile( $template, $options );
-		if ( !$code ) {
-			throw new RuntimeException( 'Couldn\'t compile template!' );
-		}
-		if ( substr( $code, 0, 5 ) === '<?php' ) {
-			$code = substr( $code, 5 );
-		}
-		$renderer = eval( $code );
-		if ( !is_callable( $renderer ) ) {
-			throw new RuntimeException(
-				"Can't run compiled template! Template: '$code'"
-			);
-		}
-
-		$html = call_user_func( $renderer, $data, array() );
-
-		return $html;
+			'partials' => $this->getPartials( $data ),
+			'options' => LightnCandy::FLAG_RUNTIMEPARTIAL,
+		];
+		return MustacheHelper::render( $this->getTopLevelTemplate(), $data, $options );
 	}
 
 	protected function getData() {
@@ -118,15 +99,33 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$appealWikiTemplate = $this->gateway->getGlobal( 'AppealWikiTemplate' );
 		$appealWikiTemplate = str_replace( '$appeal', $data['appeal'], $appealWikiTemplate );
 		$appealWikiTemplate = str_replace( '$language', $data['language'], $appealWikiTemplate );
-		$data['appeal_text'] = $output->parse( '{{' . $appealWikiTemplate . '}}' );
+		$data['appeal_text'] = self::parseAsContent( $output, '{{' . $appealWikiTemplate . '}}' );
 		$data['is_cc'] = ( $this->gateway->getPaymentMethod() === 'cc' );
 
-		$this->handleOptIn( $data );
+		// Only render recurring upsell when we come back from a qualified processor
+		if (
+			$this->gateway->showRecurringUpsell() &&
+			$this->gatewayPage instanceof ResultSwitcher
+		) {
+			$data['recurring_upsell'] = true;
+		}
+
 		$this->addSubmethods( $data );
-		$this->addRequiredFields( $data );
+		$this->addFormFields( $data );
+		$this->handleOptIn( $data );
 		$this->addCurrencyData( $data );
 		$data['recurring'] = (bool)$data['recurring'];
 		return $data;
+	}
+
+	// Backwards compatibility with pre-MW 1.33
+	private static function parseAsContent( $out, $text ) {
+		if ( is_callable( [ $out, 'parseAsContent' ] ) ) {
+			return $out->parseAsContent( $text );
+		} else {
+			// Deprecated in 1.33
+			return $out->parse( $text, /*linestart*/true, /*interface*/false );
+		}
 	}
 
 	protected function handleOptIn( &$data ) {
@@ -135,12 +134,15 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		if ( !isset( $data['opt_in'] ) || $data['opt_in'] === '' ) {
 			return;
 		}
+		$hasValidValue = false;
 		switch ( (string)$data['opt_in'] ) {
 			case '1':
 				$data['opted_in'] = true;
+				$hasValidValue = true;
 				break;
 			case '0':
 				$data['opted_out'] = true;
+				$hasValidValue = true;
 				break;
 			default:
 				$logger = DonationLoggerFactory::getLogger(
@@ -151,6 +153,17 @@ class Gateway_Form_Mustache extends Gateway_Form {
 				$logger->warning( "Invalid opt_in value {$data['opt_in']}" );
 				break;
 		}
+		// If we have a valid value passed in on the query string, don't
+		// show the radio buttons to the user (they've already seen them
+		// in the banner or on donatewiki)
+		// If the value came from 'post' we may be re-rendering a form
+		// with some kind of validation error and should keep showing
+		// the opt_in radio buttons.
+		$dataSources = $this->gateway->getDataSources();
+		if ( $hasValidValue && $dataSources['opt_in'] === 'get' ) {
+			// assuming it's always going to be '_visible' isn't safe, see comment on L234
+			$data['opt_in_visible'] = false;
+		}
 	}
 
 	protected function addSubmethods( &$data ) {
@@ -158,7 +171,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$data['show_submethods'] = ( count( $availableSubmethods ) > 1 );
 		if ( $data['show_submethods'] ) {
 			// Need to add submethod key to its array 'cause mustache doesn't get keys
-			$data['submethods'] = array();
+			$data['submethods'] = [];
 			foreach ( $availableSubmethods as $key => $submethod ) {
 				$submethod['key'] = $key;
 				if ( isset( $submethod['logo'] ) ) {
@@ -189,12 +202,12 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 			if ( isset( $submethod['issuerids'] ) ) {
 				$data['show_issuers'] = true;
-				$data['issuers'] = array();
+				$data['issuers'] = [];
 				foreach ( $submethod['issuerids'] as $code => $label ) {
-					$data['issuers'][] = array(
+					$data['issuers'][] = [
 						'code' => $code,
 						'label' => $label,
-					);
+					];
 				}
 			}
 		}
@@ -204,7 +217,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		if ( empty( $submethod['logo_hd'] ) ) {
 			return '';
 		}
-		$srcSet = array();
+		$srcSet = [];
 		foreach ( $submethod['logo_hd'] as $scale => $filename ) {
 			$path = $this->getImagePath( $filename );
 			$srcSet[] = "$path $scale";
@@ -212,46 +225,65 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		return 'srcset="' . implode( ',', $srcSet ) . '" ';
 	}
 
-	protected function addRequiredFields( &$data ) {
+	protected function addFormFields( &$data ) {
 		// If any of these are required, show the address block
-		$address_fields = array(
+		$address_fields = [
 			'city',
 			'state_province',
 			'postal_code',
 			'street_address',
-		);
+		];
 		// These are shown outside of the 'Billing information' block
-		$outside_personal_block = array(
+		$outside_personal_block = [
 			'opt_in'
-		);
+		];
 		$show_personal_block = false;
 		$address_field_count = 0;
-		$required_fields = $this->gateway->getRequiredFields();
-		foreach ( $required_fields as $field ) {
-			$data["{$field}_required"] = true;
+		$fields = $this->gateway->getFormFields();
+		foreach ( $fields as $field => $type ) {
+			if ( $type === false ) {
+				continue;
+			}
 
-			if ( in_array( $field, $address_fields ) ) {
-				$data['address_required'] = true;
-				if ( $field !== 'street_address' ) {
-					// street gets its own line
-					$address_field_count++;
+			// if field type is true(required) or optional it should be visible
+			if ( in_array( $type, [ true, 'optional' ], true ) ) {
+				$data["{$field}_visible"] = true;
+				if ( in_array( $field, $address_fields ) ) {
+					$data["address_visible"] = true;
+					if ( $field !== 'street_address' ) {
+						// street gets its own line
+						$address_field_count++;
+					}
+				}
+
+				// if field type is true(required), we also inject a *_required var to inform the view
+				if ( $type === true ) {
+					$data["{$field}_required"] = true;
+					if ( in_array( $field, $address_fields ) ) {
+						$data["address_required"] = true;
+					}
 				}
 			}
+
 			if ( !in_array( $field, $outside_personal_block ) ) {
 				$show_personal_block = true;
 			}
 		}
+
 		$data['show_personal_fields'] = $show_personal_block;
 
-		if ( !empty( $data['address_required'] ) ) {
-			$classes = array(
+		// this is not great, we're assuming 'visible' (previously 'required') will always be a thing.
+		// the decision for the current _visible suffix is made on line 217
+		if ( !empty( $data["address_visible"] ) ) {
+			$classes = [
 				0 => 'fullwidth',
 				1 => 'fullwidth',
 				2 => 'halfwidth',
 				3 => 'thirdwidth'
-			);
+			];
 			$data['address_css_class'] = $classes[$address_field_count];
-			if ( !empty( $data['state_province_required'] ) ) {
+			// not great for the ranty reasons mentioned on line 234
+			if ( !empty( $data["state_province_visible"] ) ) {
 				$this->setStateOptions( $data );
 			}
 		}
@@ -259,17 +291,17 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 	protected function setStateOptions( &$data ) {
 		$state_list = Subdivisions::getByCountry( $data['country'] );
-		$data['state_province_options'] = array();
+		$data['state_province_options'] = [];
 
 		foreach ( $state_list as $abbr => $name ) {
 			$selected = isset( $data['state_province'] )
 				&& $data['state_province'] === $abbr;
 
-			$data['state_province_options'][] = array(
+			$data['state_province_options'][] = [
 				'abbr' => $abbr,
 				'name' => $name,
 				'selected' => $selected,
-			);
+			];
 		}
 	}
 
@@ -284,10 +316,10 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			$data['show_currency_selector'] = true;
 		}
 		foreach ( $supportedCurrencies as $currency ) {
-			$data['currencies'][] = array(
+			$data['currencies'][] = [
 				'code' => $currency,
 				'selected' => ( $currency === $data['currency'] ),
-			);
+			];
 		}
 
 		$data['display_amount'] = Amount::format(
@@ -295,6 +327,9 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			$data['currency'],
 			$data['language'] . '_' . $data['country']
 		);
+		if ( doubleval( $data['amount'] ) === 0.0 ) {
+			$data['amount'] = '';
+		}
 	}
 
 	/**
@@ -305,10 +340,10 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	 */
 	protected function getErrors() {
 		$errors = $this->gateway->getErrorState()->getErrors();
-		$return = array( 'errors' => array(
-			'general' => array(),
-			'field' => array(),
-		) );
+		$return = [ 'errors' => [
+			'general' => [],
+			'field' => [],
+		] ];
 		$fieldNames = DonationData::getFieldNames();
 		foreach ( $errors as $error ) {
 			if ( $error instanceof ValidationError ) {
@@ -327,10 +362,10 @@ class Gateway_Form_Mustache extends Gateway_Form {
 				throw new RuntimeException( "Unknown error type: " . var_export( $error, true ) );
 			}
 
-			$errorContext = array(
+			$errorContext = [
 				'key' => $key,
 				'message' => $message,
-			);
+			];
 
 			if ( in_array( $key, $fieldNames ) ) {
 				$return['errors']['field'][$key] = $errorContext;
@@ -350,7 +385,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		return $return;
 	}
 
-	protected function getUrls() {
+	protected function getUrlsAndEmails() {
 		$map = [
 			'problems' => 'Problems',
 			'otherways' => 'OtherWays',
@@ -358,17 +393,19 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			'tax' => 'Tax',
 			'policy' => 'Policy'
 		];
-		$urls = [];
+		$urlsAndEmails = [];
 		foreach ( $map as $contextName => $globalName ) {
-			$urls[$contextName . '_url'] = htmlspecialchars(
+			$urlsAndEmails[$contextName . '_url'] = htmlspecialchars(
 				$this->gateway->localizeGlobal( $globalName . 'URL' )
 			);
 		}
-		return $urls;
+		$urlsAndEmails['problems_email'] = $this->gateway->getGlobal( 'ProblemsEmail' );
+		return $urlsAndEmails;
 	}
 
 	// For the following helper functions, we can't use self:: to refer to
-	// static variables (under PHP 5.3), so we use Gateway_Form_Mustache::
+	// static variables since rendering happens in another class, so we use
+	// Gateway_Form_Mustache::
 
 	/**
 	 * Get a message value specific to the donor's country and language.
@@ -382,9 +419,12 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		}
 		$language = RequestContext::getMain()->getLanguage()->getCode();
 		$key = array_shift( $params );
+		if ( isset( Gateway_Form_Mustache::$messageReplacements[$key] ) ) {
+			$key = Gateway_Form_Mustache::$messageReplacements[$key];
+		}
 		return MessageUtils::getCountrySpecificMessage(
 			$key,
-			self::$country,
+			Gateway_Form_Mustache::$country,
 			$language,
 			$params
 		);
@@ -403,24 +443,49 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 		$fieldName = array_shift( $params );
 
-		if ( isset( self::$fieldErrors[$fieldName] ) ) {
-			$context = self::$fieldErrors[$fieldName];
+		if ( isset( Gateway_Form_Mustache::$fieldErrors[$fieldName] ) ) {
+			$context = Gateway_Form_Mustache::$fieldErrors[$fieldName];
 			$context['cssClass'] = 'errorMsg';
 		} else {
-			$context = array(
+			$context = [
 				'cssClass' => 'errorMsgHide',
 				'key' => $fieldName,
-			);
+			];
 		}
 
-		$path = self::$baseDir . DIRECTORY_SEPARATOR
-			. 'error_message' . self::EXTENSION;
+		$path = Gateway_Form_Mustache::$baseDir . DIRECTORY_SEPARATOR
+			. 'error_message' . Gateway_Form_Mustache::EXTENSION;
 
-		return self::render( $path, $context );
+		return MustacheHelper::render( $path, $context );
+	}
+
+	// phpcs:enable Squiz.Classes.SelfMemberReference.NotUsed
+
+	public function getResources() {
+		$resources = parent::getResources();
+		$gatewayModules = $this->gateway->getConfig( 'ui_modules' );
+		if ( !empty( $gatewayModules['scripts'] ) ) {
+			$resources = array_merge(
+				$resources,
+				(array)$gatewayModules['scripts']
+			);
+		}
+		if ( $this->gateway->getGlobal( 'LogClientErrors' ) ) {
+			$resources[] = 'ext.donationInterface.errorLog';
+		}
+		return $resources;
 	}
 
 	public function getStyleModules() {
-		return 'ext.donationInterface.mustache.styles';
+		$modules = [ 'ext.donationInterface.mustache.styles' ];
+		$gatewayModules = $this->gateway->getConfig( 'ui_modules' );
+		if ( !empty( $gatewayModules['styles'] ) ) {
+			$modules = array_merge(
+				$modules,
+				(array)$gatewayModules['styles']
+			);
+		}
+		return $modules;
 	}
 
 	protected function getTopLevelTemplate() {
@@ -429,5 +494,31 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 	protected function getImagePath( $name ) {
 		return "{$this->scriptPath}/extensions/DonationInterface/gateway_forms/includes/{$name}";
+	}
+
+	protected function getPartials( array $data ) {
+		$partials = [];
+		if ( empty( $data['variant'] ) ) {
+			$variantDir = false;
+		} else {
+			$variantDir = $this->gateway->getGlobal( 'VariantConfigurationDirectory' ) .
+				DIRECTORY_SEPARATOR . $data['variant'] . DIRECTORY_SEPARATOR;
+		}
+		foreach ( self::$partials as $partial ) {
+			$filename = $partial . self::EXTENSION;
+			if (
+				$variantDir &&
+				file_exists( $variantDir . $filename )
+			) {
+				$partials[$partial] = rtrim( file_get_contents(
+					$variantDir . $filename
+				), "\r\n" );
+			} else {
+				$partials[$partial] = rtrim( file_get_contents(
+					self::$baseDir . DIRECTORY_SEPARATOR . $filename
+				), "\r\n" );
+			}
+		}
+		return $partials;
 	}
 }

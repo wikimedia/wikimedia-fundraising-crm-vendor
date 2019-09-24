@@ -1,5 +1,6 @@
 # Core
 - Amount
+- CountryValidation
 - DonorEmail
 - DonorFullName
 - AmountInCents
@@ -9,7 +10,8 @@
 - FiscalNumber
 - ContributionTrackingPlusUnique
 - IngenicoFinancialNumber
-- DonorLocale
+- IngenicoLocale
 - IngenicoMethodCodec
 - IngenicoReturntoHelper
 - Ingenico3DSecure
+- IngenicoFormVariant # needs to come after 3DSecure

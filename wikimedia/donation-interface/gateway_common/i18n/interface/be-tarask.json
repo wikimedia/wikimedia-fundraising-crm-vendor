@@ -7,7 +7,8 @@
 			"Wizardist",
 			"Zedlik",
 			"Red Winged Duck",
-			"Pcoombe"
+			"Pcoombe",
+			"Renessaince"
 		]
 	},
 	"donate_interface": "Падтрымайце фундацыю «Вікімэдыя»",
@@ -27,7 +28,7 @@
 	"donate_interface-monthly-donation-description": "Штомесячнае ахвяраваньне Фундацыі «Вікімэдыя»",
 	"donate_interface-amount-error": "Калі ласка, абярыце суму ахвяраваньня",
 	"donate_interface-smallamount-error": "Калі ласка, абярыце суму (мінімум $1)",
-	"donate_interface-bigamount-error": "Мы ня можам прыняць ахвяраваньні на суму большую за 10&nbsp;000&nbsp;USD ($1 $2) праз наш сайт. На конт вялікіх ахвяраваньняў лістуйцеся з нашымі супрацоўнікамі па адрасе $3.",
+	"donate_interface-bigamount-error": "Мы ня можам прыняць ахвяраваньні на суму большую за $4&nbsp;USD ($1 $2) праз наш сайт. На конт вялікіх ахвяраваньняў лістуйцеся з нашымі супрацоўнікамі па адрасе $3.",
 	"donate_interface-processing-error": "Адбылася памылка падчас апрацоўкі вашага запыту.\nКалі ласка, скантактуйцеся з службай ахвяраваньняў праз <a href=\"mailto:$1\">$1</a>.",
 	"donate_interface-fallback-currency-notice": "Ваша валюта не падтрымліваецца. Калі вырашыце працягнуць, апрацоўка будзе выкананая ў $1.",
 	"donate_interface-maintenance-notice": "Даруйце, але гэты тым плацяжу быў часова адключаны.",
@@ -325,8 +326,6 @@
 	"donate_interface-translate-bluelink": "Палепшыце гэты пераклад",
 	"donate_interface-translate-redlink1": "Дапамажыце перакласьці гэтую старонку.",
 	"donate_interface-translate-redlink2": "Ці дашліце Ваш пераклад па адрасе translations@wikimedia.org",
-	"donate_interface-email-fallbackname": "прыяцель Фундацыі «Вікімэдыі»",
-	"donate_interface-email-subject": "Мы тут дзеля вас. Дзякуем за тое, што вы з намі",
 	"donate_interface-email-unsub-title": "Адмаўленьне ад падпіскі на паведамленьні Фундацыі «Вікімэдыя»",
 	"donate_interface-email-unsub-button": "Адпісацца",
 	"donate_interface-email-unsub-success": "Вы былі пасьпяховы выключаныя з нашага сьпісу распаўсюджаньня",
@@ -338,6 +337,7 @@
 	"donate_interface-taxded-link-us": "Інфармацыя пра сьпісаньне падаткаў",
 	"donate_interface-legal-original": "Гэта не афіцыйны пераклад. У выпадку супярэчнасьцяў паміж гэтым перакладам і ангельскай вэрсіяй прыярытэт мае ангельская вэрсія.",
 	"donate_interface-monthlybox-title": "Рабіць гэта штомесяц?",
+	"donate_interface-monthlybox-content": "Штомесячныя ахвяраваньні апрацоўваюцца 2-<sup>га</sup> чысла кожнага месяца. Вы можаце скасаваць іх у любы час.",
 	"donate_interface-monthlybox-amount": "Сума штомесячнага ахвяраваньня",
 	"donate_interface-monthlybox-yes": "Вядома, рабіць гэта штомесячна",
 	"donate_interface-monthlybox-no": "НЕ, зрабіць аднаразовае ахвяраваньне",

@@ -7,8 +7,8 @@ interface ValidationHelper {
 	 *
 	 * @param GatewayType $adapter
 	 * @param array $normalized Donation data in normalized form.
-	 * @param ErrorState $errors Reference to error state
+	 * @param ErrorState &$errors Reference to error state
 	 * @return void
 	 */
-	function validate( GatewayType $adapter, $normalized, &$errors );
+	public function validate( GatewayType $adapter, $normalized, &$errors );
 }

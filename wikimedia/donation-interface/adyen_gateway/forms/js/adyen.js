@@ -6,18 +6,19 @@
 		safari = window.safari !== undefined;
 
 	function redirect( result ) {
-		var $pForm, $payment = $( '#payment-form' );
+		var $pForm, $payment = $( '#payment-form' ),
+			url = result.redirect;
 		$pForm = $(
 			'<form></form>', {
 				method: 'post',
-				action: result.formaction,
+				action: url,
 				id: 'submit-payment'
 			}
 		);
-		populateHiddenFields( result.gateway_params, $pForm );
+		populateHiddenFields( result.formData, $pForm );
 		$payment.append( $pForm );
 
-		$pForm.prop( 'action', result.formaction );
+		$pForm.prop( 'action', url );
 		$pForm.submit();
 	}
 
@@ -40,12 +41,12 @@
 		$pForm = $(
 			'<form></form>', {
 				method: 'post',
-				action: result.formaction,
+				action: result.iframe,
 				target: 'adyen-iframe',
 				id: 'fetch-iframe-form'
 			}
 		);
-		populateHiddenFields( result.gateway_params, $pForm );
+		populateHiddenFields( result.formData, $pForm );
 		$payment.append( $pForm );
 
 		$payment.find( '#fetch-iframe-form' ).submit();

@@ -37,11 +37,11 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * An array of the vars we expect to be set before people hit payments.
 	 * @var array
 	 */
-	public static $initial_vars = array(
+	public static $initial_vars = [
 		'ffname' => 'testytest',
 		'referrer' => 'www.yourmom.com', // please don't go there.
 		'currency' => 'USD',
-	);
+	];
 
 	/**
 	 * This will be set by a test method with the adapter object.
@@ -54,11 +54,11 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	public $smashPigGlobalConfig;
 
 	/**
-	 * @param $name string The name of the test case
-	 * @param $data array Any parameters read from a dataProvider
-	 * @param $dataName string|int The name or index of the data set
+	 * @param string|null $name The name of the test case
+	 * @param array $data Any parameters read from a dataProvider
+	 * @param string|int $dataName The name or index of the data set
 	 */
-	public function __construct( $name = null, array $data = array(), $dataName = '' ) {
+	public function __construct( $name = null, array $data = [], $dataName = '' ) {
 		// Just in case you got here without running the configuration...
 		global $wgDonationInterfaceTest;
 		$wgDonationInterfaceTest = true;
@@ -67,15 +67,15 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	}
 
 	public static function resetTestingAdapters() {
-		$testing_adapters = array(
-			'TestingAdyenAdapter',
-			'TestingAstroPayAdapter',
-			'TestingGenericAdapter',
-			'TestingGlobalCollectAdapter',
-			'TestingGlobalCollectOrphanAdapter',
-			'TestingPaypalExpressAdapter',
-			'TestingPaypalLegacyAdapter',
-		);
+		$testing_adapters = [
+			TestingAdyenAdapter::class,
+			TestingAstroPayAdapter::class,
+			TestingGenericAdapter::class,
+			TestingGlobalCollectAdapter::class,
+			TestingGlobalCollectOrphanAdapter::class,
+			TestingPaypalExpressAdapter::class,
+			TestingPaypalLegacyAdapter::class,
+		];
 		foreach ( $testing_adapters as $testing_adapter ) {
 			$testing_adapter::setDummyGatewayResponseCode( null );
 		}
@@ -102,7 +102,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	/**
 	 * Set up a fake request with the given data. Returns the fake request.
 	 * @param array $data
-	 * @param array $session
+	 * @param array|null $session
 	 * @return FauxRequest
 	 */
 	protected function setUpRequest( $data, $session = null ) {
@@ -135,6 +135,17 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		return $providerConfig;
 	}
 
+	protected function setInitialFiltersToFail() {
+		$this->setMwGlobals( [
+			'wgDonationInterfaceCustomFiltersInitialFunctions' => [
+				'getScoreUtmSourceMap' => 100
+			],
+			'wgDonationInterfaceUtmSourceMap' => [
+				'/.*/' => 100,
+			],
+		] );
+	}
+
 	/**
 	 * buildRequestXmlForGlobalCollect
 	 *
@@ -142,9 +153,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * - there are many cases to this that need to be developed.
 	 * - Do not consider this a complete test!
 	 *
-	 * @covers GatewayAdapter::__construct
-	 * @covers GatewayAdapter::setCurrentTransaction
-	 * @covers GatewayAdapter::buildRequestXML
+	 * @param array $optionsForTestData
+	 * @param array $options
 	 */
 	public function buildRequestXmlForGlobalCollect( $optionsForTestData, $options ) {
 		global $wgDonationInterfaceTest;
@@ -172,8 +182,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * @throws OutOfBoundsException when there is no data available for the requested country
 	 */
 	public static function getDonorTestData( $country = '' ) {
-		$donortestdata = array(
-			'US' => array( // default
+		$donortestdata = [
+			'US' => [ // default
 				'city' => 'San Francisco',
 				'state_province' => 'CA',
 				'postal_code' => '94105',
@@ -184,8 +194,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'amount' => '1.55',
 				'language' => 'en',
 				'email' => 'nobody@wikimedia.org',
-			),
-			'AU' => array(
+			],
+			'AU' => [
 				'state_province' => 'NSW',
 				'currency' => 'AUD',
 				'first_name' => 'Firstname',
@@ -193,8 +203,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'amount' => '5.55',
 				'language' => 'en',
 				'email' => 'nobody@wikimedia.org',
-			),
-			'ES' => array(
+			],
+			'ES' => [
 				'city' => 'Barcelona',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -204,8 +214,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Apellido',
 				'amount' => '1.55',
 				'language' => 'es',
-			),
-			'Catalonia' => array(
+			],
+			'Catalonia' => [
 				'city' => 'Barcelona',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -215,8 +225,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Apellido',
 				'amount' => '1.55',
 				'language' => 'ca',
-			),
-			'NO' => array(
+			],
+			'NO' => [
 				'city' => 'Oslo',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -226,8 +236,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Etternavn',
 				'amount' => '1.55',
 				'language' => 'no',
-			),
-			'FR' => array(
+			],
+			'FR' => [
 				'city' => 'Versailles',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -237,9 +247,9 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Nom',
 				'amount' => '1.55',
 				'language' => 'fr',
-			),
+			],
 			// Fiji is configured as a snowflake to test special treatment for certain store IDs
-			'FJ' => array(
+			'FJ' => [
 				'city' => 'Suva',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -249,8 +259,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'LastName',
 				'amount' => '1.55',
 				'language' => 'en',
-			),
-			'NL' => array(
+			],
+			'NL' => [
 				'city' => 'Amsterdam',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -260,8 +270,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Achternaam',
 				'amount' => '1.55',
 				'language' => 'nl',
-			),
-			'BE' => array(
+			],
+			'BE' => [
 				'city' => 'Antwerp',
 				'state_province' => 'XX',
 				'postal_code' => '0',
@@ -271,8 +281,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Achternaam',
 				'amount' => '1.55',
 				'language' => 'nl',
-			),
-			'IT' => array(
+			],
+			'IT' => [
 				'city' => 'Torino',
 				'state_province' => 'TO',
 				'postal_code' => '10123',
@@ -282,8 +292,20 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Cognome',
 				'amount' => '1.55',
 				'language' => 'it',
-			),
-			'CA' => array(
+			],
+			'IN' => [
+				'currency' => 'INR',
+				'fiscal_number' => '0000123456',
+				'payment_submethod' => 'test_bank',
+				'street_address' => 'Test Street',
+				'city' => 'Chennai',
+				'first_name' => 'Test',
+				'last_name' => 'India',
+				'amount' => '100',
+				'language' => 'en',
+				'email' => 'testindia@test.com'
+			],
+			'CA' => [
 				'city' => 'Saskatoon',
 				'state_province' => 'SK',
 				'postal_code' => 'S7K 0J5',
@@ -293,8 +315,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'last_name' => 'Surname',
 				'amount' => '1.55',
 				'language' => 'en',
-			),
-			'BR' => array(
+			],
+			'BR' => [
 				'currency' => 'BRL',
 				'fiscal_number' => '00003456789',
 				'payment_submethod' => 'test_bank',
@@ -303,8 +325,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'amount' => '100',
 				'language' => 'pt',
 				'email' => 'nobody@example.org'
-			),
-			'MX' => array(
+			],
+			'MX' => [
 				'city' => 'Tuxtla Gutiérrez',
 				'state_province' => 'CHP',
 				'currency' => 'MXN',
@@ -314,8 +336,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'email' => 'pueblo@unido.coop',
 				'amount' => '155',
 				'language' => 'es',
-			),
-			'GB' => array(
+			],
+			'GB' => [
 				'city' => 'Nottingham',
 				'currency' => 'GBP',
 				'street_address' => '123 Sherwood Forest',
@@ -324,8 +346,8 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'email' => 'robinhood@merrymen.coop',
 				'amount' => '155',
 				'language' => 'en',
-			),
-		);
+			],
+		];
 		// default to US
 		if ( $country === '' ) {
 			$country = 'US';
@@ -342,53 +364,56 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 
 	/**
 	 * Supported languages for Belgium
+	 * @return array
 	 */
 	public function belgiumLanguageProvider() {
-		return array(
-			array( 'nl' ),
-			array( 'de' ),
-			array( 'fr' ),
-		);
+		return [
+			[ 'nl' ],
+			[ 'de' ],
+			[ 'fr' ],
+		];
 	}
 
 	/**
 	 * Supported languages for Canada
+	 * @return array
 	 */
 	public function canadaLanguageProvider() {
-		return array(
-			array( 'en' ),
-			array( 'fr' ),
-		);
+		return [
+			[ 'en' ],
+			[ 'fr' ],
+		];
 	}
 
 	/**
 	 * Transaction codes for GC and GC orphan adapters not to be retried
 	 * on pain of $1000+ fines by Mastercard
+	 * @return array
 	 */
 	public function mcNoRetryCodeProvider() {
-		return array(
-			array( '430260' ),
-			array( '430306' ),
-			array( '430330' ),
-			array( '430354' ),
-			array( '430357' ),
-		);
+		return [
+			[ '430260' ],
+			[ '430306' ],
+			[ '430330' ],
+			[ '430354' ],
+			[ '430357' ],
+		];
 	}
 
 	public function benignNoRetryCodeProvider() {
-		return array(
-			array( '430285' ),
-		);
+		return [
+			[ '430285' ],
+		];
 	}
 
 	/**
 	 * Get the expected XML request from GlobalCollect
 	 *
-	 * @param $optionsForTestData
+	 * @param array $optionsForTestData
 	 * @param array $options
-	 * @return string    The expected XML request
+	 * @return string The expected XML request
 	 */
-	public function getExpectedXmlRequestForGlobalCollect( $optionsForTestData, $options = array() ) {
+	public function getExpectedXmlRequestForGlobalCollect( $optionsForTestData, $options = [] ) {
 		global $wgDonationInterfaceThankYouPage;
 		$request = RequestContext::getMain()->getRequest();
 
@@ -473,7 +498,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	/**
 	 * Get a fresh gateway object of the type specified in the variable
 	 * $this->testAdapterClass.
-	 * @param array $external_data If you want to shoehorn in some external
+	 * @param array|null $external_data If you want to shoehorn in some external
 	 * data, do that here.
 	 * @param array $setup_hacks An array of things that override stuff in
 	 * the constructor of the gateway object that I can't get to without
@@ -481,12 +506,12 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * constructor.
 	 * @return GatewayAdapter The new relevant gateway adapter object.
 	 */
-	function getFreshGatewayObject( $external_data = null, $setup_hacks = array() ) {
+	public function getFreshGatewayObject( $external_data = null, $setup_hacks = [] ) {
 		$data = null;
 		if ( !is_null( $external_data ) ) {
-			$data = array(
+			$data = [
 				'external_data' => $external_data,
-			);
+			];
 		}
 
 		if ( $setup_hacks ) {
@@ -516,11 +541,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	}
 
 	public static function resetAllEnv() {
-		$_SESSION = array();
-		$_GET = array();
-		$_POST = array();
-
-		$_SERVER = array();
+		$_SERVER = [];
 		$_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
 		$_SERVER['HTTP_HOST'] = TESTS_HOSTNAME;
 		$_SERVER['SERVER_NAME'] = TESTS_HOSTNAME;
@@ -531,7 +552,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		self::resetTestingAdapters();
 		// Wipe out the $instance of these classes to make sure they're
 		// re-created with fresh gateway instances for the next test
-		$singleton_classes = array(
+		$singleton_classes = [
 			'Gateway_Extras_ConversionLog',
 			'Gateway_Extras_CustomFilters',
 			'Gateway_Extras_CustomFilters_Functions',
@@ -540,7 +561,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 			'Gateway_Extras_CustomFilters_Referrer',
 			'Gateway_Extras_CustomFilters_Source',
 			'Gateway_Extras_SessionVelocityFilter',
-		);
+		];
 		foreach ( $singleton_classes as $singleton_class ) {
 			$unwrapped = TestingAccessWrapper::newFromClass( $singleton_class );
 			$unwrapped->instance = null;
@@ -561,28 +582,39 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 *
 	 * @param string $special_page_class A testing descendant of GatewayPage
 	 * @param array $initial_vars Array that will be loaded straight into a
-	 * test version of the http request.
+	 *  test version of the http request.
 	 * @param array $perform_these_checks Array of checks to perform in the
-	 * following format:
-	 * $perform_these_checks[$element_id][$check_to_perform][$expected_result]
-	 * So far, $check_to_perform can be either 'nodename' or 'innerhtml'
-	 * @param bool $fail_on_log_errors When true, this will fail the current test if there are entries in the gateway's error log.
-	 * @param array $session pre-existing session data.
+	 *  following format:
+	 *  $perform_these_checks[$element_id][$check_to_perform][$expected_result]
+	 *  $check_to_perform can be 'nodename', 'innerhtml', 'innerhtmlmatches',
+	 *  'value', 'selected', or 'gone' (node should not be found).
+	 * @param bool $fail_on_log_errors When true, this will fail the current test
+	 *  if there are entries in the gateway's error log.
+	 * @param array|null $session pre-existing session data.
+	 * @param bool $posted true to simulate a form post, false to simulate
+	 *  loading values from the querystring.
+	 * @throws MWException
 	 */
-	function verifyFormOutput( $special_page_class, $initial_vars, $perform_these_checks, $fail_on_log_errors = false, $session = null ) {
+	public function verifyFormOutput(
+		$special_page_class, $initial_vars, $perform_these_checks,
+		$fail_on_log_errors = false, $session = null, $posted = false
+	) {
 		// Nasty hack to clear output from any previous tests.
+		if ( empty( $_SERVER['REQUEST_TIME_FLOAT'] ) ) {
+			$_SERVER['REQUEST_TIME_FLOAT'] = microtime( true );
+		}
 		$mainContext = RequestContext::getMain();
 		$newOutput = new OutputPage( $mainContext );
-		$newRequest = new TestingRequest( $initial_vars, false, $session );
+		$newRequest = new TestingRequest( $initial_vars, $posted, $session );
 		$newTitle = Title::newFromText( 'nonsense is apparently fine' );
 		$mainContext->setRequest( $newRequest );
 		$mainContext->setOutput( $newOutput );
 		$mainContext->setTitle( $newTitle );
 
-		$globals = array(
+		$globals = [
 			'wgTitle' => $newTitle,
 			'wgOut' => $newOutput,
-		);
+		];
 
 		$this->setMwGlobals( $globals );
 
@@ -627,6 +659,10 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 			unset( $perform_these_checks['headers'] );
 
 			$input_node = $dom_thingy->getElementById( $id );
+			if ( $checks === 'gone' ) {
+				$this->assertNull( $input_node, "'$id' element supposed to be gone, but was found" );
+				continue;
+			}
 			$this->assertNotNull( $input_node, "Couldn't find the '$id' element in html. Log entries: \n" .
 				print_r( DonationLoggerFactory::$overrideLogger->messages, true ) . "\n\nHTML:\n$form_html" );
 			foreach ( $checks as $name => $expected ) {
@@ -681,28 +717,29 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * @param string $label identifies the value in assertion failures
 	 * @return void
 	 */
-	function performCheck( $value, $check, $label = 'Tested value' ) {
+	public function performCheck( $value, $check, $label = 'Tested value' ) {
 		if ( is_callable( $check ) ) {
 			$check( $value );
 			return;
 		}
 		$this->assertEquals( $check, $value, "Expected $label to be $check, found $value instead." );
 	}
+
 	/**
 	 * Asserts that there are no log entries of LOG_ERR or worse.
 	 */
-	function verifyNoLogErrors() {
+	public function verifyNoLogErrors() {
 		$log = DonationLoggerFactory::$overrideLogger->messages;
 
 		$this->assertTrue( is_array( $log ), "Missing the test log" );
 
 		// for our purposes, an "error" is LOG_ERR or less.
-		$checklogs = array(
+		$checklogs = [
 			LogLevel::ERROR => "Oops: We've got LOG_ERRors.",
 			LogLevel::CRITICAL => "Critical errors!",
 			LogLevel::ALERT => "Log Alerts!",
 			LogLevel::EMERGENCY => "Logs says the servers are actually on fire.",
-		);
+		];
 
 		$message = false;
 		foreach ( $checklogs as $level => $levelmessage ) {
@@ -726,7 +763,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		if ( !array_key_exists( $log_level, $log ) ) {
 			return false;
 		}
-		$return = array();
+		$return = [];
 		foreach ( $log[$log_level] as $line ) {
 			if ( preg_match( $match, $line ) ) {
 				$return[] = $line;
@@ -735,7 +772,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		return $return;
 	}
 
-	static function getInnerHTML( $node ) {
+	public static function getInnerHTML( $node ) {
 		$innerHTML = '';
 		$children = $node->childNodes;
 		foreach ( $children as $child ) {
@@ -745,9 +782,9 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	}
 
 	public static function unsetVariableFields( &$message ) {
-		$fields = array(
+		$fields = [
 			'date', 'source_enqueued_time', 'source_host', 'source_run_id', 'source_version', 'gateway_account'
-		);
+		];
 		foreach ( $fields as $field ) {
 			unset( $message[$field] );
 		}
@@ -757,10 +794,12 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 * Create an orphaned tranaction.
 	 *
 	 * TODO: Reuse SmashPigBaseTest#createMessage
+	 * @param array $overrides
+	 * @return array
 	 */
-	public function createOrphan( $overrides = array() ) {
+	public function createOrphan( $overrides = [] ) {
 		$uniq = mt_rand();
-		$message = $overrides + array(
+		$message = $overrides + [
 				'contribution_tracking_id' => $uniq,
 				'country' => 'US',
 				'first_name' => 'Flighty',
@@ -776,7 +815,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'date' => time() - 25 * 60,
 				'gross' => 123,
 				'currency' => 'EUR',
-			);
+			];
 		return $message;
 	}
 

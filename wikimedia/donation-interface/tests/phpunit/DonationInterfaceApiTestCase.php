@@ -1,6 +1,5 @@
 <?php
 
-use SmashPig\Core\Context;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
@@ -20,5 +19,16 @@ class DonationInterfaceApiTestCase extends ApiTestCase {
 	public function tearDown() {
 		DonationInterfaceTestCase::resetAllEnv();
 		parent::tearDown();
+	}
+
+	protected function setInitialFiltersToFail() {
+		$this->setMwGlobals( [
+			'wgDonationInterfaceCustomFiltersInitialFunctions' => [
+				'getScoreUtmSourceMap' => 100
+			],
+			'wgDonationInterfaceUtmSourceMap' => [
+				'/.*/' => 100,
+			],
+		] );
 	}
 }

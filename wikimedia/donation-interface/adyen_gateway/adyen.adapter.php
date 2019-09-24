@@ -15,7 +15,9 @@
  * GNU General Public License for more details.
  *
  */
+
 use Psr\Log\LogLevel;
+use SmashPig\Core\PaymentError;
 use SmashPig\CrmLink\FinalStatus;
 use SmashPig\CrmLink\ValidationAction;
 
@@ -32,63 +34,59 @@ class AdyenAdapter extends GatewayAdapter {
 		return 'namevalue';
 	}
 
-	public function getRequiredFields( $knownData = null ) {
-		$fields = parent::getRequiredFields( $knownData );
-		$fields[] = 'payment_submethod';
-		return $fields;
-	}
-
-	function defineAccountInfo() {
-		$this->accountInfo = array(
+	protected function defineAccountInfo() {
+		$this->accountInfo = [
 			'merchantAccount' => $this->account_config[ 'AccountName' ],
 			'skins' => $this->account_config[ 'Skins' ],
-		);
+		];
 	}
 
-	function setGatewayDefaults( $options = array() ) {
+	protected function setGatewayDefaults( $options = [] ) {
 		if ( $this->getData_Unstaged_Escaped( 'processor_form' ) == null ) {
 			$skinCodes = $this->getSkinCodes();
 			$processor_form = $skinCodes['base'];
 			$this->addRequestData(
-				array( 'processor_form' => $processor_form )
+				[ 'processor_form' => $processor_form ]
 			);
 		}
 	}
 
-	// FIXME: That's not what ReturnValueMap is for!
-	// Unused?
-	function defineReturnValueMap() {
-		$this->return_value_map = array(
+	/**
+	 * FIXME: That's not what ReturnValueMap is for!
+	 * Unused?
+	 */
+	protected function defineReturnValueMap() {
+		$this->return_value_map = [
 			'authResult' => 'result',
 			'merchantReference' => 'order_id',
 			'merchantReturnData' => 'return_data',
 			'pspReference' => 'gateway_txn_id',
 			'skinCode' => 'processor_form',
-		);
+		];
 	}
 
 	/**
 	 * Sets up the $order_id_meta array.
 	 * Should contain the following keys/values:
-	 * 'alt_locations' => array( $dataset_name, $dataset_key ) //ordered
+	 * 'alt_locations' => [ $dataset_name, $dataset_key ] //ordered
 	 * 'type' => numeric, or alphanumeric
 	 * 'length' => $max_charlen
 	 */
 	public function defineOrderIDMeta() {
-		$this->order_id_meta = array(
-			'alt_locations' => array( 'request' => 'merchantReference' ),
+		$this->order_id_meta = [
+			'alt_locations' => [ 'request' => 'merchantReference' ],
 			'ct_id' => true,
 			'generate' => true,
-		);
+		];
 	}
 
 	/**
 	 * Define transactions
 	 */
-	function defineTransactions() {
-		$this->transactions = array();
+	protected function defineTransactions() {
+		$this->transactions = [];
 
-		$requestFields = array(
+		$requestFields = [
 				'allowedMethods',
 				'brandCode',
 				'card.cardHolderName',
@@ -110,10 +108,10 @@ class AdyenAdapter extends GatewayAdapter {
 				// 'shopperStatement',
 				// 'merchantReturnData',
 				// 'deliveryAddressType',
-		);
+		];
 
 		// Add address fields for countries that use them.
-		$addressFields = array(
+		$addressFields = [
 			'billingAddress.street',
 			'billingAddress.city',
 			'billingAddress.postalCode',
@@ -121,40 +119,60 @@ class AdyenAdapter extends GatewayAdapter {
 			'billingAddress.country',
 			'billingAddressType',
 			'billingAddress.houseNumberOrName',
-		);
+		];
 
 		if ( in_array( 'street_address', $this->getRequiredFields() ) ) {
 			$requestFields = array_merge( $requestFields, $addressFields );
 		}
 
-		$this->transactions['donate'] = array(
+		$this->transactions['donate'] = [
 			'request' => $requestFields,
-			'values' => array(
+			'values' => [
 				'allowedMethods' => implode( ',', $this->getAllowedPaymentMethods() ),
 				'billingAddressType' => 2, // hide billing UI fields
 				'merchantAccount' => $this->accountInfo[ 'merchantAccount' ],
 				'sessionValidity' => date( 'c', strtotime( '+2 days' ) ),
 				'shipBeforeDate' => date( 'Y-M-d', strtotime( '+2 days' ) ),
 				// 'shopperLocale' => language _ country
-			),
+			],
 			'check_required' => true,
 			'iframe' => true,
-		);
+		];
 	}
 
 	protected function getAllowedPaymentMethods() {
-		return array(
+		return [
 			'card',
-		);
+		];
 	}
 
-	function getBasedir() {
+	protected function getBasedir() {
 		return __DIR__;
 	}
 
-	function doPayment() {
+	public function doPayment() {
+		$apiResult = $this->do_transaction( 'donate' );
+		$data = $apiResult->getData();
+		$url = $apiResult->getRedirect();
+
+		if ( !empty( $url ) && !empty( $data ) ) {
+			// We've got a URL to send them to and data to post.
+			// Now figure out if we're using an iframe or a redirect
+			// For the Adyen workflow, we do a full redirect for all iOS
+			// and Safari browsers. We decide this on the front end and
+			// post back a 'processor_form' value that will match either
+			// the 'base' or 'redirect' skin code.
+			$processorForm = $this->getData_Unstaged_Escaped( 'processor_form' );
+			$skinCodes = $this->getSkinCodes();
+			if ( $processorForm === $skinCodes['redirect'] ) {
+				return PaymentResult::newRedirect( $url, $data );
+			}
+			return PaymentResult::newIframe( $url, $data );
+		}
+		// If we've fallen through to here, there must be some problem. Use the
+		// default instantiation function.
 		return PaymentResult::fromResults(
-			$this->do_transaction( 'donate' ),
+			$apiResult,
 			$this->getFinalStatus()
 		);
 	}
@@ -162,9 +180,9 @@ class AdyenAdapter extends GatewayAdapter {
 	/**
 	 * FIXME: I can't help but feel like it's bad that the parent's do_transaction
 	 * is never used at all.
-	 * @inheritdoc
+	 * @inheritDoc
 	 */
-	function do_transaction( $transaction ) {
+	public function do_transaction( $transaction ) {
 		$this->ensureUniqueOrderID();
 		$this->session_addDonorData();
 		$this->setCurrentTransaction( $transaction );
@@ -184,11 +202,32 @@ class AdyenAdapter extends GatewayAdapter {
 
 			switch ( $transaction ) {
 				case 'donate':
-					$formaction = $this->getProcessorUrl() . '/hpp/pay.shtml';
 					// Run Session Velocity here because we don't cURL anything
-					$this->runSessionVelocityFilter();
-					// FIXME: should skip next step if session velocity rejected
-					$this->runAntifraudFilters();
+					if ( $this->runSessionVelocityFilter() ) {
+						// We run the full antifraud filter list here and not just the 'initial'
+						// list like we do in other adaptors. This is so we can have all the
+						// scores, including minFraud, available to send to the pending queue.
+						// They need to be in 'pending' because we make the final call as to
+						// whether we want to capture the payment in the IPN handler, not in
+						// this class's return processing.
+						Gateway_Extras_CustomFilters::onGatewayReady( $this );
+						$this->runAntifraudFilters();
+					}
+					if ( $this->getValidationAction() === ValidationAction::REJECT ) {
+						$this->logger->info( "Failed pre-process checks for transaction type $transaction." );
+						$this->transaction_response->setCommunicationStatus( false );
+						$this->transaction_response->setMessage( $this->getErrorMapByCodeAndTranslate( 'internal-0000' ) );
+						$this->transaction_response->addError(
+							new PaymentError(
+								'internal-0000',
+								"Failed pre-process checks for transaction type $transaction.",
+								LogLevel::INFO
+							)
+						);
+						// No need to increment sequence number, since we
+						// won't be sending the donor to the processor.
+						return $this->transaction_response;
+					}
 					// Add the risk score to our data. This will also trigger
 					// staging, placing the risk score in the constructed URL
 					// as 'offset' for use in processor-side fraud filters.
@@ -197,14 +236,14 @@ class AdyenAdapter extends GatewayAdapter {
 					// will leave it for manual review. If it's hella fraudy
 					// the listener will cancel it.
 
-					$this->addRequestData( array( 'risk_score' => $this->risk_score ) );
+					$this->addRequestData( [ 'risk_score' => $this->risk_score ] );
 
 					$requestParams = $this->buildRequestParams();
 
-					$this->transaction_response->setData( array(
-						'FORMACTION' => $formaction,
-						'gateway_params' => $requestParams,
-					) );
+					$formaction = $this->getProcessorUrl() . '/hpp/pay.shtml';
+					$this->transaction_response->setRedirect( $formaction );
+					$this->transaction_response->setData( $requestParams );
+					// FIXME: might be an iframe, might be a redirect
 					$this->logger->info(
 						"launching external iframe request: " . print_r( $requestParams, true )
 					);
@@ -237,6 +276,7 @@ class AdyenAdapter extends GatewayAdapter {
 	public function processDonorReturn( $requestValues ) {
 		// Always called outside do_transaction, so just make a new response object
 		$this->transaction_response = new PaymentTransactionResponse();
+
 		if ( empty( $requestValues ) ) {
 			$this->logger->info( "No response from gateway" );
 			throw new ResponseProcessingException(
@@ -258,13 +298,12 @@ class AdyenAdapter extends GatewayAdapter {
 		// Overwrite the order ID we have with the return data, in case the
 		// donor opened a second window.
 		$orderId = $requestValues['merchantReference'];
-		$this->addRequestData( array(
+		$this->addRequestData( [
 			'order_id' => $orderId,
-		) );
-		$gateway_txn_id = isset( $requestValues['pspReference'] ) ? $requestValues['pspReference'] : '';
-		$this->transaction_response->setGatewayTransactionId( $gateway_txn_id );
+			'gateway_txn_id' => $requestValues['pspReference'] ?? ''
+		] );
 
-		$result_code = isset( $requestValues['authResult'] ) ? $requestValues['authResult'] : '';
+		$result_code = $requestValues['authResult'] ?? '';
 		$paymentResult = null;
 		if ( $result_code == 'PENDING' || $result_code == 'AUTHORISED' ) {
 			// Both of these are listed as pending because we have to submit a capture
@@ -301,7 +340,8 @@ class AdyenAdapter extends GatewayAdapter {
 	 * before we redirect the user, so we don't need to send another one
 	 * when doStompTransaction is called from postProcessDonation.
 	 */
-	protected function doStompTransaction() { }
+	protected function doStompTransaction() {
+	}
 
 	/**
 	 * Overriding @see GatewayAdapter::getTransactionSpecificValue to strip
@@ -315,7 +355,7 @@ class AdyenAdapter extends GatewayAdapter {
 		return str_replace( '\n', '', $value );
 	}
 
-	function checkResponseSignature( $requestVars ) {
+	protected function checkResponseSignature( $requestVars ) {
 		if ( !isset( $requestVars[ 'merchantSig' ] ) ) {
 			return false;
 		}
@@ -328,10 +368,11 @@ class AdyenAdapter extends GatewayAdapter {
 
 	/**
 	 * Reformat skin codes array to access by Name
+	 * @return string[]
 	 */
 	public function getSkinCodes() {
 		$skins = $this->accountInfo['skins'];
-		$skinCodes = array();
+		$skinCodes = [];
 		foreach ( $skins as $code => $skin ) {
 			$skinCodes[$skin['Name']] = $code;
 		}

@@ -9,7 +9,7 @@ class ArrayUtil
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $array[$key] = self::trimArray($value);
-            } elseif (!is_null($value) && !is_array($value) && $key !== 'proxy_password') {
+            } elseif (is_string($value) && $key !== 'proxy_password') {
                 $array[$key] = trim($value);
             }
         }

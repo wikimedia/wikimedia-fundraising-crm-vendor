@@ -32,15 +32,17 @@ class PaymentResult {
 	protected $form;
 	protected $redirect;
 	protected $refresh = false;
-	protected $errors = array();
+	protected $errors = [];
+	protected $formData = [];
 	protected $failed = false;
 
 	protected function __construct() {
 	}
 
-	public static function newIframe( $name ) {
+	public static function newIframe( $url, $formData = [] ) {
 		$response = new PaymentResult();
-		$response->iframe = $name;
+		$response->iframe = $url;
+		$response->formData = $formData;
 		return $response;
 	}
 
@@ -50,13 +52,14 @@ class PaymentResult {
 		return $response;
 	}
 
-	public static function newRedirect( $url ) {
+	public static function newRedirect( $url, $formData = [] ) {
 		$response = new PaymentResult();
 		$response->redirect = $url;
+		$response->formData = $formData;
 		return $response;
 	}
 
-	public static function newRefresh( $errors = array() ) {
+	public static function newRefresh( $errors = [] ) {
 		$response = new PaymentResult();
 		$response->refresh = true;
 		$response->errors = $errors;
@@ -68,7 +71,7 @@ class PaymentResult {
 		return $response;
 	}
 
-	public static function newFailure( $errors = array() ) {
+	public static function newFailure( $errors = [] ) {
 		$response = new PaymentResult();
 		$response->failed = true;
 		$response->errors = $errors;
@@ -77,9 +80,9 @@ class PaymentResult {
 
 	public static function newEmpty() {
 		$response = new PaymentResult();
-		$response->errors = array( new PaymentError(
+		$response->errors = [ new PaymentError(
 			'internal-0000', 'Internal error: no results yet.', LogLevel::ERROR
-		) );
+		) ];
 		$response->failed = true;
 		return $response;
 	}
@@ -90,6 +93,10 @@ class PaymentResult {
 
 	public function getForm() {
 		return $this->form;
+	}
+
+	public function getFormData() {
+		return $this->formData;
 	}
 
 	public function getRedirect() {

@@ -1,9 +1,12 @@
 <?php
 
 class AstroPaySignature implements StagingHelper {
-	/*
+	/**
 	 * Sign an AstroPay NewInvoice request
 	 * TODO: switch on transaction, build correct message for refund
+	 * @param GatewayType $adapter
+	 * @param array $normalized
+	 * @param array &$stagedData
 	 */
 	public function stage( GatewayType $adapter, $normalized, &$stagedData ) {
 		$message = self::getNewInvoiceMessage( $stagedData );
@@ -11,13 +14,16 @@ class AstroPaySignature implements StagingHelper {
 	}
 
 	public static function getNewInvoiceMessage( $stagedData ) {
-		$requiredKeys = array(
+		$requiredKeys = [
 			'order_id', 'amount', 'donor_id', 'bank_code', 'fiscal_number', 'email'
-		);
+		];
 		$stagedKeys = array_keys( $stagedData );
 		if ( array_intersect( $requiredKeys, $stagedKeys ) != $requiredKeys ) {
 			return '';
 		} else {
+			// Set city to null when not needed
+			$city = isset( $stagedData['city'] ) ? $stagedData['city'] : '';
+
 			return str_replace( '+', ' ',
 				$stagedData['order_id'] . 'V'
 				. $stagedData['amount'] . 'I'
@@ -25,10 +31,10 @@ class AstroPaySignature implements StagingHelper {
 				. $stagedData['bank_code'] . '1'
 				. $stagedData['fiscal_number'] . 'H'
 				. /* bdate omitted */ 'G'
-				. $stagedData['email'] .'Y'
+				. $stagedData['email'] . 'Y'
 				. /* postal_code omitted */ 'A'
-				. /* street omitted */ 'P'
-				. /* city omitted */ 'S'
+				. $stagedData['street_address'] . 'P'
+				. $city . 'S'
 				. /* state_province omitted */ 'P'
 			);
 		}

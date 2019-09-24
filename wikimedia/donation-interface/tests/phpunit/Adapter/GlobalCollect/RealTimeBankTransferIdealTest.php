@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+use SmashPig\PaymentProviders\Ingenico\BankPaymentProvider;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingProviderConfiguration;
 
@@ -40,28 +41,28 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 		TestingContext::get()->providerConfigurationOverride = $config;
 
 		$this->bankPaymentProvider = $this->getMockBuilder(
-			'\SmashPig\PaymentProviders\Ingenico\BankPaymentProvider'
+			BankPaymentProvider::class
 		)->disableOriginalConstructor()->getMock();
 
 		$config->overrideObjectInstance( 'payment-provider/rtbt', $this->bankPaymentProvider );
 
 		$this->bankPaymentProvider->method( 'getBankList' )
-			->willReturn( array(
+			->willReturn( [
 				'Test1234' => 'Test Bank 1234',
 				'Test5678' => 'Test Bank 5678',
-			) );
+			] );
 
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			'wgGlobalCollectGatewayEnabled' => true,
-			'wgDonationInterfaceAllowedHtmlForms' => array(
-				'rtbt-ideal' => array(
+			'wgDonationInterfaceAllowedHtmlForms' => [
+				'rtbt-ideal' => [
 					'gateway' => 'globalcollect',
-					'payment_methods' => array( 'rtbt' => 'rtbt_ideal' ),
-					'countries' => array( '+' => 'NL' ),
-					'currencies' => array( '+' => 'EUR' ),
-				),
-			),
-		) );
+					'payment_methods' => [ 'rtbt' => 'rtbt_ideal' ],
+					'countries' => [ '+' => 'NL' ],
+					'currencies' => [ '+' => 'EUR' ],
+				],
+			],
+		] );
 	}
 
 	/**
@@ -73,23 +74,23 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 		$init['payment_method'] = 'rtbt';
 		$init['ffname'] = 'rtbt-ideal';
 
-		$assertNodes = array(
-			'amount' => array(
+		$assertNodes = [
+			'amount' => [
 				'nodename' => 'input',
 				'value' => '1.55',
-			),
-			'currency' => array(
+			],
+			'currency' => [
 				'nodename' => 'select',
 				'selected' => 'EUR',
-			),
-			'country' => array(
+			],
+			'country' => [
 				'nodename' => 'input',
 				'value' => 'NL',
-			),
-			'issuer_id' => array(
+			],
+			'issuer_id' => [
 				'innerhtmlmatches' => '/Test Bank 1234/'
-			)
-		);
+			]
+		];
 
 		$this->verifyFormOutput( 'GlobalCollectGateway', $init, $assertNodes, true );
 	}
@@ -105,13 +106,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId21() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 21,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -132,13 +133,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId31() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 31,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -159,13 +160,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId91() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 21,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -186,13 +187,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId161() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 161,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -213,13 +214,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId511() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 511,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -240,13 +241,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId721() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 721,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -267,13 +268,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId751() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 751,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -294,13 +295,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId761() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 761,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -321,13 +322,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 * @covers GatewayAdapter::getData_Unstaged_Escaped
 	 */
 	public function testBuildRequestXmlWithIssuerId771() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
 			'issuer_id' => 771,
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );
@@ -338,13 +339,13 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	}
 
 	public function testFormAction() {
-		$optionsForTestData = array(
+		$optionsForTestData = [
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'issuer_id' => 771,
 			// Email is required for RTBT.
 			'email' => 'nobody@wikimedia.org',
-		);
+		];
 
 		// somewhere else?
 		$options = $this->getDonorTestData( 'ES' );

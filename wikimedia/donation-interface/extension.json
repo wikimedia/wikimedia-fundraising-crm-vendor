@@ -1,6 +1,6 @@
 {
 	"name": "Donation Interface",
-	"version": "2.3.0",
+	"version": "2.4.0",
 	"author": [
 		"Elliott Eggleston",
 		"Katie Horn",
@@ -20,12 +20,13 @@
 	"url": "https://www.mediawiki.org/wiki/Extension:DonationInterface",
 	"type": "specialpage",
 	"requires": {
-		"MediaWiki": ">= 1.27.0"
+		"MediaWiki": ">= 1.30.0"
 	},
 	"callback": "DonationInterface::registerExtension",
 	"SpecialPages": {
 		"GatewayFormChooser": "GatewayFormChooser",
 		"SystemStatus": "SystemStatus",
+		"EmailPreferences": "EmailPreferences",
 		"GlobalCollectGateway": "GlobalCollectGateway",
 		"GlobalCollectGatewayResult": "GlobalCollectGatewayResult",
 		"IngenicoGateway": "IngenicoGateway",
@@ -42,6 +43,7 @@
 	"APIModules": {
 		"di_amazon_bill": "AmazonBillingApi",
 		"donate": "DonationApi",
+		"di_recurring_convert": "RecurringConversionApi",
 		"logPaymentsFormError": "ClientErrorApi"
 	},
 	"MessagesDirs": {
@@ -51,6 +53,7 @@
 			"gateway_common/i18n/countries",
 			"gateway_common/i18n/us-states",
 			"gateway_common/i18n/canada-provinces",
+			"gateway_common/i18n/api",
 			"amazon_gateway/i18n",
 			"globalcollect_gateway/i18n",
 			"adyen_gateway/i18n",
@@ -102,16 +105,20 @@
 		"PaymentMethod": "gateway_common/PaymentMethod.php",
 		"PaymentResult": "gateway_common/PaymentResult.php",
 		"PaymentTransactionResponse": "gateway_common/PaymentTransactionResponse.php",
+		"RecurringConversion": "gateway_common/RecurringConversion.php",
 		"ResponseCodes": "gateway_common/ResponseCodes.php",
 		"ResponseProcessingException": "gateway_common/ResponseProcessingException.php",
 		"ResultPages": "gateway_common/ResultPages.php",
+		"ResultSwitcher": "gateway_common/ResultSwitcher.php",
 		"StagingHelper": "gateway_common/StagingHelper.php",
 		"StreetAddress": "gateway_common/StreetAddress.php",
 		"UnstagingHelper": "gateway_common/UnstagingHelper.php",
 		"WmfFramework_Mediawiki": "gateway_common/WmfFramework.mediawiki.php",
 		"WmfFrameworkLogHandler": "gateway_common/WmfFrameworkLogHandler.php",
 		"ValidationHelper": "gateway_common/ValidationHelper.php",
+		"EmailForm": "email_forms/EmailForm.php",
 		"Gateway_Form": "gateway_forms/Form.php",
+		"MustacheHelper": "gateway_forms/MustacheHelper.php",
 		"Gateway_Form_Mustache": "gateway_forms/Mustache.php",
 		"MustacheErrorForm": "gateway_forms/MustacheErrorForm.php",
 		"Subdivisions": "gateway_forms/includes/Subdivisions.php",
@@ -120,9 +127,11 @@
 		"GlobalCollectAdapter": "globalcollect_gateway/globalcollect.adapter.php",
 		"GlobalCollect3DSecure": "globalcollect_gateway/GlobalCollect3DSecure.php",
 		"Ingenico3DSecure": "ingenico_gateway/Ingenico3DSecure.php",
+		"IngenicoFormVariant": "ingenico_gateway/IngenicoFormVariant.php",
 		"IngenicoGateway": "ingenico_gateway/ingenico_gateway.body.php",
 		"IngenicoGatewayResult": "ingenico_gateway/ingenico_resultswitcher.body.php",
 		"IngenicoAdapter": "ingenico_gateway/ingenico.adapter.php",
+		"IngenicoLocale": "ingenico_gateway/IngenicoLocale.php",
 		"GlobalCollectOrphanAdapter": "globalcollect_gateway/orphan.adapter.php",
 		"GlobalCollectOrphanRectifier": "globalcollect_gateway/GlobalCollectOrphanRectifier.php",
 		"IngenicoOrphanAdapter": "ingenico_gateway/orphan.adapter.php",
@@ -172,23 +181,35 @@
 		"Gateway_Extras_SessionVelocityFilter": "extras/session_velocity/session_velocity.body.php",
 		"GatewayFormChooser": "special/GatewayFormChooser.php",
 		"SystemStatus": "special/SystemStatus.php",
-		"DonationApi": "gateway_common/donation.api.php"
+		"EmailPreferences": "special/EmailPreferences.php",
+		"DonationApi": "gateway_common/donation.api.php",
+		"DonationApiBase": "gateway_common/DonationApiBase.php",
+		"RecurringConversionApi": "gateway_common/RecurringConversion.api.php"
 	},
 	"ResourceModules": {
 		"iframe.liberator": {
 			"scripts": "modules/iframe.liberator.js"
 		},
-		"ext.donationInterface.emailExplain": {
-			"scripts": "modules/js/ext.donationInterface.emailExplain.js"
+		"ext.donationInterface.employerExplain": {
+			"scripts": "modules/js/ext.donationInterface.employerExplain.js"
+		},
+		"ext.donationInterface.employerExplainAlt": {
+			"scripts": "modules/js/ext.donationInterface.employerExplainAlt.js"
+		},
+		"ext.donationInterface.emailPreferences": {
+			"scripts": "modules/js/ext.donationInterface.emailPreferences.js",
+			"dependencies": "donationInterface.skinOverride"
+		},
+		"ext.donationInterface.alwaysRedirect": {
+			"scripts": "modules/js/ext.donationInterface.alwaysRedirect.js",
+			"dependencies": "ext.donationInterface.forms"
 		},
 		"donationInterface.styles": {
-			"styles": [
-				"modules/css/gateway.css",
-				"modules/css/skinOverride.css"
-			]
+			"styles": "modules/css/gateway.css"
 		},
 		"donationInterface.skinOverride": {
-			"scripts": "modules/js/skinOverride.js"
+			"scripts": "modules/js/skinOverride.js",
+			"styles": "modules/css/skinOverride.css"
 		},
 		"ext.donationInterface.errorLog": {
 			"scripts": "modules/js/ext.donationInterface.errorLog.js"
@@ -208,7 +229,13 @@
 		},
 		"ext.donationInterface.forms": {
 			"scripts": "modules/js/ext.donationInterface.forms.js",
-			"dependencies": "ext.donationInterface.validation"
+			"dependencies": [
+				"ext.donationInterface.validation",
+				"mediawiki.util"
+			],
+			"messages": [
+				"donate_interface-email-explain"
+			]
 		},
 		"ext.donationInterface.mustache.styles": {
 			"styles": "gateway_forms/mustache/forms.css"
@@ -248,7 +275,6 @@
 				"donate_interface-noscript-msg",
 				"donate_interface-noscript-redirect-msg",
 				"donate_interface-error-msg-general",
-				"donate_interface-error-msg-js",
 				"donate_interface-error-msg-validation",
 				"donate_interface-error-msg-invalid-amount",
 				"donate_interface-error-msg-invalid-email",
@@ -295,6 +321,23 @@
 				"ext.donationInterface.currencyRates",
 				"ext.donationInterface.errorMessages"
 			]
+		},
+		"ext.donationInterface.lightgallery": {
+			"scripts": [
+				"modules/js/lightgallery.js",
+				"modules/js/lg-hash.js"
+			]
+		},
+		"ext.donationInterface.recurringUpsell": {
+			"scripts": "modules/js/ext.donationInterface.recurringUpsell.js",
+			"styles": "modules/css/recurringUpsell.css",
+			"dependencies": [
+				"mediawiki.Uri",
+				"mediawiki.util"
+			],
+			"messages": [
+				"donate_interface-recurring-upsell-error"
+			]
 		}
 	},
 	"ResourceFileModulePaths": {
@@ -312,12 +355,13 @@
 		"DonationInterfaceDefaultAppeal": "JimmyQuote",
 		"DonationInterfaceProblemsURL": "https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Problems_donating&basic=true&language=$language&country=$country",
 		"DonationInterfaceOtherWaysURL": "https://donate.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Ways_to_Give&language=$language&country=$country",
-		"DonationInterfaceFaqURL": "https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=FAQ&language=$language&country=$country",
-		"DonationInterfaceTaxURL": "https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Tax_Deductibility&language=$language&country=$country",
-		"DonationInterfacePolicyURL": "https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Donor_policy&language=$language&country=$country",
+		"DonationInterfaceFaqURL": "https://donate.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=FAQ&language=$language&country=$country",
+		"DonationInterfaceTaxURL": "https://donate.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Tax_deductibility&language=$language&country=$country",
+		"DonationInterfacePolicyURL": "https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Donor_privacy_policy&language=$language&country=$country",
 		"DonationInterfaceProblemsEmail": "donate@wikimedia.org",
 		"DonationInterfaceMajorGiftsEmail": "benefactors@wikimedia.org",
 		"DonationInterfaceDefaultEmail": "nobody@wikimedia.org",
+		"DonationInterfaceLogoOverride": [],
 		"DonationInterfaceDebugLog": false,
 		"DonationInterfaceDisplayDebug": false,
 		"DonationInterfaceUseSyslog": false,
@@ -328,6 +372,7 @@
 		"DonationInterfaceFallbackCurrency": false,
 		"DonationInterfaceFallbackCurrencyByCountry": false,
 		"DonationInterfaceNotifyOnConvert": true,
+		"DonationInterfaceSendOptInOnFailure": false,
 		"DonationInterfaceSalt": null,
 		"DonationInterfaceHeader": null,
 		"DonationInterfaceNoScriptRedirect": null,
@@ -337,6 +382,7 @@
 		"DonationInterfaceThankYouPage": "Donate-thanks",
 		"DonationInterfaceFailPage": "Donate-error",
 		"DonationInterfaceCancelPage": "Donate-cancel",
+		"DonationInterfaceLocalConfigurationDirectory": false,
 		"DonationInterfaceVariantConfigurationDirectory": false,
 		"DonationInterfaceRetryLoopCount": 3,
 		"DonationInterfaceOrphanCron": {
@@ -420,6 +466,10 @@
 			"": 100,
 			"_merge_strategy": "array_plus"
 		},
+		"IngenicoGatewayHostedFormVariants": {
+			"redirect": 100,
+			"iframe": 100
+		},
 		"AmazonGatewayLoginScript": "https://api-cdn.amazon.com/sdk/login1.js",
 		"PaypalGatewayURL": "https://www.paypal.com/cgi-bin/webscr",
 		"PaypalGatewayTestingURL": "https://www.sandbox.paypal.com/cgi-bin/webscr",
@@ -462,9 +512,8 @@
 		"DonationInterfaceCustomFiltersRefRules": [],
 		"DonationInterfaceCustomFiltersSrcRules": [],
 		"DonationInterfaceCustomFiltersFunctions": [],
+		"DonationInterfaceCustomFiltersInitialFunctions": [],
 		"DonationInterfaceNameFilterRules": [],
-		"DonationInterfaceMemcacheHost": "localhost",
-		"DonationInterfaceMemcachePort": "11211",
 		"DonationInterfaceIPVelocityFailScore": 100,
 		"DonationInterfaceIPVelocityTimeout": 300,
 		"DonationInterfaceIPVelocityThreshhold": 3,
@@ -498,6 +547,8 @@
 		"DonationInterfaceEnableSessionVelocityFilter": false,
 		"DonationInterfaceEnableSystemStatus": false,
 		"DonationInterfaceLogClientErrors": true,
+		"DonationInterfaceEnableContributionTrackingQueue": false,
+		"DonationInterfaceGeoIpDbPath": "/usr/share/GeoIP/GeoLite2-Country.mmdb",
 		"DonationInterfaceGatewayAdapters": {
 			"globalcollect": "GlobalCollectAdapter",
 			"globalcollect_orphan": "GlobalCollectOrphanAdapter",

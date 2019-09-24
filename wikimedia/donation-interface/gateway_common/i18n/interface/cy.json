@@ -25,7 +25,7 @@
 	"donate_interface-monthly-donation-description": "Cyfraniad misol at Sefydliad Wicifryngau",
 	"donate_interface-amount-error": "Byddwch gystal a dewis swm i gyfrannu",
 	"donate_interface-smallamount-error": "Dewisiwch eich swm (lleiafswm $1)",
-	"donate_interface-bigamount-error": "Ni allwn dderbyn rhoddion sy'n fwy na USD 10000 ($1 $2) trwy'r wefan. Cysylltwch â'r staff sy'n trafod rhoddion mawrion, trwy anfon e-bost at $3.",
+	"donate_interface-bigamount-error": "Ni allwn dderbyn rhoddion sy'n fwy na USD $4 ($1 $2) trwy'r wefan. Cysylltwch â'r staff sy'n trafod rhoddion mawrion, trwy anfon e-bost at $3.",
 	"donate_interface-processing-error": "Cafwyd gwall wrth drin eich cais. Nid oes prosesydd ar gael.",
 	"donate_interface-fallback-currency-notice": "Ni allwn dderbyn taliad yn eich arian breiniol chi. Os ydych am barhau i dalu, fe ddefnyddiwn yr arian breiniol $1 wrth brosesu.",
 	"donate_interface-maintenance-notice": "Ymddiheurwn fod y modd hwn o dalu wedi ei analluogi dros dro.",
@@ -334,8 +334,6 @@
 	"donate_interface-translate-bluelink": "Gwellwch ar y cyfieithiad hwn",
 	"donate_interface-translate-redlink1": "Ymunwch yn y gwaith o gyfieithu'r dudalen hon.",
 	"donate_interface-translate-redlink2": "Neu e-bostiwch eich cyfieithiad i translations@wikimedia.org",
-	"donate_interface-email-fallbackname": "Cyfaill i'r Sefydliad Wikimedia",
-	"donate_interface-email-subject": "Diolch oddi wrth Sefydliad Wikimedia",
 	"donate_interface-email-unsub-title": "Dad-danysgrifio i Sefydliad Wikimedia",
 	"donate_interface-email-unsub-button": "Dad-tanysgrifio",
 	"donate_interface-email-unsub-success": "Cawsoch eich symud o'n rhestr bostio yn llwyddiannus.",
@@ -364,13 +362,5 @@
 	"donate_interface-onetime": "Rhoi unwaith yn unig",
 	"donate_interface-monthly-short": "Misol",
 	"donate_interface-onetime-short": "Unwaith",
-	"donate_interface-error-http-403": "Nid yw'r gallu gennych i weld y dudalen hon.",
-	"apihelp-donate-param-amount": "Y swm gyfranwyd.",
-	"apihelp-donate-param-first_name": "Enw cyntaf.",
-	"apihelp-donate-param-last_name": "Enw olaf.",
-	"apihelp-donate-param-street_address": "Llinell gyntaf eich cyfeiriad.",
-	"apihelp-donate-param-supplemental_address_1": "Ail linell eich cyfeiriad.",
-	"apihelp-donate-param-city": "Tref.",
-	"apihelp-donate-param-email": "Cyfeiriad ebost.",
-	"apihelp-donate-example-1": "Cyfranwch."
+	"donate_interface-error-http-403": "Nid yw'r gallu gennych i weld y dudalen hon."
 }

@@ -55,19 +55,25 @@
 	}
 
 	/**
-	 * Get a trinary value from a checkbox that may exist.
-	 * '0' = checkbox shown and not checked
-	 * '1' = checkbox shown and checked
-	 * '' = checkbox not shown
+	 * Get a trinary value from a checkbox that may exist, falling back
+	 *  to a querystring value.
+	 *  '0' = checkbox shown and not checked, or 0 on querystring
+	 *  '1' = checkbox shown and checked, or 1 on querystring
+	 *  '' = checkbox not shown, querystring value missing
 	 *
 	 * @return {string}
 	 */
 	function getOptIn() {
-		var element = $( 'input[name=opt_in]:checked' );
-		if ( element.length === 0 ) {
-			return '';
+		var val, element = $( 'input[name=opt_in]:checked' );
+		if ( element.length === 1 ) {
+			val = element.val();
+		} else {
+			val = mw.util.getParamValue( 'opt_in' );
+			if ( val === null ) {
+				val = '';
+			}
 		}
-		return element.val();
+		return val;
 	}
 
 	/**
@@ -112,6 +118,7 @@
 			variant: $( '#variant' ).val(),
 			wmf_token: $( '#wmf_token' ).val(),
 			opt_in: getOptIn(),
+			employer: $( '#employer' ).val(),
 			format: 'json'
 		};
 
@@ -119,7 +126,7 @@
 			url: mw.util.wikiScript( 'api' ),
 			data: sendData,
 			dataType: 'json',
-			type: 'GET',
+			type: 'POST',
 			success: function ( data ) {
 				if ( typeof data.error !== 'undefined' ) {
 					// FIXME alert sux
@@ -172,6 +179,10 @@
 
 	$( function () {
 
+		var emailDiv = $( '#email' ).closest( 'div' ),
+			emailExplainMessage = mw.msg( 'donate_interface-email-explain' ),
+			optInValue = mw.donationInterface.forms.getOptIn();
+
 		$( '#first_name' ).focus();
 
 		// If submethods are visible, and a submethod is already selected on
@@ -204,5 +215,13 @@
 				di.forms.enableInput();
 			}
 		);
+
+		function showEmailExplain() {
+			emailDiv.after( '<div id="email_explain">' + emailExplainMessage + '</div>' );
+		}
+
+		if ( optInValue === '0' ) {
+			showEmailExplain();
+		}
 	} );
 } )( jQuery, mediaWiki );

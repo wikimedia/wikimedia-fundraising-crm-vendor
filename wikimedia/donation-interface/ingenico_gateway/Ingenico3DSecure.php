@@ -14,9 +14,9 @@ class Ingenico3DSecure extends GlobalCollect3DSecure {
 	 *
 	 * @param GatewayType $adapter
 	 * @param array $normalized Donation data in normalized form.
-	 * @param array $stagedData Reference to output data.
+	 * @param array &$stagedData Reference to output data.
 	 */
-	function stage( GatewayType $adapter, $normalized, &$stagedData ) {
+	public function stage( GatewayType $adapter, $normalized, &$stagedData ) {
 		parent::stage( $adapter, $normalized, $stagedData );
 		if ( isset( $stagedData['use_authentication'] ) ) {
 			$stagedData['skip_authentication'] = !$stagedData['use_authentication'];

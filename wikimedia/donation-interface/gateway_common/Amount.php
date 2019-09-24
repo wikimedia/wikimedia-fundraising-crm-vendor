@@ -27,7 +27,8 @@ class Amount implements ValidationHelper {
 		}
 		$currency = $normalized['currency'];
 		$min = self::convert( $adapter->getGlobal( 'PriceFloor' ), $currency );
-		$max = self::convert( $adapter->getGlobal( 'PriceCeiling' ), $currency );
+		$maxUsd = $adapter->getGlobal( 'PriceCeiling' );
+		$max = self::convert( $maxUsd, $currency );
 		if (
 			!is_numeric( $value ) ||
 			$value < 0
@@ -41,11 +42,12 @@ class Amount implements ValidationHelper {
 			$errors->addError( new ValidationError(
 				'amount',
 				'donate_interface-bigamount-error',
-				array(
+				[
 					$max,
 					$currency,
 					$adapter->getGlobal( 'MajorGiftsEmail' ),
-				)
+					$maxUsd
+				]
 			) );
 		} elseif ( $value < $min ) {
 			$locale = $normalized['language'] . '_' . $normalized['country'];
@@ -53,7 +55,7 @@ class Amount implements ValidationHelper {
 			$errors->addError( new ValidationError(
 				'amount',
 				'donate_interface-smallamount-error',
-				array( $formattedMin )
+				[ $formattedMin ]
 			) );
 		}
 	}
@@ -138,9 +140,9 @@ class Amount implements ValidationHelper {
 	 */
 	public static function is_fractional_currency( $currency_code ) {
 		// these currencies cannot have cents.
-		$non_fractional_currencies = array(
+		$non_fractional_currencies = [
 			'CLP', 'DJF', 'IDR', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'VND', 'XAF', 'XOF', 'XPF'
-		);
+		];
 
 		if ( in_array( strtoupper( $currency_code ), $non_fractional_currencies ) ) {
 			return false;
@@ -155,7 +157,7 @@ class Amount implements ValidationHelper {
 	 * @return bool
 	 */
 	public static function is_exponent3_currency( $currency_code ) {
-		$exponent3_currencies = array( 'BHD', 'CLF', 'IQD', 'KWD', 'LYD', 'MGA', 'MRO', 'OMR', 'TND' );
+		$exponent3_currencies = [ 'BHD', 'CLF', 'IQD', 'KWD', 'LYD', 'MGA', 'MRO', 'OMR', 'TND' ];
 
 		if ( in_array( strtoupper( $currency_code ), $exponent3_currencies ) ) {
 			return true;
@@ -173,7 +175,7 @@ class Amount implements ValidationHelper {
 	 */
 	public static function format( $amount, $currencyCode, $locale ) {
 		$amount = self::round( $amount, $currencyCode );
-		if ( class_exists( 'NumberFormatter' ) ) {
+		if ( class_exists( NumberFormatter::class ) ) {
 			$formatter = new NumberFormatter( $locale, NumberFormatter::CURRENCY );
 
 			if ( $formatter instanceof NumberFormatter ) {

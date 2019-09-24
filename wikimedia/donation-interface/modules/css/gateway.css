@@ -2,12 +2,15 @@
 #left-navigation {
 	display: none !important;
 }
+
 #right-navigation {
 	display: none !important;
 }
+
 #p-search {
 	display: none !important;
 }
+
 body.ltr #footer #footer-places {
 	display: none !important;
 }
@@ -17,12 +20,13 @@ body.ltr #footer #footer-places {
 	color: #c10;
 }
 
-#payment-table-donor {
-	background-color: transparent;
+#appeal,
+#donate {
+	display: table-cell;
 }
 
-#payment-table-donor td {
-	text-align: left;
+#donate {
+	background-color: transparent;
 }
 
 #bodyContent input[ type='text' ],
@@ -43,6 +47,7 @@ div.donor {
 	background-color: #cce7cd;
 	border: 1px solid #5eac58;
 }
+
 p#informationsharing,
 p#monthlycancel {
 	padding: 0 15px;
@@ -56,11 +61,24 @@ body.rtl input {
 	/* @noflip */
 	direction: rtl;
 }
+
 input#email {
 	/* @noflip */
 	direction: ltr;
 }
 
+.halfwidth,
+.thirdwidth {
+	display: inline-block;
+	vertical-align: top;
+}
+
+.halfwidth input,
+.halfwidth select,
+.halfwidth .errorMsg,
+.thirdwidth input,
+.thirdwidth select,
+.thirdwidth .errorMsg,
 .fullwidth {
 	width: 100%;
 }
@@ -68,22 +86,19 @@ input#email {
 .halfwidth {
 	width: 50%;
 }
+
 .halfwidth:not( :first-child ) {
 	margin-left: 2%;
 	width: 48%;
 }
 
 .thirdwidth:first-child {
-	width: 34%;
+	width: 32%;
 }
+
 .thirdwidth:not( :first-child ) {
 	margin-left: 2%;
 	width: 31%;
-}
-
-.halfwidth,
-.thirdwidth {
-	float: left;
 }
 
 /* From 2014 appeal */
@@ -97,6 +112,7 @@ input#email {
 #mw-panel div.portal {
 	display: none !important;
 }
+
 div#footer #footer-icons {
 	display: none !important;
 }
@@ -111,14 +127,10 @@ div#content {
 	border: 0;
 }
 
-/* extra-specific to take precedence */
-html body #donate .errorHighlight {
-	border: 2px solid #f00 !important;
-}
-
 .errorMsg {
 	color: #f00;
 	display: inherit;
+	clear: left;
 }
 
 .errorMsgHide {
@@ -138,29 +150,22 @@ html body #donate .errorHighlight {
 		margin: 0;
 		padding: 1em;
 	}
+
 	#mw-navigation {
 		display: none;
 	}
+
 	#appeal {
 		display: none;
 	}
-	#donate {
-		display: block;
-	}
+
 	div#greenBackground {
 		padding: 1em;
 		width: inherit;
 	}
-	table#payment-table-donor {
-		width: 100%;
-	}
 
-	/* Form - Contact/Donation Info */
-	table#payment-table-donor td {
-		padding: 0;
-	}
-	td#donate form select,
-	td#donate form input {
+	#donate form select,
+	#donate form input {
 		display: block;
 		float: left;
 		clear: both;
@@ -169,7 +174,14 @@ html body #donate .errorHighlight {
 		margin: 5px 0;
 		padding: 10px 3%;
 	}
-	td#donate form input.hidden {
+
+	#donate .thirdwidth,
+	#donate .halfwidth {
+		width: 100%;
+		margin-left: 0;
+	}
+
+	#donate form input.hidden {
 		display: none;
 	}
 
@@ -197,5 +209,9 @@ html body #donate .errorHighlight {
 
 	ul#cards li.has_sub_text input {
 		margin-bottom: 0.3em !important;
+	}
+
+	ul#cards li.has_sub_text label img.submethod-logo {
+		margin: 0.1em auto;
 	}
 }

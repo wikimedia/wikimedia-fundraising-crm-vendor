@@ -1,137 +1,45 @@
 <?php
-use SmashPig\Core\Logging\Logger;
-use SmashPig\Core\PaymentError;
-use SmashPig\Core\ValidationError;
 
 /**
  * Generic Donation API
  * This API should be able to accept donation submissions for any gateway or payment type
  * Call with api.php?action=donate
  */
-class DonationApi extends ApiBase {
-	public $donationData, $gateway;
+class DonationApi extends DonationApiBase {
 	public function execute() {
-		$this->donationData = $this->extractRequestParams();
-
-		$this->gateway = $this->donationData['gateway'];
-
-		$method = $this->donationData['payment_method'];
-		// @todo FIXME: Unused local variable.
-		$submethod = $this->donationData['payment_submethod'];
-
-		DonationInterface::setSmashPigProvider( $this->gateway );
-		$gatewayObj = $this->getGatewayObject();
-
-		// FIXME: SmashPig should just use Monolog.
-		Logger::getContext()->enterContext( $gatewayObj->getLogMessagePrefix() );
-
-		if ( !$gatewayObj ) {
-			return; // already failed with a dieUsage call
-		}
-
-		$validated_ok = $gatewayObj->validatedOK();
-		if ( !$validated_ok ) {
-			$errors = $gatewayObj->getErrorState()->getErrors();
-			$outputResult['errors'] = self::serializeErrors( $errors, $gatewayObj );
-			// FIXME: What is this junk?  Smaller API, like getResult()->addErrors
-			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
-			$this->getResult()->addValue( null, 'result', $outputResult );
+		$isValid = $this->setAdapterAndValidate();
+		if ( !$isValid ) {
 			return;
 		}
 
-		switch ( $this->gateway ) {
-			case 'globalcollect':
-				switch ( $method ) {
-					// TODO: add other iframe payment methods
-					case 'cc':
-						$result = $gatewayObj->do_transaction( 'INSERT_ORDERWITHPAYMENT' );
-						break;
-					default:
-						$result = $gatewayObj->do_transaction( 'TEST_CONNECTION' );
-				}
-				break;
-			case 'ingenico':
-				$result = $gatewayObj->do_transaction( 'createHostedCheckout' );
-				break;
-			case 'adyen':
-				$result = $gatewayObj->do_transaction( 'donate' );
-				break;
-			case 'paypal_ec':
-				$gatewayObj->doPayment();
-				$result = $gatewayObj->getTransactionResponse();
-				break;
+		$paymentResult = $this->adapter->doPayment();
+
+		$outputResult = [
+			'iframe' => $paymentResult->getIframe(),
+			'redirect' => $paymentResult->getRedirect(),
+			'formData' => $paymentResult->getFormData()
+		];
+
+		$errors = $paymentResult->getErrors();
+
+		$sendingDonorToProcessor = empty( $errors ) &&
+			( !empty( $outputResult['iframe'] ) || !empty( $outputResult['redirect'] ) );
+
+		if ( $sendingDonorToProcessor ) {
+			$this->adapter->logPending();
+			$this->markLiberatedOnRedirect( $paymentResult );
 		}
 
-		// $normalizedData = $gatewayObj->getData_Unstaged_Escaped();
-		$outputResult = array();
-		if ( $result->getMessage() !== null ) {
-			$outputResult['message'] = $result->getMessage();
-		}
-		if ( $result->getCommunicationStatus() !== null ) {
-			$outputResult['status'] = $result->getCommunicationStatus();
-		}
-
-		$errors = $result->getErrors();
-		$data = $result->getData();
-		if ( !empty( $data ) ) {
-			if ( array_key_exists( 'PAYMENT', $data )
-				&& array_key_exists( 'RETURNURL', $data['PAYMENT'] )
-			) {
-				$outputResult['returnurl'] = $data['PAYMENT']['RETURNURL'];
-			}
-			if ( array_key_exists( 'FORMACTION', $data ) ) {
-				$outputResult['formaction'] = $data['FORMACTION'];
-				if ( empty( $errors ) ) {
-					$gatewayObj->logPending();
-				}
-			}
-			if ( array_key_exists( 'gateway_params', $data ) ) {
-				$outputResult['gateway_params'] = $data['gateway_params'];
-			}
-			if ( array_key_exists( 'RESPMSG', $data ) ) {
-				$outputResult['responsemsg'] = $data['RESPMSG'];
-			}
-			if ( array_key_exists( 'ORDERID', $data ) ) {
-				$outputResult['orderid'] = $data['ORDERID'];
-			}
-		}
 		if ( !empty( $errors ) ) {
-			$outputResult['errors'] = self::serializeErrors( $errors, $gatewayObj );
+			$outputResult['errors'] = $this->serializeErrors( $errors );
 			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
 		}
 
-		if ( $this->donationData ) {
-			$this->getResult()->addValue( null, 'request', $this->donationData );
-		}
 		$this->getResult()->addValue( null, 'result', $outputResult );
 	}
 
-	public static function serializeErrors( $errors, GatewayAdapter $adapter ) {
-		$serializedErrors = array();
-		foreach ( $errors as $error ) {
-			if ( $error instanceof ValidationError ) {
-				$message = WmfFramework::formatMessage(
-					$error->getMessageKey(),
-					$error->getMessageParams()
-				);
-				$serializedErrors[$error->getField()] = $message;
-			} elseif ( $error instanceof PaymentError ) {
-				$message = $adapter->getErrorMapByCodeAndTranslate( $error->getErrorCode() );
-				$serializedErrors['general'][] = $message;
-			} else {
-				$logger = DonationLoggerFactory::getLogger( $adapter );
-				$logger->error( 'API trying to serialize unknown error type: ' . get_class( $error ) );
-			}
-		}
-		return $serializedErrors;
-	}
-
-	public function isReadMode() {
-		return false;
-	}
-
 	public function getAllowedParams() {
-		return array(
+		return [
 			'gateway' => $this->defineParam( true ),
 			'contact_id' => $this->defineParam( false ),
 			'contact_hash' => $this->defineParam( false ),
@@ -163,34 +71,46 @@ class DonationApi extends ApiBase {
 			'recurring' => $this->defineParam( false ),
 			'variant' => $this->defineParam( false ),
 			'opt_in' => $this->defineParam( false ),
-		);
+			'employer' => $this->defineParam( false ),
+		];
 	}
 
 	private function defineParam( $required = false, $type = 'string' ) {
 		if ( $required ) {
-			$param = array( ApiBase::PARAM_TYPE => $type, ApiBase::PARAM_REQUIRED => true );
+			$param = [ ApiBase::PARAM_TYPE => $type, ApiBase::PARAM_REQUIRED => true ];
 		} else {
-			$param = array( ApiBase::PARAM_TYPE => $type );
+			$param = [ ApiBase::PARAM_TYPE => $type ];
 		}
 		return $param;
 	}
 
 	/**
 	 * @see ApiBase::getExamplesMessages()
+	 * @return array
 	 */
 	protected function getExamplesMessages() {
-		return array(
+		return [
 			'action=donate&gateway=globalcollect&amount=2.00&currency=USD'
 				=> 'apihelp-donate-example-1',
-		);
+		];
 	}
 
 	/**
-	 * @return GatewayAdapter
+	 * If we are sending the donor to a payment processor with a full redirect
+	 * rather than inside an iframe, mark the order ID as 'liberated' so when
+	 * they come back, we don't waste time trying to pop them out of a frame.
+	 *
+	 * @param PaymentResult $paymentResult
 	 */
-	protected function getGatewayObject() {
-		$className = DonationInterface::getAdapterClassForGateway( $this->gateway );
-		$variant = $this->getRequest()->getVal( 'variant' );
-		return new $className( array( 'variant' => $variant ) );
+	protected function markLiberatedOnRedirect( PaymentResult $paymentResult ) {
+		if ( !$paymentResult->getRedirect() ) {
+			return;
+		}
+		// Save a flag in session saying we don't need to pop out of an iframe
+		// See related code in GatewayPage::handleResultRequest
+		$oid = $this->adapter->getData_Unstaged_Escaped( 'order_id' );
+		$sessionOrderStatus = $this->adapter->session_getData( 'order_status' );
+		$sessionOrderStatus[$oid] = 'liberated';
+		WmfFramework::setSessionValue( 'order_status', $sessionOrderStatus );
 	}
 }

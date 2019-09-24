@@ -1,7 +1,5 @@
 <?php
 
-use SmashPig\CrmLink\ValidationAction;
-
 class Gateway_Extras_CustomFilters extends FraudFilter {
 
 	// filter list to run on adapter construction
@@ -44,7 +42,7 @@ class Gateway_Extras_CustomFilters extends FraudFilter {
 			$this->risk_score = WmfFramework::getSessionValue( 'risk_scores' );
 		}
 		if ( !$this->risk_score ) {
-			$this->risk_score = array();
+			$this->risk_score = [];
 		} else {
 			$unnecessarily_escaped_session_contents = addslashes( json_encode( $this->risk_score ) );
 			$this->fraud_logger->info( '"Loaded from session" ' . $unnecessarily_escaped_session_contents );
@@ -86,7 +84,7 @@ class Gateway_Extras_CustomFilters extends FraudFilter {
 			if ( is_numeric( $this->risk_score ) ) {
 				$this->risk_score['unknown'] = (int)$this->risk_score;
 			} else {
-				$this->risk_score = array();
+				$this->risk_score = [];
 			}
 		}
 
@@ -142,19 +140,15 @@ class Gateway_Extras_CustomFilters extends FraudFilter {
 		$log_message = '"' . addslashes( json_encode( $this->risk_score ) ) . '"';
 		$this->fraud_logger->info( '"CustomFiltersScores" ' . $log_message );
 
-		$utm = array(
+		$utm = [
 			'utm_campaign' => $this->gateway_adapter->getData_Unstaged_Escaped( 'utm_campaign' ),
 			'utm_medium' => $this->gateway_adapter->getData_Unstaged_Escaped( 'utm_medium' ),
 			'utm_source' => $this->gateway_adapter->getData_Unstaged_Escaped( 'utm_source' ),
-		);
+		];
 		$log_message = '"' . addslashes( json_encode( $utm ) ) . '"';
 		$this->fraud_logger->info( '"utm" ' . $log_message );
 
-		// Always send a message if we're about to charge or redirect the donor
-		// Only send a message on initial validation if things look fishy
-		if ( $phase === self::PHASE_VALIDATE || $localAction !== ValidationAction::PROCESS ) {
-			$this->sendAntifraudMessage( $localAction, $score, $this->risk_score );
-		}
+		$this->sendAntifraudMessage( $localAction, $score, $this->risk_score );
 
 		if ( !$this->gateway_adapter->isBatchProcessor() ) {
 			// Always keep the stored scores up to date

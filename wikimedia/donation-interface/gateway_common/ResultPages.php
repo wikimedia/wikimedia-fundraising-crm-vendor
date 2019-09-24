@@ -10,7 +10,7 @@ class ResultPages {
 	 * @param array $extraParams any extra parameters to add to the URL
 	 * @return string full URL of the thank you page
 	 */
-	public static function getThankYouPage( GatewayType $adapter, $extraParams = array() ) {
+	public static function getThankYouPage( GatewayType $adapter, $extraParams = [] ) {
 		$page = $adapter::getGlobal( "ThankYouPage" );
 		if ( $page ) {
 			$page = self::appendLanguageAndMakeURL(
@@ -32,7 +32,8 @@ class ResultPages {
 			$adapter->getGlobal( 'RapidFail' ),
 			$adapter->getGlobal( 'FailPage' ),
 			$adapter->getData_Unstaged_Escaped(),
-			DonationLoggerFactory::getLogger( $adapter )
+			DonationLoggerFactory::getLogger( $adapter ),
+			$adapter->getFinalStatus()
 		);
 	}
 
@@ -49,11 +50,10 @@ class ResultPages {
 		return self::getFailPageFromParams(
 			false, // Can't render RapidFail form without an instance
 			$adapterType::getGlobal( 'FailPage' ),
-			array(
+			[
 				'gateway' => $adapterType::getIdentifier(),
 				'payment_method' => '',
-				'payment_submethod' => '',
-			),
+			],
 			DonationLoggerFactory::getLoggerForType( $adapterType, $logPrefix )
 		);
 	}
@@ -65,9 +65,12 @@ class ResultPages {
 	 * @param array $data information about the current request.
 	 *                    language, gateway, payment_method, and payment_submethod must be set
 	 * @param Psr\Log\LoggerInterface $logger
+	 * @param string|null $paymentStatus one of the FinalStatus constants
 	 * @return string full URL of the fail page, or just form name in case of rapidFail
 	 */
-	private static function getFailPageFromParams( $rapidFail, $failPage, $data, LoggerInterface $logger ) {
+	private static function getFailPageFromParams(
+		$rapidFail, $failPage, $data, LoggerInterface $logger, $paymentStatus = null
+	) {
 		if ( isset( $data['language'] ) ) {
 			$language = $data['language'];
 		} else {
@@ -80,7 +83,7 @@ class ResultPages {
 				$fail_ffname = GatewayFormChooser::getBestErrorForm(
 					$data['gateway'],
 					$data['payment_method'],
-					$data['payment_submethod']
+					$paymentStatus
 				);
 				return $fail_ffname;
 			} catch ( Exception $e ) {
@@ -95,7 +98,7 @@ class ResultPages {
 		// or update the content on payments to be consistent with the /lang
 		// format of ThankYou pages so we can use appendLanguageAndMakeURL here.
 		$failTitle = Title::newFromText( $failPage );
-		$url = wfAppendQuery( $failTitle->getFullURL(), array( 'uselang' => $language ) );
+		$url = wfAppendQuery( $failTitle->getFullURL(), [ 'uselang' => $language ] );
 
 		return $url;
 	}
@@ -122,7 +125,7 @@ class ResultPages {
 	 * appended onto the end.
 	 * @param string $url Either a wiki page title, or a URL to an external wiki
 	 * page title.
-	 * @param $language
+	 * @param string $language
 	 * @return string localized full URL
 	 */
 	protected static function appendLanguageAndMakeURL( $url, $language ) {

@@ -20,10 +20,10 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			AdyenTestConfiguration::createWithSuccessfulApi(
 			$ctx->getGlobalConfiguration()
 		);
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			'wgAdyenGatewayEnabled' => true,
 			'wgAdyenGatewayTestingURL' => 'https://example.org',
-		) );
+		] );
 	}
 
 	public function testGoodSubmit() {
@@ -35,10 +35,10 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 
 		$this->assertEquals(
 			'https://example.org/hpp/pay.shtml',
-			$result['formaction'],
-			'Adyen API not setting correct formaction'
+			$result['iframe'],
+			'Adyen API not setting correct iframe'
 		);
-		$expectedParams = array(
+		$expectedParams = [
 			'allowedMethods' => 'card',
 			'brandCode' => 'visa',
 			'card.cardHolderName' => 'Firstname Surname',
@@ -56,8 +56,8 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			'billingAddress.country' => 'US',
 			'billingAddressType' => '2',
 			'billingAddress.houseNumberOrName' => 'NA'
-		);
-		$actualParams = $result['gateway_params'];
+		];
+		$actualParams = $result['formData'];
 		unset( $actualParams['sessionValidity'] );
 		unset( $actualParams['shipBeforeDate'] );
 		unset( $actualParams['merchantSig'] );
@@ -65,12 +65,12 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 		$this->assertEquals(
 			$expectedParams,
 			$actualParams,
-			'Adyen API not setting correct gateway_params'
+			'Adyen API not setting correct formData'
 		);
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNotNull( $message, 'Not sending a message to the pending queue' );
 		DonationInterfaceTestCase::unsetVariableFields( $message );
-		$expected = array(
+		$expected = [
 			'gateway_txn_id' => false,
 			'response' => false,
 			'fee' => 0,
@@ -90,7 +90,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			'street_address' => '123 Fake Street',
 			'postal_code' => '94105',
 			'risk_score' => 20
-		);
+		];
 		$this->assertArraySubset( $expected, $message );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNull( $message, 'Sending extra pending messages' );
@@ -150,5 +150,13 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 		unset( $init['city'] );
 		unset( $init['state_province'] );
 		return $init;
+	}
+
+	public function testSubmitFailInitialFilters() {
+		$this->setInitialFiltersToFail();
+		$init = $this->getDonorData();
+		$apiResult = $this->doApiRequest( $init );
+		$result = $apiResult[0]['result'];
+		$this->assertNotEmpty( $result['errors'], 'Should have returned an error' );
 	}
 }

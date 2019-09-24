@@ -22,7 +22,7 @@ use SmashPig\Core\ValidationError;
  * @group	DonationInterface
  * @group	Validation
  */
-class AmountTest  extends DonationInterfaceTestCase {
+class AmountTest extends DonationInterfaceTestCase {
 
 	/**
 	 * @var GatewayType
@@ -43,22 +43,22 @@ class AmountTest  extends DonationInterfaceTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			'wgDonationInterfacePriceFloor' => 1.50,
 			'wgDonationInterfacePriceCeiling' => 100,
 			'wgLanguageCode' => 'en',
-		) );
+		] );
 
-		$this->setUpRequest( array(
+		$this->setUpRequest( [
 			'country' => 'US',
 			'uselang' => 'en',
-		) );
+		] );
 
-		$this->normalized = array(
+		$this->normalized = [
 			'language' => 'en',
 			'country' => 'US',
 			'currency' => 'USD',
-		);
+		];
 
 		$this->errors = new ErrorState();
 		$this->adapter = new TestingGenericAdapter();
@@ -163,11 +163,12 @@ class AmountTest  extends DonationInterfaceTestCase {
 		$expected = new ValidationError(
 			'amount',
 			'donate_interface-bigamount-error',
-			array(
+			[
 				100,
 				'USD',
 				$this->adapter->getGlobal( 'MajorGiftsEmail' ),
-			)
+				100,
+			]
 		);
 		$this->assertEquals(
 			$expected,
@@ -189,7 +190,7 @@ class AmountTest  extends DonationInterfaceTestCase {
 		$expected = new ValidationError(
 			'amount',
 			'donate_interface-smallamount-error',
-			array( $formattedMin )
+			[ $formattedMin ]
 		);
 		$this->assertEquals(
 			$expected,
@@ -212,11 +213,12 @@ class AmountTest  extends DonationInterfaceTestCase {
 		$expected = new ValidationError(
 			'amount',
 			'donate_interface-bigamount-error',
-			array(
+			[
 				200,
 				'BBD',
-				$this->adapter->getGlobal( 'MajorGiftsEmail' )
-			)
+				$this->adapter->getGlobal( 'MajorGiftsEmail' ),
+				100,
+			]
 		);
 		$this->assertEquals(
 			$expected,
@@ -238,7 +240,7 @@ class AmountTest  extends DonationInterfaceTestCase {
 		$expected = new ValidationError(
 			'amount',
 			'donate_interface-smallamount-error',
-			array( $formattedMin )
+			[ $formattedMin ]
 		);
 		$this->assertEquals(
 			$expected,
@@ -263,14 +265,14 @@ class AmountTest  extends DonationInterfaceTestCase {
 	}
 
 	public function testFormat() {
-		if ( !class_exists( 'NumberFormatter' ) ) {
+		if ( !class_exists( NumberFormatter::class ) ) {
 			$this->markTestSkipped( 'No NumberFormatter present' );
 		}
 		$validator = new Amount();
 		$amount = $validator->format( '100.59', 'USD', 'en-US' );
 		$this->assertEquals( '$100.59', $amount );
 
-		$amount = $validator->format( 100.59, 'USB', null );
+		$amount = $validator->format( 100.59, 'USB', 'en_US' );
 		$this->assertEquals( 'USB100.59', $amount );
 
 		$amount = $validator->format( 100.59, 'USD', 'en_CA' );

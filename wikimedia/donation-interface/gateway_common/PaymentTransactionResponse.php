@@ -11,7 +11,7 @@ class PaymentTransactionResponse {
 	/**
 	 * @var array List of PaymentErrors
 	 */
-	protected $errors = array();
+	protected $errors = [];
 
 	/**
 	 * @var string Raw return data from the cURL transaction
@@ -24,11 +24,6 @@ class PaymentTransactionResponse {
 	 * okay to display to a user.
 	 */
 	protected $message;
-
-	/**
-	 * @var string unique identifier for the transaction at the processor
-	 */
-	protected $gatewayTransactionId;
 
 	/**
 	 * @var boolean denoting if there were internal errors on our end,
@@ -56,7 +51,6 @@ class PaymentTransactionResponse {
 	protected $txnMessage;
 
 	/**
-	 * TODO: get rid of this.  Fold it into $data, maybe?
 	 * @var string where the donor should go next.
 	 */
 	protected $redirect;
@@ -80,13 +74,6 @@ class PaymentTransactionResponse {
 	 */
 	public function getMessage() {
 		return $this->message;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getGatewayTransactionId() {
-		return $this->gatewayTransactionId;
 	}
 
 	/**
@@ -130,13 +117,6 @@ class PaymentTransactionResponse {
 	 */
 	public function setMessage( $message ) {
 		$this->message = $message;
-	}
-
-	/**
-	 * @param string $gatewayTransactionId
-	 */
-	public function setGatewayTransactionId( $gatewayTransactionId ) {
-		$this->gatewayTransactionId = $gatewayTransactionId;
 	}
 
 	/**
@@ -198,7 +178,6 @@ class PaymentTransactionResponse {
 	public function __toString() {
 		$stringVal = "Communication Status: '{$this->communicationStatus}', " .
 			"Communication Status: '{$this->communicationStatus}', " .
-			"Gateway Txn ID: '{$this->gatewayTransactionId}', " .
 			"Message: '{$this->message}', " .
 			"Txn Message: '{$this->txnMessage}', " .
 			'Data: ' . print_r( $this->data, true ) . ', ' .

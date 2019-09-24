@@ -1,6 +1,5 @@
 <?php
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\CrmLink\Messages\SourceFields;
 
 /**
  * @group Fundraising
@@ -22,17 +21,16 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 		$apiResult = $this->doApiRequest( $init );
 		$result = $apiResult[0]['result'];
 		$this->assertTrue( empty( $result['errors'] ) );
-		$orderId = $result['orderid'];
-
-		$this->assertEquals( 'url_placeholder', $result['formaction'], 'GC API not setting formaction' );
-		$this->assertTrue( is_numeric( $orderId ), 'GC API not setting numeric order ID' );
-		$this->assertTrue( $result['status'], 'GC API result status should be true' );
-		preg_match( "/Special:GlobalCollectGatewayResult\?order_id={$orderId}\$/", $result['returnurl'], $match );
-		$this->assertNotEmpty( $match, 'GC API not setting proper return url' );
+		$actualUrl = $result['iframe'];
+		$this->assertEquals( 'url_placeholder', $actualUrl, 'GC API not setting iframe' );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNotNull( $message, 'Not sending a message to the pending queue' );
+
+		$orderId = $message['order_id'];
+		$this->assertTrue( is_numeric( $orderId ), 'GC API not setting numeric order ID' );
+
 		DonationInterfaceTestCase::unsetVariableFields( $message );
-		$expected = array(
+		$expected = [
 			'gateway_txn_id' => '626113410',
 			'response' => 'Response Status: 20',
 			'fee' => 0,
@@ -54,7 +52,7 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 			'city' => 'San Francisco',
 			'state_province' => 'CA',
 			'postal_code' => '94105'
-		);
+		];
 		$this->assertArraySubset( $expected, $message );
 		// Don't send any value for opt_in if not set or shown
 		$this->assertTrue( !isset( $message['opt_in'] ) );
@@ -112,5 +110,19 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 		$this->doApiRequest( $init );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertEquals( '0', $message['opt_in'] );
+	}
+
+	public function testSubmitFailInitialFilters() {
+		$this->setInitialFiltersToFail();
+		$init = DonationInterfaceTestCase::getDonorTestData();
+		$init['email'] = 'good@innocent.com';
+		$init['postal_code'] = 'T3 5TA';
+		$init['payment_method'] = 'cc';
+		$init['gateway'] = 'globalcollect';
+		$init['action'] = 'donate';
+		unset( $init['ffname'] );
+		$apiResult = $this->doApiRequest( $init );
+		$result = $apiResult[0]['result'];
+		$this->assertNotEmpty( $result['errors'], 'Should have returned an error' );
 	}
 }

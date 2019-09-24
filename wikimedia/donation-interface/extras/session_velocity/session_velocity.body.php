@@ -22,7 +22,7 @@ class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 	 * Container for an instance of self
 	 * @var Gateway_Extras_SessionVelocityFilter
 	 */
-	static $instance;
+	private static $instance;
 
 	// This filter stores it's information in a session array SESS_ROOT which maps like so:
 	// SESS_ROOT[GatewayIdentifier][Transaction]
@@ -35,9 +35,10 @@ class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 	const SESS_SCORE = "score";
 	const SESS_TIME = "time";
 	const SESS_MULTIPLIER = "multiplier";
+	const SESS_MAX_SCORE = 1000;
 
 	/**
-	 * @static Construct the singleton instance of this class.
+	 * Construct the singleton instance of this class.
 	 *
 	 * @param GatewayType $gateway_adapter
 	 *
@@ -101,17 +102,17 @@ class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 		// Initialize the filter
 		$sessionData = WmfFramework::getSessionValue( self::SESS_ROOT );
 		if ( !is_array( $sessionData ) ) {
-			$sessionData = array();
+			$sessionData = [];
 		}
 		if ( !array_key_exists( $gateway, $sessionData ) ) {
-			$sessionData[$gateway] = array();
+			$sessionData[$gateway] = [];
 		}
 		if ( !array_key_exists( $transaction, $sessionData[$gateway] ) ) {
-			$sessionData[$gateway][$transaction] = array(
+			$sessionData[$gateway][$transaction] = [
 				$this::SESS_SCORE => 0,
 				$this::SESS_TIME => $cRequestTime,
 				$this::SESS_MULTIPLIER => 1,
-			);
+			];
 		}
 
 		$lastTime = $sessionData[$gateway][$transaction][self::SESS_TIME];
@@ -122,6 +123,7 @@ class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 		if ( $cRequestTime != $lastTime ) {
 			$score = max( 0, $score - ( ( $cRequestTime - $lastTime ) * $decayRate ) );
 			$score += $this->getVar( 'HitScore', $transaction ) * $lastMultiplier;
+			$score = min( $score, self::SESS_MAX_SCORE );
 
 			$sessionData[$gateway][$transaction][$this::SESS_SCORE] = $score;
 			$sessionData[$gateway][$transaction][$this::SESS_TIME] = $cRequestTime;
@@ -135,7 +137,7 @@ class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 		if ( $score >= $threshold ) {
 			// Ahh!!! Failure!!! Sloooooooow doooowwwwnnnn
 			$this->fraud_logger->alert( "SessionVelocity: Rejecting request due to score of $score" );
-			$this->sendAntifraudMessage( ValidationAction::REJECT, $score, array( 'SessionVelocity' => $score ) );
+			$this->sendAntifraudMessage( ValidationAction::REJECT, $score, [ 'SessionVelocity' => $score ] );
 			$retval = false;
 		} else {
 			$retval = true;
@@ -153,10 +155,10 @@ class Gateway_Extras_SessionVelocityFilter extends FraudFilter {
 	/**
 	 * Providing that additional layer of indirection and confusion.
 	 *
-	 * @param string    $baseVar  The root name of the variable
-	 * @param string    $txn      The name of the transaction
+	 * @param string $baseVar The root name of the variable
+	 * @param string $txn The name of the transaction
 	 *
-	 * @return mixed    The contents of the configuration variable
+	 * @return mixed The contents of the configuration variable
 	 */
 	private function getVar( $baseVar, $txn ) {
 		$var = $this->gateway_adapter->getGlobal( 'SessionVelocity_' . $txn . '_' . $baseVar );

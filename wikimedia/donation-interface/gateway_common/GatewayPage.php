@@ -60,7 +60,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	/**
 	 * Show the special page
 	 *
-	 * @param $par Mixed: parameter passed to the page or null
+	 * @param string|null $par parameter passed to the page or null
 	 */
 	public function execute( $par ) {
 		global $wgContributionTrackingFundraiserMaintenance, $wgContributionTrackingFundraiserMaintenanceUnsched;
@@ -85,8 +85,9 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		DonationInterface::setSmashPigProvider( $gatewayName );
 
 		try {
-			$variant = $this->getRequest()->getVal( 'variant' );
-			$this->adapter = new $className( array( 'variant' => $variant ) );
+			$variant = $this->getVariant();
+			$this->adapter = new $className( [ 'variant' => $variant ] );
+			$this->overrideLogo();
 			$this->logger = DonationLoggerFactory::getLogger( $this->adapter );
 
 			// FIXME: SmashPig should just use Monolog.
@@ -98,10 +99,10 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			// Stolen from Minerva skin
 			$out->addHeadItem( 'viewport',
 				Html::element(
-					'meta', array(
+					'meta', [
 						'name' => 'viewport',
 						'content' => 'initial-scale=1.0, user-scalable=yes, minimum-scale=0.25, maximum-scale=5.0, width=device-width',
-					)
+					]
 				)
 			);
 
@@ -134,7 +135,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			return;
 		}
 
-		Hooks::register( 'MakeGlobalVariablesScript', array( $this, 'setClientVariables' ) );
+		Hooks::register( 'MakeGlobalVariablesScript', [ $this, 'setClientVariables' ] );
 
 		try {
 			$this->handleRequest();
@@ -146,27 +147,13 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	}
 
 	/**
-	 * Load gateway-specific modules and handle the donation request.
+	 * Handle the donation request.
 	 *
 	 * FIXME: Be more disciplined about how handleRequest fits with
 	 * handleDonationRequest.  Would it be cleaner to move to a pre and post
 	 * hook scheme?
 	 */
 	protected function handleRequest() {
-		// TODO: remove conditional when we have a dedicated error render
-		// page and move addModule to Mustache#getResources
-		if ( $this->adapter->getFormClass() === 'Gateway_Form_Mustache' ) {
-			$modules = $this->adapter->getConfig( 'ui_modules' );
-			if ( !empty( $modules['scripts'] ) ) {
-				$this->getOutput()->addModules( $modules['scripts'] );
-			}
-			if ( $this->adapter->getGlobal( 'LogClientErrors' ) ) {
-				$this->getOutput()->addModules( 'ext.donationInterface.errorLog' );
-			}
-			if ( !empty( $modules['styles'] ) ) {
-				$this->getOutput()->addModuleStyles( $modules['styles'] );
-			}
-		}
 		$this->handleDonationRequest();
 	}
 
@@ -193,15 +180,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	}
 
 	/**
-	 * @param string $logReason Logged explanation for redirect
-	 */
-	protected function displayThankYouPage( $logReason ) {
-		$thankYouPage = ResultPages::getThankYouPage( $this->adapter );
-		$this->logger->info( "Displaying thank you page $thankYouPage for status $logReason." );
-		$this->getOutput()->redirect( $thankYouPage );
-	}
-
-	/**
 	 * Display a failure page
 	 *
 	 * @param bool $allowRapid Whether to allow rendering a RapidFail form
@@ -217,7 +195,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			if ( !filter_var( $page, FILTER_VALIDATE_URL ) ) {
 				// If it's not a URL, we're rendering a RapidFail form
 				$this->logger->info( "Displaying fail form $page" );
-				$this->adapter->addRequestData( array( 'ffname' => $page ) );
+				$this->adapter->addRequestData( [ 'ffname' => $page ] );
 				$this->displayForm();
 				return;
 			}
@@ -250,7 +228,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 *
 	 * Displays useful information for debugging purposes.
 	 * Enable with $wgDonationInterfaceDisplayDebug, or the adapter equivalent.
-	 * @param PaymentTransactionResponse $results
+	 * @param PaymentTransactionResponse|null $results
 	 * @return null
 	 */
 	protected function displayResultsForDebug( PaymentTransactionResponse $results = null ) {
@@ -373,103 +351,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	}
 
 	/**
-	 * Whether or not the user comes back to the resultswitcher in an iframe
-	 * @return bool true if we need to pop out of an iframe, otherwise false
-	 */
-	protected function isReturnFramed() {
-		return false;
-	}
-
-	/**
-	 * Render a resultswitcher page
-	 */
-	protected function handleResultRequest() {
-		// no longer letting people in without these things. If this is
-		// preventing you from doing something, you almost certainly want to be
-		// somewhere else.
-		$deadSession = false;
-		if ( !$this->adapter->session_hasDonorData() ) {
-			$deadSession = true;
-		}
-		$oid = $this->adapter->getData_Unstaged_Escaped( 'order_id' );
-
-		$request = $this->getRequest();
-		$referrer = $request->getHeader( 'referer' );
-		$liberated = false;
-		if ( $this->adapter->session_getData( 'order_status', $oid ) === 'liberated' ) {
-			$liberated = true;
-		}
-
-		// XXX need to know whether we were in an iframe or not.
-		global $wgServer;
-		if ( $this->isReturnFramed() && ( strpos( $referrer, $wgServer ) === false ) && !$liberated ) {
-			$sessionOrderStatus = $request->getSessionData( 'order_status' );
-			$sessionOrderStatus[$oid] = 'liberated';
-			$request->setSessionData( 'order_status', $sessionOrderStatus );
-			$this->logger->info( "Resultswitcher: Popping out of iframe for Order ID " . $oid );
-			$this->getOutput()->allowClickjacking();
-			$this->getOutput()->addModules( 'iframe.liberator' );
-			return;
-		}
-
-		$this->setHeaders();
-		$userAgent = $request->getHeader( 'User-Agent' );
-		if ( !$userAgent ) {
-			$userAgent = 'Unknown';
-		}
-
-		if ( $this->isRepeatReturnProcess() ) {
-			$this->logger->warning(
-				'Donor is trying to process an already-processed payment. ' .
-				"Adapter Order ID: $oid.\n" .
-				"Cookies: " . print_r( $_COOKIE, true ) ."\n" .
-				"User-Agent: " . $userAgent
-			);
-			$this->displayThankYouPage( 'repeat return processing' );
-			return;
-		}
-
-		if ( $deadSession ) {
-			if ( $this->adapter->isReturnProcessingRequired() ) {
-				wfHttpError( 403, 'Forbidden', wfMessage( 'donate_interface-error-http-403' )->text() );
-				throw new RuntimeException(
-					'Resultswitcher: Request forbidden. No active donation in the session. ' .
-					"Adapter Order ID: $oid.\n" .
-					"Cookies: " . print_r( $_COOKIE, true ) ."\n" .
-					"User-Agent: " . $userAgent
-				);
-			}
-			// If it's possible for a donation to go through without our
-			// having to do additional processing in the result switcher,
-			// we don't want to falsely claim it failed just because we
-			// lost the session data. We also don't want to give any
-			// information to scammers hitting this page with no session,
-			// so we always show the thank you page. We don't want to do
-			// any post-processing if we're not sure whether we actually
-			// originated this attempt, so we return right after.
-			$this->logger->warning(
-				'Resultswitcher: session is dead, but the ' .
-				'donor may have made a successful payment.'
-			);
-			$this->displayThankYouPage( 'dead session' );
-			return;
-		}
-		$this->logger->info( "Resultswitcher: OK to process Order ID: " . $oid );
-
-		if ( $this->adapter->checkTokens() ) {
-			// feed processDonorReturn all the GET and POST vars
-			$requestValues = $this->getRequest()->getValues();
-			$result = $this->adapter->processDonorReturn( $requestValues );
-			$this->markReturnProcessed();
-			$this->renderResponse( $result );
-			return;
-		} else {
-			$this->logger->error( "Resultswitcher: Token Check Failed. Order ID: $oid" );
-		}
-		$this->displayFailPage();
-	}
-
-	/**
 	 * Ask the adapter to perform a payment
 	 *
 	 * Route the donor based on the response.
@@ -502,11 +383,16 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		} elseif ( $form = $result->getForm() ) {
 			// Show another form.
 
-			$this->adapter->addRequestData( array(
+			$this->adapter->addRequestData( [
 				'ffname' => $form,
-			) );
+			] );
 			$this->displayForm();
-		} elseif ( count( $result->getErrors() ) ) {
+		} elseif (
+			count( $result->getErrors() )
+		) {
+			$this->displayForm();
+		} elseif ( $this->adapter->showRecurringUpsell() ) {
+			$this->logger->info( "PaymentResult successful, now asking for a recurring donation." );
 			$this->displayForm();
 		} else {
 			// Success.
@@ -524,12 +410,12 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * @param string $url
 	 */
 	protected function renderIframe( $url ) {
-		$attrs = array(
+		$attrs = [
 			'id' => 'paymentiframe',
 			'name' => 'paymentiframe',
 			'width' => '680',
 			'height' => '300'
-		);
+		];
 
 		$attrs['frameborder'] = '0';
 		$attrs['style'] = 'display:block;';
@@ -543,9 +429,10 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	/**
 	 * Try to get donor information to tag log entries in case we don't
 	 * have an adapter instance.
+	 * @return string
 	 */
 	protected function getLogPrefix() {
-		$info = array();
+		$info = [];
 		$donorData = $this->getRequest()->getSessionData( 'Donor' );
 		if ( is_array( $donorData ) ) {
 			if ( isset( $donorData['contribution_tracking_id'] ) ) {
@@ -568,7 +455,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 	/**
 	 * MakeGlobalVariablesScript handler, sends settings to Javascript
-	 * @param array $vars
+	 * @param array &$vars
 	 */
 	public function setClientVariables( &$vars ) {
 		$language = $this->adapter->getData_Unstaged_Escaped( 'language' );
@@ -602,28 +489,77 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 		}
 	}
 
-	protected function isRepeatReturnProcess() {
-		$request = $this->getRequest();
-		$requestProcessId = $this->adapter->getRequestProcessId(
-			$request->getValues()
-		);
-		$key = 'processed_request-' . $requestProcessId;
-		$cachedResult = wfGetMainCache()->get( $key );
-		return boolval( $cachedResult );
-	}
-
-	protected function markReturnProcessed() {
-		$request = $this->getRequest();
-		$requestProcessId = $this->adapter->getRequestProcessId(
-			$request->getValues()
-		);
-		if ( !$requestProcessId ) {
+	/**
+	 * If certain conditions are met, override the logo
+	 */
+	protected function overrideLogo() {
+		$logoOverrideRules = $this->adapter->getGlobal( 'LogoOverride' );
+		if ( !$logoOverrideRules ) {
 			return;
 		}
-		$key = 'processed_request-' . $requestProcessId;
+		$request = $this->getRequest();
+		// If an override is stored in session, use that
+		$storedOverride = $request->getSessionData( 'logoOverride' );
+		if ( !$storedOverride ) {
+			foreach ( $logoOverrideRules as $rule ) {
+				$variableName = $rule['variable'];
+				$value = $rule['value'];
+				$actualValue = $this->getRequest()->getVal( $variableName );
+				if ( $value === $actualValue ) {
+					$storedOverride = [
+						'logo' => $rule['logo'],
+						'logoHD' => $rule['logoHD']
+					];
+					$request->setSessionData( 'logoOverride', $storedOverride );
+					break;
+				}
+			}
+		}
 
-		// TODO: we could store the results of the last process here, but for now
-		// we just indicate we did SOMETHING with it
-		wfGetMainCache()->add( $key, true, 7200 );
+		if ( $storedOverride ) {
+			// need to keep generated CSS in sync with
+			// @see ResourceLoaderSkinModule::getStyles
+			// html body is prepended to give us more-specific selectors
+			$css = 'html body .mw-wiki-logo { background-image: url(' .
+				$storedOverride['logo'] . "); }\n";
+			if (
+				!empty( $storedOverride['logoHD'] ) &&
+				!empty( $storedOverride['logoHD']['1.5x'] )
+			) {
+				$css .= '@media (-webkit-min-device-pixel-ratio: 1.5), ' .
+					'(min--moz-device-pixel-ratio: 1.5), (min-resolution: ' .
+					'1.5dppx), (min-resolution: 144dpi) { html body ' .
+					'.mw-wiki-logo { background-image: url(' .
+					$storedOverride['logoHD']['1.5x'] .
+					");background-size: 135px auto; }}\n";
+			}
+			if (
+				!empty( $storedOverride['logoHD'] ) &&
+				!empty( $storedOverride['logoHD']['2x'] )
+			) {
+				$css .= '@media (-webkit-min-device-pixel-ratio: 2), ' .
+					'(min--moz-device-pixel-ratio: 2), (min-resolution: ' .
+					'2dppx), (min-resolution: 192dpi) { html body ' .
+					'.mw-wiki-logo { background-image: url(' .
+					$storedOverride['logoHD']['2x'] .
+					");background-size: 135px auto; }}\n";
+			}
+			$this->getOutput()->addInlineStyle( $css );
+		}
+	}
+
+	protected function getVariant() {
+		// FIXME: This is the sort of thing DonationData is supposed to do,
+		// but we construct it too late to use variant in the configuration
+		// reader. We should be pulling all the get / post / session variables
+		// up here in the page class before creating the adapter.
+		$variant = $this->getRequest()->getVal( 'variant' );
+		if ( !$variant ) {
+			$donorData = $this->getRequest()->getSessionData( 'Donor' );
+			if ( $donorData && !empty( $donorData['variant'] ) ) {
+				$variant = $donorData['variant'];
+			}
+		}
+		return $variant;
 	}
 }

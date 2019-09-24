@@ -16,6 +16,8 @@
  *
  */
 
+use MaxMind\WebService\Http\CurlRequest;
+use MaxMind\WebService\Http\RequestFactory;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\CrmLink\ValidationAction;
@@ -41,32 +43,32 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 	public function setUp() {
 		parent::setUp();
 		$this->requestFactory = $this->getMockBuilder(
-			'\MaxMind\WebService\Http\RequestFactory'
+			RequestFactory::class
 		)->disableOriginalConstructor()->getMock();
 
 		$this->request = $this->getMockBuilder(
-			'MaxMind\WebService\Http\CurlRequest'
+			CurlRequest::class
 		)->disableOriginalConstructor()->getMock();
 
 		$this->requestFactory->method( 'request' )->willReturn(
 			$this->request
 		);
 
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			'wgDonationInterfaceEnableMinFraud' => true,
 			'wgDonationInterfaceMinFraudErrorScore' => 50,
-			'wgDonationInterfaceMinFraudClientOptions' => array(
+			'wgDonationInterfaceMinFraudClientOptions' => [
 				'host' => '0.0.0.0',
 				'httpRequestFactory' => $this->requestFactory
-			),
-		) );
+			],
+		] );
 	}
 
 	/**
 	 * When minFraud gets a blank answer, we should assign points according to
 	 * $wgDonationInterfaceMinFraudErrorScore.
 	 */
-	function testMinFraudErrorScore() {
+	public function testMinFraudErrorScore() {
 		$this->request->method( 'post' )->willReturn( '' );
 		$options = $this->getDonorTestData();
 		$options['email'] = 'somebody@wikipedia.org';
@@ -81,10 +83,10 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 		$this->assertEquals( 107.5, $exposed->risk_score, 'RiskScore is not as expected for failure mode' );
 		$message = QueueWrapper::getQueue( 'payments-antifraud' )->pop();
 		SourceFields::removeFromMessage( $message );
-		$expected = array(
+		$expected = [
 			'validation_action' => ValidationAction::REJECT,
 			'risk_score' => 107.5,
-			'score_breakdown' => array(
+			'score_breakdown' => [
 				'initial' => 0,
 				'getScoreUtmCampaignMap' => 0,
 				'getScoreCountryMap' => 20,
@@ -94,7 +96,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 				'getCVVResult' => 0,
 				'getAVSResult' => 0,
 				'minfraud_filter' => 50,
-			),
+			],
 			'user_ip' => '127.0.0.1',
 			'gateway_txn_id' => false,
 			'date' => $message['date'],
@@ -103,14 +105,14 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
 			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
 			'payment_method' => 'cc',
-		);
+		];
 		$this->assertEquals( $expected, $message );
 	}
 
 	/**
 	 * Test we correctly add a real score from minFraud
 	 */
-	function testMinFraudRealScore() {
+	public function testMinFraudRealScore() {
 		$options = $this->getDonorTestData();
 		$options['email'] = 'somebody@wikipedia.org';
 		$options['payment_method'] = 'cc';
@@ -124,7 +126,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 				'"device":{"ip_address":"127.0.0.1"},' .
 				'"email":{"address":"daf162af7e894faf3d55a18ec7bfa795","domain":"wikipedia.org"},' .
 				'"event":{"transaction_id":"' .
-				$gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ) .'"}}'
+				$gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ) . '"}}'
 			)->willReturn( [
 				200, 'application/json', file_get_contents(
 					__DIR__ . '/includes/Responses/minFraud/15points.json'
@@ -138,10 +140,10 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 		$this->assertEquals( 72.75, $exposed->risk_score, 'RiskScore is not as expected for failure mode' );
 		$message = QueueWrapper::getQueue( 'payments-antifraud' )->pop();
 		SourceFields::removeFromMessage( $message );
-		$expected = array(
+		$expected = [
 			'validation_action' => ValidationAction::CHALLENGE,
 			'risk_score' => 72.75,
-			'score_breakdown' => array(
+			'score_breakdown' => [
 				'initial' => 0,
 				'getScoreUtmCampaignMap' => 0,
 				'getScoreCountryMap' => 20,
@@ -151,7 +153,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 				'getCVVResult' => 0,
 				'getAVSResult' => 0,
 				'minfraud_filter' => 15.25,
-			),
+			],
 			'user_ip' => '127.0.0.1',
 			'gateway_txn_id' => false,
 			'date' => $message['date'],
@@ -160,14 +162,14 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
 			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
 			'payment_method' => 'cc',
-		);
+		];
 		$this->assertEquals( $expected, $message );
 	}
 
 	/**
 	 * Make sure we send the right stuff when extra fields are enabled
 	 */
-	function testMinFraudExtras() {
+	public function testMinFraudExtras() {
 		$options = $this->getDonorTestData();
 		$options['email'] = 'somebody@wikipedia.org';
 		$options['payment_method'] = 'cc';
@@ -207,10 +209,10 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 		$this->assertEquals( 72.75, $exposed->risk_score, 'RiskScore is not as expected for failure mode' );
 		$message = QueueWrapper::getQueue( 'payments-antifraud' )->pop();
 		SourceFields::removeFromMessage( $message );
-		$expected = array(
+		$expected = [
 			'validation_action' => ValidationAction::CHALLENGE,
 			'risk_score' => 72.75,
-			'score_breakdown' => array(
+			'score_breakdown' => [
 				'initial' => 0,
 				'getScoreUtmCampaignMap' => 0,
 				'getScoreCountryMap' => 20,
@@ -220,7 +222,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 				'getCVVResult' => 0,
 				'getAVSResult' => 0,
 				'minfraud_filter' => 15.25,
-			),
+			],
 			'user_ip' => '127.0.0.1',
 			'gateway_txn_id' => false,
 			'date' => $message['date'],
@@ -229,7 +231,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
 			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
 			'payment_method' => 'cc',
-		);
+		];
 		$this->assertEquals( $expected, $message );
 	}
 
@@ -237,7 +239,7 @@ class DonationInterface_FraudFiltersTest extends DonationInterfaceTestCase {
 	 * Make sure we send the right stuff when extra fields are enabled and
 	 * we're not collecting address fields.
 	 */
-	function testMinFraudExtrasNoAddress() {
+	public function testMinFraudExtrasNoAddress() {
 		$options = $this->getDonorTestData( 'BR' );
 		$options['email'] = 'somebody@wikipedia.org';
 		$options['payment_method'] = 'cc';

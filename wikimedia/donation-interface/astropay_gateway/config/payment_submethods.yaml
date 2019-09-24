@@ -6,8 +6,11 @@ visa:
         AR: true
         BR: true
 #       CL: true  #waiting on AstroPay
-        MX: true
         CO: true
+        IN: true
+        MX: true
+        PE: true
+        UY: true
     logo: card-visa-lg.png
 mc:
     bank_code: MC
@@ -17,8 +20,11 @@ mc:
         AR: true
         BR: true
 #       CL: true  #waiting on AstroPay
-        MX: true
         CO: true
+        IN: true
+        MX: true
+        PE: true
+        UY: true
     logo: card-mastercard.png
     logo_hd:
         2x: card-mastercard_2x.png
@@ -39,6 +45,8 @@ amex:
         AR: true
 #       CL: true  #waiting on AstroPay
         CO: true
+        IN: true
+        PE: true
     logo: card-amex-lg.png
 visa-debit:
     bank_code: VD
@@ -46,6 +54,7 @@ visa-debit:
     group: cc
     countries:
         MX: true
+        PE: true
     logo: card-visa-lg.png
     sub_text_key: donate_interface-debit
 mc-debit:
@@ -74,6 +83,9 @@ diners:
         BR: true
 #       CL: true  #waiting on AstroPay
         CO: true
+        IN: true
+        PE: true
+        UY: true
     logo: card-dinersclub-lg.png
 hiper:
     bank_code: HI
@@ -180,13 +192,13 @@ bradesco:
     countries:
         BR: true
     logo: bank-bradesco.png
-# santander:
-#    bank_code: SB
-#    label: Santander
-#    group: bt
-#    countries:
-#        BR: true
-#    logo: bank-santander.png
+santander:
+    bank_code: SB
+    label: Santander
+    group: bt
+    countries:
+        BR: true
+    logo: bank-santander.png
 santander_rio:
     bank_code: SI
     label: Santander
@@ -214,13 +226,6 @@ cash_santander:
     countries:
         MX: true
     logo: bank-santander.png
-cash_banamex:
-    bank_code: BM
-    label: Banamex
-    group: cash
-    countries:
-        MX: true
-    logo: cash-banamex.png
 cash_bancomer:
     bank_code: BV
     label: Bancomer
@@ -242,13 +247,6 @@ cash_pago_facil:
     countries:
         AR: true
     logo: cash-pago-facil.png
-cash_provencia_pagos:
-    bank_code: BG
-    label: Provencia Pagos
-    group: cash
-    countries:
-        AR: true
-    logo: cash-provencia-pagos.png
 cash_efecty:
     bank_code: EY
     label: Efecty
@@ -283,3 +281,41 @@ cash_red_pagos:
     countries:
         UY: true
     logo: cash-red-pagos.png
+#india
+netbanking:
+    bank_code: NB
+    label_key: donate_interface-bank-name-netbanking
+    group: bt
+    countries:
+        IN: true
+    logo: bank-netbanking.png
+    logo_hd:
+        2x: bank-netbanking_2x.png
+    sub_text_key: donate_interface-bank-name-netbanking
+upi:
+    bank_code: UI
+    label: UPI
+    group: bt
+    countries:
+        IN: true
+    logo: bank-upi.png
+    logo_hd:
+        2x: bank-upi_2x.png
+paytmwallet:
+    bank_code: PW
+    label: PayTM Wallet
+    group: bt
+    countries:
+        IN: true
+    logo: bank-paytm.png
+    logo_hd:
+        2x: bank-paytm_2x.png
+rupay:
+    bank_code: RU
+    label: RuPay
+    group: cc
+    countries:
+        IN: true
+    logo: card-rupay.png
+    logo_hd:
+        2x: card-rupay_2x.png

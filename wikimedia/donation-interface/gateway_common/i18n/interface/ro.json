@@ -9,7 +9,8 @@
 			"Stelistcristi",
 			"Jrobell",
 			"Matrafox",
-			"Strainu"
+			"Strainu",
+			"Andrei Stroe"
 		]
 	},
 	"donate_interface": "Sprijiniți Wikimedia",
@@ -29,7 +30,7 @@
 	"donate_interface-monthly-donation-description": "Donație lunară către Fundația Wikimedia",
 	"donate_interface-amount-error": "Vă rugăm să introduceți o sumă validă",
 	"donate_interface-smallamount-error": "Vă rugăm să alegeți o sumă (minim $1)",
-	"donate_interface-bigamount-error": "Nu putem accepta donații mai mari de 10000 de dolari ($1 $2) prin intermediul site-ului nostru. Vă rugăm să contactați personalul nostru specializat la $3.",
+	"donate_interface-bigamount-error": "Nu putem accepta donații mai mari de $4 de dolari ($1 $2) prin intermediul site-ului nostru. Vă rugăm să contactați personalul nostru specializat la $3.",
 	"donate_interface-processing-error": "S-a produs o eroare în timpul prelucrării cererii dumneavoastră. Vă rugăm să contactați Departamentul pentru Donații la <a href=\"mailto:$1\">$1</a>.",
 	"donate_interface-fallback-currency-notice": "Moneda dumneavoastră nu a fost acceptată. Dacă decideți să continuați, procesarea plății se va face în $1.",
 	"donate_interface-maintenance-notice": "Ne cerem scuze, dar această modalitate de plată a fost oprită temporar.",
@@ -353,8 +354,6 @@
 	"donate_interface-translate-bluelink": "Îmbunătățiți această traducere",
 	"donate_interface-translate-redlink1": "Ajutați la traducerea acestei pagini.",
 	"donate_interface-translate-redlink2": "Sau trimiteți traducerea dumneavoastră la adresa translations@wikimedia.org",
-	"donate_interface-email-fallbackname": "prieten al Fundației Wikimedia",
-	"donate_interface-email-subject": "Mulțumiri din partea Fundației Wikimedia",
 	"donate_interface-email-unsub-title": "Dezabonare Fundația Wikimedia",
 	"donate_interface-email-unsub-button": "Dezabonare",
 	"donate_interface-email-unsub-success": "Ați fost înlăturat cu succes din lista noastră de discuții",
@@ -379,21 +378,5 @@
 	"donate_interface-monthly-short": "Lunar",
 	"donate_interface-onetime-short": "O dată",
 	"donate_interface-error-http-403": "Nu aveți permisiunea să accesați această pagină.",
-	"donate_interface-statement": "Wikimedia $1",
-	"apihelp-donate-param-amount": "Suma donată.",
-	"apihelp-donate-param-currency": "Codul monedei.",
-	"apihelp-donate-param-first_name": "Prenume.",
-	"apihelp-donate-param-last_name": "Nume de familie.",
-	"apihelp-donate-param-street_address": "Prima linie a adresei.",
-	"apihelp-donate-param-supplemental_address_1": "A doua linie a adresei.",
-	"apihelp-donate-param-city": "Oraș.",
-	"apihelp-donate-param-postal_code": "Cod poștal.",
-	"apihelp-donate-param-email": "Adresă de e-mail.",
-	"apihelp-donate-param-country": "Codul țării.",
-	"apihelp-donate-param-card_num": "Numărul cardului de credit.",
-	"apihelp-donate-param-card_type": "Tipul cardului de credit.",
-	"apihelp-donate-param-expiration": "Data expirării.",
-	"apihelp-donate-param-cvv": "Cod CVV.",
-	"apihelp-donate-param-language": "Codul limbii.",
-	"apihelp-donate-example-1": "Faceți o donație"
+	"donate_interface-statement": "Wikimedia $1"
 }

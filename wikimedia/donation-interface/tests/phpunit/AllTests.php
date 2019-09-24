@@ -22,12 +22,12 @@
  * @see DonationInterface_Adapter_AllTests
  */
 class DonationInterface_AllTests extends PHPUnit_Framework_TestSuite {
-	function __construct() {
+	public function __construct() {
 		parent::__construct( 'DonationInterface test suite' );
 
-		$suffixes = array(
+		$suffixes = [
 			'Test.php',
-		);
+		];
 		$fileIterator = new File_Iterator_Facade();
 		$files = $fileIterator->getFilesAsArray( __DIR__, $suffixes );
 		$this->addTestFiles( $files );

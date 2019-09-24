@@ -34,20 +34,20 @@ use Wikimedia\TestingAccessWrapper;
 class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceTestCase {
 
 	/**
-	 * @param $name string The name of the test case
-	 * @param $data array Any parameters read from a dataProvider
-	 * @param $dataName string|int The name or index of the data set
+	 * @param string $name The name of the test case
+	 * @param array $data Any parameters read from a dataProvider
+	 * @param string|int $dataName The name or index of the data set
 	 */
-	function __construct( $name = null, array $data = array(), $dataName = '' ) {
+	public function __construct( $name = null, array $data = [], $dataName = '' ) {
 		parent::__construct( $name, $data, $dataName );
-		$this->testAdapterClass = 'TestingAstroPayAdapter';
+		$this->testAdapterClass = TestingAstroPayAdapter::class;
 	}
 
-	function setUp() {
+	public function setUp() {
 		parent::setUp();
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			'wgAstroPayGatewayEnabled' => true,
-		) );
+		] );
 		TestingContext::get()->providerConfigurationOverride =
 			TestingProviderConfiguration::createForProvider(
 				'astropay',
@@ -59,12 +59,13 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * Ensure we're setting the right url for each transaction
 	 * @covers AstroPayAdapter::getCurlBaseOpts
 	 */
-	function testCurlUrl() {
+	public function testCurlUrl() {
 		$init = $this->getDonorTestData( 'BR' );
 		$gateway = $this->getFreshGatewayObject( $init );
 		$gateway->setCurrentTransaction( 'NewInvoice' );
+		$accessible = TestingAccessWrapper::newFromObject( $gateway );
 
-		$result = $gateway->getCurlBaseOpts();
+		$result = $accessible->getCurlBaseOpts();
 
 		$this->assertEquals(
 			'https://sandbox.astropay.example.com/api_curl/streamline/NewInvoice',
@@ -77,7 +78,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * Test the NewInvoice transaction is making a sane request and signing
 	 * it correctly
 	 */
-	function testNewInvoiceRequest() {
+	public function testNewInvoiceRequest() {
 		$init = $this->getDonorTestData( 'BR' );
 		$session['Donor']['order_id'] = '123456789';
 		$this->setUpRequest( $init, $session );
@@ -87,7 +88,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$gateway->do_transaction( 'NewInvoice' );
 		parse_str( $gateway->curled[0], $actual );
 
-		$expected = array(
+		$expected = [
 			'x_login' => 'createlogin',
 			'x_trans_key' => 'createpass',
 			'x_invoice' => '123456789',
@@ -100,13 +101,51 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_cpf' => '00003456789',
 			'x_name' => 'Nome Apelido',
 			'x_email' => 'nobody@example.org',
-			// 'x_address' => 'Rua Falso 123',
+			'x_version' => '1.1',
+			'x_address' => 'N0NE PROVIDED',
 			// 'x_zip' => '01110-111',
 			// 'x_city' => 'São Paulo',
 			// 'x_state' => 'SP',
-			'control' => 'AC43664E0C4DF30607A26F271C8998BC4EE26511366E65AFB69B96E89BFD4359',
+			'control' => 'D00BB4BF818EA9C3E944EF01FB470CBC34FE97E7F6346E6EE5A915EB957BB3FF',
 			'type' => 'json',
-		);
+		];
+		$this->assertEquals( $expected, $actual, 'NewInvoice is not including the right parameters' );
+	}
+
+	/**
+	 * Test the NewInvoice transaction is sending address and city correctly for India
+	 */
+	public function testNewInvoiceRequestAddressAndCity() {
+		$init = $this->getDonorTestData( 'IN' );
+		$session['Donor']['order_id'] = '123456789';
+		$this->setUpRequest( $init, $session );
+		$this->setLanguage( $init['language'] );
+		$gateway = new TestingAstroPayAdapter();
+
+		$gateway->do_transaction( 'NewInvoice' );
+		parse_str( $gateway->curled[0], $actual );
+
+		$expected = [
+			'x_login' => 'createlogin',
+			'x_trans_key' => 'createpass',
+			'x_invoice' => '123456789',
+			'x_amount' => '100.00',
+			'x_currency' => 'INR',
+			'x_bank' => 'TE',
+			'x_country' => 'IN',
+			'x_description' => wfMessage( 'donate_interface-donation-description' )->inLanguage( $init['language'] )->text(),
+			'x_iduser' => 'testindia@test.com',
+			'x_cpf' => '0000123456',
+			'x_name' => 'Test India',
+			'x_email' => 'testindia@test.com',
+			'x_version' => '1.1',
+			'x_address' => 'Test Street',
+			// 'x_zip' => '01110-111',
+			'x_city' => 'Chennai',
+			// 'x_state' => 'SP',
+			'control' => '1A3BA9E7AC831F3CC9A558D98BD5DF7C88A39B9FF245DA78974B273A5F659DCD',
+			'type' => 'json',
+		];
 		$this->assertEquals( $expected, $actual, 'NewInvoice is not including the right parameters' );
 	}
 
@@ -114,7 +153,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * When AstroPay sends back valid JSON with status "0", we should set txn
 	 * status to true and errors should be empty.
 	 */
-	function testStatusNoErrors() {
+	public function testStatusNoErrors() {
 		$init = $this->getDonorTestData( 'BR' );
 		$gateway = $this->getFreshGatewayObject( $init );
 
@@ -130,7 +169,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * If astropay sends back non-JSON, communication status should be false
 	 */
-	function testGibberishResponse() {
+	public function testGibberishResponse() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -146,7 +185,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * When AstroPay sends back valid JSON with status "1", we should set
 	 * error array to generic error and log a warning.
 	 */
-	function testStatusErrors() {
+	public function testStatusErrors() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -168,7 +207,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * do_transaction should set redirect key when we get a valid response.
 	 */
-	function testRedirectOnSuccess() {
+	public function testRedirectOnSuccess() {
 		$init = $this->getDonorTestData( 'BR' );
 		$gateway = $this->getFreshGatewayObject( $init );
 
@@ -184,7 +223,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * do_transaction should set redirect key when we get a valid response.
 	 */
-	function testDoPaymentSuccess() {
+	public function testDoPaymentSuccess() {
 		$init = $this->getDonorTestData( 'BR' );
 		$init['payment_method'] = 'cc';
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -201,7 +240,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * When AstroPay sends back valid JSON with status "1", we should set
 	 * error array to generic error and log a warning.
 	 */
-	function testDoPaymentErrors() {
+	public function testDoPaymentErrors() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -224,7 +263,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * Should set a validation error on amount
 	 */
-	function testDoPaymentLimitExceeded() {
+	public function testDoPaymentLimitExceeded() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$init['payment_method'] = 'cc';
@@ -242,7 +281,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * Should set a validation error on fiscal_number
 	 */
-	function testDoPaymentBadFiscalNumber() {
+	public function testDoPaymentBadFiscalNumber() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$init['payment_method'] = 'cc';
@@ -260,7 +299,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * Should finalize to failed
 	 */
-	function testDoPaymentUserUnauthorized() {
+	public function testDoPaymentUserUnauthorized() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$init['payment_method'] = 'cc';
@@ -274,7 +313,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * Should tell the user to try again
 	 */
-	function testDoPaymentCouldNotRegister() {
+	public function testDoPaymentCouldNotRegister() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$init['payment_method'] = 'cc';
@@ -292,7 +331,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * Should tell the user to try again
 	 */
-	function testDoPaymentCouldNotMakeDeposit() {
+	public function testDoPaymentCouldNotMakeDeposit() {
 		$init = $this->getDonorTestData( 'BR' );
 		$this->setLanguage( $init['language'] );
 		$init['payment_method'] = 'cc';
@@ -310,7 +349,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * PaymentStatus transaction should interpret the delimited response
 	 */
-	function testPaymentStatus() {
+	public function testPaymentStatus() {
 		$init = $this->getDonorTestData( 'BR' );
 		$session['Donor']['order_id'] = '123456789';
 		$this->setUpRequest( $init, $session );
@@ -319,7 +358,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$gateway->do_transaction( 'PaymentStatus' );
 
 		// from the test response
-		$expected = array(
+		$expected = [
 			'result' => '9',
 			'x_amount' => '100.00',
 			'x_iduser' => '08feb2d12771bbcfeb86',
@@ -331,18 +370,19 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_payment_type' => '03',
 			'x_bank_name' => 'GNB',
 			'x_currency' => 'BRL',
-		);
+		];
 		$results = $gateway->getTransactionData();
 		$this->assertEquals( $expected, $results,
 			'PaymentStatus response not interpreted correctly' );
 		// Should not throw exception
-		$gateway->verifyStatusSignature( $results );
+		$accessible = TestingAccessWrapper::newFromObject( $gateway );
+		$accessible->verifyStatusSignature( $results );
 	}
 
 	/**
 	 * Invalid signature should be recognized as such.
 	 */
-	function testInvalidSignature() {
+	public function testInvalidSignature() {
 		$init = $this->getDonorTestData( 'BR' );
 		$session['Donor']['order_id'] = '123456789';
 		$this->setUpRequest( $init, $session );
@@ -353,20 +393,21 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 
 		$results = $gateway->getTransactionData();
 		$this->setExpectedException( 'ResponseProcessingException' );
-		$gateway->verifyStatusSignature( $results );
+		$accessible = TestingAccessWrapper::newFromObject( $gateway );
+		$accessible->verifyStatusSignature( $results );
 	}
 
 	/**
 	 * If status is paid and signature is correct, processDonorReturn should not
 	 * throw exception and final status should be 'completed'
 	 */
-	function testSuccessfulReturn() {
+	public function testSuccessfulReturn() {
 		$init = $this->getDonorTestData( 'BR' );
 		$session['Donor']['order_id'] = '123456789';
 		$this->setUpRequest( $init, $session );
 		$gateway = new TestingAstroPayAdapter();
 
-		$requestValues = array(
+		$requestValues = [
 			'result' => '9',
 			'x_amount' => '100.00',
 			'x_amount_usd' => '42.05',
@@ -375,7 +416,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_document' => '32869',
 			'x_iduser' => '08feb2d12771bbcfeb86',
 			'x_invoice' => '123456789',
-		);
+		];
 
 		$result = $gateway->processDonorReturn( $requestValues );
 		$this->assertFalse( $result->isFailed() );
@@ -387,7 +428,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * Make sure we record the actual amount charged, even if the donor has
 	 * opened a new window and screwed up their session data.
 	 */
-	function testReturnUpdatesAmount() {
+	public function testReturnUpdatesAmount() {
 		$init = $this->getDonorTestData( 'BR' );
 		$init['amount'] = '22.55'; // junk session data from another banner click
 		$session['Donor']['order_id'] = '123456789';
@@ -397,7 +438,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$amount = $gateway->getData_Unstaged_Escaped( 'amount' );
 		$this->assertEquals( '22.55', $amount );
 
-		$requestValues = array(
+		$requestValues = [
 			'result' => '9',
 			'x_amount' => '100.00',
 			'x_amount_usd' => '42.05',
@@ -406,7 +447,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_document' => '32869',
 			'x_iduser' => '08feb2d12771bbcfeb86',
 			'x_invoice' => '123456789',
-		);
+		];
 
 		$result = $gateway->processDonorReturn( $requestValues );
 		$this->assertFalse( $result->isFailed() );
@@ -417,13 +458,13 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * If payment is rejected, final status should be 'failed'
 	 */
-	function testRejectedReturn() {
+	public function testRejectedReturn() {
 		$init = $this->getDonorTestData( 'BR' );
 		$session['Donor']['order_id'] = '123456789';
 		$this->setUpRequest( $init, $session );
 		$gateway = new TestingAstroPayAdapter();
 
-		$requestValues = array(
+		$requestValues = [
 			'result' => '8', // rejected by bank
 			'x_amount' => '100.00',
 			'x_amount_usd' => '42.05',
@@ -432,7 +473,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_document' => '32869',
 			'x_iduser' => '08feb2d12771bbcfeb86',
 			'x_invoice' => '123456789',
-		);
+		];
 
 		$result = $gateway->processDonorReturn( $requestValues );
 		$this->assertTrue( $result->isFailed() );
@@ -440,7 +481,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertEquals( FinalStatus::FAILED, $status );
 	}
 
-	function testStageBankCode() {
+	public function testStageBankCode() {
 		$init = $this->getDonorTestData( 'BR' );
 		$init['payment_method'] = 'cc';
 		$init['payment_submethod'] = 'elo';
@@ -456,7 +497,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * Test that we run the AntiFraud filters before redirecting
 	 */
-	function testAntiFraudFilters() {
+	public function testAntiFraudFilters() {
 		$init = $this->getDonorTestData( 'BR' );
 		$init['payment_method'] = 'cc';
 		$init['bank_code'] = 'VD';
@@ -473,32 +514,55 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->assertEquals( ValidationAction::CHALLENGE, $gateway->getValidationAction(), 'Validation action is not as expected' );
 		$exposed = TestingAccessWrapper::newFromObject( $gateway );
 		$this->assertEquals( 60, $exposed->risk_score, 'RiskScore is not as expected' );
-		$message = QueueWrapper::getQueue( 'payments-antifraud' )->pop();
-		SourceFields::removeFromMessage( $message );
-		$expected = array(
+
+		$initialMessage = QueueWrapper::getQueue( 'payments-antifraud' )->pop();
+		$validateMessage = QueueWrapper::getQueue( 'payments-antifraud' )->pop();
+
+		SourceFields::removeFromMessage( $initialMessage );
+		SourceFields::removeFromMessage( $validateMessage );
+
+		$expectedInitial = [
+			'validation_action' => ValidationAction::PROCESS,
+			'risk_score' => 0,
+			'score_breakdown' => [
+				'initial' => 0,
+			],
+			'user_ip' => '127.0.0.1',
+			'gateway_txn_id' => false,
+			'date' => $initialMessage['date'],
+			'server' => gethostname(),
+			'gateway' => 'astropay',
+			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
+			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
+			'payment_method' => 'cc',
+		];
+
+		$expectedValidate = [
 			'validation_action' => ValidationAction::CHALLENGE,
 			'risk_score' => 60,
-			'score_breakdown' => array(
+			'score_breakdown' => [
 				'initial' => 0,
 				'getScoreUtmCampaignMap' => 0,
 				'getScoreCountryMap' => 0,
 				'getScoreUtmSourceMap' => 10.5,
 				'getScoreUtmMediumMap' => 12,
 				'getScoreEmailDomainMap' => 37.5,
-			),
+			],
 			'user_ip' => '127.0.0.1',
 			'gateway_txn_id' => false,
-			'date' => $message['date'],
+			'date' => $validateMessage['date'],
 			'server' => gethostname(),
 			'gateway' => 'astropay',
 			'contribution_tracking_id' => $gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' ),
 			'order_id' => $gateway->getData_Unstaged_Escaped( 'order_id' ),
 			'payment_method' => 'cc',
-		);
-		$this->assertEquals( $expected, $message );
+		];
+
+		$this->assertEquals( $expectedInitial, $initialMessage );
+		$this->assertEquals( $expectedValidate, $validateMessage );
 	}
 
-	function testStageFiscalNumber() {
+	public function testStageFiscalNumber() {
 		$init = $this->getDonorTestData( 'BR' );
 		$init['fiscal_number'] = '000.034.567-89';
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -513,7 +577,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * We should increment the order ID with each NewInvoice call
 	 */
-	function testNewInvoiceOrderId() {
+	public function testNewInvoiceOrderId() {
 		$init = $this->getDonorTestData( 'BR' );
 		$firstRequest = $this->setUpRequest( $init );
 		$firstAttempt = new TestingAstroPayAdapter();
@@ -537,7 +601,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	 * We should increment the order ID with each NewInvoice call, even when
 	 * retrying inside a single doPayment call
 	 */
-	function testNewInvoiceOrderIdRetry() {
+	public function testNewInvoiceOrderIdRetry() {
 		$init = $this->getDonorTestData( 'BR' );
 		$gateway = $this->getFreshGatewayObject( $init );
 		$gateway::setDummyGatewayResponseCode( 'collision' );
@@ -555,7 +619,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 	/**
 	 * We should show an error for incompatible country / currency combinations
 	 */
-	function testBadCurrencyForCountry() {
+	public function testBadCurrencyForCountry() {
 		$init = $this->getDonorTestData( 'BR' );
 		$init['currency'] = 'CLP';
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -568,7 +632,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		);
 	}
 
-	function testDummyFiscalNumber() {
+	public function testDummyFiscalNumber() {
 		$init = $this->getDonorTestData( 'MX' );
 		$init['payment_submethod'] = 'visa';
 		$gateway = $this->getFreshGatewayObject( $init );

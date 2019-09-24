@@ -10,7 +10,7 @@
 
 		var $form = $( '<iframe>' )
 			.attr( {
-				src: result.formaction,
+				src: result.iframe,
 				width: 318,
 				height: 316,
 				frameborder: 0,
@@ -20,11 +20,16 @@
 		$( '#payment-form' ).append( $form );
 	}
 
-	if ( di.forms.isIframe() ) {
-		di.forms.submit = function () {
-			di.forms.callDonateApi( function ( result ) {
-				showIframe( result );
-			} );
-		};
+	function handleResult( result ) {
+		if ( di.forms.isIframe() && !result.redirect ) {
+			showIframe( result );
+		} else {
+			location.replace( result.redirect );
+		}
 	}
+
+	di.forms.submit = function () {
+		di.forms.callDonateApi( handleResult );
+	};
+
 } )( jQuery, mediaWiki );

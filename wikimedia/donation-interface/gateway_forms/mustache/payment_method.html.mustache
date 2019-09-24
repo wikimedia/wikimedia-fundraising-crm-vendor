@@ -1,5 +1,3 @@
-						<tr>
-							<td>
 								<dl class="submethods">
 									<dd class="field">
 {{# show_submethods }}
@@ -8,7 +6,7 @@
                                                 <li title="{{# label_key }}{{ l10n . }}{{/ label_key }}{{^ label_key }}{{ label }}{{/ label_key }}" {{# sub_text_key }}class="has_sub_text" {{/ sub_text_key }}>
                                                 <label for="submethod-{{ key }}">
                                                     <input id="submethod-{{ key }}" name="payment_submethod" type="radio" value="{{ key }}" class="cardradio" />
-                                                    <img class="submethod-logo" alt="{{ label }}" src="{{ logo }}" {{{ srcset }}}/>
+                                                    <img class="submethod-logo" alt="{{# label_key }}{{ l10n . }}{{/ label_key }}{{^ label_key }}{{ label }}{{/ label_key }}" src="{{ logo }}" {{{ srcset }}}/>
 {{# sub_text_key }}
                                                     <p class="card_sub_text">{{ l10n . }}</p>
 {{/ sub_text_key }}
@@ -25,21 +23,11 @@
 {{/ show_single_submethod }}
 									</dd>
 								</dl>
-							</td>
-						</tr>
 {{> issuers }}
-						<tr>
-							<td>
 								<div id="paymentContinue" {{^ show_submethods }}class="force"{{/ show_submethods }}> <input class="btn enabled" id="paymentContinueBtn" type="button" value="{{ l10n "donate_interface-continue" }}" /></div>
 								<div id="paymentSubmit" > <input class="btn enabled" id="paymentSubmitBtn" type="button" value="{{ l10n "donate_interface-submit-button" }}" /></div>
-							</td>
-						</tr>
 {{# is_cc }}
-						<tr>
-							<td>
 								<div class="mw-donate-submessage" id="payment_gateway-donate-submessage">
 									<img src="{{ script_path }}/extensions/DonationInterface/gateway_forms/includes/padlock.gif"> {{ l10n "donate_interface-donate-click" }}
 								</div>
-							</td>
-						</tr>
 {{/ is_cc }}

@@ -25,17 +25,17 @@ class TestingGenericAdapter extends GatewayAdapter {
 	/**
 	 * A list of fake errors that is returned each time revalidate() is called.
 	 */
-	public $errorsForRevalidate = array();
+	public $errorsForRevalidate = [];
 
 	public $revalidateCount = 0;
 
-	public static $acceptedCurrencies = array();
+	public static $acceptedCurrencies = [];
 
 	public function getCommunicationType() {
 		return 'xml';
 	}
 
-	public function revalidate( $check_not_empty = array() ) {
+	public function revalidate( $check_not_empty = [] ) {
 		if ( !empty( $this->errorsForRevalidate ) ) {
 			$fakeErrors = $this->errorsForRevalidate[$this->revalidateCount];
 			if ( $fakeErrors !== null ) {
@@ -57,10 +57,10 @@ class TestingGenericAdapter extends GatewayAdapter {
 	public function defineAccountInfo() {
 	}
 
-	public function defineDataConstraints() {
+	protected function defineDataConstraints() {
 	}
 
-	public function defineErrorMap() {
+	protected function defineErrorMap() {
 	}
 
 	public function defineOrderIDMeta() {
@@ -79,16 +79,16 @@ class TestingGenericAdapter extends GatewayAdapter {
 		$this->data_transformers = parent::getCoreDataTransformers();
 	}
 
-	public function defineVarMap() {
+	protected function defineVarMap() {
 	}
 
 	public function processResponse( $response ) {
 	}
 
-	public function setGatewayDefaults( $options = array() ) {
+	protected function setGatewayDefaults( $options = [] ) {
 	}
 
-	public function getCurrencies( $options = array() ) {
+	public function getCurrencies( $options = [] ) {
 		return self::$acceptedCurrencies;
 	}
 

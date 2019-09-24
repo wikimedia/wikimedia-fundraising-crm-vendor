@@ -55,15 +55,20 @@ $wgDonationInterfaceSalt = $wgSecretKey
  * As this is a mandatory check for all INR transactions, that rule made it into
  * the default.
  */
-$wgDonationInterface3DSRules = array(
-	'INR' => array(), //all countries
-)
+$wgDonationInterface3DSRules = [
+	'INR' => [], //all countries
+]
 
 Caching:
 To let SmashPig objects use Mediawiki's local cluster BagOStuff cache, add this
 to your SmashPig configuration under key 'cache':
  class: LocalClusterPsr6Cache
 (no constructor-parameters need to be specified)
+
+Geolocation for donors coming in without country on the url:
+Set this to the path of a MaxMind format GeoIP database.
+These databases can be obtained at https://dev.maxmind.com/geoip/geoip2/geolite2/
+$wgDonationInterfaceGeoIpDbPath = '/usr/share/GeoIP/GeoLite2-Country.mmdb'
 
 ==== Form appearance and content ====
 
@@ -86,13 +91,13 @@ URL of a page listing alternate ways to give.
 $wgDonationInterfaceOtherWaysURL = 'https://donate.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Ways_to_Give&language=$language&country=$country'
 
 URL of your organizations FAQ page for donors, FIXME: this will change
-$wgDonationInterfaceFaqURL = 'https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=FAQ&language=$language&country=$country'
+$wgDonationInterfaceFaqURL = 'https://donate.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=FAQ&language=$language&country=$country'
 
 URL of a page detailing tax detectability of donations to your organization, FIXME: this will change
-$wgDonationInterfaceTaxURL = 'https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Tax_Deductibility&language=$language&country=$country'
+$wgDonationInterfaceTaxURL = 'https://donate.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Tax_deductibility&language=$language&country=$country'
 
 URL of a page detailing donor privacy policy
-$wgDonationInterfacePolicyURL = 'https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Donor_policy&language=$language&country=$country'
+$wgDonationInterfacePolicyURL = 'https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Donor_privacy_policy&language=$language&country=$country'
 
 Email address donors should contact with any donation-related problems
 $wgDonationInterfaceProblemsEmail = 'donate@wikimedia.org'
@@ -124,6 +129,15 @@ $wgDonationInterfaceFailPage = 'Donate-error'
 $wgDonationInterfaceCancelPage = 'Donate-error'
 
 /**
+ * If this is set to a valid directory path, yaml files under this path will
+ * replace built-in config files. For example, if this is set to /etc/di/,
+ * then /etc/di/globalcollect/country_fields.yaml will be used instead of
+ * the built-in globalcollect_gateway/config/country_fields.yaml.
+ * Superseded files will be completely ignored, so copy and modify originals.
+ */
+$wgDonationInterfaceLocalConfigurationDirectory = false
+
+/**
  * If this is set to a valid directory path, yaml files under this path can
  * potentially replace built-in config files. For example, if this is set to
  * /etc/di_alt/, and query string variable 'variant' has value 'nostate',
@@ -131,8 +145,28 @@ $wgDonationInterfaceCancelPage = 'Donate-error'
  * instead of the built-in globalcollect_gateway/config/country_fields.yaml.
  * Superseded files will be completely ignored, so copy and modify originals.
  * Only latin letters, numbers, and underscores are allowed in variant.
+ * Variant configurations override both local and built-in configurations.
  */
 $wgDonationInterfaceVariantConfigurationDirectory = false
+
+/**
+ * Set this to override the logo for certain querystring values (and persist
+ * the override in session). For example:
+ * $wgDonationInterfaceLogoOverride = [
+ *    [
+ *        'variable' => 'utm_medium',
+ *        'value' => 'endowment',
+ *        'logo' => '/path/to/EndowmentLogo.png',
+ *        'logoHD' => [
+ *                        '1.5x' => '/path/to/Endowment1.5x.png',
+ *                        '2x' => '/path/to/Endowment2x.png',
+ *                    ]
+ *    ],
+ * ];
+ * will use EndowmentLogo.png when the querystring variable 'utm_medium' has
+ * the value 'endowment'. You can specify multiple rulesets.
+ */
+$wgDonationInterfaceLogoOverride = [];
 
 ==== Debug and logging ====
 
@@ -178,7 +212,10 @@ fallback (see above), we show an interstitial page notifying the user
 of the conversion before sending the donation to the gateway.
 $wgDonationInterfaceNotifyOnConvert = true
 
-
+When this is true, and a donor has provided their email address and
+opted in to receive emails, send a message to the opt-in queue even
+on payment failure.
+$wgDonationInterfaceSendOptInOnFailure = false
 
 ==== Processors and accounts ====
 
@@ -188,11 +225,11 @@ $wgGlobalCollectGatewayTestingURL = 'https://ps.gcsip.nl/wdl/wdl'
 // Actually it's ps.gcsip.com, but trust me it's better this way.
 $wgGlobalCollectGatewayURL = 'https://ps.gcsip.nl/wdl/wdl'
 
-#	$wgGlobalCollectGatewayAccountInfo['example'] = array(
+#	$wgGlobalCollectGatewayAccountInfo['example'] = [
 #		'MerchantID' => '', // GlobalCollect ID
-#	)
+#	]
 
-$wgGlobalCollectGatewayCvvMap = array(
+$wgGlobalCollectGatewayCvvMap = [
 	'M' => true, //CVV check performed and valid value.
 	'N' => false, //CVV checked and no match.
 	'P' => true, //CVV check not performed, not requested
@@ -201,9 +238,9 @@ $wgGlobalCollectGatewayCvvMap = array(
 	'Y' => false, //Server provider did not respond.
 	'0' => true, //No service available.
 	'' => false, //No code returned. All the points.
-)
+]
 
-$wgGlobalCollectGatewayAvsMap = array(
+$wgGlobalCollectGatewayAvsMap = [
 	'A' => 50, //Address (Street) matches, Zip does not.
 	'B' => 50, //Street address match for international transactions. Postal code not verified due to incompatible formats.
 	'C' => 50, //Street address and postal code not verified for international transaction due to incompatible formats.
@@ -224,12 +261,27 @@ $wgGlobalCollectGatewayAvsMap = array(
 	'Z' => 50, //5 digit Zip matches, Address (Street) does not.
 	'0' => 25, //No service available.
 	'' => 100, //No code returned. All the points.
-)
+]
+Ingenico Connect account info is read from SmashPig configuration, but you can
+set a map of hosted checkout variant names to IDs here. The logic in this
+extension chooses between 'redirect' and 'iframe' variants. The 'iframe'
+variant will be used by default for card transactions, and the 'redirect'
+variant will be used when bank authentication (3D Secure) might be used. By
+default both point to ID 100, the ID number Ingenico assigns to the pre-created
+look and feel. At the Connect console, you should create your 'iframe' variant
+based on the 'Minimal' template for proper positioning. If you use a variant
+based on the 'Responsive' template, you will need to change the
+#ingenico-iFrame CSS rules in this extension's ingenico.css to compensate.
+
+$wgIngenicoGatewayHostedFormVariants = [
+    'redirect' => 100,
+    'iframe' => 100
+]
 
 Amazon account info is mostly read from SmashPig configuration
 FIXME: stop duplicating SellerID and ClientID
 FIXME: actually use 'Region'
-$wgAmazonGatewayAccountInfo['example'] = array(
+$wgAmazonGatewayAccountInfo['example'] = [
     'SellerID' => '', // 13 or so uppercase letters
     'ClientID' => '', // app or site-specific, starts with amznX.application
     'Region' => '', // 'de', 'jp', 'uk', or 'us'
@@ -241,7 +293,7 @@ $wgAmazonGatewayAccountInfo['example'] = array(
     // Sorry, devs, ReturnURL HAS to be https.
     // Also, it has to be whitelisted for your application at sellercentral.amazon.com
     // e.g. https://payments.wikimedia.org/index.php/Special:AmazonGateway
-)
+]
 
 // This URL appears to be global and usable for both sandbox and non-sandbox
 $wgAmazonGatewayLoginScript = 'https://api-cdn.amazon.com/sdk/login1.js'
@@ -250,11 +302,11 @@ $wgPaypalGatewayURL = 'https://www.paypal.com/cgi-bin/webscr'
 $wgPaypalGatewayTestingURL = 'https://www.sandbox.paypal.com/cgi-bin/webscr'
 $wgPaypalGatewayRecurringLength = '0' // 0 should mean forever
 
-$wgPaypalGatewayXclickCountries = array()
+$wgPaypalGatewayXclickCountries = []
 
 # Example PayPal Express Checkout account:
 #
-# $wgPaypalExpressGatewayAccountInfo['test'] = array(
+# $wgPaypalExpressGatewayAccountInfo['test'] = [
 #     'User' => 'abc',
 #     'Password' => '12345',
 #
@@ -264,12 +316,12 @@ $wgPaypalGatewayXclickCountries = array()
 #
 #     // TODO: Use parameter substitution.
 #     'RedirectURL' => 'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&useraction=commit&token=',
-# )
+# ]
 
 # Example legacy PayPal
-#	$wgPaypalGatewayAccountInfo['example'] = array(
+#	$wgPaypalGatewayAccountInfo['example'] = [
 #		'AccountEmail' => "",
-#	)
+#	]
 
 # https://developer.paypal.com/docs/classic/api/endpoints/
 # TODO: Move to configuration.
@@ -287,26 +339,26 @@ $wgAdyenGatewayTestingURL = 'https://test.adyen.com'
 // error can be reviewed and manually captured.
 $wgAdyenGatewayMaxRiskScore = 95
 
-#	$wgAdyenGatewayAccountInfo['example'] = array(
+#	$wgAdyenGatewayAccountInfo['example'] = [
 #		'AccountName' => '' // account identifier, not login name
 #		'SharedSecret' => '' // entered in the skin editor
 #		'SkinCode' => ''
-#	)
+#	]
 
 // Set base URLs here.  Individual transactions have their own paths
 $wgAstroPayGatewayURL = 'https://api.dlocal.com/'
 $wgAstroPayGatewayTestingURL = 'https://sandbox.dlocal.com/'
-#	$wgAstroPayGatewayAccountInfo['example'] = array(
-#		'Create' => array( // For creating invoices
+#	$wgAstroPayGatewayAccountInfo['example'] = [
+#		'Create' => [ // For creating invoices
 #			'Login' => '',
 #			'Password' => '',
-#		),
-#		'Status' => array( // For checking payment status
+#		],
+#		'Status' => [ // For checking payment status
 #			'Login' => '',
 #			'Password' => '',
-#		),
+#		],
 #		'SecretKey' => '', // For signing requests and verifying responses
-#	)
+#	]
 
 
 ==== Queues ====
@@ -324,7 +376,14 @@ Non-critical queues:
 'banner-history': Banner history log ID-contribution tracking ID associations
     that go in Drupal in banner_history_contribution_associations.
     See crm/modules/queue2civicrm/banner_history.
+'contribution_tracking': Optional queue for saving contribution tracking data
+	to the contribution tracking table for the purpose of decoupling from the
+	database itself.
 
+When this is true, a contribution tracking ID is generated from a sequence
+generator, and tracking information is inserted into the contribution tracking
+queue, as opposed to being inserted into the database directly.
+$wgDonationInterfaceEnableContributionTrackingQueue = false;
 
 ==== Fraud filters and blocking ====
 
@@ -336,7 +395,7 @@ Non-critical queues:
  * going to only contain countries forbidden by law, there's no reason
  * to override by gateway and as such it's always referenced directly.
  */
-$wgDonationInterfaceForbiddenCountries = array()
+$wgDonationInterfaceForbiddenCountries = []
 
 //Custom Filters globals
 /**
@@ -345,21 +404,21 @@ $wgDonationInterfaceForbiddenCountries = array()
  * The keys to the array are the 'actions' to be taken (eg 'process').
  * The value for one of these keys is an array representing the lower
  * and upper bounds for that action.  For instance,
- *  $wgDonationInterfaceCustomFiltersActionRanges = array(
- * 		'process' => array( 0, 100)
+ *  $wgDonationInterfaceCustomFiltersActionRanges = [
+ * 		'process' => [ 0, 100 ]
  * 		...
- * 	)
+ * 	]
  * means that any transaction with a risk score greater than or equal
  * to 0 and less than or equal to 100 will be given the 'process' action.
  *
  * These are evaluated on a >= or <= basis.
  */
-$wgDonationInterfaceCustomFiltersActionRanges = array(
-	'process' => array( 0, 100 ),
-	'review' => array( -1, -1 ),
-	'challenge' => array( -1, -1 ),
-	'reject' => array( -1, -1 ),
-)
+$wgDonationInterfaceCustomFiltersActionRanges = [
+	'process' => [ 0, 100 ],
+	'review' => [ -1, -1 ],
+	'challenge' => [ -1, -1 ],
+	'reject' => [ -1, -1 ],
+]
 
 /**
  * A base value for tracking the 'riskiness' of a transaction
@@ -400,7 +459,7 @@ $wgDonationInterfaceMinFraudLicenseKey = ''
  *   leave validation on while developing and only (optionally) disable it
  *   before deployment.
  */
-$wgDonationInterfaceMinFraudClientOptions = array()
+$wgDonationInterfaceMinFraudClientOptions = []
 
 // Weight to give minFraud risk scores when enabled
 // 100 means to use the raw minFraud score
@@ -425,23 +484,23 @@ $wgDonationInterfaceMinFraudAlarmLimit = 25000
  * Things you can put here: email (send the real address instead of a hash),
  * amount, currency, first_name, last_name, and street_address.
  */
-$wgDonationInterfaceMinFraudExtraFields = array()
+$wgDonationInterfaceMinFraudExtraFields = []
 
 //Referrer Filter globals
-$wgDonationInterfaceCustomFiltersRefRules = array()
+$wgDonationInterfaceCustomFiltersRefRules = []
 
 //Source Filter globals
-$wgDonationInterfaceCustomFiltersSrcRules = array()
+$wgDonationInterfaceCustomFiltersSrcRules = []
 
 //Functions Filter globals
 //These functions fire when we trigger the antifraud filters.
 //Anything that needs access to API call results goes here.
 //FIXME: you need to copy all the initial functions here because
 //individual function scores don't persist like filter scores.
-$wgDonationInterfaceCustomFiltersFunctions = array()
+$wgDonationInterfaceCustomFiltersFunctions = []
 //These functions fire on GatewayReady, so all they can see is the
 //request and the session.
-$wgDonationInterfaceCustomFiltersInitialFunctions = array()
+$wgDonationInterfaceCustomFiltersInitialFunctions = []
 
 //IP velocity filter globals
 $wgDonationInterfaceIPVelocityFailScore = 100
@@ -473,18 +532,18 @@ $wgDonationInterfaceSessionVelocity_Threshold = 50 // Above this score, we deny 
  * @code
  * <?php
  *
- * $wgDonationInterfaceCustomFiltersFunctions = array(
+ * $wgDonationInterfaceCustomFiltersFunctions = [
  * 	'getScoreCountryMap' => 100,
- * )
+ * ]
  *
- * $wgDonationInterfaceCountryMap = array(
+ * $wgDonationInterfaceCountryMap = [
  * 	'CA' =>  1,
  * 	'US' => 5,
- * )
+ * ]
  * ?>
  * @endcode
  */
-$wgDonationInterfaceCountryMap = array()
+$wgDonationInterfaceCountryMap = []
 
 /**
  * $wgDonationInterfaceEmailDomainMap
@@ -498,18 +557,18 @@ $wgDonationInterfaceCountryMap = array()
  * @code
  * <?php
  *
- * $wgDonationInterfaceCustomFiltersFunctions = array(
+ * $wgDonationInterfaceCustomFiltersFunctions = [
  * 	'getScoreEmailDomainMap' => 100,
- * )
+ * ]
  *
- * $wgDonationInterfaceEmailDomainMap = array(
+ * $wgDonationInterfaceEmailDomainMap = [
  * 	'gmail.com' =>  5,
  * 	'wikimedia.org' => 0,
- * )
+ * ]
  * ?>
  * @endcode
  */
-$wgDonationInterfaceEmailDomainMap = array()
+$wgDonationInterfaceEmailDomainMap = []
 
 /**
  * $wgDonationInterfaceUtmCampaignMap
@@ -523,18 +582,18 @@ $wgDonationInterfaceEmailDomainMap = array()
  * @code
  * <?php
  *
- * $wgDonationInterfaceCustomFiltersFunctions = array(
+ * $wgDonationInterfaceCustomFiltersFunctions = [
  * 	'getScoreUtmCampaignMap' => 100,
- * )
+ * ]
  *
- * $wgDonationInterfaceUtmCampaignMap = array(
+ * $wgDonationInterfaceUtmCampaignMap = [
  * 	'/^$/' =>  20,
  * 	'/some-odd-string/' => 100,
- * )
+ * ]
  * ?>
  * @endcode
  */
-$wgDonationInterfaceUtmCampaignMap = array()
+$wgDonationInterfaceUtmCampaignMap = []
 
 /**
  * $wgDonationInterfaceUtmMediumMap
@@ -548,18 +607,18 @@ $wgDonationInterfaceUtmCampaignMap = array()
  * @code
  * <?php
  *
- * $wgDonationInterfaceCustomFiltersFunctions = array(
+ * $wgDonationInterfaceCustomFiltersFunctions = [
  * 	'getScoreUtmMediumMap' => 100,
- * )
+ * ]
  *
- * $wgDonationInterfaceUtmMediumMap = array(
+ * $wgDonationInterfaceUtmMediumMap = [
  * 	'/^$/' =>  20,
  * 	'/some-odd-string/' => 100,
- * )
+ * ]
  * ?>
  * @endcode
  */
-$wgDonationInterfaceUtmMediumMap = array()
+$wgDonationInterfaceUtmMediumMap = []
 
 /**
  * $wgDonationInterfaceUtmSourceMap
@@ -573,18 +632,18 @@ $wgDonationInterfaceUtmMediumMap = array()
  * @code
  * <?php
  *
- * $wgDonationInterfaceCustomFiltersFunctions = array(
+ * $wgDonationInterfaceCustomFiltersFunctions = [
  * 	'getScoreUtmSourceMap' => 100,
- * )
+ * ]
  *
- * $wgDonationInterfaceUtmSourceMap = array(
+ * $wgDonationInterfaceUtmSourceMap = [
  * 	'/^$/' =>  20,
  * 	'/some-odd-string/' => 100,
- * )
+ * ]
  * ?>
  * @endcode
  */
-$wgDonationInterfaceUtmSourceMap = array()
+$wgDonationInterfaceUtmSourceMap = []
 
 /**
  * $wgDonationInterfaceNameFilterRules
@@ -600,23 +659,23 @@ $wgDonationInterfaceUtmSourceMap = array()
  * @code
  * <?php
  *
- * $wgDonationInterfaceCustomFiltersFunctions = array(
+ * $wgDonationInterfaceCustomFiltersFunctions = [
  * 	'getScoreName' => 100,
- * )
+ * ]
  *
- * $wgDonationInterfaceNameFilterRules = array(
- *     array(
- *         'KeyMapA' => array('a','s','d'),
- *         'KeyMapB' => array('h','j','k','l'),
+ * $wgDonationInterfaceNameFilterRules = [
+ *     [
+ *         'KeyMapA' => [ 'a','s','d' ],
+ *         'KeyMapB' => [ 'h','j','k','l' ],
  *         'GibberishWeight' => .9,
  *         'Score' => 10,
  *         'MinimumLength' => 10,
- *     ),
- * )
+ *     ],
+ * ]
  *
  */
 
-$wgDonationInterfaceNameFilterRules = array()
+$wgDonationInterfaceNameFilterRules = []
 
 $wgDonationInterfaceEnableConversionLog = false //this is definitely an Extra
 $wgDonationInterfaceEnableMinFraud = false //this is definitely an Extra

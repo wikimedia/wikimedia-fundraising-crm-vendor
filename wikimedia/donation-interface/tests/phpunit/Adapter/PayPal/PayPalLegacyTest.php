@@ -24,38 +24,38 @@
 class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTestCase {
 
 	/**
-	 * @param $name string The name of the test case
-	 * @param $data array Any parameters read from a dataProvider
-	 * @param $dataName string|int The name or index of the data set
+	 * @param string $name The name of the test case
+	 * @param array $data Any parameters read from a dataProvider
+	 * @param string|int $dataName The name or index of the data set
 	 */
-	public function __construct( $name = null, array $data = array(), $dataName = '' ) {
+	public function __construct( $name = null, array $data = [], $dataName = '' ) {
 		parent::__construct( $name, $data, $dataName );
-		$this->testAdapterClass = 'TestingPaypalLegacyAdapter';
+		$this->testAdapterClass = TestingPaypalLegacyAdapter::class;
 	}
 
 	public function setUp() {
 		parent::setUp();
 
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			'wgDonationInterfaceCancelPage' => 'https://example.com/tryAgain.php',
 			'wgPaypalGatewayEnabled' => true,
 			'wgDonationInterfaceThankYouPage' => 'https://example.org/wiki/Thank_You',
-			'wgDonationInterfaceAllowedHtmlForms' => array(
-				'paypal' => array(
+			'wgDonationInterfaceAllowedHtmlForms' => [
+				'paypal' => [
 					'gateway' => 'paypal',
-					'payment_methods' => array( 'paypal' => 'ALL' ),
-				),
-				'paypal-recurring' => array(
+					'payment_methods' => [ 'paypal' => 'ALL' ],
+				],
+				'paypal-recurring' => [
 					'gateway' => 'paypal',
-					'payment_methods' => array( 'paypal' => 'ALL' ),
+					'payment_methods' => [ 'paypal' => 'ALL' ],
 					'recurring',
-				),
-			),
-		) );
+				],
+			],
+		] );
 	}
 
 	public function tearDown() {
-		TestingPaypalLegacyAdapter::$fakeGlobals = array();
+		TestingPaypalLegacyAdapter::$fakeGlobals = [];
 
 		parent::tearDown();
 	}
@@ -63,14 +63,14 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Integration test to verify that the Donate transaction works as expected when all necessary data is present.
 	 */
-	function testDoTransactionDonate() {
+	public function testDoTransactionDonate() {
 		$init = $this->getDonorTestData();
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$ret = $gateway->doPayment();
 		parse_str( parse_url( $ret->getRedirect(), PHP_URL_QUERY ), $res );
 
-		$expected = array(
+		$expected = [
 			'amount' => $init['amount'],
 			'currency_code' => $init['currency'],
 			'country' => $init['country'],
@@ -83,7 +83,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 			'lc' => $init['country'], // this works because it's a US donor...
 			'cancel_return' => 'https://example.com/tryAgain.php/en',
 			'return' => 'https://example.org/wiki/Thank_You/en?country=US',
-		);
+		];
 
 		$this->assertEquals( $expected, $res, 'Paypal "Donate" transaction not constructing the expected redirect URL' );
 		$this->assertEquals(
@@ -96,7 +96,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Integration test to verify that the DonateRecurring transaction works as expected when all necessary data is present.
 	 */
-	function testDoTransactionDonateRecurring() {
+	public function testDoTransactionDonateRecurring() {
 		$init = $this->getDonorTestData();
 		$init['recurring'] = '1';
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -104,7 +104,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 		$ret = $gateway->doPayment();
 		parse_str( parse_url( $ret->getRedirect(), PHP_URL_QUERY ), $res );
 
-		$expected = array(
+		$expected = [
 			'a3' => $init['amount'], // obviously.
 			'currency_code' => $init['currency'],
 			'country' => $init['country'],
@@ -121,7 +121,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 			'srt' => $gateway->getGlobal( 'RecurringLength' ),
 			'cancel_return' => 'https://example.com/tryAgain.php/en',
 			'return' => 'https://example.org/wiki/Thank_You/en?country=US',
-		);
+		];
 
 		$this->assertEquals( $expected, $res, 'Paypal "DonateRecurring" transaction not constructing the expected redirect URL' );
 	}
@@ -129,19 +129,19 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Integration test to verify that the Donate transaction works as expected when all necessary data is present.
 	 */
-	function testDoTransactionDonateXclick() {
+	public function testDoTransactionDonateXclick() {
 		$init = $this->getDonorTestData();
 
-		TestingPaypalLegacyAdapter::$fakeGlobals = array(
-			'XclickCountries' => array( $init['country'] ),
-		);
+		TestingPaypalLegacyAdapter::$fakeGlobals = [
+			'XclickCountries' => [ $init['country'] ],
+		];
 
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$ret = $gateway->doPayment();
 		parse_str( parse_url( $ret->getRedirect(), PHP_URL_QUERY ), $res );
 
-		$expected = array(
+		$expected = [
 			'amount' => $init['amount'],
 			'currency_code' => $init['currency'],
 			'country' => $init['country'],
@@ -155,7 +155,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 			'cancel_return' => 'https://example.com/tryAgain.php/en',
 			'return' => 'https://example.org/wiki/Thank_You/en?country=US',
 			'no_shipping' => '1', // hard-coded in transaction definition
-		);
+		];
 
 		$this->assertEquals( $expected, $res, 'Paypal "DonateXclick" transaction not constructing the expected redirect URL' );
 	}
@@ -163,19 +163,19 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Integration test to verify that the Paypal gateway redirects when validation is successful.
 	 */
-	function testRedirectFormOnValid() {
+	public function testRedirectFormOnValid() {
 		$init = $this->getDonorTestData();
-		$session = array( 'Donor' => $init );
+		$session = [ 'Donor' => $init ];
 
 		$redirectTest = function ( $location ) use ( $init ) {
 			parse_str( parse_url( $location, PHP_URL_QUERY ), $actual );
 			$this->assertEquals( $init['amount'], $actual['amount'] );
 		};
-		$assertNodes = array(
-			'headers' => array(
+		$assertNodes = [
+			'headers' => [
 				'Location' => $redirectTest,
-			)
-		);
+			]
+		];
 
 		$this->verifyFormOutput( 'PaypalLegacyGateway', $init, $assertNodes, false, $session );
 	}
@@ -183,16 +183,16 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Integration test to verify that the Paypal gateway shows an error message when validation fails.
 	 */
-	function testShowFormOnError() {
+	public function testShowFormOnError() {
 		$init = $this->getDonorTestData();
 		$init['amount'] = '-100.00';
-		$session = array( 'Donor' => $init );
+		$session = [ 'Donor' => $init ];
 		$errorMessage = wfMessage( 'donate_interface-error-msg-invalid-amount' )->text();
-		$assertNodes = array(
-			'mw-content-text' => array(
+		$assertNodes = [
+			'mw-content-text' => [
 				'innerhtmlmatches' => "/.*$errorMessage.*/"
-			)
-		);
+			]
+		];
 
 		$this->verifyFormOutput( 'PaypalLegacyGateway', $init, $assertNodes, false, $session );
 	}
@@ -200,24 +200,24 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Stay on the payments form if there's a currency conversion notification.
 	 */
-	function testShowFormOnCurrencyFallback() {
+	public function testShowFormOnCurrencyFallback() {
 		$init = $this->getDonorTestData();
 		$init['currency'] = 'BBD';
 		$init['amount'] = 15.00;
-		$session = array( 'Donor' => $init );
-		$this->setMwGlobals( array(
+		$session = [ 'Donor' => $init ];
+		$this->setMwGlobals( [
 			'wgDonationInterfaceFallbackCurrency' => 'USD',
 			'wgDonationInterfaceNotifyOnConvert' => true,
-		) );
+		] );
 		$errorMessage = wfMessage( 'donate_interface-fallback-currency-notice', 'USD' )->text();
-		$assertNodes = array(
-			'headers' => array(
+		$assertNodes = [
+			'headers' => [
 				'location' => null,
-			),
-			'currencyMsg' => array(
+			],
+			'currencyMsg' => [
 				'innerhtmlmatches' => "/.*$errorMessage.*/"
-			)
-		);
+			]
+		];
 
 		$this->verifyFormOutput( 'PaypalLegacyGateway', $init, $assertNodes, false, $session );
 	}
@@ -227,7 +227,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	 *
 	 * @dataProvider belgiumLanguageProvider
 	 */
-	function testDoTransactionDonate_BE( $language ) {
+	public function testDoTransactionDonate_BE( $language ) {
 		$init = $this->getDonorTestData( 'BE' );
 		$init['language'] = $language;
 		$this->setLanguage( $language );
@@ -236,7 +236,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 		$ret = $gateway->doPayment();
 		parse_str( parse_url( $ret->getRedirect(), PHP_URL_QUERY ), $res );
 
-		$expected = array(
+		$expected = [
 			'amount' => $init['amount'],
 			'currency_code' => $init['currency'],
 			'country' => 'BE',
@@ -249,7 +249,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 			'lc' => 'BE',
 			'cancel_return' => "https://example.com/tryAgain.php/$language",
 			'return' => "https://example.org/wiki/Thank_You/$language?country=BE",
-		);
+		];
 
 		$this->assertEquals( $expected, $res, 'Paypal "Donate" transaction not constructing the expected redirect URL' );
 		$this->assertEquals(
@@ -265,7 +265,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	 *
 	 * @dataProvider canadaLanguageProvider
 	 */
-	function testDoTransactionDonate_CA( $language ) {
+	public function testDoTransactionDonate_CA( $language ) {
 		$init = $this->getDonorTestData( 'CA' );
 		$init['language'] = $language;
 		$this->setLanguage( $language );
@@ -274,7 +274,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 		$ret = $gateway->doPayment();
 		parse_str( parse_url( $ret->getRedirect(), PHP_URL_QUERY ), $res );
 
-		$expected = array(
+		$expected = [
 			'amount' => $init['amount'],
 			'currency_code' => 'CAD',
 			'country' => 'CA',
@@ -287,7 +287,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 			'lc' => 'CA',
 			'cancel_return' => "https://example.com/tryAgain.php/$language",
 			'return' => "https://example.org/wiki/Thank_You/$language?country=CA",
-		);
+		];
 
 		$this->assertEquals( $expected, $res, 'Paypal "Donate" transaction not constructing the expected redirect URL' );
 		$this->assertEquals(
@@ -300,7 +300,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 	/**
 	 * Integration test to verify that the Donate transaction works as expected in Italy
 	 */
-	function testDoTransactionDonate_IT() {
+	public function testDoTransactionDonate_IT() {
 		$init = $this->getDonorTestData( 'IT' );
 		$this->setLanguage( 'it' );
 		$gateway = $this->getFreshGatewayObject( $init );
@@ -308,7 +308,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 		$ret = $gateway->doPayment();
 		parse_str( parse_url( $ret->getRedirect(), PHP_URL_QUERY ), $res );
 
-		$expected = array(
+		$expected = [
 			'amount' => $init['amount'],
 			'currency_code' => $init['currency'],
 			'country' => 'IT',
@@ -321,7 +321,7 @@ class DonationInterface_Adapter_PayPal_Legacy_Test extends DonationInterfaceTest
 			'lc' => 'IT',
 			'cancel_return' => 'https://example.com/tryAgain.php/it',
 			'return' => 'https://example.org/wiki/Thank_You/it?country=IT',
-		);
+		];
 
 		$this->assertEquals( $expected, $res, 'Paypal "Donate" transaction not constructing the expected redirect URL' );
 		$this->assertEquals(

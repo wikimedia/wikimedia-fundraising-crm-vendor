@@ -16,9 +16,8 @@ class PaypalRefundMaintenance extends Maintenance {
 	public function __construct() {
 		parent::__construct();
 
-		if ( method_exists( $this, 'requireExtension' ) ) {
-			$this->requireExtension( 'Donation Interface' );
-		}
+		$this->requireExtension( 'Donation Interface' );
+
 		$this->addOption( 'file', 'Read refund detail in from a file',
 			true, true, 'f' );
 		$this->addOption( 'unsubscribe', 'Cancel the subscription this charge is a part of',
@@ -45,19 +44,19 @@ class PaypalRefundMaintenance extends Maintenance {
 			$oid = $refund[0];
 			$gateway_txn_id = $refund[1];
 			$subscription_id = $refund[2];
-			$gateway_opts = array(
+			$gateway_opts = [
 				'batch_mode' => true,
-				'external_data' => array(
+				'external_data' => [
 					'payment_method' => 'paypal',
 					'currency' => $refund[3],
 					'amount' => $refund[4]
-				),
-			);
+				],
+			];
 
 			$adapter = new PaypalExpressAdapter( $gateway_opts );
 
 			$this->output( "Refunding transaction $oid from gateway transaction $oid\n" );
-			$adapter->addRequestData( array( 'order_id' => $oid, 'gateway_txn_id' => $gateway_txn_id, 'subscr_id' => $subscription_id ) );
+			$adapter->addRequestData( [ 'order_id' => $oid, 'gateway_txn_id' => $gateway_txn_id, 'subscr_id' => $subscription_id ] );
 			$result = $adapter->doRefund();
 			if ( $result->isFailed() ) {
 				$this->error( "Failed refunding transaction $oid " . print_r( $result->getErrors(), true ) );
@@ -80,5 +79,5 @@ class PaypalRefundMaintenance extends Maintenance {
 	}
 }
 
-$maintClass = 'PaypalRefundMaintenance';
+$maintClass = PaypalRefundMaintenance::class;
 require_once RUN_MAINTENANCE_IF_MAIN;

@@ -17,13 +17,13 @@
  */
 
 trait TTestingAdapter {
-	public static $fakeGlobals = array();
+	public static $fakeGlobals = [];
 
 	public static $fakeIdentifier;
 
 	public static $dummyGatewayResponseCode = null;
 
-	public $curled = array();
+	public $curled = [];
 
 	public static function getIdentifier() {
 		if ( static::$fakeIdentifier ) {
@@ -40,41 +40,7 @@ trait TTestingAdapter {
 	}
 
 	/**
-	 * Returns the variable $this->dataObj which should be an instance of
-	 * DonationData.
-	 *
-	 * @returns DonationData
-	 */
-	public function getDonationData() {
-		return $this->dataObj;
-	}
-
-	public function _buildRequestParams() {
-		return $this->buildRequestParams();
-	}
-
-	public function _addCodeRange() {
-		return call_user_func_array( array( $this, 'addCodeRange' ), func_get_args() );
-	}
-
-	public function _findCodeAction() {
-		return call_user_func_array( array( $this, 'findCodeAction' ), func_get_args() );
-	}
-
-	public function _buildRequestXML() {
-		return call_user_func_array( array( $this, 'buildRequestXML' ), func_get_args() );
-	}
-
-	public function _getData_Staged() {
-		return call_user_func_array( array( $this, 'getData_Staged' ), func_get_args() );
-	}
-
-	public function _stageData() {
-		$this->stageData();
-	}
-
-	/**
-	 * @TODO: Get rid of this and the override mechanism as soon as you
+	 * @todo Get rid of this and the override mechanism as soon as you
 	 * refactor the constructor into something reasonable.
 	 */
 	public function defineOrderIDMeta() {
@@ -84,8 +50,10 @@ trait TTestingAdapter {
 		parent::defineOrderIDMeta();
 	}
 
-	// @TODO: That minFraud jerk needs its own isolated tests.
-	function runAntifraudFilters() {
+	/**
+	 * @todo That minFraud jerk needs its own isolated tests.
+	 */
+	public function runAntifraudFilters() {
 		// now screw around with the batch settings to trick the fraud filters into triggering
 		$is_batch = $this->isBatchProcessor();
 		$this->batch = true;
@@ -95,13 +63,9 @@ trait TTestingAdapter {
 		$this->batch = $is_batch;
 	}
 
-	public function getRiskScore() {
-		return $this->risk_score;
-	}
-
 	/**
 	 * Set the error code you want the dummy response to return
-	 * @param $code
+	 * @param string|null $code
 	 */
 	public static function setDummyGatewayResponseCode( $code ) {
 		static::$dummyGatewayResponseCode = $code;
@@ -114,6 +78,8 @@ trait TTestingAdapter {
 
 	/**
 	 * Load in some dummy response XML so we can test proper response processing
+	 * @param string $ch
+	 * @return string|false
 	 */
 	protected function curl_exec( $ch ) {
 		$code = '';
@@ -151,14 +117,17 @@ trait TTestingAdapter {
 
 	/**
 	 * Load in some dummy curl response info so we can test proper response processing
+	 * @param string $ch
+	 * @param array|null $opt
+	 * @return array
 	 */
 	protected function curl_getinfo( $ch, $opt = null ) {
 		$code = 200;
 
 		// put more here if it ever turns out that we care about it.
-		return array(
+		return [
 			'http_code' => $code,
-		);
+		];
 	}
 
 }
