@@ -25,12 +25,6 @@
       "Omnimail\\Silverpop\\Tests\\" : "test/tests"
     }
   },
-  "repositories": [
-    {
-      "type": "git",
-      "url":  "https://github.com/eileenmcnaughton/silverpop-php-connector.git"
-    }
-  ],
   "require": {
     "mrmarkfrench/silverpop-php-connector": "dev-master",
     "league/csv" : "^9.0",

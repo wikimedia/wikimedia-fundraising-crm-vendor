@@ -1609,8 +1609,14 @@
         "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
-            "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-            "reference": "63980619f88faca3d2f9e04cd9950eec7619b873"
+            "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
+            "reference": "318ff74e6564d1c251b1df41ef4001f7b472bf6f"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/318ff74e6564d1c251b1df41ef4001f7b472bf6f",
+            "reference": "318ff74e6564d1c251b1df41ef4001f7b472bf6f",
+            "shasum": ""
         },
         "require": {
             "ext-curl": "*",
@@ -1622,7 +1628,7 @@
         "require-dev": {
             "phpunit/phpunit": "*"
         },
-        "time": "2019-07-25T06:55:53+00:00",
+        "time": "2019-09-17T18:21:41+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
@@ -1630,11 +1636,7 @@
                 "SilverpopConnector\\": "src/SilverpopConnector"
             }
         },
-        "autoload-dev": {
-            "psr-4": {
-                "SilverpopConnector\\Tests\\": "test/tests"
-            }
-        },
+        "notification-url": "https://packagist.org/downloads/",
         "license": [
             "MIT"
         ],
@@ -3212,7 +3214,7 @@
         "source": {
             "type": "git",
             "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-            "reference": "4168abec7c7c05712180b11c692a07cd7b78f91e"
+            "reference": "d12b5d2e1221c09134c1cc9bde7d9d7b29ae11f2"
         },
         "require": {
             "league/csv": "^9.0",
@@ -3224,7 +3226,7 @@
             "guzzlehttp/guzzle": "*",
             "phpunit/phpunit": "*"
         },
-        "time": "2019-09-09T06:23:22+00:00",
+        "time": "2020-01-15T01:27:13+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {

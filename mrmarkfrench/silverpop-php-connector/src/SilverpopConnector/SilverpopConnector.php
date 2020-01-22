@@ -27,6 +27,7 @@ class SilverpopConnector {
 
   protected $baseUrl      = null;
   protected $dateFormat   = null;
+  protected $timeout      = null;
   protected $username     = null;
   protected $password     = null;
   protected $clientId     = null;
@@ -45,13 +46,15 @@ class SilverpopConnector {
    * multiple connector objects for more than one set of credentials.
    *
    * @param string $baseUrl The base API URL for all requests.
-   * @return SilverpopConnector
+   * @param string $dateFormat Passed through to API requests to specify output format
+   * @param float $timeout Timeout in seconds for API requests
    */
-  public function __construct($baseUrl='http://api.pilot.silverpop.com', $dateFormat='MM/dd/yyyy') {
+  public function __construct($baseUrl='http://api.pilot.silverpop.com', $dateFormat='MM/dd/yyyy', $timeout=10.0) {
     $this->restConnector = SilverpopRestConnector::getInstance();
     $this->xmlConnector  = SilverpopXmlConnector::getInstance();
     $this->setBaseUrl($baseUrl);
     $this->setDateFormat($dateFormat);
+    $this->setTimeout($timeout);
   }
 
   /**
@@ -95,11 +98,15 @@ class SilverpopConnector {
    * "protected static $instance=null;" property in your child class
    * for this method to reference.
    *
+   * @param string $baseUrl The base API URL for all requests.
+   * @param string $dateFormat Passed through to API requests to specify output format
+   * @param float $timeout Timeout in seconds for API requests
+   *
    * @return SilverpopConnector
    */
-  public static function getInstance($baseUrl='http://api.pilot.silverpop.com') {
+  public static function getInstance($baseUrl='http://api.pilot.silverpop.com', $dateFormat='MM/dd/yyyy', $timeout=10.0) {
     if (static::$instance == null) {
-      static::$instance = new static($baseUrl);
+      static::$instance = new static($baseUrl, $dateFormat, $timeout);
     }
     return static::$instance;
   }
@@ -200,6 +207,17 @@ class SilverpopConnector {
     $this->dateFormat = $dateFormat;
     $this->restConnector->setDateFormat($dateFormat);
     $this->xmlConnector->setDateFormat($dateFormat);
+  }
+
+  /**
+   * Set the timeout.
+   *
+   * @param float $timeout
+   */
+  public function setTimeout($timeout) {
+    $this->dateFormat = $timeout;
+    $this->restConnector->setTimeout($timeout);
+    $this->xmlConnector->setTimeout($timeout);
   }
 
   //////////////////////////////////////////////////////////////////////////
