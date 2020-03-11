@@ -131,6 +131,7 @@ class IngenicoAdapter extends GlobalCollectAdapter implements RecurringConversio
 				'avsResult',
 				'cvvResult',
 				'statusCode',
+				'paymentProductId',
 			]
 		];
 
@@ -142,6 +143,7 @@ class IngenicoAdapter extends GlobalCollectAdapter implements RecurringConversio
 				'avsResult',
 				'cvvResult',
 				'statusCode',
+				'paymentProductId',
 			]
 		];
 
@@ -212,9 +214,11 @@ class IngenicoAdapter extends GlobalCollectAdapter implements RecurringConversio
 				);
 				break;
 			case 'approvePayment':
-				$id = $data['id'];
+				$data['gateway_txn_id'] = $data['id'];
 				unset( $data['id'] );
-				$result = $provider->approvePayment( $id, $data );
+				/** @var \SmashPig\PaymentProviders\ApprovePaymentResponse $approvePaymentResponse */
+				$approvePaymentResponse = $provider->approvePayment( $data );
+				$result = $approvePaymentResponse->getRawResponse();
 				break;
 			case 'cancelPayment':
 				$id = $data['id'];
@@ -255,7 +259,7 @@ class IngenicoAdapter extends GlobalCollectAdapter implements RecurringConversio
 	 */
 	protected function tuneForRecurring() {
 		$isRecurring = $this->getData_Unstaged_Escaped( 'recurring' );
-		if ( $isRecurring || $this->showRecurringUpsell() ) {
+		if ( $isRecurring || $this->showMonthlyConvert() ) {
 			$this->transactions['createHostedCheckout']['request']['cardPaymentMethodSpecificInput'] =
 				array_merge(
 					$this->transactions['createHostedCheckout']['request']['cardPaymentMethodSpecificInput'],
@@ -368,14 +372,14 @@ class IngenicoAdapter extends GlobalCollectAdapter implements RecurringConversio
 	 *
 	 * Note: We currently add in substitute status codes for
 	 * IN_PROGRESS and CANCELLED_BY_CONSUMER so that we can map these
-	 * to a valid \SmashPig\CrmLink\FinalStatus. Ingenico does not return a
+	 * to a valid \SmashPig\PaymentData\FinalStatus. Ingenico does not return a
 	 * status code for these two states, only the text description.
 	 * This behaviour should updated when globalcollect is retired.
 	 *
 	 * @param array $txnData
 	 *
 	 * @return int|null
-	 * @see \SmashPig\CrmLink\FinalStatus
+	 * @see \SmashPig\PaymentData\FinalStatus
 	 */
 	protected function getStatusCode( $txnData ) {
 		$statusCode = $this->getData_Unstaged_Escaped( 'gateway_status' );
@@ -437,8 +441,16 @@ class IngenicoAdapter extends GlobalCollectAdapter implements RecurringConversio
 				'subscr_id' => $sessionData['gateway_txn_id'],
 			]
 		);
+		$this->logger->info(
+			'Pushing transaction to queue [recurring] with amount ' .
+			"{$message['currency']} {$message['gross']}"
+		);
 		QueueWrapper::push( 'recurring', $message );
 		$this->session_resetForNewAttempt( true );
 		return PaymentResult::newSuccess();
+	}
+
+	public function getRequestProcessId( $requestValues ) {
+		return $requestValues['hostedCheckoutId'];
 	}
 }

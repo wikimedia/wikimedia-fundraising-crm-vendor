@@ -3,7 +3,7 @@
 namespace SmashPig\PaymentProviders\Ingenico;
 
 use OutOfBoundsException;
-use SmashPig\CrmLink\FinalStatus;
+use SmashPig\PaymentData\FinalStatus;
 
 /**
  * Documented at:
@@ -51,6 +51,7 @@ class PaymentStatus {
 		FinalStatus::COMPLETE => [
 			self::CAPTURED,
 			self::PAID,
+			self::CAPTURE_REQUESTED,
 		],
 		FinalStatus::FAILED => [
 			self::REJECTED,
@@ -60,7 +61,6 @@ class PaymentStatus {
 			self::REDIRECTED,
 			self::PENDING_PAYMENT,
 			self::AUTHORIZATION_REQUESTED,
-			self::CAPTURE_REQUESTED,
 		],
 		FinalStatus::PENDING_POKE => [
 			self::PENDING_APPROVAL,

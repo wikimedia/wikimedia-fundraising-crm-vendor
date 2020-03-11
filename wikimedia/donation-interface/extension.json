@@ -1,6 +1,6 @@
 {
 	"name": "Donation Interface",
-	"version": "2.4.0",
+	"version": "2.5.0",
 	"author": [
 		"Elliott Eggleston",
 		"Katie Horn",
@@ -14,7 +14,8 @@
 		"Dylan Kozlowski",
 		"Casey Dentinger",
 		"Maggie Epps",
-		"Jack Gleeson"
+		"Jack Gleeson",
+		"Christine Stone"
 	],
 	"license-name": "GPL-2.0-or-later",
 	"url": "https://www.mediawiki.org/wiki/Extension:DonationInterface",
@@ -106,7 +107,6 @@
 		"PaymentResult": "gateway_common/PaymentResult.php",
 		"PaymentTransactionResponse": "gateway_common/PaymentTransactionResponse.php",
 		"RecurringConversion": "gateway_common/RecurringConversion.php",
-		"ResponseCodes": "gateway_common/ResponseCodes.php",
 		"ResponseProcessingException": "gateway_common/ResponseProcessingException.php",
 		"ResultPages": "gateway_common/ResultPages.php",
 		"ResultSwitcher": "gateway_common/ResultSwitcher.php",
@@ -132,6 +132,7 @@
 		"IngenicoGatewayResult": "ingenico_gateway/ingenico_resultswitcher.body.php",
 		"IngenicoAdapter": "ingenico_gateway/ingenico.adapter.php",
 		"IngenicoLocale": "ingenico_gateway/IngenicoLocale.php",
+		"IngenicoPaymentSubmethod": "ingenico_gateway/IngenicoPaymentSubmethod.php",
 		"GlobalCollectOrphanAdapter": "globalcollect_gateway/orphan.adapter.php",
 		"GlobalCollectOrphanRectifier": "globalcollect_gateway/GlobalCollectOrphanRectifier.php",
 		"IngenicoOrphanAdapter": "ingenico_gateway/orphan.adapter.php",
@@ -195,6 +196,10 @@
 		},
 		"ext.donationInterface.employerExplainAlt": {
 			"scripts": "modules/js/ext.donationInterface.employerExplainAlt.js"
+		},
+		"ext.donationInterface.noCardSelect": {
+			"styles": "modules/css/noCardSelect.css",
+			"dependencies": "ext.donationInterface.forms"
 		},
 		"ext.donationInterface.emailPreferences": {
 			"scripts": "modules/js/ext.donationInterface.emailPreferences.js",
@@ -328,16 +333,32 @@
 				"modules/js/lg-hash.js"
 			]
 		},
-		"ext.donationInterface.recurringUpsell": {
-			"scripts": "modules/js/ext.donationInterface.recurringUpsell.js",
-			"styles": "modules/css/recurringUpsell.css",
+		"ext.donationInterface.monthlyConvert": {
+			"scripts": "modules/js/ext.donationInterface.monthlyConvert.js",
+			"styles": "modules/css/monthlyConvert.css",
 			"dependencies": [
 				"mediawiki.Uri",
 				"mediawiki.util"
 			],
 			"messages": [
-				"donate_interface-recurring-upsell-error"
+				"donate_interface-monthly-convert-error"
 			]
+		},
+		"ext.donationInterface.monthlyConvert_001": {
+			"styles": "modules/css/monthlyConvert_001.css",
+			"dependencies": "ext.donationInterface.monthlyConvert"
+		},
+		"ext.donationInterface.monthlyConvert_003": {
+			"scripts": "modules/js/ext.donationInterface.monthlyConvert_003.js",
+			"dependencies": "ext.donationInterface.monthlyConvert"
+		},
+		"ext.donationInterface.monthlyConvert_006": {
+			"styles": "modules/css/monthlyConvert_006.css",
+			"dependencies": "ext.donationInterface.monthlyConvert"
+		},
+		"ext.donationInterface.monthlyConvert_010": {
+			"scripts": "modules/js/ext.donationInterface.monthlyConvert_010.js",
+			"dependencies": "ext.donationInterface.monthlyConvert"
 		}
 	},
 	"ResourceFileModulePaths": {

@@ -326,6 +326,15 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				'language' => 'pt',
 				'email' => 'nobody@example.org'
 			],
+			'CO' => [
+				'currency' => 'COP',
+				'fiscal_number' => '9.999.999.999',
+				'first_name' => 'Nombre',
+				'last_name' => 'Apellido',
+				'amount' => '5',
+				'language' => 'es',
+				'email' => 'nobody@example.org'
+			],
 			'MX' => [
 				'city' => 'Tuxtla Gutiérrez',
 				'state_province' => 'CHP',
@@ -669,6 +678,16 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 				switch ( $name ) {
 					case 'nodename':
 						$this->performCheck( $input_node->nodeName, $expected, "name of node with id '$id'" );
+						break;
+					case 'nodehtml':
+						$html = $dom_thingy->saveXML( $input_node );
+						// Strip comments
+						$actual_html = preg_replace( '/<!--[^>]*-->/', '', $html );
+						$this->performCheck( $actual_html, $expected, "nodeHTML of node '$id'" );
+						break;
+					case 'nodehtmlmatches':
+						$html = $dom_thingy->saveXML( $input_node );
+						$this->assertEquals( 1, preg_match( $expected, $html ), "HTML of the node with id '$id' does not match pattern '$expected'. It has value " . $html );
 						break;
 					case 'innerhtml':
 						$actual_html = self::getInnerHTML( $input_node );

@@ -1,50 +1,71 @@
 <?php namespace SmashPig\PaymentProviders\Adyen\Tests;
 
-use SmashPig\PaymentProviders\Adyen\AdyenPaymentsInterface;
+use SmashPig\PaymentProviders\IPaymentProvider;
 
-class MockAdyenPaymentsAPI implements AdyenPaymentsInterface {
+class MockAdyenPaymentsAPI implements IPaymentProvider {
 
 	protected $account = '';
-	protected $returnCode = false;
+	protected $captureReturnCode = false;
+	protected $cancelReturnCode = false;
 
 	public $captured = [];
 	public $cancelled = [];
 
 	public function __construct( $returnCode ) {
-		$this->returnCode = $returnCode;
+		if ( $returnCode == 'Success!' ) {
+			$this->captureReturnCode = '[capture-received]';
+			$this->cancelReturnCode = '[cancel-received]';
+		}
 	}
 
 	public function setAccount( $account ) {
 		$this->account = $account;
 	}
 
+	/*
+	 * Yet to be faked.
+	 */
+	public function createPayment( $params ) {
+		return;
+	}
+
 	/**
 	 * Fakes a Capture modification to a given Adyen transaction.
 	 *
-	 * @param string $currency Original currency of the request
-	 * @param int $amount Amount to be captured. Less than or equal to the original request
-	 * @param string $pspReference Original pspReference of the request
-	 *
-	 * @returns bool|string The return code set in the constructor.
+	 * @param array $params
+	 * @return \stdClass
 	 */
-	public function capture( $currency, $amount, $pspReference ) {
+	public function approvePayment( $params ) {
 		$this->captured[] = [
-			'currency' => $currency,
-			'amount' => $amount,
-			'pspReference' => $pspReference,
+			'currency' => $params['currency'],
+			'amount' => $params['amount'],
+			'pspReference' => $params['gateway_txn_id'],
 		];
-		return $this->returnCode;
+
+		$response = json_decode( json_encode(
+			[ 'captureResult' => [
+				'response' => $this->captureReturnCode,
+				'pspReference' => $params['gateway_txn_id']
+			] ] ) );
+
+		return $response;
 	}
 
 	/**
 	 * Pretends to cancel an Adyen authorization
 	 *
 	 * @param string $pspReference Original pspReference of the request
-	 *
-	 * @returns bool|string The return code set in the constructor.
+	 * @return \stdClass
 	 */
 	public function cancel( $pspReference ) {
 		$this->cancelled[] = $pspReference;
-		return $this->returnCode;
+
+		$response = json_decode( json_encode(
+			[ 'cancelResult' => [
+				'response' => $this->cancelReturnCode,
+				'pspReference' => $pspReference
+			] ] ) );
+
+		return $response;
 	}
 }

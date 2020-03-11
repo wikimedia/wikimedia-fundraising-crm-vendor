@@ -18,7 +18,7 @@
 use MaxMind\MinFraud;
 use MaxMind\MinFraud\Model\Score;
 use Psr\Log\LogLevel;
-use SmashPig\CrmLink\ValidationAction;
+use SmashPig\PaymentData\ValidationAction;
 
 /**
  * Gateway_Extras_CustomFilters_MinFraud
@@ -459,7 +459,7 @@ class Gateway_Extras_CustomFilters_MinFraud extends Gateway_Extras {
 					);
 					if ( !$result->isGood() ) {
 						$this->gateway_logger->error(
-							"Could not send minFraud query limit email: " . $result->errors[0]->message
+							"Could not send minFraud query limit email: " . $result->getErrors()[0]->message
 						);
 					}
 				}

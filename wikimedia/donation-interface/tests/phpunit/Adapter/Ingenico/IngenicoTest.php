@@ -17,10 +17,11 @@
  */
 
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\CrmLink\FinalStatus;
+use SmashPig\PaymentData\FinalStatus;
 use SmashPig\CrmLink\Messages\SourceFields;
-use SmashPig\CrmLink\ValidationAction;
+use SmashPig\PaymentData\ValidationAction;
 use Wikimedia\TestingAccessWrapper;
+use SmashPig\PaymentProviders\ApprovePaymentResponse;
 
 /**
  *
@@ -332,7 +333,8 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 		$gateway = $this->getFreshGatewayObject( $init );
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'approvePayment' )
-			->willReturn(
+			->with( [ 'gateway_txn_id' => $init['gateway_txn_id'] ] )
+			->willReturn( ( new ApprovePaymentResponse() )->setRawResponse(
 				[
 					"payment" => [
 						"id" => "000000850010000188180000200001",
@@ -367,7 +369,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 							"isAuthorized" => true
 						]
 					]
-				]
+				] )
 			);
 		$gateway->do_transaction( 'approvePayment' );
 		$data = $gateway->getTransactionData();
@@ -626,6 +628,30 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 		SourceFields::removeFromMessage( $queueMessage );
 		$contactFields = array_fill_keys( DonationData::getContactFields(), '' );
 		$this->assertEquals( array_intersect_key( $init, $contactFields ), $queueMessage );
+	}
+
+	public function testDonorReturnPaymentSubmethod() {
+		$init = $this->getDonorTestData( 'FR' );
+		$init['payment_method'] = 'cc';
+		$init['payment_submethod'] = '';
+		$init['email'] = 'innocent@localhost.net';
+		$init['order_id'] = mt_rand();
+		$session['Donor'] = $init;
+		$this->setUpRequest( $init, $session );
+		$gateway = $this->getFreshGatewayObject( [] );
+		$this->hostedCheckoutProvider->expects( $this->once() )
+			->method( 'getHostedPaymentStatus' )
+			->willReturn( $this->hostedPaymentStatusResponse );
+		$this->hostedCheckoutProvider->method( 'approvePayment' )
+			->willReturn( $this->approvePaymentResponse );
+		$result = $gateway->processDonorReturn( [
+			'merchantReference' => $init['order_id'],
+			'cvvResult' => 'M',
+			'avsResult' => '0'
+		] );
+		$queueMessage = QueueWrapper::getQueue( 'payments-init' )->pop();
+		SourceFields::removeFromMessage( $queueMessage );
+		$this->assertEquals( 'visa', $queueMessage['payment_submethod'] );
 	}
 
 	public function testClearDataWhenDone() {

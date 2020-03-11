@@ -18,8 +18,9 @@
 
 use Psr\Log\LogLevel;
 use SmashPig\Core\PaymentError;
-use SmashPig\CrmLink\FinalStatus;
-use SmashPig\CrmLink\ValidationAction;
+use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentData\ValidationAction;
+use SmashPig\PaymentData\ErrorCode;
 
 /**
  * AdyenAdapter
@@ -101,8 +102,8 @@ class AdyenAdapter extends GatewayAdapter {
 				'skinCode',
 				'shopperLocale',
 				'shopperEmail',
+				'shopperReference',
 				// TODO more fields we might want to send to Adyen
-				// 'shopperReference',
 				// 'recurringContract',
 				// 'blockedMethods',
 				// 'shopperStatement',
@@ -183,6 +184,7 @@ class AdyenAdapter extends GatewayAdapter {
 	 * @inheritDoc
 	 */
 	public function do_transaction( $transaction ) {
+		$this->tuneForRecurring();
 		$this->ensureUniqueOrderID();
 		$this->session_addDonorData();
 		$this->setCurrentTransaction( $transaction );
@@ -255,6 +257,14 @@ class AdyenAdapter extends GatewayAdapter {
 		return $this->transaction_response;
 	}
 
+	protected function tuneForRecurring() {
+		$isRecurring = $this->getData_Unstaged_Escaped( 'recurring' );
+		if ( $isRecurring ) {
+			array_push( $this->transactions['donate']['request'], 'recurringContract' );
+			$this->transactions['donate']['values']['recurringContract'] = 'RECURRING';
+		}
+	}
+
 	/**
 	 * Add risk score to the message we send to the pending queue.
 	 * The IPN listener will combine this with scores based on CVV and AVS
@@ -265,6 +275,11 @@ class AdyenAdapter extends GatewayAdapter {
 	protected function getQueueDonationMessage() {
 		$transaction = parent::getQueueDonationMessage();
 		$transaction['risk_score'] = $this->risk_score;
+		// map order_id to recurring_payment_token as this is our recurring token ID for Adyen
+		$isRecurring = $this->getData_Unstaged_Escaped( 'recurring' );
+		if ( $isRecurring ) {
+			$transaction['recurring_payment_token'] = $transaction['order_id'];
+		}
 		return $transaction;
 	}
 
@@ -281,7 +296,7 @@ class AdyenAdapter extends GatewayAdapter {
 			$this->logger->info( "No response from gateway" );
 			throw new ResponseProcessingException(
 				'No response from gateway',
-				ResponseCodes::NO_RESPONSE
+				ErrorCode::NO_RESPONSE
 			);
 		}
 		$this->logger->info( "Processing user return data: " . print_r( $requestValues, true ) );
@@ -290,7 +305,7 @@ class AdyenAdapter extends GatewayAdapter {
 			$this->logger->info( "Bad signature in response" );
 			throw new ResponseProcessingException(
 				'Bad signature in response',
-				ResponseCodes::BAD_SIGNATURE
+				ErrorCode::BAD_SIGNATURE
 			);
 		}
 		$this->logger->debug( 'Good signature' );

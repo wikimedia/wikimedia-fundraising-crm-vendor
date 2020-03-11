@@ -25,8 +25,8 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\PaymentError;
 use SmashPig\Core\UtcDate;
 use SmashPig\Core\ValidationError;
-use SmashPig\CrmLink\FinalStatus;
-use SmashPig\CrmLink\ValidationAction;
+use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\PaymentData\ReferenceData\NationalCurrencies;
 
@@ -2191,7 +2191,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		}
 		// If we're asking the donor to convert their donation to recurring,
 		// don't delete everything from session just yet.
-		if ( !$this->showRecurringUpsell() ) {
+		if ( !$this->showMonthlyConvert() ) {
 			$this->session_resetForNewAttempt( $force );
 		}
 
@@ -2239,7 +2239,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 
 	/**
 	 * Build and send a message to the payments-init queue, once the initial workflow is complete.
-	 * @param string $status one of the constants in @see SmashPig\CrmLink\FinalStatus
+	 * @param string $status one of the constants in @see SmashPig\PaymentData\FinalStatus
 	 */
 	public function sendFinalStatusMessage( $status ) {
 		$transaction = [
@@ -3972,12 +3972,12 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * @return bool true when we want to ask a one-time donor for a recurring
 	 *  donation after their one-time donation is complete.
 	 */
-	public function showRecurringUpsell() {
+	public function showMonthlyConvert() {
 		if ( !$this instanceof RecurringConversion ) {
 			return false;
 		}
 		$variant = $this->getData_Unstaged_Escaped( 'variant' );
 		$isRecurring = $this->getData_Unstaged_Escaped( 'recurring' );
-		return !$isRecurring && ( strstr( $variant, 'upsell' ) !== false );
+		return !$isRecurring && ( strstr( $variant, 'monthlyConvert' ) !== false );
 	}
 }

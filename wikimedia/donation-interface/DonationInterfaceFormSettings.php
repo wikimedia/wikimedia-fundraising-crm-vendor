@@ -4,7 +4,7 @@
  * parameters. The chooser should instead query enabled gateway capabilities
  * and simply pass along any ffname from the banner to allow A/B testing.
  */
-use SmashPig\CrmLink\FinalStatus;
+use SmashPig\PaymentData\FinalStatus;
 
 global $wgDonationInterfaceAllowedHtmlForms;
 /**
@@ -726,6 +726,18 @@ $forms_whitelist['adyen-test'] = [
 	'payment_methods' => [
 		'cc' => [ 'visa', 'mc', 'amex', 'discover', 'cb' ],
 	],
+	// Setting form chooser weight to zero so this form is not chosen as default
+	'selection_weight' => 0,
+];
+
+$forms_whitelist['adyen-test-recurring'] = [
+	'gateway' => 'adyen',
+	'countries' => [ '+' => [ 'CA', 'FR', 'GB', 'IE', 'IL', 'JP', 'NL', 'UA', 'US', ], ],
+	'currencies' => [ '+' => [ 'CAD', 'EUR', 'GBP', 'JPY', 'ILS', 'UAH', 'USD', ], ],
+	'payment_methods' => [
+		'cc' => [ 'visa', 'mc', 'amex', 'discover', 'cb' ],
+	],
+	'recurring',
 	// Setting form chooser weight to zero so this form is not chosen as default
 	'selection_weight' => 0,
 ];
