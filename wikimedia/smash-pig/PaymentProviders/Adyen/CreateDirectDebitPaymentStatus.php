@@ -3,10 +3,10 @@
 namespace SmashPig\PaymentProviders\Adyen;
 
 use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentData\StatusNormalizer;
 use OutOfBoundsException;
+use SmashPig\PaymentData\StatusNormalizer;
 
-class CancelPaymentStatus implements StatusNormalizer {
+class CreateDirectDebitPaymentStatus  implements StatusNormalizer {
 
 	/**
 	 * @param $adyenStatus
@@ -14,8 +14,11 @@ class CancelPaymentStatus implements StatusNormalizer {
 	 */
 	public function normalizeStatus( string $adyenStatus ) : string {
 		switch ( $adyenStatus ) {
-			case '[cancel-received]':
+			case 'Received':
 				$status = FinalStatus::COMPLETE;
+				break;
+			case 'Refused':
+				$status = FinalStatus::FAILED;
 				break;
 			default:
 				throw new OutOfBoundsException( "Unknown Adyen status $adyenStatus" );

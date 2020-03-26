@@ -34,27 +34,23 @@ class Api {
 	}
 
 	/**
-	 * Create the payment authorisation request.
+	 * Requests authorisation of a credit card payment.
 	 * https://docs.adyen.com/classic-integration/recurring-payments/authorise-a-recurring-payment#recurring-payments
 	 *
 	 * TODO: This authorise request is currently specific to recurring. Might we want to make non-recurring calls
 	 * in the future?
 	 *
-	 * @param $params
+	 * @param array $params needs 'recurring_payment_token', 'order_id', 'recurring', 'amount', and 'currency'
 	 * @return bool|WSDL\authoriseResponse
 	 */
 	public function createPayment( $params ) {
 		$data = new WSDL\authorise();
 		$data->paymentRequest = new WSDL\PaymentRequest();
-
-		$data->paymentRequest->amount = new WSDL\Amount();
-		$data->paymentRequest->amount->currency = $params['currency'];
-		$data->paymentRequest->amount->value = $params['amount'] * 100;
+		$data->paymentRequest->amount = $this->getAmount( $params );
 
 		$isRecurring = $params['recurring'] ?? false;
 		if ( $isRecurring ) {
-			$data->paymentRequest->recurring = new WSDL\Recurring();
-			$data->paymentRequest->recurring->contract = static::RECURRING_CONTRACT;
+			$data->paymentRequest->recurring = $this->getRecurring();
 			$data->paymentRequest->shopperInteraction = static::RECURRING_SHOPPER_INTERACTION;
 			$data->paymentRequest->selectedRecurringDetailReference = static::RECURRING_SELECTED_RECURRING_DETAIL_REFERENCE;
 			$data->paymentRequest->shopperReference = $params['recurring_payment_token'];
@@ -78,17 +74,56 @@ class Api {
 	}
 
 	/**
-	 * @param $params
+	 * Requests a direct debit payment. As with the card payment, this function currently only
+	 * supports recurring payments.
+	 * Documentation for the classic integration is no longer available, but there's this:
+	 * https://docs.adyen.com/payment-methods/sepa-direct-debit/api-only#recurring-payments
+	 *
+	 * @param array $params needs 'recurring_payment_token', 'order_id', 'recurring', 'amount', and 'currency'
+	 * @return bool|WSDL\directdebitFuncResponse
+	 */
+	public function createDirectDebitPayment( $params ) {
+		$data = new WSDL\directdebit();
+		$data->request = new WSDL\DirectDebitRequest();
+		$data->request->amount = $this->getAmount( $params );
+
+		$isRecurring = $params['recurring'] ?? false;
+		if ( $isRecurring ) {
+			$data->request->recurring = $this->getRecurring();
+			$data->request->shopperInteraction = self::RECURRING_SHOPPER_INTERACTION;
+			$data->request->selectedRecurringDetailReference = self::RECURRING_SELECTED_RECURRING_DETAIL_REFERENCE;
+			$data->request->shopperReference = $params['recurring_payment_token'];
+		}
+
+		$data->request->reference = $params['order_id'];
+		$data->request->merchantAccount = $this->account;
+
+		$tl = new TaggedLogger( 'RawData' );
+		$tl->info( 'Launching SOAP directdebit request', $data );
+
+		try {
+			$response = $this->soapClient->directdebit( $data );
+			Logger::debug( $this->soapClient->__getLastRequest() );
+		} catch ( \Exception $ex ) {
+			Logger::error( 'SOAP directdebit request threw exception!', null, $ex );
+			return false;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Approve a payment that has been authorized. In credit-card terms, this
+	 * captures the payment.
+	 *
+	 * @param array $params Needs keys 'gateway_txn_id', 'currency', and 'amount' set
 	 * @return bool|WSDL\captureResponse
 	 */
 	public function approvePayment( $params ) {
 		$data = new WSDL\capture();
 		$data->modificationRequest = new WSDL\ModificationRequest();
-		$data->modificationRequest->modificationAmount = new WSDL\Amount();
-
+		$data->modificationRequest->modificationAmount = $this->getAmount( $params );
 		$data->modificationRequest->merchantAccount = $this->account;
-		$data->modificationRequest->modificationAmount->currency = $params['currency'];
-		$data->modificationRequest->modificationAmount->value = $params['amount'] * 100; // Todo: Make this CLDR aware
 		$data->modificationRequest->originalReference = $params['gateway_txn_id'];
 
 		$tl = new TaggedLogger( 'RawData' );
@@ -105,7 +140,9 @@ class Api {
 	}
 
 	/**
-	 * @param $pspReference
+	 * Cancels a payment that may already be authorized
+	 *
+	 * @param string $pspReference The Adyen-side identifier, aka gateway_txn_id
 	 * @return bool|WSDL\cancelResponse
 	 */
 	public function cancel( $pspReference ) {
@@ -126,5 +163,25 @@ class Api {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * @param array $params
+	 * @return WSDL\Amount
+	 */
+	private function getAmount( $params ) {
+		$amount = new WSDL\Amount();
+		$amount->currency = $params['currency'];
+		$amount->value = $params['amount'] * 100;
+		return $amount;
+	}
+
+	/**
+	 * @return WSDL\Recurring
+	 */
+	private function getRecurring() {
+		$recurring = new WSDL\Recurring();
+		$recurring->contract = static::RECURRING_CONTRACT;
+		return $recurring;
 	}
 }

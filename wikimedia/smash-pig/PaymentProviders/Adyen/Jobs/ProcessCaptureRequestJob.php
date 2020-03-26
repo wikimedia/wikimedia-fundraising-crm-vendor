@@ -10,7 +10,7 @@ use SmashPig\Core\Logging\TaggedLogger;
 use SmashPig\Core\RetryableException;
 use SmashPig\CrmLink\Messages\DonationInterfaceAntifraudFactory;
 use SmashPig\PaymentData\ValidationAction;
-use SmashPig\PaymentProviders\Adyen\PaymentProvider;
+use SmashPig\PaymentProviders\Adyen\CardPaymentProvider;
 use SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Authorisation;
 
 /**
@@ -211,16 +211,16 @@ class ProcessCaptureRequestJob extends RunnableJob {
 	}
 
 	/**
-	 * @return PaymentProvider
+	 * @return CardPaymentProvider
 	 */
 	protected function getProvider() {
-		return new PaymentProvider();
+		return new CardPaymentProvider();
 	}
 
 	protected function cancelAuthorization() {
 		$this->logger->debug( "Cancelling authorization with reference '{$this->pspReference}'" );
 		$provider = $this->getProvider();
-		$result = $provider->cancel( $this->pspReference );
+		$result = $provider->cancelPayment( $this->pspReference );
 		if ( $result->isSuccessful() ) {
 			$this->logger->debug( "Successfully cancelled authorization" );
 		} else {
