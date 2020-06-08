@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "217bb137b150f6558d3dab0396d1d0d5",
+    "content-hash": "bbccdda079c35f106d3ac430bd9e7be8",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -316,12 +316,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/gabrielbull/omnimail.git",
-                "reference": "5ebf4c514639b540e8bc029aa539a5a6992c6453"
+                "reference": "b27aaee11418a8da9594b9579f801dad48551a27"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gabrielbull/omnimail/zipball/5ebf4c514639b540e8bc029aa539a5a6992c6453",
-                "reference": "5ebf4c514639b540e8bc029aa539a5a6992c6453",
+                "url": "https://api.github.com/repos/gabrielbull/omnimail/zipball/b27aaee11418a8da9594b9579f801dad48551a27",
+                "reference": "b27aaee11418a8da9594b9579f801dad48551a27",
                 "shasum": ""
             },
             "require": {
@@ -382,7 +382,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2019-10-12T20:10:01+00:00"
+            "time": "2020-05-03T15:30:54+00:00"
         },
         {
             "name": "paragonie/random_compat",

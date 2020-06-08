@@ -101,6 +101,20 @@ class Mailer extends AbstractMailer implements MailerInterface
     )));
   }
 
+    /**
+     * Get Recipients.
+     *
+     * @param array $parameters
+     *
+     * @return \Omnimail\Silverpop\Requests\GetQueryRequest
+     */
+    public function getQueryCriteria($parameters = array()) {
+      return $this->createRequest('GetQueryRequest', array_merge($parameters, array(
+        'credentials' => $this->getCredentials(),
+        'client' => $this->getClient(),
+      )));
+    }
+
   /**
    * Initialize a request object
    *
