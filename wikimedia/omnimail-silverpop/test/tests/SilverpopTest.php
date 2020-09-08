@@ -97,7 +97,7 @@ class SilverpopTest extends BaseTestClass {
         $history = Middleware::history($this->container);
         $responses = [];
         if ($authenticateFirst) {
-            $responses[] = new Response(200, [], file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'));
+            $this->authenticate();
         }
         foreach ($body as $responseBody) {
             $responses[] = new Response(200, [], $responseBody);
@@ -112,6 +112,21 @@ class SilverpopTest extends BaseTestClass {
     protected function assertOutgoingRequest($fileName) {
         $xml = strval($this->container[0]['request']->getBody());
         $this->assertEquals(file_get_contents(__DIR__ . '/Requests/' . $fileName), $xml);
+    }
+
+    /**
+     * Authenticate with silverpop.
+     *
+     * It's possible we are already authenticated so we just want to fill up our mock responses and
+     * try anyway. That way when the actual command runs we know it is done and the number of responses
+     * used won't depend on whether a previous test authenticated earlier.
+     */
+    protected function authenticate() {
+        $responses[] = new Response(200, [], file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'));
+        $mock = new MockHandler($responses);
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        Omnimail::create('Silverpop', ['client' => $client, 'credentials' => new Credentials(['username' => 'Shrek', 'password' => 'Fiona'])])->getMailings();
     }
 
 }
