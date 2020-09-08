@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "13113b88ff16571e288f02af1c7925bc",
+    "content-hash": "b6611d13770e095eb98fa8a132ac73cd",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -266,16 +266,16 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "dev-master",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "cb252dd"
+                "reference": "bc31d2888ab1b6d237a42e828615cce0ac9db58c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/cb252dd",
-                "reference": "cb252dd",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/bc31d2888ab1b6d237a42e828615cce0ac9db58c",
+                "reference": "bc31d2888ab1b6d237a42e828615cce0ac9db58c",
                 "shasum": ""
             },
             "require": {
@@ -308,7 +308,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2020-09-02T19:07:33+00:00"
+            "time": "2020-09-02T23:52:14+00:00"
         },
         {
             "name": "omnimail/omnimail",
@@ -544,16 +544,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "2.0.28",
+            "version": "2.0.29",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "d1ca58cf33cb21046d702ae3a7b14fdacd9f3260"
+                "reference": "497856a8d997f640b4a516062f84228a772a48a8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/d1ca58cf33cb21046d702ae3a7b14fdacd9f3260",
-                "reference": "d1ca58cf33cb21046d702ae3a7b14fdacd9f3260",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/497856a8d997f640b4a516062f84228a772a48a8",
+                "reference": "497856a8d997f640b4a516062f84228a772a48a8",
                 "shasum": ""
             },
             "require": {
@@ -562,7 +562,6 @@
             "require-dev": {
                 "phing/phing": "~2.7",
                 "phpunit/phpunit": "^4.8.35|^5.7|^6.0",
-                "sami/sami": "~2.0",
                 "squizlabs/php_codesniffer": "~2.0"
             },
             "suggest": {
@@ -632,7 +631,7 @@
                 "x.509",
                 "x509"
             ],
-            "time": "2020-07-08T09:08:33+00:00"
+            "time": "2020-09-08T04:24:43+00:00"
         },
         {
             "name": "psr/http-message",
@@ -2554,7 +2553,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "mrmarkfrench/silverpop-php-connector": 20,
         "omnimail/omnimail": 20
     },
     "prefer-stable": true,
