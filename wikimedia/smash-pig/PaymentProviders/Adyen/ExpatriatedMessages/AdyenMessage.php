@@ -99,10 +99,21 @@ abstract class AdyenMessage extends ListenerMessage {
 	 *
 	 * @return bool True if the message was complete and can be processed
 	 */
-	public function validate() {
+	public function validate(): bool {
 		// Not sure if there's any validation we can do that hasn't already been done
 		// by the WSDL processor.
 
 		return true;
+	}
+
+	/**
+	 * Returns the gateway-side ID we record for this transaction. In the
+	 * case of a card payment where we get different IDs for the auth and
+	 * capture, we record the ID of the authorization.
+	 *
+	 * @return string
+	 */
+	public function getGatewayTxnId() {
+		return $this->pspReference;
 	}
 }

@@ -19,6 +19,8 @@ class Authorisation extends AdyenMessage {
 
 	public $cvvResult = '';
 	public $avsResult = '';
+	public $recurringProcessingModel = '';
+	public $recurringDetailReference = '';
 
 	/**
 	 * Overloads the generic Adyen method adding fields specific to the Authorization message
@@ -61,9 +63,8 @@ class Authorisation extends AdyenMessage {
 					$this->recurringProcessingModel = $firstSegment( $entry->value );
 					break;
 				case 'recurring.recurringDetailReference':
-					$this->{'recurring.recurringDetailReference'} = $firstSegment( $entry->value );
+					$this->recurringDetailReference = $firstSegment( $entry->value );
 					break;
-
 			}
 		}
 	}
@@ -83,6 +84,28 @@ class Authorisation extends AdyenMessage {
 
 		if ( $result === true ) {
 			return parent::runActionChain();
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Check for subsequent recurring payment IPNs.
+	 *
+	 * Credit card recurring payments will not have the recurringDetailReference set
+	 * Sepa direct debit recurring payments will have sepadirectdebit as payment method
+	 *
+	 * @returns bool True if it is a recurring payment otherwise False
+	 */
+	public function isRecurringInstallment() {
+		// Check for credit card recurring
+		if ( isset( $this->recurringProcessingModel )
+				 && $this->recurringProcessingModel == 'Subscription'
+				 && $this->recurringDetailReference == '' ) {
+			return true;
+		// Check for sepa direct debit recurring
+		} elseif ( $this->paymentMethod == 'sepadirectdebit' ) {
+			return true;
 		} else {
 			return false;
 		}
