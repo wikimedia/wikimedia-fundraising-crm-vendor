@@ -63,6 +63,10 @@ class ReferenceData {
 				'mcdebit' => 'mc-debit',
 			],
 		],
+		'maestro' => [
+			'method' => 'cc',
+			'submethod' => 'maestro',
+		],
 		'multibanco' => [
 			'method' => 'rtbt',
 			'submethod' => 'rtbt_multibanco',
@@ -106,7 +110,7 @@ class ReferenceData {
 	/**
 	 * @param string $method Adyen's 'Payment Method'
 	 * @param string $variant Adyen's 'Payment Method Variant'
-	 * @returns array first entry is our payment_method, second is our payment_submethod
+	 * @return array first entry is our payment_method, second is our payment_submethod
 	 */
 	public static function decodePaymentMethod( $method, $variant ) {
 		if ( !array_key_exists( $method, self::$methods ) ) {
