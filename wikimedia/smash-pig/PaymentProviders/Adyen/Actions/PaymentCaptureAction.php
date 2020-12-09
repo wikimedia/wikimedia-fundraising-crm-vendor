@@ -1,8 +1,8 @@
 <?php namespace SmashPig\PaymentProviders\Adyen\Actions;
 
 use SmashPig\Core\Actions\IListenerMessageAction;
+use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\Core\Jobs\DeletePendingJob;
 use SmashPig\Core\Logging\TaggedLogger;
 use SmashPig\Core\Messages\ListenerMessage;
 use SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Authorisation;
@@ -41,23 +41,24 @@ class PaymentCaptureAction implements IListenerMessageAction {
 						"with psp reference {$msg->pspReference}."
 					);
 					$job = ProcessCaptureRequestJob::factory( $msg );
-					QueueWrapper::push( 'jobs-adyen', $job );
+					$queueName = 'jobs-adyen';
+					$jobQueueCount = Context::get()->getProviderConfiguration()->val(
+						'capture-job-queue-count'
+					);
+					if ( $jobQueueCount > 1 ) {
+						$queueNum = rand( 0, $jobQueueCount ) + 1;
+						$queueName .= "-$queueNum";
+					}
+					QueueWrapper::push( $queueName, $job );
 				}
 			} else {
-				// And here we just need to destroy the orphan
-				// FIXME: should we really delete these details, if donors can
-				// potentially re-use a merchant reference by reloading an Adyen
-				// full-redirect page?
+				// Here we could decide to delete the data from the pending
+				// table, but we don't because donors can potentially re-use
+				// a merchant reference by reloading an Adyen hosted page.
 				$tl->info(
 					"Adyen payment with psp reference {$msg->pspReference} " .
-					"reported status failed: '{$msg->reason}'. " .
-					'Queueing job to delete pending records.'
+					"reported status failed: '{$msg->reason}'."
 				);
-				$job = DeletePendingJob::factory(
-					'adyen',
-					$msg->merchantReference
-				);
-				QueueWrapper::push( 'jobs-adyen', $job );
 			}
 		}
 
