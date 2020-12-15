@@ -137,7 +137,7 @@ class Contact {
    * @return mixed
    */
   public function getOptOutTimestamp() {
-    return $this->data['Opted Out Date'] ? strtotime($this->data['Opted Out Date']) : FALSE;
+    return !empty($this->data['Opted Out Date']) ? strtotime($this->data['Opted Out Date']) : FALSE;
   }
 
   public function getOptInIsoDateTime() {
