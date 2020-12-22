@@ -139,7 +139,7 @@ class GetSentMailingsForOrgRequest extends SilverpopBaseRequest
   public function getDefaultParameters() {
     return array(
       'endpoint' => 'https://api4.silverpop.com',
-      'statuses' => array('SENT', 'SENDING'),
+      'statuses' => array('SENT', 'SENDING', 'SENT_CANCELLED'),
       'includeZeroSent' => FALSE,
       'includeTest' => FALSE,
       'startTimeStamp' => strtotime('1 week ago'),
