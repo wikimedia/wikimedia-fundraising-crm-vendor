@@ -20,6 +20,9 @@ use SmashPig\Core\Context;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
+use RemexHtml\DOM;
+use RemexHtml\Tokenizer;
+use RemexHtml\TreeBuilder;
 use Wikimedia\TestingAccessWrapper;
 
 /**
@@ -51,7 +54,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	protected $gatewayAdapter;
 
 	protected $testAdapterClass = TESTS_ADAPTER_DEFAULT;
-	public $smashPigGlobalConfig;
+	public static $smashPigGlobalConfig;
 
 	/**
 	 * @param string|null $name The name of the test case
@@ -81,20 +84,24 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		}
 	}
 
-	protected function setUp() {
+	protected function setUp(): void {
 		// TODO: Use SmashPig dependency injection instead.  Also override
 		// SmashPig core logger.
 		DonationLoggerFactory::$overrideLogger = new TestingDonationLogger();
-		// Replace real SmashPig context with test version that lets us
-		// override provider configurations that may be set in code
-		$this->smashPigGlobalConfig = TestingGlobalConfiguration::create();
-		TestingContext::init( $this->smashPigGlobalConfig );
-		Context::get()->setSourceType( 'payments' );
-		Context::get()->setSourceName( 'DonationInterface' );
+		self::setUpSmashPigContext();
 		parent::setUp();
 	}
 
-	protected function tearDown() {
+	public static function setUpSmashPigContext() {
+		// Replace real SmashPig context with test version that lets us
+		// override provider configurations that may be set in code
+		self::$smashPigGlobalConfig = TestingGlobalConfiguration::create();
+		TestingContext::init( self::$smashPigGlobalConfig );
+		Context::get()->setSourceType( 'payments' );
+		Context::get()->setSourceName( 'DonationInterface' );
+	}
+
+	protected function tearDown(): void {
 		self::resetAllEnv();
 		parent::tearDown();
 	}
@@ -129,7 +136,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	 */
 	protected function setSmashPigProvider( $provider ) {
 		$providerConfig = TestingProviderConfiguration::createForProvider(
-			$provider, $this->smashPigGlobalConfig
+			$provider, self::$smashPigGlobalConfig
 		);
 		TestingContext::get()->providerConfigurationOverride = $providerConfig;
 		return $providerConfig;
@@ -295,7 +302,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 			],
 			'IN' => [
 				'currency' => 'INR',
-				'fiscal_number' => '0000123456',
+				'fiscal_number' => 'AAAPL1234C',
 				'payment_submethod' => 'test_bank',
 				'street_address' => 'Test Street',
 				'city' => 'Chennai',
@@ -550,12 +557,6 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 	}
 
 	public static function resetAllEnv() {
-		$_SERVER = [];
-		$_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
-		$_SERVER['HTTP_HOST'] = TESTS_HOSTNAME;
-		$_SERVER['SERVER_NAME'] = TESTS_HOSTNAME;
-		$_SERVER['SCRIPT_NAME'] = __FILE__;
-
 		RequestContext::resetMain();
 
 		self::resetTestingAdapters();
@@ -577,6 +578,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		}
 		// Reset SmashPig context
 		Context::set( null );
+		self::setUpSmashPigContext();
 		// Clear out our HashBagOStuff, used for testing
 		wfGetMainCache()->clear();
 		DonationLoggerFactory::$overrideLogger = null;
@@ -608,10 +610,6 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		$special_page_class, $initial_vars, $perform_these_checks,
 		$fail_on_log_errors = false, $session = null, $posted = false
 	) {
-		// Nasty hack to clear output from any previous tests.
-		if ( empty( $_SERVER['REQUEST_TIME_FLOAT'] ) ) {
-			$_SERVER['REQUEST_TIME_FLOAT'] = microtime( true );
-		}
 		$mainContext = RequestContext::getMain();
 		$newOutput = new OutputPage( $mainContext );
 		$newRequest = new TestingRequest( $initial_vars, $posted, $session );
@@ -643,7 +641,6 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 			$this->verifyNoLogErrors();
 		}
 
-		$dom_thingy = new DomDocument();
 		//// DEBUGGING, foo
 		// if (property_exists($this, 'FOO')) {
 		// error_log(var_export($formpage->getRequest()->response()->getheader('Location'), true));
@@ -651,8 +648,29 @@ abstract class DonationInterfaceTestCase extends MediaWikiTestCase {
 		// }
 
 		if ( $form_html ) {
+			// use RemexHtml to get a DomDocument so we don't get errors on
+			// unknown HTML5 elements.
+			$domBuilder = new DOM\DOMBuilder( [
+				'suppressHtmlNamespace' => true
+			] );
+			$treeBuilder = new TreeBuilder\TreeBuilder(
+				$domBuilder,
+				[ 'ignoreErrors' => true ]
+			);
+			$dispatcher = new TreeBuilder\Dispatcher( $treeBuilder );
+			$tokenizer = new Tokenizer\Tokenizer(
+				$dispatcher,
+				'<?xml encoding="UTF-8">' . $form_html,
+				[ 'ignoreErrors' => true ]
+			);
+			$tokenizer->execute( [
+				// Need to send null here so getFragment() returns DomDocument
+				// instead of a DomElement
+				'fragmentNamespace' => null,
+				'fragmentName' => 'document'
+			] );
+			$dom_thingy = $domBuilder->getFragment();
 			// p.s. i'm SERIOUS about the character encoding.
-			$dom_thingy->loadHTML( '<?xml encoding="UTF-8">' . $form_html );
 			$dom_thingy->encoding = 'UTF-8';
 		}
 

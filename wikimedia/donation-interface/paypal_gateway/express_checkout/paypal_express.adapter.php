@@ -496,7 +496,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 				// Merge response into our transaction data.
 				// TODO: Use getFormattedData instead.
 				// FIXME: We don't want to allow overwriting of ctid, need a
-				// blacklist of protected fields.
+				// list of protected fields.
 				$this->addResponseData( $this->unstageKeys( $response ) );
 
 				// Complete if payment already finalized
@@ -673,7 +673,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 	public function doRefund() {
 		$response = $this->do_transaction( 'RefundTransaction' );
 		if ( !$response->getCommunicationStatus() ) {
-			return PaymentResult::newFailure( $response->getErrors(), FinalStatus::FAILED );
+			return PaymentResult::newFailure( $response->getErrors() );
 		}
 		return PaymentResult::fromResults( $response, FinalStatus::COMPLETE );
 	}
@@ -681,7 +681,7 @@ class PaypalExpressAdapter extends GatewayAdapter {
 	public function cancelSubscription() {
 		$response = $this->do_transaction( 'ManageRecurringPaymentsProfileStatusCancel' );
 		if ( !$response->getCommunicationStatus() ) {
-			return PaymentResult::newFailure( $response->getErrors(), FinalStatus::FAILED );
+			return PaymentResult::newFailure( $response->getErrors() );
 		}
 		return PaymentResult::fromResults( $response, FinalStatus::COMPLETE );
 	}

@@ -3,17 +3,17 @@
 		"authors": [
 			"Danmichaelo",
 			"Finnrind",
+			"Jon Harald Søby",
+			"Jrobell",
 			"Jsoby",
+			"Kingu",
 			"Laaknor",
 			"McDutchie",
 			"Nghtwlkr",
+			"Pmt",
 			"Sjurhamre",
-			"Zilvador",
-			"Jrobell",
-			"Kingu",
-			"Jon Harald Søby",
 			"Telaneo",
-			"Pmt"
+			"Zilvador"
 		]
 	},
 	"donate_interface": "Støtt Wikimedia",
@@ -167,6 +167,7 @@
 	"donate_interface-donor-currency-msg": "Denne gaven blir gitt i $1",
 	"donate_interface-donor-fiscal_number": "Fiscal number",
 	"donate_interface-donor-fiscal_number-in": "PAN",
+	"donate_interface-donor-fiscal_number-explain-in": "Betalingsprosesseringen vår er påkrevd av Reserve Bank of India for å samle inn din PAN, men vi beholder eller lagrer ikke denne informasjonen.",
 	"donate_interface-donor-opt_in_yes": "Ja! Send meg epostoppdateringer og informasjon av og til om hvordan jeg kan støtte Wikipedia i fremtiden.*",
 	"donate_interface-donor-opt_in_no": "Nei takk, jeg ønsker ikke å motta epostoppdateringer selv om det bare er snakk om noen få eposter årlig.",
 	"donate_interface-donor-opt_in_explain": "*Informasjonen din behandles i samsvar med <a href=\"$1\">personvernspolicyen vår for donorer</a>. Hver epost du mottar vil inkludere måter å avslutte abonnementet på.",
@@ -439,5 +440,10 @@
 	"donate_interface-monthly-convert-action-button": "Doner månedlig",
 	"donate_interface-monthly-convert-error": "Engangsdonasjonen din lyktes, men vi kunne ikke starte en gjentagende donasjon.",
 	"donate_interface-monthly-convert-yes-button-variant-006": "Ja, jeg ønsker å hjelpe til",
-	"donate_interface-monthly-convert-no-button-variant-006": "Ellers takk"
+	"donate_interface-monthly-convert-no-button-variant-006": "Ellers takk",
+	"donate_interface-monthly-convert-yes-button-variant-011": "Ja, jeg vil legge til en månedlig donasjon på <span class=\"mc-convert-ask\"></span>",
+	"donate_interface-monthly-convert-no-button-variant-011": "Nei, takk",
+	"donate_interface-monthly-convert-no-button-variant-014": "Nei, ikke nå",
+	"donate_interface-fundraiser-maintenance-header": "Midlertidig nede for vedlikehold",
+	"donate_interface-fundraiser-maintenance-notice": "Vi utfører for øyeblikket planlagt vedlikehold, og kan ikke ta imot donasjoner nå. Prøv igjen snart. Om du har noen spørsmål, send oss en epost på $1."
 }

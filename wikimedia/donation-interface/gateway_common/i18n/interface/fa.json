@@ -1,22 +1,24 @@
 {
 	"@metadata": {
 		"authors": [
+			"4nn1l2",
+			"Alirezaaa",
 			"Americophile",
+			"Amire80",
 			"Armin1392",
 			"Ebraminio",
+			"FarsiNevis",
+			"Hosseinblue",
 			"Huji",
 			"Jsoby",
+			"Ladsgroup",
 			"Mjbmr",
+			"MohandesWiki",
 			"Reza1615",
+			"Rtemis",
 			"Sahim",
 			"Wayiran",
-			"ZxxZxxZ",
-			"Rtemis",
-			"Alirezaaa",
-			"MohandesWiki",
-			"Hosseinblue",
-			"4nn1l2",
-			"Ladsgroup"
+			"ZxxZxxZ"
 		]
 	},
 	"donate_interface": "حمایت از ویکی‌مدیا",
@@ -221,7 +223,7 @@
 	"donate_interface-error-no-form": "ما قادر به پیدا کردن شکل کمک مطابق پارامتر‌های شما نبودیم.لطفاً برای اطلاعات بیشتر با [mailto:$1 our help team] تماس بگیرید.",
 	"donate_interface-error-reference": "شماره خطا: $1",
 	"php-response-declined": "انتقال وجه شما مورد قبول نبود.",
-	"donate_interface-thankyou": "سپاس از بابت کمک مالی‌تان!",
+	"donate_interface-thankyou": "سپاس از شما بابت کمک مالی‌تان!",
 	"donate_interface-post-transaction": "جزئیات انتقال وجه",
 	"donate_interface-cvv-explain": "<h4>CVV چیست؟</h4>\n<p>عددِ تائیدِ دارندهٔ کارت (CVV): این اعداد سه یا چهار رقمی کمک می‌کند تا مطمئن شویم که کارت فیزیکی در مالکیت صاحب آن است. این به جلوگیری از استفادهٔ نامجاز یا کلاه‌بردارانه کمک می‌کند.</p>\n<h4>ویزا، مسترکارت</h4>\n<p>کد سه‌رقمی در پشت کارت شما، در درون بخش امضاء قرار دارد. معمولاً پنل امضا مجموعه‌ای از اعداد را خواهد داشت، اما تنها سه رقم آخر، کد CVV را تشکیل می‌دهند.</p>\n<h4>امریکن اکسپرس</h4>\n<p>این کد <i>همواره</i> در <i>بالای</i> شمارهٔ حساب برجسته‌شده در روی کارت قرار دارد.\nدر برخی موارد، کد در سمت چپ کارت قرار دارد، اما همواره در بالای شمارهٔ حساب است.</p><br />",
 	"donate_interface-question-comment": "پرسش یا نظری دارید؟ تماس بگیرید: <a href=\"mailto:$1\">$1</a>",
@@ -377,15 +379,17 @@
 	"donate_interface-taxded-msg-us": "بنیاد ویکی‌مدیا سازمان خیریهٔ ناسودبری‌است که در ایالات متحده تحت یواس آی‌آر‌اس کد سکشن ۵۰۱ (سی) (۳) تأسیس شده‌است، و به همین علت، کمک‌های اهدایی اشخاص یا نهادهای مستقر در ایالات متحده ممکن است مشمول وضعیت مالیات کسر پذیر شوند.",
 	"donate_interface-legal-original": "این یک ترجمهٔ داوطلبانه است. در صورت تضاد بین ترجمه و نسخهٔ انگلیسی، نسخهٔ انگلیسی مقدم خواهد بود.",
 	"donate_interface-monthlybox-title": "ماهانه‌اش کنیم؟",
-	"donate_interface-monthlybox-content": "کمک‌های ماهیانه دومین روز هر ماه انجام می‌گیرند. هرگاه خواستید می‌توانید آن را لغو کنید.",
+	"donate_interface-monthlybox-content": "کمک‌های ماهانه در دومین روز هر ماه انجام می‌گیرند. هرگاه خواستید می‌توانید آن را لغو کنید.",
 	"donate_interface-monthlybox-amount": "مقدار کمک مالی ماهانه",
 	"donate_interface-monthlybox-yes": "بله، ماهانه‌اش کنید",
 	"donate_interface-monthlybox-no": "نه، یک بار خواهم پرداخت",
 	"donate_interface-monthlybox-bottom": "کمک مالی شما به طور ایمن پردازش خواهد شد.",
 	"donate_interface-monthly-cancel": "پرداخت‌های ماهانه توسط بنیاد ویکی‌مدیا تا زمانی مانند وقتی که‌ شما ما را برای  قطع ادامهٔ آنها مطلع می‌کنید،وارد حساب خواهد شد.",
 	"donate_interface-onetime": "یک بار اهدا کنید",
-	"donate_interface-monthly-short": "ماهیانه",
+	"donate_interface-monthly-short": "ماهانه",
 	"donate_interface-onetime-short": "یک بار",
 	"donate_interface-error-http-403": "شما اجازهٔ دسترسی به این صفحه را ندارید.",
-	"donate_interface-statement": "$1 ویکی‌مدیا"
+	"donate_interface-statement": "$1 ویکی‌مدیا",
+	"donate_interface-fundraiser-maintenance-header": "به صورت موقف خاموش برای تعمیر و نگهداری",
+	"donate_interface-fundraiser-maintenance-notice": "در حال حاضر برای تعمیر و نگهداری امکان قبول کمک‌های مالی مقدور نیست و لطفاً بعد از مدتی تلاش کنید. در صورتی که سوال دارید به $1 ایمیل بزنید."
 }

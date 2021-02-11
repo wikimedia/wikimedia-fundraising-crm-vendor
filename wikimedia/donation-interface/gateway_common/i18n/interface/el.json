@@ -3,17 +3,18 @@
 		"authors": [
 			"Crazymadlover",
 			"Egmontaz",
+			"Geraki",
 			"Glavkos",
 			"Jsoby",
+			"KATRINE1992",
 			"McDutchie",
+			"NikosLikomitros",
+			"Nikosgranturismogt",
 			"Omnipaedista",
-			"Shirayuki",
-			"ZaDiak",
 			"Pcoombe",
 			"Protnet",
-			"Geraki",
-			"KATRINE1992",
-			"Nikosgranturismogt"
+			"Shirayuki",
+			"ZaDiak"
 		]
 	},
 	"donate_interface": "Υποστηρίξτε το Wikimedia",
@@ -363,5 +364,6 @@
 	"donate_interface-monthly-short": "Μηνιαία",
 	"donate_interface-onetime-short": "Εφάπαξ",
 	"donate_interface-error-http-403": "Δεν έχετε δικαίωμα πρόσβασης σε αυτήν τη σελίδα.",
-	"donate_interface-statement": "Wikimedia $1"
+	"donate_interface-statement": "Wikimedia $1",
+	"donate_interface-fundraiser-maintenance-header": "Προσωρινά εκτός λειτουργίας για συντήρηση"
 }

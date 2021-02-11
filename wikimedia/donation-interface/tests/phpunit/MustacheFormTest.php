@@ -27,10 +27,10 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 	protected $outputPage;
 	protected $gatewayPage;
 
-	public function setUp() {
+	public function setUp(): void {
 		$this->outputPage = $this->getMockBuilder( OutputPage::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'parse' ] )
+			->onlyMethods( [ 'parseAsContent' ] )
 			->getMock();
 
 		$this->gatewayPage = new TestingGatewayPage();
@@ -40,17 +40,17 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 		$req = new TestingRequest();
 		RequestContext::getMain()->setRequest( $req );
 
-		$this->adapter = new TestingGenericAdapter();
-		$this->adapter->addRequestData( [
-			'amount' => '12',
-			'currency' => 'EUR',
-		] );
-
 		$this->setMwGlobals( [
 			'wgTitle' => Title::newFromText( 'nonsense is apparently fine' )
 		] );
 
 		parent::setUp();
+
+		$this->adapter = new TestingGenericAdapter();
+		$this->adapter->addRequestData( [
+			'amount' => '12',
+			'currency' => 'EUR',
+		] );
 	}
 
 	public function formCases() {
@@ -78,14 +78,13 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 		$this->assertRegExp( $regexp, $html );
 	}
 
-	/**
-	 * @expectedException Exception
-	 * @expectedExceptionMessage Template file unavailable
-	 */
 	public function testNoTemplateFile() {
 		$this->setMwGlobals( [
 			'wgDonationInterfaceTemplate' => __DIR__ . "/data/mustache/DONOTCREATE.mustache",
 		] );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Template file unavailable' );
 		$this->form = new Gateway_Form_Mustache();
 		$this->form->setGateway( $this->adapter );
 		$this->form->setGatewayPage( $this->gatewayPage );
@@ -102,11 +101,10 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 			'wgDonationInterfaceAppealWikiTemplate' => 'JimmySezPleeeeeze/$appeal/$language',
 		] );
 
-		$this->outputPage->method( 'parse' )
-			->willReturn( '<p>This is the template text</p>' );
 		$this->outputPage->expects( $this->once() )
-			->method( 'parse' )
-			->with( $this->equalTo( '{{JimmySezPleeeeeze/JimmyQuote/en}}' ) );
+			->method( 'parseAsContent' )
+			->with( $this->equalTo( '{{JimmySezPleeeeeze/JimmyQuote/en}}' ) )
+			->willReturn( '<p>This is the template text</p>' );
 
 		$this->form = new Gateway_Form_Mustache();
 		$this->form->setGateway( $this->adapter );
@@ -129,7 +127,7 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 		$this->adapter->addRequestData( [ 'appeal' => 'differentAppeal' ] );
 
 		$this->outputPage->expects( $this->once() )
-			->method( 'parse' )
+			->method( 'parseAsContent' )
 			->with( $this->equalTo( '{{JimmySezPleeeeeze/differentAppeal/en}}' ) );
 
 		$this->form = new Gateway_Form_Mustache();
@@ -153,7 +151,7 @@ class MustacheFormTest extends DonationInterfaceTestCase {
 		] );
 
 		$this->outputPage->expects( $this->once() )
-			->method( 'parse' )
+			->method( 'parseAsContent' )
 			->with( $this->equalTo( '{{JimmySezPleeeeeze/scriptalertallyourbasearebelongtousscript/en}}' ) );
 
 		$this->form = new Gateway_Form_Mustache();

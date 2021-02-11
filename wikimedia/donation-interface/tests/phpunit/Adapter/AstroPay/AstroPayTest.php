@@ -43,7 +43,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		$this->testAdapterClass = TestingAstroPayAdapter::class;
 	}
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 		$this->setMwGlobals( [
 			'wgAstroPayGatewayEnabled' => true,
@@ -51,7 +51,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		TestingContext::get()->providerConfigurationOverride =
 			TestingProviderConfiguration::createForProvider(
 				'astropay',
-				$this->smashPigGlobalConfig
+				self::$smashPigGlobalConfig
 			);
 	}
 
@@ -89,7 +89,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		parse_str( $gateway->curled[0], $actual );
 
 		$expected = [
-			'x_login' => 'createlogin',
+			'x_login' => 'creator',
 			'x_trans_key' => 'createpass',
 			'x_invoice' => '123456789',
 			'x_amount' => '100.00',
@@ -126,7 +126,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 		parse_str( $gateway->curled[0], $actual );
 
 		$expected = [
-			'x_login' => 'createlogin',
+			'x_login' => 'creator',
 			'x_trans_key' => 'createpass',
 			'x_invoice' => '123456789',
 			'x_amount' => '100.00',
@@ -135,7 +135,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_country' => 'IN',
 			'x_description' => wfMessage( 'donate_interface-donation-description' )->inLanguage( $init['language'] )->text(),
 			'x_iduser' => 'testindia@test.com',
-			'x_cpf' => '0000123456',
+			'x_cpf' => 'AAAPL1234C',
 			'x_name' => 'Test India',
 			'x_email' => 'testindia@test.com',
 			'x_version' => '1.1',
@@ -143,7 +143,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			// 'x_zip' => '01110-111',
 			'x_city' => 'Chennai',
 			// 'x_state' => 'SP',
-			'control' => '1A3BA9E7AC831F3CC9A558D98BD5DF7C88A39B9FF245DA78974B273A5F659DCD',
+			'control' => '9BB2B726B494809C0FF3BDBBB2C71BA24C625F41E69E52C68260A15BE3C36DB8',
 			'type' => 'json',
 		];
 		$this->assertEquals( $expected, $actual, 'NewInvoice is not including the right parameters' );
@@ -364,7 +364,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'x_iduser' => '08feb2d12771bbcfeb86',
 			'x_invoice' => '123456789',
 			'PT' => '1',
-			'x_control' => '0656B92DF44B814D48D84FED2F444CCA1E991A24A365FBEECCCA15B73CC08C2A',
+			'x_control' => '7D998D40BED8AEEA5BE1403E884FE884FABFC6D5ED7B09F57C9AC323DB7DCBA1',
 			'x_document' => '987654321',
 			'x_bank' => 'TE',
 			'x_payment_type' => '03',
@@ -411,7 +411,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'result' => '9',
 			'x_amount' => '100.00',
 			'x_amount_usd' => '42.05',
-			'x_control' => 'DDF89085AC70C0B0628150C51D64419D8592769F2439E3936570E26D24881730',
+			'x_control' => 'A4B61DACA9A693E2AB70B76C9496DFB582F28D142046A8C6C0C4A6E2A4D7CF08',
 			'x_description' => 'Donation to the Wikimedia Foundation',
 			'x_document' => '32869',
 			'x_iduser' => '08feb2d12771bbcfeb86',
@@ -442,7 +442,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'result' => '9',
 			'x_amount' => '100.00',
 			'x_amount_usd' => '42.05',
-			'x_control' => 'DDF89085AC70C0B0628150C51D64419D8592769F2439E3936570E26D24881730',
+			'x_control' => 'A4B61DACA9A693E2AB70B76C9496DFB582F28D142046A8C6C0C4A6E2A4D7CF08',
 			'x_description' => 'Donation to the Wikimedia Foundation',
 			'x_document' => '32869',
 			'x_iduser' => '08feb2d12771bbcfeb86',
@@ -468,7 +468,7 @@ class DonationInterface_Adapter_AstroPay_AstroPayTest extends DonationInterfaceT
 			'result' => '8', // rejected by bank
 			'x_amount' => '100.00',
 			'x_amount_usd' => '42.05',
-			'x_control' => '706F57BC3E74906B14B1DEB946F027104513797CC62AC0F5107BC98F42D5DC95',
+			'x_control' => '2B8751BE3447654CE409E166E784718077F4CDD87518A43A36F023D809B03772',
 			'x_description' => 'Donation to the Wikimedia Foundation',
 			'x_document' => '32869',
 			'x_iduser' => '08feb2d12771bbcfeb86',

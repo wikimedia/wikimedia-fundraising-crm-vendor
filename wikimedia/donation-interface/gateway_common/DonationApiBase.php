@@ -22,10 +22,13 @@ abstract class DonationApiBase extends ApiBase {
 	protected $adapter;
 
 	/**
-	 * @return GatewayAdapter
+	 * @return GatewayAdapter|null
 	 */
 	protected function getGatewayObject() {
 		$className = DonationInterface::getAdapterClassForGateway( $this->gateway );
+		if ( $className::getGlobal( 'Enabled' ) !== true ) {
+			return null;
+		}
 		$variant = $this->getRequest()->getVal( 'variant' );
 		return new $className( [ 'variant' => $variant ] );
 	}
@@ -56,6 +59,12 @@ abstract class DonationApiBase extends ApiBase {
 		$this->gateway = $this->donationData['gateway'];
 
 		DonationInterface::setSmashPigProvider( $this->gateway );
+		if ( isset( $this->donationData['language'] ) ) {
+			// setLanguage will sanitize the code, replacing it with the base wiki
+			// language in case it's invalid.
+			RequestContext::getMain()->setLanguage( $this->donationData['language'] );
+		}
+
 		$this->adapter = $this->getGatewayObject();
 
 		if ( !$this->adapter ) {
@@ -65,10 +74,19 @@ abstract class DonationApiBase extends ApiBase {
 		// FIXME: SmashPig should just use Monolog.
 		Logger::getContext()->enterContext( $this->adapter->getLogMessagePrefix() );
 
-		$validated_ok = $this->adapter->validatedOK();
-		if ( !$validated_ok ) {
-			$errors = $this->adapter->getErrorState()->getErrors();
-			$outputResult = [ 'errors' => $this->serializeErrors( $errors ) ];
+		$errors = [];
+		if ( !$this->adapter->checkTokens() ) {
+			$errors['wmf_token'] = WmfFramework::formatMessage( 'donate_interface-token-mismatch' );
+		} else {
+			$validated_ok = $this->adapter->validatedOK();
+			if ( !$validated_ok ) {
+				$errors = $this->serializeErrors(
+					$this->adapter->getErrorState()->getErrors()
+				);
+			}
+		}
+		if ( !empty( $errors ) ) {
+			$outputResult = [ 'errors' => $errors ];
 			// FIXME: What is this junk?  Smaller API, like getResult()->addErrors
 			$this->getResult()->setIndexedTagName( $outputResult['errors'], 'error' );
 			$this->getResult()->addValue( null, 'result', $outputResult );

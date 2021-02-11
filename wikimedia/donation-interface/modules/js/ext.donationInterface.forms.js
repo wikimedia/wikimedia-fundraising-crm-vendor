@@ -54,6 +54,13 @@
 		} );
 	}
 
+	function resetSubmethod() {
+		var $submethodInput = $( 'input:radio[name=payment_submethod]' );
+		if ( $submethodInput.length > 1 ) {
+			$submethodInput.prop( 'checked', false );
+		}
+	}
+
 	/**
 	 * Get a trinary value from a checkbox that may exist, falling back
 	 *  to a querystring value.
@@ -64,9 +71,9 @@
 	 * @return {string}
 	 */
 	function getOptIn() {
-		var val, element = $( 'input[name=opt_in]:checked' );
-		if ( element.length === 1 ) {
-			val = element.val();
+		var val, $element = $( 'input[name=opt_in]:checked' );
+		if ( $element.length === 1 ) {
+			val = $element.val();
 		} else {
 			val = mw.util.getParamValue( 'opt_in' );
 			if ( val === null ) {
@@ -93,7 +100,7 @@
 		var sendData,
 			paymentSubmethod;
 
-		if ( typeof ( $( 'input[name="payment_submethod"]:checked' ).val() ) === 'undefined' ) {
+		if ( typeof $( 'input[name="payment_submethod"]:checked' ).val() === 'undefined' ) {
 			paymentSubmethod = '';
 		} else {
 			paymentSubmethod = $( 'input[name="payment_submethod"]:checked' ).val().toLowerCase();
@@ -128,6 +135,7 @@
 			wmf_token: $( '#wmf_token' ).val(),
 			opt_in: getOptIn(),
 			employer: $( '#employer' ).val(),
+			employer_id: $( '#employer_id' ).val(),
 			format: 'json'
 		};
 
@@ -183,12 +191,13 @@
 		submit: submitForm,
 		callDonateApi: callDonateApi,
 		isIframe: isIframe,
+		resetSubmethod: resetSubmethod,
 		getOptIn: getOptIn
 	};
 
 	$( function () {
 
-		var emailDiv = $( '#email' ).closest( 'div' ),
+		var $emailDiv = $( '#email' ).closest( 'div' ),
 			emailExplainMessage = mw.msg( 'donate_interface-email-explain' ),
 			optInValue = mw.donationInterface.forms.getOptIn();
 
@@ -197,14 +206,15 @@
 		// If submethods are visible, and a submethod is already selected on
 		// page load, clear it.
 		if ( $( 'input[name="payment_submethod"]:checked:visible' ).length > 0 ) {
-			$( 'input[name="payment_submethod"]' ).attr( 'checked', false );
+			di.forms.resetSubmethod();
 		}
 
-		// Submit on submethod click if valid, otherwise do nothing.
+		// Submit on submethod click if valid, otherwise clear submethod selection.
 		$( 'input[name="payment_submethod"]' ).on( 'click', function () {
 			if ( di.validation.validate() ) {
 				di.forms.submit();
 			} else {
+				di.forms.resetSubmethod();
 				return false;
 			}
 		} );
@@ -226,7 +236,7 @@
 		);
 
 		function showEmailExplain() {
-			emailDiv.after( '<div id="email_explain">' + emailExplainMessage + '</div>' );
+			$emailDiv.after( '<div id="email_explain">' + emailExplainMessage + '</div>' );
 		}
 
 		if ( optInValue === '0' ) {

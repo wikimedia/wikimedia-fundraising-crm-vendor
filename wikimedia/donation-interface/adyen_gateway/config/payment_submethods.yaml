@@ -7,6 +7,7 @@ cb:
     brandCode: cartebancaire
 visa:
     countries:
+        AU: true
         CA: true
         FR: true
         GB: true
@@ -14,12 +15,22 @@ visa:
         IL: true
         JP: true
         NL: true
+        NZ: true
+        SE: true
         UA: true
         US: true
     group: cc
     logo: card-visa-lg.png
+# FIXME: we don't actually want a separate button for visa-debit
+# but we DO need it in this array to avoid an exception on return
+# to the ResultSwitcher.
+visa-debit:
+    countries:
+        XX: true
+    group: cc
 mc:
     countries:
+        AU: true
         CA: true
         FR: true
         GB: true
@@ -27,6 +38,8 @@ mc:
         IL: true
         JP: true
         NL: true
+        NZ: true
+        SE: true
         UA: true
         US: true
     group: cc
@@ -36,6 +49,7 @@ mc:
         3x: card-mastercard_3x.png
 amex:
     countries:
+        AU: true
         CA: true
         FR: true
         GB: true
@@ -43,12 +57,15 @@ amex:
         IL: true
         JP: true
         NL: true
+        NZ: true
+        SE: true
         UA: true
         US: true
     group: cc
     logo: card-amex-lg.png
 jcb:
     countries:
+        AU: true
         IE: true
         JP: true
         NL: true
@@ -60,5 +77,13 @@ discover:
         US: true
     group: cc
     logo: card-discover-lg.png
+rtbt_ideal:
+    label: iDEAL
+    group: rtbt
+    countries:
+        NL: true
+    logo: iDEAL-klein.gif
+    show_single_logo: true
+    brandCode: ideal
 
 

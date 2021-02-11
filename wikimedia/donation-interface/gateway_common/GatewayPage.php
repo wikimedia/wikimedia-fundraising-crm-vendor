@@ -63,18 +63,26 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * @param string|null $par parameter passed to the page or null
 	 */
 	public function execute( $par ) {
-		global $wgContributionTrackingFundraiserMaintenance, $wgContributionTrackingFundraiserMaintenanceUnsched;
+		global $wgDonationInterfaceFundraiserMaintenance;
 
 		// FIXME: Deprecate "language" param.
 		$language = $this->getRequest()->getVal( 'language' );
-		if ( $language ) {
-			$this->getContext()->setLanguage( $language );
-			global $wgLang;
-			$wgLang = $this->getContext()->getLanguage(); // BackCompat
+		if ( !$language ) {
+			// For some result pages, language does not come in on a standard URL param
+			// (langauge or uselang). For those cases, it's pretty safe to assume the
+			// correct language is in session.
+			// FIXME Restrict the places where we access session data
+			$donorData = WmfFramework::getSessionValue( 'Donor' );
+			if ( ( $donorData !== null ) && isset( $donorData[ 'language' ] ) ) {
+				$language = $donorData[ 'language' ];
+			}
 		}
 
-		if ( $wgContributionTrackingFundraiserMaintenance
-			|| $wgContributionTrackingFundraiserMaintenanceUnsched ) {
+		if ( $language ) {
+			$this->getContext()->setLanguage( $language );
+		}
+
+		if ( $wgDonationInterfaceFundraiserMaintenance ) {
 			$this->getOutput()->redirect( Title::newFromText( 'Special:FundraiserMaintenance' )->getFullURL(), '302'
 			);
 			return;
@@ -492,6 +500,8 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 	/**
 	 * If certain conditions are met, override the logo
+	 * TODO: this is only being used to use the endowment logo when
+	 * utm_medium=endowment. Move to a hook handled in EndowmentHooks
 	 */
 	protected function overrideLogo() {
 		$logoOverrideRules = $this->adapter->getGlobal( 'LogoOverride' );

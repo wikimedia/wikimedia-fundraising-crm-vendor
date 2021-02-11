@@ -1,10 +1,11 @@
 {
 	"@metadata": {
 		"authors": [
+			"Amire80",
 			"Bjankuloski06",
 			"Jsoby",
-			"Rancher",
 			"Pcoombe",
+			"Rancher",
 			"Vlad5250"
 		]
 	},
@@ -46,7 +47,7 @@
 	"donate_interface-CHF": "швајцарски франк",
 	"donate_interface-CLP": "чилеански пезос",
 	"donate_interface-CNY": "кинески јуан",
-	"donate_interface-COP": "колумбиски колумб",
+	"donate_interface-COP": "колумбиски пезос",
 	"donate_interface-CRC": "костарикански колон",
 	"donate_interface-CZK": "чешка круна",
 	"donate_interface-DKK": "данска круна",
@@ -160,6 +161,7 @@
 	"donate_interface-donor-currency-msg": "Ова дарување се врши во $1",
 	"donate_interface-donor-fiscal_number": "Фискален број",
 	"donate_interface-donor-fiscal_number-in": "PAN",
+	"donate_interface-donor-fiscal_number-explain-in": "Банката на резерви на Индија бара нашиот наплатен услужник да го има вашиот PAN, но ние не ја чуваме или складираме таа информација.",
 	"donate_interface-donor-opt_in_yes": "Да! Повремено (ретко) испраќајте ми сознанија за тоа како во иднина можам да ја поддржам Википедија.*",
 	"donate_interface-donor-opt_in_no": "Не, не сакам да добивам новости, дури и ако се само неколку годишно.",
 	"donate_interface-donor-opt_in_explain": "*Со вашите податоци се постапува во склад со <a href=\"$1\">Правилата за дарители</a>. Во секое известување по е-пошта е вклучена и можност за отпис.",
@@ -174,6 +176,7 @@
 	"donate_interface-error-msg-validation": "Исправете ги грешките во образецот.",
 	"donate_interface-error-msg-invalid-amount": "Внесете правилен износ",
 	"donate_interface-error-msg-invalid-country": "За жал, не можев да ја утврдам вашата земја. Изберете една од страницата <a href=\"$1\">Начини на дарување</a>.",
+	"donate_interface-error-msg-invalid-currency": "Изберете важечка валута",
 	"donate_interface-error-msg-invalid-email": "Внесете важечка е-пошта (на пр. ime@domen.com)",
 	"donate_interface-error-msg-card-num": "Внесете полноважен број на кредитна картичка од прифатените видови",
 	"donate_interface-error-msg-amex": "Внесете правилен број на American Express картичка.",
@@ -433,5 +436,10 @@
 	"donate_interface-monthly-convert-action-button": "Дарувајте месечно",
 	"donate_interface-monthly-convert-error": "Вашиот еднократен прилог е успешен, но не можевме да го отпочнеме редовниот.",
 	"donate_interface-monthly-convert-yes-button-variant-006": "Да, сакам да помогнам",
-	"donate_interface-monthly-convert-no-button-variant-006": "Не, благодарам"
+	"donate_interface-monthly-convert-no-button-variant-006": "Не, благодарам",
+	"donate_interface-monthly-convert-yes-button-variant-011": "Да, ќе додадам месечен прилог од <span class=\"mc-convert-ask\"></span>",
+	"donate_interface-monthly-convert-no-button-variant-011": "Не, благодарам!",
+	"donate_interface-monthly-convert-no-button-variant-014": "Не, не сега",
+	"donate_interface-fundraiser-maintenance-header": "Привремено недостапно поради одржување",
+	"donate_interface-fundraiser-maintenance-notice": "Во моментов вршиме планирано одржување и не можеме да прифаќаме уплати. Вратете се малку подоцна. Ако имате некакви прашања, обратете се на $1."
 }

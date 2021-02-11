@@ -2,15 +2,15 @@
 	"@metadata": {
 		"authors": [
 			"AdiJapan",
+			"Andrei Stroe",
 			"Cin",
 			"Firilacroco",
+			"Jrobell",
 			"Jsoby",
+			"Matrafox",
 			"Minisarm",
 			"Stelistcristi",
-			"Jrobell",
-			"Matrafox",
-			"Strainu",
-			"Andrei Stroe"
+			"Strainu"
 		]
 	},
 	"donate_interface": "Sprijiniți Wikimedia",
@@ -378,5 +378,6 @@
 	"donate_interface-monthly-short": "Lunar",
 	"donate_interface-onetime-short": "O dată",
 	"donate_interface-error-http-403": "Nu aveți permisiunea să accesați această pagină.",
-	"donate_interface-statement": "Wikimedia $1"
+	"donate_interface-statement": "Wikimedia $1",
+	"donate_interface-fundraiser-maintenance-header": "Închis temporar pentru mentenanță"
 }

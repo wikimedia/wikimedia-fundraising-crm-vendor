@@ -19,19 +19,19 @@ class IPVelocityTest extends DonationInterfaceTestCase {
 	protected $ipFilter;
 	protected $oldCache;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		global $wgDonationInterfaceIPVelocityToxicDuration,
 			$wgDonationInterfaceIPVelocityFailDuration,
-			$wgDonationInterfaceIPWhitelist,
-			$wgDonationInterfaceIPBlacklist;
+			$wgDonationInterfaceIPAllowList,
+			$wgDonationInterfaceIPDenyList;
 
 		$wgDonationInterfaceIPVelocityToxicDuration = 1000;
 		$wgDonationInterfaceIPVelocityFailDuration = 500;
 
-		$wgDonationInterfaceIPWhitelist = [ '1.2.3.4' ];
-		$wgDonationInterfaceIPBlacklist = [ '5.6.7.8' ];
+		$wgDonationInterfaceIPAllowList = [ '1.2.3.4' ];
+		$wgDonationInterfaceIPDenyList = [ '5.6.7.8' ];
 		$this->setMwGlobals( [
 			'wgMainCacheType' => CACHE_DB,
 			'wgDonationInterfaceEnableIPVelocityFilter' => true,
@@ -53,18 +53,18 @@ class IPVelocityTest extends DonationInterfaceTestCase {
 		);
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		parent::tearDown();
 
 		global $wgDonationInterfaceIPVelocityToxicDuration,
 			$wgDonationInterfaceIPVelocityFailDuration,
-			$wgDonationInterfaceIPWhitelist,
-			$wgDonationInterfaceIPBlacklist;
+			$wgDonationInterfaceIPAllowList,
+			$wgDonationInterfaceIPDenyList;
 
 		unset( $wgDonationInterfaceIPVelocityToxicDuration );
 		unset( $wgDonationInterfaceIPVelocityFailDuration );
-		unset( $wgDonationInterfaceIPWhitelist );
-		unset( $wgDonationInterfaceIPBlacklist );
+		unset( $wgDonationInterfaceIPAllowList );
+		unset( $wgDonationInterfaceIPDenyList );
 		ObjectCache::$instances[CACHE_DB] = $this->oldCache;
 	}
 

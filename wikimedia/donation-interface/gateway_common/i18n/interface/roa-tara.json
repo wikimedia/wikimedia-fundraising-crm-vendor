@@ -1,10 +1,11 @@
 {
 	"@metadata": {
 		"authors": [
+			"Amire80",
+			"Beta16",
 			"Joetaras",
-			"Reder",
 			"Pcoombe",
-			"Beta16"
+			"Reder"
 		]
 	},
 	"donate_interface": "Supporte UicchiMedia",
@@ -45,7 +46,7 @@
 	"donate_interface-CHF": "Franghe svizzere",
 	"donate_interface-CLP": "Peso cilene",
 	"donate_interface-CNY": "Yuan renminbi cenise",
-	"donate_interface-COP": "Columb d'a Colombie",
+	"donate_interface-COP": "Peso colombiane",
 	"donate_interface-CRC": "Colon d'a Costa Rica",
 	"donate_interface-CZK": "Corone ceche",
 	"donate_interface-DKK": "Corone danese",
@@ -159,6 +160,7 @@
 	"donate_interface-donor-currency-msg": "Quèste donaziune jè state fatte jndre $1",
 	"donate_interface-donor-fiscal_number": "Numere fiscale",
 	"donate_interface-donor-fiscal_number-in": "PAN",
+	"donate_interface-donor-fiscal_number-explain-in": "'U processe nuèstre de pajamende jè cercate da 'a Reserve Bank of India pe collezzionà 'u PAN tune, ma nuje non ge tenìme o stipme sta 'mbormazione.",
 	"donate_interface-donor-opt_in_yes": "Sìne! Pie piacere manneme le aggiornaminde pe email e le 'mbormaziune sus a cumme Ije pozze dà 'na màne a Uicchipedie jndr'à 'u future.*",
 	"donate_interface-donor-opt_in_no": "No, non ge vogghie avè aggiornaminde, pure ca so sulamende picche email a l'anne.",
 	"donate_interface-donor-opt_in_explain": "*Le 'mbormaziune tune onne state gestite in accorde cu <a href=\"$1\">Donor Privacy Policy</a>. Ogne email ca tu ave tène le opziune pe te scangellà facile facile.",
@@ -173,6 +175,7 @@
 	"donate_interface-error-msg-validation": "Pe' piacere corregge le errore jndr'ô module.",
 	"donate_interface-error-msg-invalid-amount": "Pe piacere mitte 'n'imborte valide",
 	"donate_interface-error-msg-invalid-country": "Ne despiace, non ge putime acchià 'u pajesere tune. Pe piacere scacchie 'nu pajesere sus 'a pàgena <a href=\"$1\">Mode de acchià</a>.",
+	"donate_interface-error-msg-invalid-currency": "Pe piacere scacchie 'na valute valide",
 	"donate_interface-error-msg-invalid-email": "Pe piacere mitte 'n'indirizze email valide pe esembie cicce@cappucce.com",
 	"donate_interface-error-msg-card-num": "Pe piacere mitte 'u numere corrette de carte de credite pe' une de le tipe de carte accettate",
 	"donate_interface-error-msg-amex": "Pe piacere mitte 'nu numere corrette d'a carte pe l'American Express.",
@@ -264,7 +267,7 @@
 	"donate_interface-mailing-address": "Indirizze de spedizione",
 	"donate_interface-billing-address": "Indirizze de fatturazione",
 	"donate_interface-billing-name": "Nome d'a fatturazione",
-	"donate_interface-title": "Titele",
+	"donate_interface-title": "Titole",
 	"donate_interface-company-name": "Suggettate o nome de l'organizzazzione",
 	"donate_interface-address-1": "Indirizze 1",
 	"donate_interface-address-2": "Indirizze 2",
@@ -437,5 +440,10 @@
 	"donate_interface-monthly-convert-action-button": "Done mensilmende",
 	"donate_interface-monthly-convert-error": "'A donazione de 'na vota sole ha sciute bbone, ma nuje non ge putime accumenzà 'na donazione recorrende.",
 	"donate_interface-monthly-convert-yes-button-variant-006": "Sìne, vogghie ccu aijute",
-	"donate_interface-monthly-convert-no-button-variant-006": "None, grazie"
+	"donate_interface-monthly-convert-no-button-variant-006": "None, grazie",
+	"donate_interface-monthly-convert-yes-button-variant-011": "Sìne, agghie aggiungere 'na donazione mensile<span class=\"mc-convert-ask\"></span>",
+	"donate_interface-monthly-convert-no-button-variant-011": "None, grazie!",
+	"donate_interface-monthly-convert-no-button-variant-014": "No, none mò",
+	"donate_interface-fundraiser-maintenance-header": "Temboraneamende abbasce pe manutenzione",
+	"donate_interface-fundraiser-maintenance-notice": "Nuje ste facime mo 'na manutenzione schedulate e non ge putime accettà dunazziune. Pe piacere pruève cchiù tarde. Ce tìne domande da fà, manne 'n'email a $1."
 }

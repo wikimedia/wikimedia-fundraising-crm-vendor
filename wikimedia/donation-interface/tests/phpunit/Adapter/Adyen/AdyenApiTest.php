@@ -1,8 +1,6 @@
 <?php
 use Psr\Log\LogLevel;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\PaymentProviders\Adyen\Tests\AdyenTestConfiguration;
-use SmashPig\Tests\TestingContext;
 
 /**
  * @group Fundraising
@@ -13,13 +11,8 @@ use SmashPig\Tests\TestingContext;
  */
 class AdyenApiTest extends DonationInterfaceApiTestCase {
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
-		$ctx = TestingContext::get();
-		$ctx->providerConfigurationOverride =
-			AdyenTestConfiguration::createWithSuccessfulApi(
-			$ctx->getGlobalConfiguration()
-		);
 		$this->setMwGlobals( [
 			'wgAdyenGatewayEnabled' => true,
 			'wgAdyenGatewayTestingURL' => 'https://example.org',
@@ -46,6 +39,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			'allowedMethods' => 'card',
 			'brandCode' => 'visa',
 			'card.cardHolderName' => 'Firstname Surname',
+			'countryCode' => 'US',
 			'currencyCode' => 'USD',
 			'merchantAccount' => 'wikitest',
 			'offset' => '20',
@@ -96,7 +90,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			'postal_code' => '94105',
 			'risk_score' => 20
 		];
-		$this->assertArraySubset( $expected, $message );
+		$this->assertArraySubmapSame( $expected, $message );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNull( $message, 'Sending extra pending messages' );
 		$logged = DonationInterfaceTestCase::getLogMatches(
@@ -106,7 +100,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 		preg_match( '/Redirecting for transaction: (.*)$/', $logged[0], $matches );
 		$detailString = $matches[1];
 		$actual = json_decode( $detailString, true );
-		$this->assertArraySubset( $expected, $actual, 'Logged the wrong stuff!' );
+		$this->assertArraySubmapSame( $expected, $actual, 'Logged the wrong stuff!' );
 	}
 
 	public function testTooSmallDonation() {
@@ -165,6 +159,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			'allowedMethods' => 'card',
 			'brandCode' => 'visa',
 			'card.cardHolderName' => 'Firstname Surname',
+			'countryCode' => 'US',
 			'currencyCode' => 'USD',
 			'merchantAccount' => 'wikitest',
 			'offset' => '20',
@@ -217,7 +212,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 			'postal_code' => '94105',
 			'risk_score' => 20
 		];
-		$this->assertArraySubset( $expected, $message );
+		$this->assertArraySubmapSame( $expected, $message );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertNull( $message, 'Sending extra pending messages' );
 		$logged = DonationInterfaceTestCase::getLogMatches(
@@ -227,7 +222,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 		preg_match( '/Redirecting for transaction: (.*)$/', $logged[0], $matches );
 		$detailString = $matches[1];
 		$actual = json_decode( $detailString, true );
-		$this->assertArraySubset( $expected, $actual, 'Logged the wrong stuff!' );
+		$this->assertArraySubmapSame( $expected, $actual, 'Logged the wrong stuff!' );
 	}
 
 	protected function getDonorData() {
@@ -237,6 +232,7 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 		$init['payment_submethod'] = 'visa';
 		$init['gateway'] = 'adyen';
 		$init['action'] = 'donate';
+		$init['wmf_token'] = $this->saltedToken;
 		// The US form doesn't have these two as we can look them up by zip
 		unset( $init['city'] );
 		unset( $init['state_province'] );
@@ -246,7 +242,10 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 	protected function getDonorSession() {
 		// this ends up being the first part of our order_id.sequence which maps to shopperReference
 		$ct_id = mt_rand( 0, 10000000 );
-		return [ 'Donor' => [ 'contribution_tracking_id' => $ct_id ] ];
+		return [
+			'Donor' => [ 'contribution_tracking_id' => $ct_id, ],
+			'adyenEditToken' => 'blahblah',
+		];
 	}
 
 	public function testSubmitFailInitialFilters() {
@@ -255,5 +254,69 @@ class AdyenApiTest extends DonationInterfaceApiTestCase {
 		$apiResult = $this->doApiRequest( $init );
 		$result = $apiResult[0]['result'];
 		$this->assertNotEmpty( $result['errors'], 'Should have returned an error' );
+	}
+
+	public function testRtbtSubmit() {
+		$session = $this->getDonorSession();
+		$postData = [
+			'action' => 'donate',
+			'gateway' => 'adyen',
+			'currency' => 'EUR',
+			'amount' => '2.00',
+			'first_name' => 'Testy',
+			'last_name' => 'McTesterson',
+			'language' => 'nl',
+			'email' => 'testy@wikimedia.org',
+			'country' => 'NL',
+			'payment_method' => 'rtbt',
+			'payment_submethod' => 'rtbt_ideal',
+			'processor_form' => 'testskin',
+			'utm_source' => 'test',
+			'referrer' => 'blah.com/blah',
+			'wmf_token' => $this->saltedToken,
+		];
+		$apiResult = $this->doApiRequest( $postData, $session );
+		$result = $apiResult[0]['result'];
+		$this->assertTrue( empty( $result['errors'] ) );
+
+		$this->assertEquals(
+			'https://example.org/hpp/pay.shtml',
+			$result['iframe'],
+			'Adyen API not setting correct iframe'
+		);
+
+		$message = QueueWrapper::getQueue( 'pending' )->pop();
+		$this->assertNotNull( $message, 'Not sending a message to the pending queue' );
+		DonationInterfaceTestCase::unsetVariableFields( $message );
+		$expected = [
+			'gateway_txn_id' => false,
+			'response' => false,
+			'fee' => 0,
+			'utm_source' => 'test..rtbt',
+			'language' => 'nl',
+			'email' => 'testy@wikimedia.org',
+			'first_name' => 'Testy',
+			'last_name' => 'McTesterson',
+			'country' => 'NL',
+			'gateway' => 'adyen',
+			'recurring' => '',
+			'payment_method' => 'rtbt',
+			'payment_submethod' => 'rtbt_ideal',
+			'currency' => 'EUR',
+			'gross' => '2.00',
+			'user_ip' => '127.0.0.1',
+			'risk_score' => 31.5
+		];
+		$this->assertArraySubmapSame( $expected, $message );
+		$message = QueueWrapper::getQueue( 'pending' )->pop();
+		$this->assertNull( $message, 'Sending extra pending messages' );
+		$logged = DonationInterfaceTestCase::getLogMatches(
+			LogLevel::INFO, '/^Redirecting for transaction: /'
+		);
+		$this->assertEquals( 1, count( $logged ), 'Should have logged details once' );
+		preg_match( '/Redirecting for transaction: (.*)$/', $logged[0], $matches );
+		$detailString = $matches[1];
+		$actual = json_decode( $detailString, true );
+		$this->assertArraySubmapSame( $expected, $actual, 'Logged the wrong stuff!' );
 	}
 }

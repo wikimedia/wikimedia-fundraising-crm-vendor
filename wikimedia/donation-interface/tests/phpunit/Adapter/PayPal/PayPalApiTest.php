@@ -13,7 +13,7 @@ use SmashPig\Tests\TestingProviderConfiguration;
  */
 class PayPalApiTest extends DonationInterfaceApiTestCase {
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 		$ctx = TestingContext::get();
 		$ctx->providerConfigurationOverride = TestingProviderConfiguration::createForProvider(
@@ -36,11 +36,12 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 			'utm_medium' => 'sitenotice',
 			'country' => 'US',
 			'language' => 'fr',
+			'wmf_token' => $this->saltedToken,
 		];
 		$init['gateway'] = 'paypal_ec';
 		$init['action'] = 'donate';
 
-		$apiResult = $this->doApiRequest( $init );
+		$apiResult = $this->doApiRequest( $init, [ 'paypal_ecEditToken' => $this->clearToken ] );
 		$result = $apiResult[0]['result'];
 		$this->assertTrue( empty( $result['errors'] ) );
 
@@ -70,7 +71,7 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 		];
 		// FIXME: want to assert stuff about countribution_tracking_id, but we
 		// have no way of overriding that for API tests
-		$this->assertArraySubset(
+		$this->assertArraySubmapSame(
 			$expected,
 			$message,
 			'PayPal EC setup sending wrong pending message'
@@ -84,7 +85,7 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 		preg_match( '/Redirecting for transaction: (.*)$/', $logged[0], $matches );
 		$detailString = $matches[1];
 		$actual = json_decode( $detailString, true );
-		$this->assertArraySubset( $expected, $actual, 'Logged the wrong stuff!' );
+		$this->assertArraySubmapSame( $expected, $actual, 'Logged the wrong stuff!' );
 	}
 
 	public function testTooSmallDonation() {
@@ -96,11 +97,12 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 			'utm_medium' => 'sitenotice',
 			'country' => 'US',
 			'language' => 'fr',
+			'wmf_token' => $this->saltedToken
 		];
 		$init['gateway'] = 'paypal_ec';
 		$init['action'] = 'donate';
 
-		$apiResult = $this->doApiRequest( $init );
+		$apiResult = $this->doApiRequest( $init, [ 'paypal_ecEditToken' => $this->clearToken ] );
 		$result = $apiResult[0]['result'];
 		$this->assertNotEmpty( $result['errors'], 'Should have returned an error' );
 		$this->assertNotEmpty( $result['errors']['amount'], 'Error should be in amount' );
@@ -124,11 +126,12 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 			'recurring' => '1',
 			'contribution_tracking_id' => strval( mt_rand() ),
 			'language' => 'fr',
+			'wmf_token' => $this->saltedToken
 		];
 		$init['gateway'] = 'paypal_ec';
 		$init['action'] = 'donate';
 
-		$apiResult = $this->doApiRequest( $init );
+		$apiResult = $this->doApiRequest( $init, [ 'paypal_ecEditToken' => $this->clearToken ] );
 		$result = $apiResult[0]['result'];
 		$this->assertTrue( empty( $result['errors'] ) );
 
@@ -158,7 +161,7 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 		];
 		// FIXME: want to assert stuff about countribution_tracking_id, but we
 		// have no way of overriding that for API tests
-		$this->assertArraySubset(
+		$this->assertArraySubmapSame(
 			$expected,
 			$message,
 			'PayPal EC setup sending wrong pending message'
@@ -172,6 +175,6 @@ class PayPalApiTest extends DonationInterfaceApiTestCase {
 		preg_match( '/Redirecting for transaction: (.*)$/', $logged[0], $matches );
 		$detailString = $matches[1];
 		$actual = json_decode( $detailString, true );
-		$this->assertArraySubset( $expected, $actual, 'Logged the wrong stuff!' );
+		$this->assertArraySubmapSame( $expected, $actual, 'Logged the wrong stuff!' );
 	}
 }

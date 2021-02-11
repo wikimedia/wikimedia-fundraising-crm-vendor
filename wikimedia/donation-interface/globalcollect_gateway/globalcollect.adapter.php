@@ -52,7 +52,7 @@ class GlobalCollectAdapter extends GatewayAdapter {
 	 */
 	public function defineAccountInfo() {
 		$this->accountInfo = [
-			'MERCHANTID' => $this->account_config[ 'MerchantID' ],
+			'MERCHANTID' => $this->account_config[ 'MerchantID' ] ?? '',
 			// 'IPADDRESS' => '', //TODO: Not sure if this should be OUR ip, or the user's ip. Hurm.
 			'VERSION' => "1.0",
 		];
@@ -1452,11 +1452,11 @@ class GlobalCollectAdapter extends GatewayAdapter {
 			);
 		}
 
-		// Unstage any data that we've whitelisted.
+		// Unstage any data that we've configured.
 		// TODO: This should be generalized into the base class.
-		$whitelisted_keys = $this->transaction_option( 'response' );
-		if ( $whitelisted_keys ) {
-			$filtered_data = array_intersect_key( $data, array_flip( $whitelisted_keys ) );
+		$allowed_keys = $this->transaction_option( 'response' );
+		if ( $allowed_keys ) {
+			$filtered_data = array_intersect_key( $data, array_flip( $allowed_keys ) );
 			$unstaged = $this->unstageKeys( $filtered_data );
 			$this->addResponseData( $unstaged );
 		}

@@ -22,6 +22,7 @@ class DonationData implements LogPrefixProvider {
 	protected $dataSources = [];
 	protected $gateway;
 	protected $gatewayID;
+
 	/**
 	 * @var \Psr\Log\LoggerInterface
 	 */
@@ -107,6 +108,7 @@ class DonationData implements LogPrefixProvider {
 		'variant',
 		'opt_in',
 		'employer',
+		'employer_id',
 	];
 
 	/**
@@ -157,6 +159,7 @@ class DonationData implements LogPrefixProvider {
 
 		// We have some data, so normalize it.
 		if ( $this->normalized ) {
+			// As a side effect, this also saves contribution_tracking data.
 			$this->normalize();
 
 			// FIXME: This should be redundant now?
@@ -521,16 +524,8 @@ class DonationData implements LogPrefixProvider {
 	 */
 	protected function handleContributionTrackingID() {
 		if ( !$this->isSomething( 'contribution_tracking_id' ) ) {
-			if ( $this->gateway->getGlobal( 'EnableContributionTrackingQueue' ) ) {
-				$this->setVal( 'contribution_tracking_id', $this->getIdFromSequenceGenerator() );
-				return true;
-			} else {
-				$ctid = $this->saveContributionTrackingData();
-				if ( $ctid ) {
-					$this->setVal( 'contribution_tracking_id', $ctid );
-					return true;
-				}
-			}
+			$this->setVal( 'contribution_tracking_id', $this->getIdFromSequenceGenerator() );
+			return true;
 		}
 		return false;
 	}
@@ -915,46 +910,13 @@ class DonationData implements LogPrefixProvider {
 		}
 		$ctid = $this->getVal( 'contribution_tracking_id' );
 		$tracking_data = $this->getCleanTrackingData( true );
+		$current_hash = sha1( serialize( $tracking_data ) );
 
-		if ( $this->gateway->getGlobal( 'EnableContributionTrackingQueue' ) ) {
-
+		if ( $this->trackingDataUpdated( $current_hash ) ) {
 			$ctid = $this->sendToContributionTrackingQueue( $tracking_data, $ctid );
-
-		} else {
-			$db = ContributionTrackingProcessor::contributionTrackingConnection();
-
-			if ( !$db ) {
-				// TODO: This might be a critical failure; do we want to throw an exception instead?
-				$this->logger->error( 'Failed to create a connect to contribution_tracking database' );
-				return false;
-			}
-
-			if ( $ctid ) {
-				// We're updating a record, but only if we actually have data to update
-				if ( count( $tracking_data ) ) {
-					$db->update(
-						'contribution_tracking',
-						$tracking_data,
-						[ 'id' => $ctid ]
-					);
-				}
-			} else {
-				// We need a new record
-				// set the time stamp if it's not already set
-				if ( !isset( $tracking_data['ts'] ) || !strlen( $tracking_data['ts'] ) ) {
-					$tracking_data['ts'] = $db->timestamp();
-				}
-
-				// Store the contribution data
-				if ( $db->insert( 'contribution_tracking', $tracking_data ) ) {
-					$ctid = $db->insertId();
-				} else {
-					$this->logger->error( 'Failed to create a new contribution_tracking record' );
-					return false;
-				}
-			}
+			// Add a hash of the current tracking data to help prevent duplicate queue msgs
+			WmfFramework::setSessionValue( 'ct_hash', $current_hash );
 		}
-
 		return $ctid;
 	}
 
@@ -1019,6 +981,7 @@ class DonationData implements LogPrefixProvider {
 			'recurring_payment_token',
 			'opt_in',
 			'employer',
+			'employer_id',
 		];
 	}
 
@@ -1095,6 +1058,17 @@ class DonationData implements LogPrefixProvider {
 			$posted = ( array_key_exists( 'REQUEST_METHOD', $_SERVER ) && WmfFramework::isPosted() );
 		}
 		return $posted;
+	}
+
+	/**
+	 * @param array $tracking_data
+	 * @return boolean
+	 */
+	private function trackingDataUpdated( $current_hash ) {
+		// Let's check that there's something new in $tracking_data to send to the queue
+		$last_saved_hash = $this->gateway->session_getData( 'ct_hash' );
+		$hasNewData = $current_hash !== $last_saved_hash;
+		return $hasNewData;
 	}
 
 	private function expungeNulls() {

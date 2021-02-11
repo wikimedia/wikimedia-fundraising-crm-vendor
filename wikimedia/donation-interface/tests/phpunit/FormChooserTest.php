@@ -35,13 +35,14 @@ class DonationInterface_FormChooserTest extends DonationInterfaceTestCase {
 		parent::__construct( $name, $data, $dataName );
 	}
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->setMwGlobals( [
 			'wgDonationInterfaceEnableFormChooser' => true,
 			'wgIngenicoGatewayEnabled' => true,
 			'wgPaypalGatewayEnabled' => true,
+			'wgPaypalExpressGatewayEnabled' => false,
 		] );
 	}
 
@@ -69,7 +70,7 @@ class DonationInterface_FormChooserTest extends DonationInterfaceTestCase {
 
 	public function testMaintenanceMode_Redirect() {
 		$this->setMwGlobals( [
-			'wgContributionTrackingFundraiserMaintenance' => true,
+			'wgDonationInterfaceFundraiserMaintenance' => true,
 		] );
 
 		$expectedLocation = Title::newFromText( 'Special:FundraiserMaintenance' )->getFullURL( '', false, PROTO_CURRENT );

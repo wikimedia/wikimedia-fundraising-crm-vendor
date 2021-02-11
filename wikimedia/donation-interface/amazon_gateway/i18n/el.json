@@ -1,8 +1,9 @@
 {
 	"@metadata": {
 		"authors": [
-			"ZaDiak",
-			"Nikosgranturismogt"
+			"NikosLikomitros",
+			"Nikosgranturismogt",
+			"ZaDiak"
 		]
 	},
 	"amazon_gateway-desc": "Επεξεργασία πληρωμών Amazon"

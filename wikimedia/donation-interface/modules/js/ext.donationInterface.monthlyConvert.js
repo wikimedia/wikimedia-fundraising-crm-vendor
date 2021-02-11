@@ -90,13 +90,18 @@
 	mc.setConvertAsk = function ( suggestedAmount, locale, currency ) {
 		var convertAmountFormatted;
 
-		convertAmountFormatted = suggestedAmount.toLocaleString(
-			locale,
-			{
-				currency: currency,
-				style: 'currency'
-			}
-		);
+		try {
+			convertAmountFormatted = suggestedAmount.toLocaleString(
+				locale,
+				{
+					currency: currency,
+					style: 'currency'
+				}
+			);
+		} catch ( e ) {
+			// Assume a two decimal place currency for fallback
+			convertAmountFormatted = currency + ' ' + suggestedAmount.toFixed( 2 );
+		}
 
 		$( '.mc-convert-ask' ).text( convertAmountFormatted );
 		$( '.mc-modal-screen' ).show();
@@ -107,6 +112,7 @@
 			action: 'di_recurring_convert',
 			format: 'json',
 			gateway: $( '#gateway' ).val(),
+			wmf_token: $( '#wmf_token' ).val(),
 			amount: amount
 		};
 		$.ajax( {
@@ -170,8 +176,8 @@
 			} );
 			$( '.mc-donate-monthly-button' ).on( 'click keypress', function ( e ) {
 				if ( e.which === 13 || e.type === 'click' ) {
-					var otherAmountField = $( '#mc-other-amount-input' ),
-						otherAmount = +otherAmountField.val(),
+					var $otherAmountField = $( '#mc-other-amount-input' ),
+						otherAmount = +$otherAmountField.val(),
 						rates = mw.config.get( 'wgDonationInterfaceCurrencyRates' ),
 						rate,
 						minUsd = mw.config.get( 'wgDonationInterfacePriceFloor' );
@@ -182,14 +188,14 @@
 						rate = 1;
 					}
 					if ( otherAmount < minUsd * rate ) {
-						otherAmountField.addClass( 'errorHighlight' );
+						$otherAmountField.addClass( 'errorHighlight' );
 						$( '#mc-error-smallamount' ).show();
 					} else if ( otherAmount > originalAmount ) {
-						otherAmountField.addClass( 'errorHighlight' );
+						$otherAmountField.addClass( 'errorHighlight' );
 						$( '#mc-error-bigamount' ).show();
 					} else {
 						$( '.mc-error' ).hide();
-						otherAmountField.removeClass( 'errorHighlight' );
+						$otherAmountField.removeClass( 'errorHighlight' );
 						mc.postUpdonate( otherAmount );
 					}
 				}

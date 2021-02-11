@@ -36,9 +36,9 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 	 */
 	protected $providerConfig;
 
-	public static function setUpAmazonTestingContext( $testCase ) {
+	public static function setUpAmazonTestingContext() {
 		$config = AmazonTestConfiguration::instance(
-			$testCase->smashPigGlobalConfig
+			self::$smashPigGlobalConfig
 		);
 		$config->override( [
 			'payments-client' => [
@@ -54,9 +54,9 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		return $config;
 	}
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
-		$this->providerConfig = self::setUpAmazonTestingContext( $this );
+		$this->providerConfig = self::setUpAmazonTestingContext();
 
 		$this->setMwGlobals( [
 			'wgAmazonGatewayEnabled' => true,

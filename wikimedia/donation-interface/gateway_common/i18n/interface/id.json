@@ -3,6 +3,7 @@
 		"authors": [
 			"-iNu-",
 			"Bennylin",
+			"C5st4wr6ch",
 			"Farras",
 			"Ilham151096",
 			"IvanLanin",
@@ -10,11 +11,11 @@
 			"Jsoby",
 			"Kenrick95",
 			"Microcell",
-			"Seddon",
-			"C5st4wr6ch",
-			"Pcoombe",
 			"Mirws",
+			"Pcoombe",
 			"Presidenvolksraad",
+			"RXerself",
+			"Seddon",
 			"William Surya Permana"
 		]
 	},
@@ -253,7 +254,7 @@
 	"donate_interface-otherways-alt": "Ada <a href=\"$1\">cara lain untuk memberi</a>, termasuk melalui cek.",
 	"donate_interface-otherways-short": "Cara lain untuk memberi",
 	"donate_interface-token-mismatch": "Sesi Anda telah kedaluwarssa. Silakan coba isi formulir dan mengirimkannya lagi.",
-	"donate_interface-cc-token-expired": "Token Anda telah kedaluwarsa, klik Oke to memuat ulang.",
+	"donate_interface-cc-token-expired": "Token Anda telah kedaluwarsa, klik Oke untuk memuat ulang.",
 	"donate_interface-try-again": "Kami tidak dapat memproses donasi Anda untuk sementara waktu. Cobalah beberapa saat lagi.",
 	"donate_interface-cc-form-header-personal": "Informasi penagihan",
 	"donate_interface-cc-form-header-payment": "Informasi pembayaran",
@@ -411,5 +412,7 @@
 	"donate_interface-monthly-short": "Bulanan",
 	"donate_interface-onetime-short": "Sekali saja",
 	"donate_interface-error-http-403": "Anda tidak memiliki izin untuk mengakses halaman ini.",
-	"donate_interface-statement": "Wikimedia $1"
+	"donate_interface-statement": "Wikimedia $1",
+	"donate_interface-fundraiser-maintenance-header": "Dimatikan sementara untuk pemeliharaan",
+	"donate_interface-fundraiser-maintenance-notice": "Kami sedang melakukan pemeliharaan terjadwal dan tidak dapat menerima sumbangan. Silakan coba lagi nanti. Jika Anda memiliki pertanyaan, silakan kirim surel ke $1."
 }

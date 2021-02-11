@@ -1,17 +1,18 @@
 {
 	"@metadata": {
 		"authors": [
+			"Amire80",
 			"BRUTE",
 			"David1010",
 			"Dawid Deutschland",
 			"ITshnik",
 			"Jsoby",
-			"Nodar Kherkheulidze",
-			"Temuri rajavi",
-			"გიორგიმელა",
 			"MIKHEIL",
+			"Nodar Kherkheulidze",
+			"Otogi",
 			"Pcoombe",
-			"Otogi"
+			"Temuri rajavi",
+			"გიორგიმელა"
 		]
 	},
 	"donate_interface": "მხარი დაუჭირეთ ვიკიმედიას!",
@@ -337,5 +338,6 @@
 	"donate_interface-monthly-short": "ყოველთვიურად",
 	"donate_interface-onetime-short": "ერთხელ",
 	"donate_interface-error-http-403": "თქვენ არ გაქვთ ამ გვერდთან წვდომის უფლება.",
-	"donate_interface-statement": "ვიკიმედია $1"
+	"donate_interface-statement": "ვიკიმედია $1",
+	"donate_interface-fundraiser-maintenance-header": "დროებით ქვემოთ დახმარებისთვის"
 }

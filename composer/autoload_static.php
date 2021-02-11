@@ -11,10 +11,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
-        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
-        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
+        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
+        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '023d27dca8066ef29e6739335ea73bad' => __DIR__ . '/..' . '/symfony/polyfill-php70/bootstrap.php',
         '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
@@ -116,9 +116,11 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
             'GetOptionKit\\' => 13,
             'Geocoder\\Provider\\Nominatim\\' => 28,
             'Geocoder\\Provider\\MapQuest\\' => 27,
+            'Geocoder\\Provider\\Here\\' => 23,
             'Geocoder\\Provider\\GoogleMaps\\' => 29,
             'Geocoder\\Provider\\FreeGeoIp\\' => 28,
             'Geocoder\\Provider\\DataTable\\' => 28,
+            'Geocoder\\Provider\\Addok\\' => 24,
             'Geocoder\\Http\\' => 14,
             'Geocoder\\' => 9,
             'GeoIp2\\' => 7,
@@ -351,6 +353,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         array (
             0 => __DIR__ . '/..' . '/geocoder-php/mapquest-provider',
         ),
+        'Geocoder\\Provider\\Here\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geocoder-php/here-provider',
+        ),
         'Geocoder\\Provider\\GoogleMaps\\' => 
         array (
             0 => __DIR__ . '/..' . '/geocoder-php/google-maps-provider',
@@ -362,6 +368,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'Geocoder\\Provider\\DataTable\\' => 
         array (
             0 => __DIR__ . '/..' . '/wikimedia/civicrm-data-table-provider',
+        ),
+        'Geocoder\\Provider\\Addok\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geo6/geocoder-php-addok-provider',
         ),
         'Geocoder\\Http\\' => 
         array (
@@ -475,6 +485,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'AdyenGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_resultswitcher.body.php',
         'AdyenHostedSignature' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/AdyenHostedSignature.php',
         'AdyenMethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/AdyenMethodCodec.php',
+        'AdyenSubmethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/AdyenSubmethodCodec.php',
         'AmazonAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon.adapter.php',
         'AmazonBillingApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon.api.php',
         'AmazonGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon_gateway.body.php',
@@ -515,9 +526,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'DonorLanguage' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorLanguage.php',
         'DonorLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorLocale.php',
         'DrupalFinder\\DrupalFinder' => __DIR__ . '/..' . '/webflo/drupal-finder/src/DrupalFinder.php',
-        'DummyFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/DummyFiscalNumber.php',
         'EasyPeasyICS' => __DIR__ . '/..' . '/phpmailer/phpmailer/extras/EasyPeasyICS.php',
+        'EmployerSearchAPI' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/employerSearch.api.php',
         'EncodingMangler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EncodingMangler.php',
+        'EndowmentHooks' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EndowmentHooks.php',
         'Error' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/Error.php',
         'ErrorState' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ErrorState.php',
         'FallbackLogPrefixer' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/FallbackLogPrefixer.php',
@@ -563,8 +575,6 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'IngenicoPaymentSubmethod' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/IngenicoPaymentSubmethod.php',
         'IngenicoReturntoHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoReturntoHelper.php',
         'IsoDate' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/IsoDate.php',
-        'LCRun3' => __DIR__ . '/..' . '/zordius/lightncandy/src/lightncandy.php',
-        'LightnCandy' => __DIR__ . '/..' . '/zordius/lightncandy/src/lightncandy.php',
         'LocalClusterPsr6Cache' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LocalClusterPsr6Cache.php',
         'LogPrefixProvider' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LogPrefixProvider.php',
         'MessageUtils' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/MessageUtils.php',
@@ -588,6 +598,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         'PaypalLegacyGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/paypal_legacy_gateway.body.php',
         'PaypalLegacyLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/legacy/PaypalLegacyLocale.php',
         'PaypalRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/scripts/refund.php',
+        'PlaceholderFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/PlaceholderFiscalNumber.php',
         'RecurringConversion' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.php',
         'RecurringConversionApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.api.php',
         'ResponseProcessingException' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',

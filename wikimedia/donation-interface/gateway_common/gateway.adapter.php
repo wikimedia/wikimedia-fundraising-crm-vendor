@@ -772,7 +772,8 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 			if ( array_key_exists( $transaction, $this->transactions ) && is_array( $this->transactions[$transaction] ) &&
 				array_key_exists( 'values', $this->transactions[$transaction] ) &&
 				array_key_exists( $gateway_field_name, $this->transactions[$transaction]['values'] ) ) {
-				return $this->transactions[$transaction]['values'][$gateway_field_name];
+				$value = $this->transactions[$transaction]['values'][$gateway_field_name];
+				return $this->trimFieldToConstraints( $value, $gateway_field_name );
 			}
 		}
 
@@ -1065,7 +1066,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * @return PaymentTransactionResponse
 	 * @throws UnexpectedValueException
 	 */
-	final private function do_transaction_internal( $transaction, &$retryVars = null ) {
+	private function do_transaction_internal( $transaction, &$retryVars = null ) {
 		$this->debugarray[] = __FUNCTION__ . " is doing a $transaction.";
 
 		// reset, in case this isn't our first time.
@@ -1355,7 +1356,8 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * pieces of default data particular to the gateway. It will be up to
 	 * the child class to poke the data through to the data object
 	 * (probably with $this->addRequestData()).
-	 * DO NOT set default payment information here (or anywhere, really).
+	 * DO NOT set default payment informati
+	 * on here (or anywhere, really).
 	 * That would be naughty.
 	 * @param array $options associative array of values as given to the
 	 *  GateWayType constructor.
@@ -1606,6 +1608,46 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	public function processDonorReturn( $requestValues ) {
 		$this->finalizeInternalStatus( FinalStatus::COMPLETE );
 		return PaymentResult::newSuccess();
+	}
+
+	/**
+	 * @param string $stringToCheck
+	 * @return int|mixed
+	 */
+	public function calculateKeyMashScore( $stringToCheck ) {
+		$letters = str_split( strtolower( $stringToCheck ) );
+		$rules = $this->getGlobal( 'NameFilterRules' );
+		$score = 0;
+
+		foreach ( $rules as $rule ) {
+			$keyMapA = $rule['KeyMapA'];
+			$keyMapB = $rule['KeyMapB'];
+
+			$gibberishWeight = $rule['GibberishWeight'];
+
+			$minimumLength = $rule['MinimumLength'];
+
+			$failScore = $rule['Score'];
+
+			$points = 0;
+
+			if ( is_array( $letters ) && !empty( $letters ) && count( $letters ) > $minimumLength ) {
+				foreach ( $letters as $letter ) {
+					// For each char in zone A add a point, zone B subtract.
+					if ( in_array( $letter, $keyMapA ) ) {
+						$points++;
+					}
+					if ( in_array( $letter, $keyMapB ) ) {
+						$points--;
+					}
+				}
+
+				if ( abs( $points ) / count( $letters ) >= $gibberishWeight ) {
+					$score += $failScore;
+				}
+			}
+		}
+		return $score;
 	}
 
 	/**
@@ -1860,7 +1902,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
-	 * Saves a stomp frame to the configured server and queue, based on the
+	 * Sends a queue message to the configured server and queue, based on the
 	 * outcome of our current transaction.
 	 * The big tricky thing here, is that we DO NOT SET a FinalStatus,
 	 * unless we have just learned what happened to a donation in progress,
@@ -1872,7 +1914,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * Probably called in postProcessDonation(), which is itself most likely to
 	 * be called through executeFunctionIfExists, later on in do_transaction.
 	 */
-	protected function doStompTransaction() {
+	protected function doQueueTransaction() {
 		$status = $this->getFinalStatus();
 		switch ( $status ) {
 			case FinalStatus::COMPLETE:
@@ -2069,26 +2111,36 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 */
 	public function formatStagedData() {
 		foreach ( $this->staged_data as $field => $value ) {
-			// Trim all values if they are a string
-			$value = is_string( $value ) ? trim( $value ) : $value;
+			// Note: This is the very last resort. This should already have been dealt with thoroughly in staging.
+			$this->staged_data[ $field ] = $this->trimFieldToConstraints( $value, $field );
+		}
+	}
 
-			if ( isset( $this->dataConstraints[ $field ] ) && is_string( $value ) ) {
-				// Truncate the field if it has a length specified
-				if ( isset( $this->dataConstraints[ $field ]['length'] ) ) {
-					$length = (int)$this->dataConstraints[ $field ]['length'];
-				} else {
-					$length = false;
-				}
+	/**
+	 * Trims a single field according to length constraints in data_constraints.yaml
+	 *
+	 * @param mixed $value
+	 * @param string $field the name of the field specified in data_constraints
+	 * @return mixed|string
+	 */
+	protected function trimFieldToConstraints( $value, $field ) {
+		// Trim all values if they are a string
+		$value = is_string( $value ) ? trim( $value ) : $value;
 
-				if ( !empty( $length ) && !empty( $value ) ) {
-					// Note: This is the very last resort. This should already have been dealt with thoroughly in staging.
-					$value = mb_substr( $value, 0, $length, 'UTF-8' );
-				}
-
+		if ( isset( $this->dataConstraints[$field] ) && is_string( $value ) ) {
+			// Truncate the field if it has a length specified
+			if ( isset( $this->dataConstraints[$field]['length'] ) ) {
+				$length = (int)$this->dataConstraints[$field]['length'];
+			} else {
+				$length = false;
 			}
 
-			$this->staged_data[ $field ] = $value;
+			if ( !empty( $length ) && !empty( $value ) ) {
+				$value = mb_substr( $value, 0, $length, 'UTF-8' );
+			}
+
 		}
+		return $value;
 	}
 
 	/**
@@ -2385,8 +2437,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 
 	/**
 	 * Runs all the post-process logic that has been enabled and configured in
-	 * donationdata.php and/or LocalSettings.php, including the ActiveMQ/Stomp
-	 * queue message.
+	 * donationdata.php and/or LocalSettings.php, including the queue message.
 	 * This function is most likely to be called through
 	 * executeFunctionIfExists, later on in do_transaction.
 	 */
@@ -2395,7 +2446,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		Gateway_Extras_ConversionLog::onPostProcess( $this );
 
 		try {
-			$this->doStompTransaction();
+			$this->doQueueTransaction();
 		}
 		catch ( Exception $ex ) {
 			$this->logger->alert( "Failure queueing final status message: {$ex->getMessage()}" );
@@ -2761,39 +2812,8 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$fName = $this->getData_Unstaged_Escaped( 'first_name' );
 		$lName = $this->getData_Unstaged_Escaped( 'last_name' );
 
-		$nameArray = str_split( strtolower( $fName . $lName ) );
-		$rules = $this->getGlobal( 'NameFilterRules' );
-		$score = 0;
-
-		foreach ( $rules as $rule ) {
-			$keyMapA = $rule['KeyMapA'];
-			$keyMapB = $rule['KeyMapB'];
-
-			$gibberishWeight = $rule['GibberishWeight'];
-
-			$minimumLength = $rule['MinimumLength'];
-
-			$failScore = $rule['Score'];
-
-			$points = 0;
-
-			if ( is_array( $nameArray ) && !empty( $nameArray ) && count( $nameArray ) > $minimumLength ) {
-				foreach ( $nameArray as $letter ) {
-					// For each char in zone A add a point, zone B subtract.
-					if ( in_array( $letter, $keyMapA ) ) {
-						$points++;
-					}
-					if ( in_array( $letter, $keyMapB ) ) {
-						$points--;
-					}
-				}
-
-				if ( abs( $points ) / count( $nameArray ) >= $gibberishWeight ) {
-					$score += $failScore;
-				}
-			}
-		}
-		return $score;
+		$fullName = $fName . $lName;
+		return $this->calculateKeyMashScore( $fullName );
 	}
 
 	/**
@@ -3969,15 +3989,37 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	}
 
 	/**
+	 * Check if currency is in the list for $wgDonationInterfaceMonthlyConvertCountries
+	 * @return bool
+	 */
+	protected function isMonthlyConvertCountry() {
+		$country = $this->getData_Unstaged_Escaped( 'country' );
+		$monthlyConvertCountries = $this->getGlobal( 'MonthlyConvertCountries' );
+		return in_array( $country, $monthlyConvertCountries );
+	}
+
+	/**
 	 * @return bool true when we want to ask a one-time donor for a recurring
 	 *  donation after their one-time donation is complete.
+	 *
+	 * @see $wgDonationInterfaceMonthlyConvertCountries
 	 */
 	public function showMonthlyConvert() {
 		if ( !$this instanceof RecurringConversion ) {
 			return false;
 		}
+		// FIXME:: make a hook, move this check to EndowmentHooks
+		$medium = $this->getData_Unstaged_Escaped( 'utm_medium' );
+		// never show for endowment
+		if ( $medium == "endowment" ) {
+			return false;
+		}
 		$variant = $this->getData_Unstaged_Escaped( 'variant' );
+		$isMonthlyConvert = strstr( $variant, 'monthlyConvert' ) !== false;
 		$isRecurring = $this->getData_Unstaged_Escaped( 'recurring' );
-		return !$isRecurring && ( strstr( $variant, 'monthlyConvert' ) !== false );
+		if ( !$isMonthlyConvert && $this->isMonthlyConvertCountry() ) {
+			$isMonthlyConvert = true;
+		}
+		return !$isRecurring && $isMonthlyConvert;
 	}
 }

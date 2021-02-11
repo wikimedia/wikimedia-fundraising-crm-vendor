@@ -22,16 +22,14 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	}
 
 	public function execute( $par ) {
-		global $wgContributionTrackingFundraiserMaintenance,
-			$wgContributionTrackingFundraiserMaintenanceUnsched,
+		global $wgDonationInterfaceFundraiserMaintenance,
 			$wgDonationInterfaceEnableFormChooser;
 
 		if ( !$wgDonationInterfaceEnableFormChooser ) {
 			throw new BadTitleError();
 		}
 
-		if ( $wgContributionTrackingFundraiserMaintenance
-			|| $wgContributionTrackingFundraiserMaintenanceUnsched ) {
+		if ( $wgDonationInterfaceFundraiserMaintenance ) {
 			$this->getOutput()->redirect( Title::newFromText( 'Special:FundraiserMaintenance' )->getFullURL(), '302' );
 			return;
 		}
@@ -68,17 +66,6 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 		$paymentSubMethod = $getValOrNull( 'payment_submethod' );
 		$gateway = $getValOrNull( 'gateway' );
 		$recurring = $this->getRequest()->getVal( 'recurring', false );
-
-		// FIXME: This is clearly going to go away before we deploy this bizniss.
-		$testNewGetAll = $this->getRequest()->getVal( 'testGetAll', false );
-		if ( $testNewGetAll ) {
-			$forms = self::getAllValidForms( $country, $currency, $paymentMethod, $paymentSubMethod, $recurring, $gateway );
-			echo "<pre>" . print_r( $forms, true ) . "</pre>";
-			$form = self::pickOneForm( $forms, $currency, $country );
-			echo "<pre>I choose you, " . print_r( $form, true ) . "!</pre>";
-			echo "<pre>Trying: " . ucfirst( $forms[$form]['gateway'] ) . "Gateway</pre>";
-			die();
-		}
 
 		// FIXME: here we should check for ffname, and if that's a valid form skip the choosing
 		$form = self::getOneValidForm( $country, $currency, $paymentMethod, $paymentSubMethod, $recurring, $gateway );
@@ -215,7 +202,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	 * Gets all the valid forms that match the provided parameters.
 	 * These parameters should exactly match the params in getOneValidForm.
 	 * TODO: Should be passed as a hash or object.
-	 * $wgDonationInterfaceAllowedHtmlForms Contains all whitelisted forms and meta data
+	 * $wgDonationInterfaceAllowedHtmlForms Contains all enabled forms and meta data
 	 * @param string|null $country Optional country code filter
 	 * @param string|null $currency Optional currency code filter
 	 * @param string|null $payment_method Optional payment method filter
@@ -355,7 +342,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	 * Gets the array of settings and capability definitions for the form
 	 * specified in $form_key.
 	 * $wgDonationInterfaceAllowedHtmlForms is the global array
-	 * of whitelisted (enabled) forms.
+	 * of enabled forms.
 	 * @param string $form_key The name of the form (ffname) we're looking
 	 * for. Should map to a first-level key in
 	 * $wgDonationInterfaceAllowedHtmlForms.
@@ -626,7 +613,7 @@ class GatewayFormChooser extends UnlistedSpecialPage {
 	/**
 	 * Get the best defined error form for all your error form needs!
 	 * ...based on gateway, method, and optional submethod.
-	 * $wgDonationInterfaceAllowedHtmlForms Contains all whitelisted forms and meta data
+	 * $wgDonationInterfaceAllowedHtmlForms Contains all enabled forms and meta data
 	 * @param string $gateway The gateway used for the payment that failed
 	 * @param string $payment_method The code for the payment method that failed
 	 * @param string|null $payment_status Specific status code for donation, from @see FinalStatus

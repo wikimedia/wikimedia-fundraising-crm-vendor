@@ -20,14 +20,16 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 
 	protected $partialUrl;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 		$this->setMwGlobals( [
 			'wgIngenicoGatewayHostedFormVariants' => [
 				'iframe' => 105,
 				'redirect' => 102,
-			]
+			],
+			'wgIngenicoGatewayEnabled' => true
 		] );
+
 		$ctx = TestingContext::get();
 		$globalConfig = $ctx->getGlobalConfiguration();
 
@@ -52,6 +54,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['payment_submethod'] = 'visa';
 		$init['gateway'] = 'ingenico';
 		$init['action'] = 'donate';
+		$init['wmf_token'] = $this->saltedToken;
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'createHostedPayment' )->with(
@@ -68,7 +71,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 						'showResultPage' => 'false',
 						'variant' => 105
 					];
-					$this->assertArraySubset( $hcsi, $actual['hostedCheckoutSpecificInput'] );
+					$this->assertArraySubmapSame( $hcsi, $actual['hostedCheckoutSpecificInput'] );
 					$this->assertRegExp(
 						'/Special:IngenicoGatewayResult/',
 						$actual['hostedCheckoutSpecificInput']['returnUrl']
@@ -76,7 +79,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 					$order = [
 						'amountOfMoney' => [
 							'currencyCode' => 'USD',
-							'amount' => 155
+							'amount' => 155.0
 						],
 						'customer' => [
 							'billingAddress' => [
@@ -98,7 +101,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 							]
 						]
 					];
-					$this->assertArraySubset( $order, $actual['order'] );
+					$this->assertArraySubmapSame( $order, $actual['order'] );
 					$this->assertTrue( is_numeric( $actual['order']['references']['merchantReference'] ) );
 					return true;
 				} )
@@ -116,7 +119,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 				$this->equalTo( $this->partialUrl )
 			)->willReturn( 'https://wmf-pay.' . $this->partialUrl );
 
-		$apiResult = $this->doApiRequest( $init );
+		$apiResult = $this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 		$result = $apiResult[0]['result'];
 
 		$this->assertEquals(
@@ -150,7 +153,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 			'gateway_session_id' => '8915-28e5b79c889641c8ba770f1ba576c1fe',
 			'gateway_txn_id' => false,
 		];
-		$this->assertArraySubset( $expected, $message );
+		$this->assertArraySubmapSame( $expected, $message );
 	}
 
 	public function testStageLocale() {
@@ -161,6 +164,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['gateway'] = 'ingenico';
 		$init['action'] = 'donate';
 		$init['language'] = 'zh-ha';
+		$init['wmf_token'] = $this->saltedToken;
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'createHostedPayment' )->with(
@@ -177,7 +181,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 						'showResultPage' => 'false',
 						'variant' => 105
 					];
-					$this->assertArraySubset( $hcsi, $actual['hostedCheckoutSpecificInput'] );
+					$this->assertArraySubmapSame( $hcsi, $actual['hostedCheckoutSpecificInput'] );
 					return true;
 				} )
 			)
@@ -194,7 +198,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 				$this->equalTo( $this->partialUrl )
 			)->willReturn( 'https://wmf-pay.' . $this->partialUrl );
 
-		$this->doApiRequest( $init );
+		$this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 	}
 
 	/**
@@ -209,6 +213,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['action'] = 'donate';
 		$init['first_name'] = 'ФёдорÐÐÐ';
 		$init['last_name'] = 'Достоевский';
+		$init['wmf_token'] = $this->saltedToken;
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'createHostedPayment' )->with(
@@ -216,7 +221,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 					$order = [
 						'amountOfMoney' => [
 							'currencyCode' => 'USD',
-							'amount' => 155
+							'amount' => 155.0
 						],
 						'customer' => [
 							'billingAddress' => [
@@ -238,7 +243,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 							]
 						]
 					];
-					$this->assertArraySubset( $order, $actual['order'] );
+					$this->assertArraySubmapSame( $order, $actual['order'] );
 					return true;
 				} )
 			)
@@ -254,7 +259,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 				$this->equalTo( $this->partialUrl )
 			)->willReturn( 'https://wmf-pay.' . $this->partialUrl );
 
-		$this->doApiRequest( $init );
+		$this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 	}
 
 	/**
@@ -270,19 +275,18 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['gateway'] = 'ingenico';
 		$init['action'] = 'donate';
 		$init['variant'] = 'monthlyConvert123';
+		$init['wmf_token'] = $this->saltedToken;
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'createHostedPayment' )->with(
 				$this->callback( function ( $actual ) use ( $init ) {
-					$hcsi = [
-						'isRecurring' => true
-					];
-					$this->assertArraySubset( $hcsi, $actual['hostedCheckoutSpecificInput'] );
+					$this->assertFalse(
+						array_key_exists( 'isRecurring', $actual['hostedCheckoutSpecificInput'] )
+					);
 					$cpmsi = [
 						'tokenize' => true,
-						'recurringPaymentSequenceIndicator' => 'first'
 					];
-					$this->assertArraySubset( $cpmsi, $actual['cardPaymentMethodSpecificInput'] );
+					$this->assertArraySubmapSame( $cpmsi, $actual['cardPaymentMethodSpecificInput'] );
 					return true;
 				} )
 			)
@@ -298,7 +302,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 				$this->equalTo( $this->partialUrl )
 			)->willReturn( 'https://wmf-pay.' . $this->partialUrl );
 
-		$this->doApiRequest( $init );
+		$this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 	}
 
 	public function testSubmitFailInitialFilters() {
@@ -309,11 +313,12 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['payment_submethod'] = 'visa';
 		$init['gateway'] = 'ingenico';
 		$init['action'] = 'donate';
+		$init['wmf_token'] = $this->saltedToken;
 		// Should not make any API calls
 		$this->hostedCheckoutProvider->expects( $this->never() )
 			->method( $this->anything() );
 
-		$apiResult = $this->doApiRequest( $init );
+		$apiResult = $this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 		$result = $apiResult[0]['result'];
 		$this->assertNotEmpty( $result['errors'], 'Should have returned an error' );
 	}
@@ -340,6 +345,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['gateway'] = 'ingenico';
 		$init['action'] = 'donate';
 		$init['variant'] = 'optional';
+		$init['wmf_token'] = $this->saltedToken;
 
 		// optional field 'last_name' present
 		$init['first_name'] = 'Opty';
@@ -360,7 +366,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 			->willReturn( 'https://wmf-pay.' . $this->partialUrl );
 
 		// make request WITH optional field 'last_name' present
-		$this->doApiRequest( $init );
+		$this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 
 		// check optional field present when supplied
@@ -369,7 +375,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		// unset optional field 'last_name' and repeat request.
 		$init['first_name'] = 'OptyPrince';
 		unset( $init['last_name'] );
-		$this->doApiRequest( $init, [] );
+		$this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 
 		// check optional field not present
@@ -392,6 +398,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$init['gateway'] = 'ingenico';
 		$init['action'] = 'donate';
 		$init['variant'] = 'employer';
+		$init['wmf_token'] = $this->saltedToken;
 
 		// optional field 'last_name' present
 		$init['employer'] = 'wikimedia foundation';
@@ -410,7 +417,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 			->method( 'getHostedPaymentUrl' )
 			->willReturn( 'https://wmf-pay.' . $this->partialUrl );
 
-		$this->doApiRequest( $init );
+		$this->doApiRequest( $init, [ 'ingenicoEditToken' => $this->clearToken ] );
 		$message = QueueWrapper::getQueue( 'pending' )->pop();
 		$this->assertEquals( 'wikimedia foundation', $message['employer'] );
 	}
@@ -429,13 +436,15 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$donorTestData['recurring_payment_token'] = 'T1234-5432-9876';
 		$donorTestData['gateway_txn_id'] = 'TXN-999-1234';
 		$session = [
-			'Donor' => $donorTestData
+			'Donor' => $donorTestData,
+			'ingenicoEditToken' => $this->clearToken,
 		];
 
 		$apiParams = [
 			'amount' => '1.22',
 			'action' => 'di_recurring_convert',
-			'gateway' => 'ingenico'
+			'gateway' => 'ingenico',
+			'wmf_token' => $this->saltedToken,
 		];
 
 		$apiResult = $this->doApiRequest( $apiParams, $session );
@@ -455,7 +464,7 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		unset( $expected['processor_form'] );
 		unset( $expected['variant'] );
 		$expected['gross'] = '1.22';
-		$this->assertArraySubset( $expected, $message );
+		$this->assertArraySubmapSame( $expected, $message );
 	}
 
 	/**
@@ -470,13 +479,15 @@ class IngenicoApiTest extends DonationInterfaceApiTestCase {
 		$donorTestData['gateway'] = 'ingenico';
 		$donorTestData['variant'] = 'monthlyConvert';
 		$session = [
-			'Donor' => $donorTestData
+			'Donor' => $donorTestData,
+			'ingenicoEditToken' => $this->clearToken,
 		];
 
 		$apiParams = [
 			'amount' => '1.22',
 			'action' => 'di_recurring_convert',
-			'gateway' => 'ingenico'
+			'gateway' => 'ingenico',
+			'wmf_token' => $this->saltedToken,
 		];
 
 		$apiResult = $this->doApiRequest( $apiParams, $session );

@@ -7,21 +7,21 @@
 			"Andriykopanytsia",
 			"Base",
 			"Dim Grits",
+			"Gzhegozh",
 			"HomoSuperior",
+			"Jrobell",
 			"Jsoby",
 			"Microcell",
+			"Movses",
 			"NickK",
 			"Olvin",
+			"Piramidion",
 			"Prima klasy4na",
 			"Sodmy",
+			"Vlad5250",
 			"Ата",
-			"Тест",
-			"Jrobell",
-			"Piramidion",
 			"Максим Підліснюк",
-			"Movses",
-			"Gzhegozh",
-			"Vlad5250"
+			"Тест"
 		]
 	},
 	"donate_interface": "Підтримайте Вікімедіа",
@@ -333,7 +333,7 @@
 	"donate_interface-please-donate-today": "Будь ласка, зробіть пожертву вже сьогодні",
 	"donate_interface-donate-now": "Пожертвувати зараз",
 	"donate_interface-please-select-gift-amount": "Будь ласка, виберіть суму пожертви",
-	"donate_interface-select-gift-amount": "Вибор суми пожертви",
+	"donate_interface-select-gift-amount": "Вибір суми пожертви",
 	"donate_interface-select-amount": "Виберіть суму",
 	"donate_interface-make-a-donation": "Зробити пожертву",
 	"donate_interface-enter-your-amount": "Або введіть вашу суму в поле вище",
@@ -439,5 +439,7 @@
 	"donate_interface-monthly-convert-action-button": "Жертвувати щомісячно",
 	"donate_interface-monthly-convert-error": "Ваша одноразова пожертва пройшла успішно, але нам не вдалося започаткувати повторювану пожертву.",
 	"donate_interface-monthly-convert-yes-button-variant-006": "Так, я хочу допомогти",
-	"donate_interface-monthly-convert-no-button-variant-006": "Ні, дякую"
+	"donate_interface-monthly-convert-no-button-variant-006": "Ні, дякую",
+	"donate_interface-fundraiser-maintenance-header": "Тимчасово відключений для технічного обслуговування",
+	"donate_interface-fundraiser-maintenance-notice": "Ми зараз виконуємо заплановане обслуговування і не в змозі прийняти пожертвувань. Будь ласка, спробуйте ще раз трохи згодом. Якщо у Вас є якісь запитання, будь ласка, напишіть на $1 ."
 }

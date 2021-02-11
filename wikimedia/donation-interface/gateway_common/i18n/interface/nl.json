@@ -1,28 +1,28 @@
 {
 	"@metadata": {
 		"authors": [
+			"Edoderoo",
+			"Esketti",
+			"Festina90",
+			"Goefie",
+			"Jrobell",
 			"Jsoby",
+			"Kippenvlees1",
+			"Mainframe98",
+			"Mar(c)",
 			"McDutchie",
 			"Microcell",
 			"Mihxil",
+			"Mirolith",
 			"Pcoombe",
 			"Romaine",
 			"SPQRobin",
 			"Saruman",
 			"Servien",
 			"Siebrand",
-			"Tjcool007",
-			"User555",
 			"Sjoerddebruin",
-			"Jrobell",
-			"Mirolith",
-			"Esketti",
-			"Edoderoo",
-			"Mainframe98",
-			"Festina90",
-			"Mar(c)",
-			"Goefie",
-			"Kippenvlees1"
+			"Tjcool007",
+			"User555"
 		]
 	},
 	"donate_interface": "Steun Wikimedia",
@@ -372,6 +372,7 @@
 	"donate_interface-email-unsub-fail": "Er is een fout opgetreden tijdens bij het verwerken van uw verzoek. Gelieve contact op te nemen met <$1>.",
 	"donate_interface-email-unsub-confirm": "Weet u zeker dat u het e-mailadres <b>$1</b> wilt uitschrijven?",
 	"donate_interface-email-unsub-warning": "Hierdoor ontvangt u niet langer e-mails die Wikimedia Foundation aan u als donateur verzendt. Als dit e-mailadres gekoppeld is aan een account van een van onze projecten, kan u echter wel nog e-mails op dit adres ontvangen. Als u vragen hebt, neem dan contact op met <a href=\"mailto:$1\">$1</a>.",
+	"donate_interface-email-explain": "We zullen u een ontvangstbewijs mailen om uw donatie te bevestigen.",
 	"donate_interface-email-optin-fail": "Er trad een fout op bij het verwerken van uw aanvraag. Neem contact op met <a href=\"mailto:$1\">$1</a> of  <a href=\"$2\">klik hier om het opnieuw te proberen</a>.",
 	"donate_interface-faqs": "Veelgestelde vragen",
 	"donate_interface-tax-info": "Fiscale aftrekbaarheid",
@@ -400,5 +401,7 @@
 	"donate_interface-emailprefs-thank-you-title": "Bedankt",
 	"donate_interface-monthly-convert-change-amount": "Ja, maar met een ander hoeveelheid",
 	"donate_interface-monthly-convert-action-button": "Maandelijks doneren",
-	"donate_interface-monthly-convert-no-button-variant-006": "Nee, bedankt"
+	"donate_interface-monthly-convert-no-button-variant-006": "Nee, bedankt",
+	"donate_interface-fundraiser-maintenance-header": "Tijdelijk niet beschikbaar wegens onderhoudswerkzaamheden",
+	"donate_interface-fundraiser-maintenance-notice": "Op het moment wordt onderhoud uitgevoerd en kunnen we helaas geen donaties verwerken. Probeer het snel opnieuw. Stuur een e-mail naar $1 als u vragen hebt."
 }

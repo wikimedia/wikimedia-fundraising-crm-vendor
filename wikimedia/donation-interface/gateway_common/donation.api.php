@@ -63,7 +63,7 @@ class DonationApi extends DonationApiBase {
 			'processor_form' => $this->defineParam( false ),
 			'language' => $this->defineParam( false ),
 			'order_id' => $this->defineParam( false ),
-			'wmf_token' => $this->defineParam( false ),
+			'wmf_token' => $this->defineParam( true ),
 			'utm_source' => $this->defineParam( false ),
 			'utm_campaign' => $this->defineParam( false ),
 			'utm_medium' => $this->defineParam( false ),
@@ -72,6 +72,7 @@ class DonationApi extends DonationApiBase {
 			'variant' => $this->defineParam( false ),
 			'opt_in' => $this->defineParam( false ),
 			'employer' => $this->defineParam( false ),
+			'employer_id' => $this->defineParam( false ),
 		];
 	}
 

@@ -1,16 +1,16 @@
 {
 	"@metadata": {
 		"authors": [
-			"Jsoby",
-			"McDutchie",
-			"Toliño",
-			"Pcoombe",
 			"Agremon",
-			"Elisardojm",
+			"ArenaL5",
 			"Banjo",
+			"Elisardojm",
+			"Iváns",
+			"Jsoby",
 			"Maria zaos",
-			"Navhy",
-			"Iváns"
+			"McDutchie",
+			"Pcoombe",
+			"Toliño"
 		]
 	},
 	"donate_interface": "Apoia a Wikimedia",
@@ -388,10 +388,12 @@
 	"donate_interface-monthlybox-yes": "Abofé, facela mensualmente",
 	"donate_interface-monthlybox-no": "NON, facer unha doazón única",
 	"donate_interface-monthlybox-bottom": "A túa doazón procesarase de xeito seguro.",
-	"donate_interface-monthly-cancel": "Para as doazóns recorrentes, a Fundación Wikimedia cargará mensualmente os pagos fixos a partir do aniversario mensual da primeira doazón, ata que decidas notificar a suspensión das doazóns. As doazóns feitas os días 29, 30 ou 31 efectuaranse no último día do mes para os meses máis curtos, aproximándose todo o posible á data orixinal. Para resolver calquera dúbida, envía unha mensaxe ao enderezo $1.",
+	"donate_interface-monthly-cancel": "Para os doantes recorrentes, a Fundación Wikimedia cargará mensualmente os pagos fixos en cada aniversario mensual da primeira doazón, ata que decidas notificarnos para suspenderes as doazóns. As doazóns iniciadas nos días 29, 30 ou 31 efectuaranse no último día do mes para os meses máis curtos, aproximándose todo o posible á data orixinal. Para resolver calquera dúbida, envía unha mensaxe ao enderezo $1.",
 	"donate_interface-onetime": "Facer unha doazón única",
 	"donate_interface-monthly-short": "Mensual",
 	"donate_interface-onetime-short": "Única",
 	"donate_interface-error-http-403": "Non ten permiso para acceder a esta páxina.",
-	"donate_interface-statement": "Wikimedia $1"
+	"donate_interface-statement": "Wikimedia $1",
+	"donate_interface-fundraiser-maintenance-header": "Fóra de servizo temporalmente por mantemento",
+	"donate_interface-fundraiser-maintenance-notice": "Estamos levando a cabo tarefas programadas de mantemento e non podemos aceptar doazóns. Inténtao de novo máis tarde. Se tes algunha pregunta, envía un correo ao enderezo $1."
 }
