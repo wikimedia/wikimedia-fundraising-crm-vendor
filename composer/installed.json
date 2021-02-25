@@ -2756,17 +2756,17 @@
     },
     {
         "name": "phpmailer/phpmailer",
-        "version": "v5.2.27",
-        "version_normalized": "5.2.27.0",
+        "version": "v5.2.28",
+        "version_normalized": "5.2.28.0",
         "source": {
             "type": "git",
             "url": "https://github.com/PHPMailer/PHPMailer.git",
-            "reference": "dde1db116511aa4956389d75546c5be4c2beb2a6"
+            "reference": "acba50393dd03da69a50226c139722af8b153b11"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/dde1db116511aa4956389d75546c5be4c2beb2a6",
-            "reference": "dde1db116511aa4956389d75546c5be4c2beb2a6",
+            "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/acba50393dd03da69a50226c139722af8b153b11",
+            "reference": "acba50393dd03da69a50226c139722af8b153b11",
             "shasum": ""
         },
         "require": {
@@ -2796,7 +2796,7 @@
         "suggest": {
             "league/oauth2-google": "Needed for Google XOAUTH2 authentication"
         },
-        "time": "2018-11-15T22:32:31+00:00",
+        "time": "2020-03-19T14:29:37+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -2816,12 +2816,12 @@
         ],
         "authors": [
             {
-                "name": "Jim Jagielski",
-                "email": "jimjag@gmail.com"
-            },
-            {
                 "name": "Marcus Bointon",
                 "email": "phpmailer@synchromedia.co.uk"
+            },
+            {
+                "name": "Jim Jagielski",
+                "email": "jimjag@gmail.com"
             },
             {
                 "name": "Andy Prevost",
@@ -2831,7 +2831,21 @@
                 "name": "Brent R. Matzelle"
             }
         ],
-        "description": "PHPMailer is a full-featured email creation and transfer class for PHP"
+        "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
+        "funding": [
+            {
+                "url": "https://marcus.bointon.com/donations/",
+                "type": "custom"
+            },
+            {
+                "url": "https://github.com/Synchro",
+                "type": "github"
+            },
+            {
+                "url": "https://www.patreon.com/marcusbointon",
+                "type": "patreon"
+            }
+        ]
     },
     {
         "name": "phpseclib/phpseclib",
@@ -4624,12 +4638,12 @@
     },
     {
         "name": "wikimedia/smash-pig",
-        "version": "v0.6.6",
-        "version_normalized": "0.6.6.0",
+        "version": "v0.6.7",
+        "version_normalized": "0.6.7.0",
         "source": {
             "type": "git",
             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-            "reference": "168ce6de469bebb3bdf89403eec97398dcd08493"
+            "reference": "96a049efc4f0d3e64b0563d6ffde77c6bff9b4a7"
         },
         "require": {
             "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -4639,12 +4653,12 @@
             "ext-json": "*",
             "ext-pdo": "*",
             "php": ">=7.0",
-            "phpmailer/phpmailer": "^5.2",
+            "phpmailer/phpmailer": "^5.2.28",
             "predis/predis": "^1.1",
             "psr/cache": "^1.0",
             "psr/log": "^1.0",
             "symfony/event-dispatcher": "^2.1",
-            "symfony/http-foundation": "^2.1",
+            "symfony/http-foundation": "^2.8.2",
             "symfony/yaml": "^3"
         },
         "require-dev": {
@@ -4653,7 +4667,7 @@
             "mediawiki/mediawiki-codesniffer": "^31.0",
             "phpunit/phpunit": "^6"
         },
-        "time": "2021-01-13T20:26:24+00:00",
+        "time": "2021-02-23T21:07:53+00:00",
         "type": "library",
         "installation-source": "source",
         "autoload": {
