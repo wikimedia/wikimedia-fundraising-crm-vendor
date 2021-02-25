@@ -2831,21 +2831,7 @@
                 "name": "Brent R. Matzelle"
             }
         ],
-        "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
-        "funding": [
-            {
-                "url": "https://marcus.bointon.com/donations/",
-                "type": "custom"
-            },
-            {
-                "url": "https://github.com/Synchro",
-                "type": "github"
-            },
-            {
-                "url": "https://www.patreon.com/marcusbointon",
-                "type": "patreon"
-            }
-        ]
+        "description": "PHPMailer is a full-featured email creation and transfer class for PHP"
     },
     {
         "name": "phpseclib/phpseclib",
@@ -3570,17 +3556,17 @@
     },
     {
         "name": "symfony/http-foundation",
-        "version": "v2.8.44",
-        "version_normalized": "2.8.44.0",
+        "version": "v2.8.52",
+        "version_normalized": "2.8.52.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/http-foundation.git",
-            "reference": "10f660d43087b2198c3789bebbd587d20ec6e956"
+            "reference": "3929d9fe8148d17819ad0178c748b8d339420709"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/http-foundation/zipball/10f660d43087b2198c3789bebbd587d20ec6e956",
-            "reference": "10f660d43087b2198c3789bebbd587d20ec6e956",
+            "url": "https://api.github.com/repos/symfony/http-foundation/zipball/3929d9fe8148d17819ad0178c748b8d339420709",
+            "reference": "3929d9fe8148d17819ad0178c748b8d339420709",
             "shasum": ""
         },
         "require": {
@@ -3592,7 +3578,7 @@
         "require-dev": {
             "symfony/expression-language": "~2.4|~3.0.0"
         },
-        "time": "2018-08-01T13:47:49+00:00",
+        "time": "2019-11-12T12:34:41+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
