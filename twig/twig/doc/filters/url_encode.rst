@@ -2,16 +2,18 @@
 ==============
 
 .. versionadded:: 1.12.3
+
     Support for encoding an array as query string was added in Twig 1.12.3.
 
 .. versionadded:: 1.16.0
+
     The ``raw`` argument was removed in Twig 1.16.0. Twig now always encodes
     according to RFC 3986.
 
 The ``url_encode`` filter percent encodes a given string as URL segment
 or an array as query string:
 
-.. code-block:: jinja
+.. code-block:: twig
 
     {{ "path-seg*ment"|url_encode }}
     {# outputs "path-seg%2Ament" #}
