@@ -1,11 +1,10 @@
-<p align="center"><img width="320"src="https://cdn.rawgit.com/gabrielbull/omnimail/master/omnimail-logo.svg"></p>
+<p align="center"><img width="320"src="https://cdn.rawgit.com/omnimail/omnimail/master/omnimail-logo.svg"></p>
 
 <p align="center">
-  <a href="https://travis-ci.org/gabrielbull/omnimail"><img src="https://img.shields.io/travis/gabrielbull/omnimail.svg?style=flat-square" alt="Build Status"></a>
+  <a href="https://travis-ci.org/omnimail/omnimail"><img src="https://img.shields.io/travis/omnimail/omnimail.svg?style=flat-square" alt="Build Status"></a>
   <a href="https://styleci.io/repos/12901491"><img src="https://styleci.io/repos/12901491/shield" alt="StyleCI"></a>
-  <a href="https://scrutinizer-ci.com/g/gabrielbull/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/g/gabrielbull/omnimail.svg?style=flat-square" alt="Scrutinizer Code Quality"></a>
-  <a href="https://scrutinizer-ci.com/g/gabrielbull/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/coverage/g/gabrielbull/omnimail.svg?style=flat-square" alt="Code Coverage"></a>
-  <a href="https://codeclimate.com/github/gabrielbull/omnimail"><img src="https://img.shields.io/codeclimate/github/gabrielbull/omnimail.svg?style=flat-square" alt="Code Climate"></a>
+  <a href="https://scrutinizer-ci.com/g/omnimail/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/g/omnimail/omnimail.svg?style=flat-square" alt="Scrutinizer Code Quality"></a>
+  <a href="https://scrutinizer-ci.com/g/omnimail/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/coverage/g/omnimail/omnimail.svg?style=flat-square" alt="Code Coverage"></a>
   <a href="https://packagist.org/packages/omnimail/omnimail"><img src="https://img.shields.io/packagist/v/omnimail/omnimail.svg?style=flat-square" alt="Latest Stable Version"></a>
 </p>
 
@@ -23,6 +22,8 @@
    - [Postmark](#postmark)
    - [Sendgrid](#sendgrid)
    - [SendinBlue](#sendinblue)
+   - [SMTP](#smtp)
+   - [Gmail](#gmail)
 4. [Email](#email)
    - [To](#email-to)
    - [From](#email-from)
@@ -65,7 +66,7 @@ composer require omnimail/omnimail
 To use the AmazonSES mailer class, you will need to install the `daniel-zahariev/php-aws-ses` library using composer.
 
 ```
-composer require daniel-zahariev/php-aws-ses
+composer require "daniel-zahariev/php-aws-ses:^0.9.2"
 ```
 
 #### Usage
@@ -74,7 +75,7 @@ composer require daniel-zahariev/php-aws-ses
 use Omnimail\Email;
 use Omnimail\AmazonSES;
 
-$mailer = new AmazonSES($accessKey, $secretKey, $region, $verifyPeer, $verifyHost);
+$mailer = new AmazonSES($accessKey, $secretKey, $region, $verifyPeer, $verifyHost, $signatureVersion);
 
 $email = (new Email())
     ->addTo('example@email.com')
@@ -245,6 +246,62 @@ use Omnimail\Email;
 use Omnimail\SendinBlue;
 
 $mailer = new SendinBlue($accessKey);
+
+$email = (new Email())
+    ->addTo('example@email.com')
+    ->setFrom('example@email.com')
+    ->setSubject('Hello, world!')
+    ->setTextBody('Hello World! How are you?');
+
+$mailer->send($email);
+```
+
+<a name="smtp"></a>
+### SMTP
+
+#### Installation
+
+To use the SMTP mailer class, you will need to install the `phpmailer/phpmailer` library using composer.
+
+```
+composer require phpmailer/phpmailer
+```
+
+#### Usage
+
+```php
+use Omnimail\Email;
+use ShahariaAzam\SMTPMailer\SMTPMailer;
+
+$mailer = new SMTPMailer("SMTP HOSTNAME", "SMTP USERNAME", "SMTP PASSWORD");
+
+$email = (new Email())
+    ->addTo('example@email.com')
+    ->setFrom('example@email.com')
+    ->setSubject('Hello, world!')
+    ->setTextBody('Hello World! How are you?');
+
+$mailer->send($email);
+```
+
+<a name="gmail"></a>
+### Gmail
+
+#### Installation
+
+To use the Gmail mailer class, you will need to install the `phpmailer/phpmailer` library using composer.
+
+```
+composer require phpmailer/phpmailer
+```
+
+#### Usage
+
+```php
+use Omnimail\Email;
+use Omnimail\Gmail;
+
+$mailer = new Gmail("you@gmail.com", "password", []);
 
 $email = (new Email())
     ->addTo('example@email.com')

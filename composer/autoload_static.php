@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit713b445f683293f4a04a72f73555246e
+class ComposerStaticInitebb9913cd4370c53a0175c121ee342bb
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -273,7 +273,7 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         ),
         'Omnimail\\Silverpop\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/src',
+            0 => __DIR__ . '/../..' . '/drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/src',
             1 => __DIR__ . '/..' . '/wikimedia/omnimail-silverpop/src',
         ),
         'Omnimail\\' => 
@@ -310,8 +310,8 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
         ),
         'Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/php-http/message/src',
-            1 => __DIR__ . '/..' . '/php-http/message-factory/src',
+            0 => __DIR__ . '/..' . '/php-http/message-factory/src',
+            1 => __DIR__ . '/..' . '/php-http/message/src',
         ),
         'Http\\Discovery\\' => 
         array (
@@ -623,10 +623,10 @@ class ComposerStaticInit713b445f683293f4a04a72f73555246e
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit713b445f683293f4a04a72f73555246e::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit713b445f683293f4a04a72f73555246e::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit713b445f683293f4a04a72f73555246e::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit713b445f683293f4a04a72f73555246e::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$classMap;
 
         }, null, ClassLoader::class);
     }
