@@ -50,8 +50,8 @@
         },
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
-            "version": "dev-master",
-            "version_normalized": "dev-master",
+            "version": "2.5.0",
+            "version_normalized": "2.5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php",
@@ -4749,16 +4749,16 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.5.1",
-            "version_normalized": "2.5.1.0",
+            "version": "v2.5.2",
+            "version_normalized": "2.5.2.0",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "9bc0a1bb4e177497fcce0f02976bcf78ac2dd81a"
+                "reference": "0c8fd59a456967554e1dca78dbd300152bdbc8d3"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
-                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+                "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
                 "ext-curl": "*",
                 "ext-json": "*",
                 "geoip2/geoip2": "^2.9",
@@ -4779,7 +4779,7 @@
                 "wikimedia/remex-html": "~2.2",
                 "wikimedia/testing-access-wrapper": "~1.0"
             },
-            "time": "2021-02-11T07:38:33+00:00",
+            "time": "2021-03-17T21:30:45+00:00",
             "type": "library",
             "extra": {
                 "phan-taint-check-plugin": "2.0.2"
@@ -4862,15 +4862,15 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.6.7",
-            "version_normalized": "0.6.7.0",
+            "version": "v0.6.9",
+            "version_normalized": "0.6.9.0",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "96a049efc4f0d3e64b0563d6ffde77c6bff9b4a7"
+                "reference": "1fcd30ff0727695d4262788479bfd853b9eef831"
             },
             "require": {
-                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+                "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
                 "coderkungfu/php-queue": "^1.0",
                 "corneltek/getoptionkit": "^2.5",
                 "ext-curl": "*",
@@ -4882,16 +4882,16 @@
                 "psr/cache": "^1.0",
                 "psr/log": "^1.0",
                 "symfony/event-dispatcher": "^2.1",
-                "symfony/http-foundation": "^2.8.2",
+                "symfony/http-foundation": "^2.8.52",
                 "symfony/yaml": "^3"
             },
             "require-dev": {
                 "ext-sqlite3": "*",
-                "jakub-onderka/php-parallel-lint": "^0.9",
                 "mediawiki/mediawiki-codesniffer": "^31.0",
-                "phpunit/phpunit": "^6"
+                "php-parallel-lint/php-parallel-lint": "^1.2",
+                "phpunit/phpunit": "^9.5"
             },
-            "time": "2021-02-23T21:07:53+00:00",
+            "time": "2021-03-17T03:17:49+00:00",
             "type": "library",
             "installation-source": "source",
             "autoload": {

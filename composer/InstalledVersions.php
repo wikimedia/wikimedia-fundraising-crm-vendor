@@ -30,7 +30,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '1e661c2721f1574319e921119c34c5cb78aed547',
+    'reference' => '99bf1c92107c46a622a9d75b3f90633415da6cdb',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -46,8 +46,8 @@ private static $installed = array (
     ),
     'amzn/login-and-pay-with-amazon-sdk-php' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => '2.5.0',
+      'version' => '2.5.0.0',
       'aliases' => 
       array (
       ),
@@ -772,12 +772,12 @@ private static $installed = array (
     ),
     'wikimedia/donation-interface' => 
     array (
-      'pretty_version' => 'v2.5.1',
-      'version' => '2.5.1.0',
+      'pretty_version' => 'v2.5.2',
+      'version' => '2.5.2.0',
       'aliases' => 
       array (
       ),
-      'reference' => '9bc0a1bb4e177497fcce0f02976bcf78ac2dd81a',
+      'reference' => '0c8fd59a456967554e1dca78dbd300152bdbc8d3',
     ),
     'wikimedia/fundraising-crm' => 
     array (
@@ -786,7 +786,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '1e661c2721f1574319e921119c34c5cb78aed547',
+      'reference' => '99bf1c92107c46a622a9d75b3f90633415da6cdb',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
@@ -799,12 +799,12 @@ private static $installed = array (
     ),
     'wikimedia/smash-pig' => 
     array (
-      'pretty_version' => 'v0.6.7',
-      'version' => '0.6.7.0',
+      'pretty_version' => 'v0.6.9',
+      'version' => '0.6.9.0',
       'aliases' => 
       array (
       ),
-      'reference' => '96a049efc4f0d3e64b0563d6ffde77c6bff9b4a7',
+      'reference' => '1fcd30ff0727695d4262788479bfd853b9eef831',
     ),
     'willdurand/geocoder' => 
     array (
