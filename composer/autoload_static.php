@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitebb9913cd4370c53a0175c121ee342bb
+class ComposerStaticInit42ce950f1cd3513c0db540ea02e0760f
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -40,7 +40,7 @@ class ComposerStaticInitebb9913cd4370c53a0175c121ee342bb
         ),
         'W' => 
         array (
-            'Wikimedia\\Composer\\' => 19,
+            'Wikimedia\\Composer\\Merge\\V2\\' => 28,
             'Webmozart\\PathUtil\\' => 19,
             'Webmozart\\Assert\\' => 17,
         ),
@@ -155,7 +155,7 @@ class ComposerStaticInitebb9913cd4370c53a0175c121ee342bb
         array (
             0 => __DIR__ . '/..' . '/dnoegel/php-xdg-base-dir/src',
         ),
-        'Wikimedia\\Composer\\' => 
+        'Wikimedia\\Composer\\Merge\\V2\\' => 
         array (
             0 => __DIR__ . '/..' . '/wikimedia/composer-merge-plugin/src',
         ),
@@ -507,6 +507,7 @@ class ComposerStaticInitebb9913cd4370c53a0175c121ee342bb
         'CleanupRecurringLength' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
         'ClientErrorApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/clientError.api.php',
         'ClientSideValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'ConfigurationReader' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
         'Console_Table' => __DIR__ . '/..' . '/pear/console_table/Table.php',
         'ContributionTrackingPlusUnique' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
@@ -623,10 +624,10 @@ class ComposerStaticInitebb9913cd4370c53a0175c121ee342bb
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitebb9913cd4370c53a0175c121ee342bb::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit42ce950f1cd3513c0db540ea02e0760f::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit42ce950f1cd3513c0db540ea02e0760f::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit42ce950f1cd3513c0db540ea02e0760f::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit42ce950f1cd3513c0db540ea02e0760f::$classMap;
 
         }, null, ClassLoader::class);
     }
