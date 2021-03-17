@@ -30,7 +30,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '99bf1c92107c46a622a9d75b3f90633415da6cdb',
+    'reference' => '00640e4a36775924239a4e61f7f00342941f8c80',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -163,8 +163,8 @@ private static $installed = array (
     ),
     'geo6/geocoder-php-addok-provider' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => 'v1.3.0',
+      'version' => '1.3.0.0',
       'aliases' => 
       array (
       ),
@@ -199,11 +199,10 @@ private static $installed = array (
     ),
     'geocoder-php/here-provider' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => '0.6.0',
+      'version' => '0.6.0.0',
       'aliases' => 
       array (
-        0 => '1.0.x-dev',
       ),
       'reference' => 'd6b96e1bf5824714cbaea3486edd5b53956173dd',
     ),
@@ -786,7 +785,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '99bf1c92107c46a622a9d75b3f90633415da6cdb',
+      'reference' => '00640e4a36775924239a4e61f7f00342941f8c80',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
