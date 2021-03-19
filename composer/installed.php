@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '00640e4a36775924239a4e61f7f00342941f8c80',
+    'reference' => '3482586e6e40fe7fb41152e61c60303f53c0fa42',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -362,12 +362,12 @@
     ),
     'omnimail/omnimail' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => '0.3.5.1',
+      'version' => '0.3.5.1',
       'aliases' => 
       array (
       ),
-      'reference' => 'fd11eaca17dc57423649a591674a06d6310b9135',
+      'reference' => '96a129e651be24fc7cd7a34b2b7cfdb343333e11',
     ),
     'paragonie/random_compat' => 
     array (
@@ -761,16 +761,16 @@
       'aliases' => 
       array (
       ),
-      'reference' => '00640e4a36775924239a4e61f7f00342941f8c80',
+      'reference' => '3482586e6e40fe7fb41152e61c60303f53c0fa42',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
-      'pretty_version' => 'dev-master',
-      'version' => 'dev-master',
+      'pretty_version' => '1.1',
+      'version' => '1.1.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'ff552bc1ce37c1a51a34e62dd9757d1296a9c5d9',
+      'reference' => '421eceb7845cfafd1ea53042e5a7dfde016225a9',
     ),
     'wikimedia/smash-pig' => 
     array (

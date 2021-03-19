@@ -28,7 +28,7 @@
   "require": {
     "mrmarkfrench/silverpop-php-connector": "*",
     "league/csv" : "^9.0",
-    "omnimail/omnimail": "dev-master",
+    "omnimail/omnimail": "^0.3",
     "phpseclib/phpseclib":  "~2.0"
   },
   "require-dev": {

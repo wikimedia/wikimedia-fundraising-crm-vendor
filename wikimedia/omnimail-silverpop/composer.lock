@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a2a755d0d644994229eed2815f377c9c",
+    "content-hash": "39bef6b419067b007946449e6e6974ab",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -312,16 +312,16 @@
         },
         {
             "name": "omnimail/omnimail",
-            "version": "dev-master",
+            "version": "0.3.5.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/omnimail/omnimail.git",
-                "reference": "fd11eaca17dc57423649a591674a06d6310b9135"
+                "url": "https://github.com/gabrielbull/omnimail.git",
+                "reference": "96a129e651be24fc7cd7a34b2b7cfdb343333e11"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/fd11eaca17dc57423649a591674a06d6310b9135",
-                "reference": "fd11eaca17dc57423649a591674a06d6310b9135",
+                "url": "https://api.github.com/repos/gabrielbull/omnimail/zipball/96a129e651be24fc7cd7a34b2b7cfdb343333e11",
+                "reference": "96a129e651be24fc7cd7a34b2b7cfdb343333e11",
                 "shasum": ""
             },
             "require": {
@@ -382,7 +382,11 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2020-08-18T17:45:17+00:00"
+            "support": {
+                "issues": "https://github.com/gabrielbull/omnimail/issues",
+                "source": "https://github.com/gabrielbull/omnimail/tree/master"
+            },
+            "time": "2020-08-17T20:20:26+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -2672,9 +2676,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "omnimail/omnimail": 20
-    },
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": [],
@@ -2682,5 +2684,5 @@
     "platform-overrides": {
         "php": "7.2.2"
     },
-    "plugin-api-version": "1.1.0"
+    "plugin-api-version": "2.0.0"
 }
