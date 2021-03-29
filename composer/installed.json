@@ -927,7 +927,7 @@
             },
             "time": "2020-12-22T16:47:52+00:00",
             "type": "library",
-            "installation-source": "source",
+            "installation-source": "dist",
             "autoload": {
                 "psr-4": {
                     "Geocoder\\Provider\\Addok\\": ""
@@ -1172,7 +1172,7 @@
                     "dev-master": "1.0-dev"
                 }
             },
-            "installation-source": "source",
+            "installation-source": "dist",
             "autoload": {
                 "psr-4": {
                     "Geocoder\\Provider\\Here\\": ""
@@ -1879,6 +1879,13 @@
                 "read",
                 "write"
             ],
+            "support": {
+                "docs": "https://csv.thephpleague.com",
+                "forum": "https://groups.google.com/forum/#!forum/thephpleague",
+                "issues": "https://github.com/thephpleague/csv/issues",
+                "rss": "https://github.com/thephpleague/csv/releases.atom",
+                "source": "https://github.com/thephpleague/csv"
+            },
             "install-path": "../league/csv"
         },
         {
@@ -2171,6 +2178,10 @@
             "keywords": [
                 "Silverpop"
             ],
+            "support": {
+                "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.5.0"
+            },
             "install-path": "../mrmarkfrench/silverpop-php-connector"
         },
         {
@@ -2311,7 +2322,7 @@
             },
             "time": "2020-08-17T20:20:26+00:00",
             "type": "library",
-            "installation-source": "source",
+            "installation-source": "dist",
             "autoload": {
                 "psr-4": {
                     "Omnimail\\": "src"
@@ -4422,6 +4433,53 @@
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
             "install-path": "../symfony/yaml"
+        },
+        {
+            "name": "theiconic/name-parser",
+            "version": "v1.2.11",
+            "version_normalized": "1.2.11.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/theiconic/name-parser.git",
+                "reference": "9a54a713bf5b2e7fd990828147d42de16bf8a253"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/theiconic/name-parser/zipball/9a54a713bf5b2e7fd990828147d42de16bf8a253",
+                "reference": "9a54a713bf5b2e7fd990828147d42de16bf8a253",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.1",
+                "php-mock/php-mock-phpunit": "^2.1",
+                "phpunit/phpunit": "^7.0"
+            },
+            "time": "2019-11-14T14:08:48+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "TheIconic\\NameParser\\": [
+                        "src/",
+                        "tests/"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "The Iconic",
+                    "email": "engineering@theiconic.com.au"
+                }
+            ],
+            "description": "PHP library for parsing a string containing a full name into its parts",
+            "install-path": "../theiconic/name-parser"
         },
         {
             "name": "twig/twig",

@@ -30,7 +30,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '3482586e6e40fe7fb41152e61c60303f53c0fa42',
+    'reference' => '357f4efe946c887d40fce3caf9cec70f70cf2dff',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -715,6 +715,15 @@ private static $installed = array (
       ),
       'reference' => '3dc414b7db30695bae671a1d86013d03f4ae9834',
     ),
+    'theiconic/name-parser' => 
+    array (
+      'pretty_version' => 'v1.2.11',
+      'version' => '1.2.11.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '9a54a713bf5b2e7fd990828147d42de16bf8a253',
+    ),
     'twig/twig' => 
     array (
       'pretty_version' => 'v1.44.2',
@@ -785,7 +794,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '3482586e6e40fe7fb41152e61c60303f53c0fa42',
+      'reference' => '357f4efe946c887d40fce3caf9cec70f70cf2dff',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
