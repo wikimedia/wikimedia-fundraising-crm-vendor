@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '357f4efe946c887d40fce3caf9cec70f70cf2dff',
+    'reference' => '3b0c00435abd0ed7ebb21a78fbacb1316ac221ed',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -49,12 +49,12 @@
     ),
     'coderkungfu/php-queue' => 
     array (
-      'pretty_version' => '1.0.0',
-      'version' => '1.0.0.0',
+      'pretty_version' => '1.0.1',
+      'version' => '1.0.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'a9baeb0ae3b05bbd0d2f9f56c8365ff63f64524a',
+      'reference' => 'cd29afd03a5b4b740ce6c50128f1e69723c54f72',
     ),
     'cogpowered/finediff' => 
     array (
@@ -218,12 +218,12 @@
     ),
     'google/apiclient' => 
     array (
-      'pretty_version' => 'v2.2.2',
-      'version' => '2.2.2.0',
+      'pretty_version' => 'v2.4.1',
+      'version' => '2.4.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '4e0fd83510e579043e10e565528b323b7c2b3c81',
+      'reference' => '1fdfe942f9aaf3064e621834a5e3047fccb3a6da',
     ),
     'google/apiclient-services' => 
     array (
@@ -326,12 +326,12 @@
     ),
     'monolog/monolog' => 
     array (
-      'pretty_version' => '1.25.1',
-      'version' => '1.25.1.0',
+      'pretty_version' => '2.2.0',
+      'version' => '2.2.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => '70e65a5470a42cfec1a7da00d30edb6e617e8dcf',
+      'reference' => '1cb1cde8e8dd0f70cc0fe51354a59acad9302084',
     ),
     'mrmarkfrench/silverpop-php-connector' => 
     array (
@@ -516,12 +516,12 @@
     ),
     'psr/log' => 
     array (
-      'pretty_version' => '1.0.2',
-      'version' => '1.0.2.0',
+      'pretty_version' => '1.1.3',
+      'version' => '1.1.3.0',
       'aliases' => 
       array (
       ),
-      'reference' => '4ebe3a8bf773a19edfe0a84b6585ba3d401b724d',
+      'reference' => '0f73288fd15629204f9d42b7055f72dacbe811fc',
     ),
     'psr/log-implementation' => 
     array (
@@ -756,12 +756,12 @@
     ),
     'wikimedia/donation-interface' => 
     array (
-      'pretty_version' => 'v2.5.2',
-      'version' => '2.5.2.0',
+      'pretty_version' => 'v2.5.3',
+      'version' => '2.5.3.0',
       'aliases' => 
       array (
       ),
-      'reference' => '0c8fd59a456967554e1dca78dbd300152bdbc8d3',
+      'reference' => 'fadde18daa9402fdf3d249360d2d804f0d708216',
     ),
     'wikimedia/fundraising-crm' => 
     array (
@@ -770,7 +770,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '357f4efe946c887d40fce3caf9cec70f70cf2dff',
+      'reference' => '3b0c00435abd0ed7ebb21a78fbacb1316ac221ed',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
