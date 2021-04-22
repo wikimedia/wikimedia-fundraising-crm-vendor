@@ -2161,17 +2161,17 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.5.0",
-            "version_normalized": "1.5.0.0",
+            "version": "1.5.3",
+            "version_normalized": "1.5.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "1da27c43004e7607e7657e3cc7f9234578cade5a"
+                "reference": "60d272707c52adf474c53d8236b0d06f1604294c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/1da27c43004e7607e7657e3cc7f9234578cade5a",
-                "reference": "1da27c43004e7607e7657e3cc7f9234578cade5a",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/60d272707c52adf474c53d8236b0d06f1604294c",
+                "reference": "60d272707c52adf474c53d8236b0d06f1604294c",
                 "shasum": ""
             },
             "require": {
@@ -2184,7 +2184,7 @@
             "require-dev": {
                 "phpunit/phpunit": "*"
             },
-            "time": "2021-01-05T15:41:44+00:00",
+            "time": "2021-03-31T17:54:16+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -2208,7 +2208,7 @@
             ],
             "support": {
                 "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
-                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.5.0"
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.5.3"
             },
             "install-path": "../mrmarkfrench/silverpop-php-connector"
         },

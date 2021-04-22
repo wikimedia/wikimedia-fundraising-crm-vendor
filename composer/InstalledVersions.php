@@ -30,7 +30,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '3b0c00435abd0ed7ebb21a78fbacb1316ac221ed',
+    'reference' => '1761e7f6f2eed744c01f0977c7447aa327b3f087',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -359,12 +359,12 @@ private static $installed = array (
     ),
     'mrmarkfrench/silverpop-php-connector' => 
     array (
-      'pretty_version' => '1.5.0',
-      'version' => '1.5.0.0',
+      'pretty_version' => '1.5.3',
+      'version' => '1.5.3.0',
       'aliases' => 
       array (
       ),
-      'reference' => '1da27c43004e7607e7657e3cc7f9234578cade5a',
+      'reference' => '60d272707c52adf474c53d8236b0d06f1604294c',
     ),
     'neitanod/forceutf8' => 
     array (
@@ -794,7 +794,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '3b0c00435abd0ed7ebb21a78fbacb1316ac221ed',
+      'reference' => '1761e7f6f2eed744c01f0977c7447aa327b3f087',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
