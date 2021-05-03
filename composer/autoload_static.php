@@ -7,13 +7,13 @@ namespace Composer\Autoload;
 class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
 {
     public static $files = array (
-        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
-        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '023d27dca8066ef29e6739335ea73bad' => __DIR__ . '/..' . '/symfony/polyfill-php70/bootstrap.php',
@@ -30,6 +30,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
     );
 
     public static $prefixLengthsPsr4 = array (
+        's' => 
+        array (
+            'sgoettsch\\monologRotatingFileHandler\\' => 37,
+        ),
         'p' => 
         array (
             'phpseclib\\' => 10,
@@ -82,6 +86,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Predis\\' => 7,
             'PhpParser\\' => 10,
             'PayWithAmazon\\' => 14,
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'O' => 
         array (
@@ -148,6 +153,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
     );
 
     public static $prefixDirsPsr4 = array (
+        'sgoettsch\\monologRotatingFileHandler\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/sgoettsch/monolog-rotating-file-handler/src',
+        ),
         'phpseclib\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
@@ -276,6 +285,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'PayWithAmazon\\' => 
         array (
             0 => __DIR__ . '/..' . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon',
+        ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
         'Omnimail\\Silverpop\\' => 
         array (
@@ -533,7 +546,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'DonorLanguage' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorLanguage.php',
         'DonorLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorLocale.php',
         'DrupalFinder\\DrupalFinder' => __DIR__ . '/..' . '/webflo/drupal-finder/src/DrupalFinder.php',
-        'EasyPeasyICS' => __DIR__ . '/..' . '/phpmailer/phpmailer/extras/EasyPeasyICS.php',
         'EmployerSearchAPI' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/employerSearch.api.php',
         'EncodingMangler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EncodingMangler.php',
         'EndowmentHooks' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EndowmentHooks.php',
@@ -588,10 +600,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'MustacheErrorForm' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',
         'MustacheHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheHelper.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
-        'PHPMailer' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmailer.php',
-        'PHPMailerOAuth' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauth.php',
-        'PHPMailerOAuthGoogle' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauthgoogle.php',
-        'POP3' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.pop3.php',
         'ParseError' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/ParseError.php',
         'PayPalCountry' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/PayPalCountry.php',
         'PaymentMethod' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentMethod.php',
@@ -612,7 +620,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'ResultPages' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultPages.php',
         'ResultSwitcher' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultSwitcher.php',
         'RiskScore' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/RiskScore.php',
-        'SMTP' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.smtp.php',
         'SessionUpdateTimestampHandlerInterface' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
         'StagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StagingHelper.php',
         'StreetAddress' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StreetAddress.php',
@@ -623,8 +630,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'WmfFrameworkLogHandler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFrameworkLogHandler.php',
         'WmfFramework_Drupal' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.drupal.php',
         'WmfFramework_Mediawiki' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.mediawiki.php',
-        'ntlm_sasl_client_class' => __DIR__ . '/..' . '/phpmailer/phpmailer/extras/ntlm_sasl_client.php',
-        'phpmailerException' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmailer.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

@@ -30,7 +30,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '1761e7f6f2eed744c01f0977c7447aa327b3f087',
+    'reference' => 'a22b9eb8d87d26dbc4d6a539d271583606d3ef8e',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -488,12 +488,12 @@ private static $installed = array (
     ),
     'phpmailer/phpmailer' => 
     array (
-      'pretty_version' => 'v5.2.28',
-      'version' => '5.2.28.0',
+      'pretty_version' => 'v6.4.0',
+      'version' => '6.4.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'acba50393dd03da69a50226c139722af8b153b11',
+      'reference' => '050d430203105c27c30efd1dce7aa421ad882d01',
     ),
     'phpseclib/phpseclib' => 
     array (
@@ -581,6 +581,15 @@ private static $installed = array (
       array (
       ),
       'reference' => '19d6ec893994912d21b390c43d287816ab070772',
+    ),
+    'sgoettsch/monolog-rotating-file-handler' => 
+    array (
+      'pretty_version' => '2.0.1',
+      'version' => '2.0.1.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '913e1de21981b252854e319549b5e1c450f5f22f',
     ),
     'symfony/console' => 
     array (
@@ -794,7 +803,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '1761e7f6f2eed744c01f0977c7447aa327b3f087',
+      'reference' => 'a22b9eb8d87d26dbc4d6a539d271583606d3ef8e',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
@@ -807,12 +816,12 @@ private static $installed = array (
     ),
     'wikimedia/smash-pig' => 
     array (
-      'pretty_version' => 'v0.6.9',
-      'version' => '0.6.9.0',
+      'pretty_version' => 'v0.6.10',
+      'version' => '0.6.10.0',
       'aliases' => 
       array (
       ),
-      'reference' => '1fcd30ff0727695d4262788479bfd853b9eef831',
+      'reference' => '49cc82c6f0495fbc10567dcd5fd1c9ee4cb77fb9',
     ),
     'willdurand/geocoder' => 
     array (
