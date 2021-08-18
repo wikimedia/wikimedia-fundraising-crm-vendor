@@ -866,8 +866,10 @@ abstract class AbstractCollector implements iCollector, iCollectorShorthand, iSi
     protected function hasStartTimer($namespace)
     {
         return ($this->exists($namespace) &&
-          is_array($this->getStat($namespace)) &&
-          isset($this->getStat($namespace)['start']));
+            is_array($this->getStat($namespace)) &&
+            isset($this->getStat($namespace)['start']) &&
+            is_numeric($this->getStat($namespace)['start'])
+        );
     }
 
     /**

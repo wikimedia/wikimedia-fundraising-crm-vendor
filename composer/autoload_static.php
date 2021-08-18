@@ -526,7 +526,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'CleanupRecurringLength' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
         'ClientErrorApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/clientError.api.php',
         'ClientSideValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
-        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'ConfigurationReader' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
         'Console_Table' => __DIR__ . '/..' . '/pear/console_table/Table.php',
         'ContributionTrackingPlusUnique' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
