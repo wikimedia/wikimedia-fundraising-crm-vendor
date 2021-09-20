@@ -499,7 +499,13 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
     );
 
     public static $classMap = array (
+        'Abstract3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/Abstract3DSecure.php',
+        'Adyen3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/checkout/Adyen3DSecure.php',
         'AdyenAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen.adapter.php',
+        'AdyenCheckoutAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen_checkout.adapter.php',
+        'AdyenCheckoutGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen_checkout_gateway.body.php',
+        'AdyenCheckoutGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen_checkout_resultswitcher.body.php',
+        'AdyenDonationApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen.api.php',
         'AdyenGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_gateway.body.php',
         'AdyenGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_resultswitcher.body.php',
         'AdyenHostedSignature' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/AdyenHostedSignature.php',
@@ -523,9 +529,11 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'AstroPayStatusQuery' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/scripts/status.php',
         'BannerHistoryLogIdProcessor' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/banner_history/BannerHistoryLogIdProcessor.php',
         'BlankAddressFields' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
+        'CiviproxyConnect' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/civiproxy/CiviproxyConnect.php',
         'CleanupRecurringLength' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
         'ClientErrorApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/clientError.api.php',
         'ClientSideValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'ConfigurationReader' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
         'Console_Table' => __DIR__ . '/..' . '/pear/console_table/Table.php',
         'ContributionTrackingPlusUnique' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
@@ -618,6 +626,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'ResponseProcessingException' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',
         'ResultPages' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultPages.php',
         'ResultSwitcher' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultSwitcher.php',
+        'ReturnUrl' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ReturnUrl.php',
         'RiskScore' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/RiskScore.php',
         'SessionUpdateTimestampHandlerInterface' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
         'StagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StagingHelper.php',

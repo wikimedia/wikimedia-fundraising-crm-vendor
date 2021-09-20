@@ -46,21 +46,30 @@ class DonationData implements LogPrefixProvider {
 		'amountGiven',
 		'amountOther',
 		'appeal',
+		'color_depth', // device fingerprinting
 		'contact_id',
 		'contact_hash',
 		'email',
 		// @deprecated
 		'emailAdd',
+		'encrypted_card_number',
+		'encrypted_expiry_month',
+		'encrypted_expiry_year',
+		'encrypted_security_code',
 		'first_name',
+		'gateway_session_id',
+		'java_enabled', // device fingerprinting
 		'last_name',
+		'screen_height', // device fingerprinting
+		'screen_width', // device fingerprinting
 		'street_address',
 		'supplemental_address_1',
+		'time_zone_offset', // device fingerprinting
 		'city',
 		'state_province',
 		'postal_code',
 		'country',
 		'card_num',
-		'card_type',
 		'expiration',
 		'cvv',
 		'currency',
@@ -109,6 +118,7 @@ class DonationData implements LogPrefixProvider {
 		'opt_in',
 		'employer',
 		'employer_id',
+		'payment_token',
 	];
 
 	/**
@@ -371,7 +381,6 @@ class DonationData implements LogPrefixProvider {
 			$this->setLanguage();
 			$this->setCountry(); // must do this AFTER setIPAddress...
 			$this->setCurrencyCode(); // AFTER setCountry
-			$this->renameCardType();
 			$this->setEmail();
 			$this->setCardNum();
 			$this->setAppeal();
@@ -401,17 +410,6 @@ class DonationData implements LogPrefixProvider {
 		} else {
 			// command line?
 			$this->setVal( 'server_ip', '127.0.0.1' );
-		}
-	}
-
-	/**
-	 * munge the legacy card_type field into payment_submethod
-	 */
-	protected function renameCardType() {
-		if ( $this->getVal( 'payment_method' ) == 'cc' ) {
-			if ( $this->isSomething( 'card_type' ) ) {
-				$this->setVal( 'payment_submethod', $this->getVal( 'card_type' ) );
-			}
 		}
 	}
 
@@ -979,6 +977,7 @@ class DonationData implements LogPrefixProvider {
 			'date',
 			'gateway_session_id',
 			'recurring_payment_token',
+			'processor_contact_id',
 			'opt_in',
 			'employer',
 			'employer_id',

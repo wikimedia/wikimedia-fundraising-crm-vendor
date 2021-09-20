@@ -1,0 +1,16 @@
+cc:
+    label: Credit Cards
+    validation:
+        country: true
+        name: true
+        email: true
+rtbt:
+    label: Real time bank transfer
+    validation:
+        country: true
+        name: true
+        email: true
+apple:
+    label: Apple Pay
+    validation:
+        country: true

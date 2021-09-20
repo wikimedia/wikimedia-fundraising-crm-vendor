@@ -19,6 +19,7 @@ Set these to true to enable each payment processor integration:
 $wgGlobalCollectGatewayEnabled = false
 $wgAmazonGatewayEnabled = false
 $wgAdyenGatewayEnabled = false
+$wgAdyenCheckoutGatewayEnabled = false
 $wgAstroPayGatewayEnabled = false
 $wgPaypalExpressGatewayEnabled = false
 $wgPaypalGatewayEnabled = false
@@ -99,11 +100,17 @@ $wgDonationInterfaceTaxURL = 'https://donate.wikimedia.org/wiki/Special:LandingC
 URL of a page detailing donor privacy policy
 $wgDonationInterfacePolicyURL = 'https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Donor_privacy_policy&language=$language&country=$country'
 
+Countries that are Tax Deductible would be listed in this array
+$wgDonationInterfaceTaxDedCountries = ['FR']
+
 Email address donors should contact with any donation-related problems
 $wgDonationInterfaceProblemsEmail = 'donate@wikimedia.org'
 
 Email address donors should contact with donations too big to process online
 $wgDonationInterfaceMajorGiftsEmail = 'benefactors@wikimedia.org';
+
+Countries where the surname/family name (last_name) input should be rendered before the given name (first_name) input.
+$wgDonationInterfaceSurnameFirstCountries = [ 'JP' ];
 
 The full URL for Javascript-disabled credit card form redirect
 $wgDonationInterfaceNoScriptRedirect = null
@@ -326,6 +333,20 @@ $wgAdyenGatewayMaxRiskScore = 95
 #		'SkinCode' => ''
 #	]
 
+$wgAdyenCheckoutGatewayAccountInfo['example'] = [
+	// Latest values for Script & Css at https://docs.adyen.com/online-payments/release-notes
+	'Script' => [
+		'src' => 'https://checkoutshopper-test.adyen.com/checkoutshopper/sdk/4.3.0/adyen.js',
+		'integrity' => 'sha384-cNkiBPQRGouJfbstYuSccx2XkGe3RB28iYrjge6rLIDtex7fk5+3/E9f4EZ34fxE'
+	],
+	'Css' => [
+		'src' => 'https://checkoutshopper-test.adyen.com/checkoutshopper/sdk/4.3.0/adyen.css',
+		'integrity' => 'sha384-5CDvDZiVPuf+3ZID0lh0aaUHAeky3/ACF1YAKzPbn3GEmzWgO53gP6stiYHWIdpB',
+	],
+	'ClientKey' => '', // find under web service user 'Authentication' block within adyen API credentials area
+	'Environment' => 'test',
+]
+
 // Set base URLs here.  Individual transactions have their own paths
 $wgAstroPayGatewayURL = 'https://api.dlocal.com/'
 $wgAstroPayGatewayTestingURL = 'https://sandbox.dlocal.com/'
@@ -363,6 +384,11 @@ Non-critical queues:
 Contribution tracking IDs are generated from a sequence generator and used to
 generate unique merchant references for payments. These are also used to prefix
 log entries about a donation attempt.
+
+/**
+ * Value for the source_type field on messages pushed to queues
+ */
+$wgDonationInterfaceMessageSourceType = 'payments';
 
 ==== Fraud filters and blocking ====
 
@@ -688,3 +714,10 @@ $wgDonationInterfaceEmployersListDataFileLocation = '/vagrant/employerData.csv'
  */
 $wgDonationInterfaceMonthlyConvertCountries = []
 
+/**
+ * Should be set to one of the monthly convert modules defined in the
+ * ResourceModules section of extension.json. When monthly convert is
+ * activated because a country is in the list set in the above variable,
+ * this variable controls which variant donors will see.
+ */
+$wgDonationInterfaceMonthlyConvertDefaultModule = 'ext.donationInterface.monthlyConvert'

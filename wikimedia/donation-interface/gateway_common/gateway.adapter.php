@@ -34,7 +34,7 @@ use SmashPig\PaymentData\ReferenceData\NationalCurrencies;
  * GatewayAdapter
  *
  */
-abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
+abstract class GatewayAdapter implements GatewayType {
 	/**
 	 * Don't change these strings without fixing cross-repo usages.
 	 */
@@ -749,20 +749,10 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * @param string $gateway_field_name The GATEWAY's field name that we are
 	 * hoping to populate. Probably not even remotely the way we name the same
 	 * data internally.
-	 * @param bool $token This is a throwback to a road we nearly went down,
-	 * with ajax and client-side token replacement. The idea was, if this was
-	 * set to true, we would simply pass the fully-formed transaction structure
-	 * with our tokenized var names in the spots where form values would usually
-	 * go, so we could fetch the structure and have some client-side voodoo
-	 * populate the transaction so we wouldn't have to touch the data at all.
-	 * At this point, very likely cruft that can be removed, but as I'm not 100%
-	 * on that point, I'm keeping it for now. If we do kill off this param, we
-	 * should also get rid of the function buildTransactionFormat and anything
-	 * that calls it.
 	 * @throws LogicException
 	 * @return mixed The value we want to send directly to the gateway, for the specified gateway field name.
 	 */
-	public function getTransactionSpecificValue( $gateway_field_name, $token = false ) {
+	public function getTransactionSpecificValue( $gateway_field_name ) {
 		if ( empty( $this->transactions ) ) {
 			$msg = self::getGatewayName() . ': Transactions structure is empty! No transaction can be constructed.';
 			$this->logger->critical( $msg );
@@ -776,13 +766,11 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		}
 
 		// If there's a hard-coded value in the transaction definition, use that.
-		if ( !empty( $transaction ) ) {
-			if ( array_key_exists( $transaction, $this->transactions ) && is_array( $this->transactions[$transaction] ) &&
-				array_key_exists( 'values', $this->transactions[$transaction] ) &&
-				array_key_exists( $gateway_field_name, $this->transactions[$transaction]['values'] ) ) {
-				$value = $this->transactions[$transaction]['values'][$gateway_field_name];
-				return $this->trimFieldToConstraints( $value, $gateway_field_name );
-			}
+		if ( array_key_exists( $transaction, $this->transactions ) && is_array( $this->transactions[$transaction] ) &&
+			array_key_exists( 'values', $this->transactions[$transaction] ) &&
+			array_key_exists( $gateway_field_name, $this->transactions[$transaction]['values'] ) ) {
+			$value = $this->transactions[$transaction]['values'][$gateway_field_name];
+			return $this->trimFieldToConstraints( $value, $gateway_field_name );
 		}
 
 		// if it's account info, use that.
@@ -793,9 +781,6 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 
 		// If there's a value in the post data (name-translated by the var_map), use that.
 		if ( array_key_exists( $gateway_field_name, $this->var_map ) ) {
-			if ( $token === true ) { // we just want the field name to use, so short-circuit all that mess.
-				return '@' . $this->var_map[$gateway_field_name];
-			}
 			$staged = $this->getData_Staged( $this->var_map[$gateway_field_name] );
 			if ( !is_null( $staged ) ) {
 				// if it was sent, use that.
@@ -808,6 +793,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 
 		// not in the map, or hard coded. What then?
 		// Complain furiously, for your code is faulty.
+		// TODO maybe just assume the name doesn't need to be var_mapped?
 		$msg = self::getGatewayName() . ': Requested value ' . $gateway_field_name . ' cannot be found in the transactions structure.';
 		$this->logger->critical( $msg );
 		throw new LogicException( $msg );
@@ -918,22 +904,21 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * @param array $structure Current transaction's more leafward structure,
 	 * from the point of view of the current XML node.
 	 * @param DOMElement &$node The current XML node.
-	 * @param bool $js More likely cruft relating back to buildTransactionFormat
 	 */
-	protected function buildTransactionNodes( $structure, &$node, $js = false ) {
+	protected function buildTransactionNodes( $structure, &$node ) {
 		if ( !is_array( $structure ) ) {
 			// this is a weird case that shouldn't ever happen. I'm just being... thorough. But, yeah: It's like... the base-1 case.
-			$this->appendNodeIfValue( $structure, $node, $js );
+			$this->appendNodeIfValue( $structure, $node );
 		} else {
 			foreach ( $structure as $key => $value ) {
 				if ( !is_array( $value ) ) {
 					// do not use $key, it's the numeric index here and $value is the field name
 					// FIXME: make tree traversal more readable.
-					$this->appendNodeIfValue( $value, $node, $js );
+					$this->appendNodeIfValue( $value, $node );
 				} else {
 					// Recurse for child
 					$keynode = $this->xmlDoc->createElement( $key );
-					$this->buildTransactionNodes( $value, $keynode, $js );
+					$this->buildTransactionNodes( $value, $keynode );
 					$node->appendChild( $keynode );
 				}
 			}
@@ -972,11 +957,9 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 	 * @param string $value The GATEWAY's field name for the current node.
 	 * @param DOMElement &$node The parent node this node will be contained in, if it
 	 *  is determined to have a non-empty value.
-	 * @param bool $js Probably cruft at this point. This is connected to the
-	 * function buildTransactionFormat.
 	 */
-	protected function appendNodeIfValue( $value, &$node, $js = false ) {
-		$nodevalue = $this->getTransactionSpecificValue( $value, $js );
+	protected function appendNodeIfValue( $value, &$node ) {
+		$nodevalue = $this->getTransactionSpecificValue( $value );
 		if ( $nodevalue !== '' && $nodevalue !== false ) {
 			$temp = $this->xmlDoc->createElement( $value );
 
@@ -1188,7 +1171,7 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 				);
 			}
 
-		} elseif ( $txn_ok === false ) { // nothing to process, so we have to build it manually
+		} else { // nothing to process, so we have to build it manually
 			$logMessage = 'Transaction Communication failed' . print_r( $this->transaction_response, true );
 			$this->logger->error( $logMessage );
 
@@ -1767,28 +1750,35 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 		$result = ''; // holds formatted version as it is built
 		$pad = 0; // initial indent
 		$matches = []; // returns from preg_matches()
+		// FIXME The line below was added to keep existing functionality while preventing
+		// issues with uninitialized variables, but probably it should be moved to
+		// the first elseif in the while block, below. However, likely this code will
+		// be removed soon.
+		$nextLineIndentChange = 0;
 		// scan each line and adjust indent based on opening/closing tags
 		while ( $token !== false ) {
 			// test for the various tag states
 			// 1. open and closing tags on same line - no change
 			if ( preg_match( '/.+<\/\w[^>]*>$/', $token, $matches ) ) {
-				$indent = 0;
+				$nextLineIndentChange = 0;
 			} elseif ( preg_match( '/^<\/\w/', $token, $matches ) ) {
 				// 2. closing tag - outdent now
+				// FIXME set $nextLineIndentChange=0 here instead of initailizing
+				// outside the while loop. (See related comment, above.)
 				$pad--;
 			} elseif ( preg_match( '/^<\w[^>]*[^\/]>.*$/', $token, $matches ) ) {
 				// 3. opening tag - don't pad this one, only subsequent tags
-				$indent = 1;
+				$nextLineIndentChange = 1;
 			} else {
 				// 4. no indentation needed
-				$indent = 0;
+				$nextLineIndentChange = 0;
 			}
 
 			// pad the line with the required number of leading spaces
 			$line = str_pad( $token, strlen( $token ) + $pad, ' ', STR_PAD_LEFT );
 			$result .= $line . "\n"; // add to the cumulative result, with linefeed
 			$token = strtok( "\n" ); // get the next token
-			$pad += $indent; // update the pad size for subsequent lines
+			$pad += $nextLineIndentChange; // update the pad size for subsequent lines
 		}
 
 		return $result;
@@ -2628,14 +2618,6 @@ abstract class GatewayAdapter implements GatewayType, LogPrefixProvider {
 							$field['state_province'] = $requirementFlag;
 						}
 					}
-					break;
-				case 'creditCard' :
-					$field = [
-						'card_num' => $requirementFlag,
-						'cvv' => $requirementFlag,
-						'expiration' => $requirementFlag,
-						'card_type' => $requirementFlag
-					];
 					break;
 				case 'name' :
 					$field = [

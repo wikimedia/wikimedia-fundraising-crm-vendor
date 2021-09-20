@@ -53,7 +53,6 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 			'postal_code' => '99999',
 			'country' => 'US',
 			'card_num' => '42',
-			'card_type' => 'visa',
 			'expiration' => '1138',
 			'cvv' => '665',
 			'currency' => 'USD',
@@ -122,7 +121,6 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 			'postal_code' => '94104',
 			'country' => 'US',
 			'card_num' => '378282246310005',
-			'card_type' => 'amex',
 			'expiration' => '0415',
 			'cvv' => '001',
 			'currency' => 'USD',
@@ -170,7 +168,6 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 			'postal_code' => '94104',
 			'country' => 'US',
 			'card_num' => '378282246310005',
-			'card_type' => 'amex',
 			'expiration' => '0415',
 			'cvv' => '001',
 			'currency' => 'USD',
@@ -443,7 +440,8 @@ class DonationInterface_DonationDataTest extends DonationInterfaceTestCase {
 			'processor_form',
 			'referrer',
 			'contact_id',
-			'contact_hash'
+			'contact_hash',
+			'processor_contact_id'
 		];
 		$this->assertArrayEquals( $expected, $actual, false );
 	}

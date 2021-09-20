@@ -25,7 +25,9 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	public static $baseDir;
 
 	protected static $partials = [
+		'first_name',
 		'issuers',
+		'last_name',
 		'more_info_links',
 		'no_script',
 		'opt_in',
@@ -112,10 +114,21 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$data['appeal_text'] = $output->parseAsContent( '{{' . $appealWikiTemplate . '}}' );
 		$data['is_cc'] = ( $this->gateway->getPaymentMethod() === 'cc' );
 
+		// 'is_tax_ded' is a boolean variable to check if a country falls tax-exempt countries
+		$tax_ded_countries = $this->gateway->getGlobal( 'TaxDedCountries' );
+		$data['is_tax_ded'] = in_array( $data['country'], $tax_ded_countries );
+		if ( $data['is_tax_ded'] ) {
+			$countries = CountryNames::getNames( $data['language'] );
+			$data['country_full']  = $countries[$data['country']];
+		}
+
 		// Only render monthly convert when we come back from a qualified processor
 		if (
-			$this->gateway->showMonthlyConvert() &&
-			$this->gatewayPage instanceof ResultSwitcher
+			// Or when we force display with a querystring flag
+			RequestContext::getMain()->getRequest()->getBool( 'debugMonthlyConvert' ) || (
+				$this->gateway->showMonthlyConvert() &&
+				$this->gatewayPage instanceof ResultSwitcher
+			)
 		) {
 			$data['monthly_convert'] = true;
 		}
@@ -248,7 +261,8 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		];
 		// These are shown outside of the 'Billing information' block
 		$outside_personal_block = [
-			'opt_in'
+			'opt_in',
+			'country'
 		];
 		$show_personal_block = false;
 		$address_field_count = 0;
@@ -284,6 +298,13 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		}
 
 		$data['show_personal_fields'] = $show_personal_block;
+
+		// In some countries, the surname (last_name) field should appear before the
+		// given name (first_name) field.
+		$surnameFirstCountries = $this->gateway->getGlobal( 'SurnameFirstCountries' );
+		if ( in_array( $data['country'], $surnameFirstCountries ) ) {
+			$data['show_surname_first'] = true;
+		}
 
 		// this is not great, we're assuming 'visible' (previously 'required') will always be a thing.
 		// the decision for the current _visible suffix is made on line 217
@@ -433,15 +454,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		if ( isset( Gateway_Form_Mustache::$messageReplacements[$key] ) ) {
 			$key = Gateway_Form_Mustache::$messageReplacements[$key];
 		}
-		// Sometimes Lightncandy seems to send us an array with way too much
-		// information as the last param. Remove any params that are themselves
-		// arrays, as our message formatting can't handle them.
-		$filteredParams = [];
-		foreach ( $params as $param ) {
-			if ( is_scalar( $param ) ) {
-				$filteredParams[] = $param;
-			}
-		}
+		$filteredParams = MustacheHelper::filterMessageParams( $params );
 		return MessageUtils::getCountrySpecificMessage(
 			$key,
 			Gateway_Form_Mustache::$country,
@@ -483,7 +496,16 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			$resources[] = 'ext.donationInterface.errorLog';
 		}
 		if ( $this->gateway->showMonthlyConvert() ) {
-			$resources[] = 'ext.donationInterface.monthlyConvert';
+			// Search for any monthlyConvert modules that may have already
+			// been added by the variant=XXX mechanism.
+			$mcModules = preg_grep( '/monthlyConvert/', $resources );
+			if ( empty( $mcModules ) ) {
+				// Only add the default module if no variant-specified
+				// module is already in the list.
+				$resources[] = $this->gateway->getGlobal(
+					'MonthlyConvertDefaultModule'
+				);
+			}
 		}
 		return $resources;
 	}

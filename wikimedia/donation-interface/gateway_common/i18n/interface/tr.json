@@ -2,6 +2,7 @@
 	"@metadata": {
 		"authors": [
 			"BaRaN6161 TURK",
+			"Cobija",
 			"Emperyan",
 			"Joseph",
 			"Jsoby",
@@ -204,7 +205,6 @@
 	"donate_interface-error-msg-invalid-postal_code-us": "Lütfen posta kodunuzdaki hataları düzeltin",
 	"donate_interface-error-msg-invalid-postal_code": "Lütfen posta kodunuzdaki hataları düzeltin",
 	"donate_interface-error-msg-country": "Lütfen ülkenizi girin",
-	"donate_interface-error-msg-card_type": "kredi kartı türü",
 	"donate_interface-error-msg-card_num": "kredi kartı numarası",
 	"donate_interface-error-msg-expiration": "Lütfen kartın son kullanma tarihini girin",
 	"donate_interface-error-msg-cvv": "Lütfen genellikle kartın arkasında gösterilen CVV kodunu girin",
@@ -360,7 +360,7 @@
 	"donate_interface-bt-special_id": "Ülkeye özgü bilgiler",
 	"donate_interface-bt-information": "Banka transfer bilgileri",
 	"donate_interface-bt-finished": "Tamamlandı",
-	"donate_interface-obt-generic-name": "Çevrim içi banka havalesi",
+	"donate_interface-obt-generic-name": "Çevrimiçi banka havalesi",
 	"donate_interface-obt-biller_id": "Biller kodu",
 	"donate_interface-obt-customer_payment_reference": "Kaynak #",
 	"donate_interface-obt-customer_payment_reference_note": "Her Kaynak # numarası yalnızca bir kez geçerlidir. Lütfen bu kaynak numarasını gelecekteki bağışlarınız için tekrar kullanmayın.",

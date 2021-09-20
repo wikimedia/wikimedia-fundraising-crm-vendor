@@ -36,6 +36,8 @@
 		"AmazonGateway": "AmazonGateway",
 		"AdyenGateway": "AdyenGateway",
 		"AdyenGatewayResult": "AdyenGatewayResult",
+		"AdyenCheckoutGateway": "AdyenCheckoutGateway",
+		"AdyenCheckoutGatewayResult": "AdyenCheckoutGatewayResult",
 		"AstroPayGateway": "AstroPayGateway",
 		"AstroPayGatewayResult": "AstroPayGatewayResult",
 		"PaypalExpressGateway": "PaypalExpressGateway",
@@ -44,6 +46,7 @@
 	},
 	"APIModules": {
 		"di_amazon_bill": "AmazonBillingApi",
+		"di_donate_adyen": "AdyenDonationApi",
 		"donate": "DonationApi",
 		"di_recurring_convert": "RecurringConversionApi",
 		"logPaymentsFormError": "ClientErrorApi",
@@ -61,7 +64,8 @@
 			"globalcollect_gateway/i18n",
 			"adyen_gateway/i18n",
 			"astropay_gateway/i18n",
-			"paypal_gateway/i18n"
+			"paypal_gateway/i18n",
+			"email_forms/i18n"
 		]
 	},
 	"ExtensionMessagesFiles": {
@@ -80,6 +84,7 @@
 		"FiscalNumber": "gateway_common/FiscalNumber.php",
 		"ClientErrorApi": "gateway_common/clientError.api.php",
 		"EmployerSearchAPI": "gateway_common/employerSearch.api.php",
+		"CiviproxyConnect": "extras/civiproxy/CiviproxyConnect.php",
 		"ClientSideValidationHelper": "gateway_common/ClientSideValidationHelper.php",
 		"ConfigurationReader": "gateway_common/ConfigurationReader.php",
 		"ContributionTrackingPlusUnique": "gateway_common/ContributionTrackingPlusUnique.php",
@@ -114,8 +119,10 @@
 		"ResponseProcessingException": "gateway_common/ResponseProcessingException.php",
 		"ResultPages": "gateway_common/ResultPages.php",
 		"ResultSwitcher": "gateway_common/ResultSwitcher.php",
+		"ReturnUrl": "gateway_common/ReturnUrl.php",
 		"StagingHelper": "gateway_common/StagingHelper.php",
 		"StreetAddress": "gateway_common/StreetAddress.php",
+		"Abstract3DSecure": "gateway_common/Abstract3DSecure.php",
 		"UnstagingHelper": "gateway_common/UnstagingHelper.php",
 		"WmfFramework_Mediawiki": "gateway_common/WmfFramework.mediawiki.php",
 		"WmfFrameworkLogHandler": "gateway_common/WmfFrameworkLogHandler.php",
@@ -154,6 +161,11 @@
 		"AdyenMethodCodec": "adyen_gateway/AdyenMethodCodec.php",
 		"AdyenSubmethodCodec": "adyen_gateway/AdyenSubmethodCodec.php",
 		"AdyenAdapter": "adyen_gateway/adyen.adapter.php",
+		"Adyen3DSecure": "adyen_gateway/checkout/Adyen3DSecure.php",
+		"AdyenDonationApi": "adyen_gateway/checkout/adyen.api.php",
+		"AdyenCheckoutAdapter": "adyen_gateway/checkout/adyen_checkout.adapter.php",
+		"AdyenCheckoutGateway": "adyen_gateway/checkout/adyen_checkout_gateway.body.php",
+		"AdyenCheckoutGatewayResult": "adyen_gateway/checkout/adyen_checkout_resultswitcher.body.php",
 		"FullNameWithExceptions": "adyen_gateway/FullNameWithExceptions.php",
 		"RiskScore": "adyen_gateway/RiskScore.php",
 		"AmountInMinorUnits": "adyen_gateway/AmountInMinorUnits.php",
@@ -213,6 +225,7 @@
 		},
 		"ext.donationInterface.emailPreferences": {
 			"scripts": "modules/js/ext.donationInterface.emailPreferences.js",
+			"styles": "modules/css/emailPreferences.css",
 			"dependencies": "donationInterface.skinOverride"
 		},
 		"ext.donationInterface.alwaysRedirect": {
@@ -259,6 +272,11 @@
 			"scripts": "adyen_gateway/forms/js/adyen.js",
 			"dependencies": "ext.donationInterface.forms"
 		},
+		"ext.donationInterface.adyenCheckout": {
+			"scripts": "adyen_gateway/checkout/forms/adyen.js",
+			"styles": "adyen_gateway/checkout/forms/adyen.css",
+			"dependencies": "ext.donationInterface.forms"
+		},
 		"ext.donationInterface.ingenico.scripts": {
 			"scripts": "globalcollect_gateway/forms/js/ingenico.js",
 			"dependencies": "ext.donationInterface.forms"
@@ -303,7 +321,6 @@
 				"donate_interface-error-msg-postal_code",
 				"donate_interface-error-msg-street_address",
 				"donate_interface-error-msg-country",
-				"donate_interface-error-msg-card_type",
 				"donate_interface-error-msg-card_num",
 				"donate_interface-error-msg-expiration",
 				"donate_interface-error-msg-cvv",
@@ -372,7 +389,12 @@
 		},
 		"ext.donationInterface.monthlyConvert_011": {
 			"styles": "modules/css/monthlyConvert_011.css",
-			"dependencies": "ext.donationInterface.monthlyConvert"
+			"scripts": "modules/js/ext.donationInterface.monthlyConvert_011.js",
+			"dependencies": "ext.donationInterface.monthlyConvert",
+			"messages": [
+				"donate_interface-monthly-convert-no-button-variant-011",
+				"donate_interface-monthly-convert-yes-button-variant-011"
+			]
 		},
 		"ext.donationInterface.monthlyConvertButtonFlip": {
 			"scripts": "modules/js/ext.donationInterface.monthlyConvertButtonFlip.js",
@@ -396,7 +418,8 @@
 	},
 	"Hooks": {
 		"Language::getMessagesFileName": "DonationInterface::onGetMessagesFileName",
-		"UnitTestsList": "DonationInterface::onDonationInterfaceUnitTests"
+		"UnitTestsList": "DonationInterface::onDonationInterfaceUnitTests",
+		"MediaWikiPHPUnitTest::startTest": "DonationInterface::onMediaWikiPHPUnitTeststartTest"
 	},
 	"config": {
 		"DonationInterfaceTest": {
@@ -474,6 +497,9 @@
 		"DonationInterfaceHeader": {
 			"value": null
 		},
+		"DonationInterfaceSurnameFirstCountries": {
+			"value": [ "JP" ]
+		},
 		"DonationInterfaceNoScriptRedirect": {
 			"value": null
 		},
@@ -520,6 +546,9 @@
 				"INR": []
 			},
 			"merge_strategy": "array_plus"
+		},
+		"DonationInterfaceMessageSourceType": {
+			"value": "payments"
 		},
 		"GlobalCollectGatewayTestingURL": {
 			"value": "https://ps.gcsip.nl/wdl/wdl"
@@ -768,6 +797,9 @@
 		"AdyenGatewayEnabled": {
 			"value": false
 		},
+		"AdyenCheckoutGatewayEnabled": {
+			"value": false
+		},
 		"AstroPayGatewayEnabled": {
 			"value": false
 		},
@@ -814,7 +846,7 @@
 				"ingenico": "IngenicoAdapter",
 				"ingenico_orphan": "IngenicoOrphanAdapter",
 				"amazon": "AmazonAdapter",
-				"adyen": "AdyenAdapter",
+				"adyen": "AdyenCheckoutAdapter",
 				"astropay": "AstroPayAdapter",
 				"paypal_ec": "PaypalExpressAdapter",
 				"paypal": "PaypalLegacyAdapter"
@@ -822,6 +854,9 @@
 		},
 		"DonationInterfaceAllowedHtmlForms": {
 			"value": []
+		},
+		"DonationInterfaceTaxDedCountries": {
+			"value": [ "FR" ]
 		},
 		"DonationInterfaceFundraiserMaintenance": {
 			"value": false
@@ -831,6 +866,41 @@
 		},
 		"DonationInterfaceMonthlyConvertCountries": {
 			"value": []
+		},
+		"DonationInterfaceMonthlyConvertDefaultModule": {
+			"value": "ext.donationInterface.monthlyConvert"
+		},
+		"DonationInterfaceEmailPrefCtrLanguages": {
+			"value": [
+				"ca",
+				"da",
+				"de",
+				"en",
+				"es",
+				"es-mx",
+				"fr-ca",
+				"fr",
+				"he",
+				"hu",
+				"it",
+				"ja",
+				"lv",
+				"mk",
+				"nb",
+				"nl",
+				"pl",
+				"pt-br",
+				"pt",
+				"ro",
+				"ru",
+				"sk",
+				"sv",
+				"uk",
+				"zh"
+			]
+		},
+		"DonationInterfaceCiviproxyURLBase": {
+			"value": "https://localhost"
 		}
 	},
 	"manifest_version": 2

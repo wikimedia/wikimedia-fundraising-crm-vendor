@@ -6,7 +6,13 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Abstract3DSecure' => $vendorDir . '/wikimedia/donation-interface/gateway_common/Abstract3DSecure.php',
+    'Adyen3DSecure' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/checkout/Adyen3DSecure.php',
     'AdyenAdapter' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen.adapter.php',
+    'AdyenCheckoutAdapter' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen_checkout.adapter.php',
+    'AdyenCheckoutGateway' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen_checkout_gateway.body.php',
+    'AdyenCheckoutGatewayResult' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen_checkout_resultswitcher.body.php',
+    'AdyenDonationApi' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/checkout/adyen.api.php',
     'AdyenGateway' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen_gateway.body.php',
     'AdyenGatewayResult' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/adyen_resultswitcher.body.php',
     'AdyenHostedSignature' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/AdyenHostedSignature.php',
@@ -30,9 +36,11 @@ return array(
     'AstroPayStatusQuery' => $vendorDir . '/wikimedia/donation-interface/astropay_gateway/scripts/status.php',
     'BannerHistoryLogIdProcessor' => $vendorDir . '/wikimedia/donation-interface/extras/banner_history/BannerHistoryLogIdProcessor.php',
     'BlankAddressFields' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
+    'CiviproxyConnect' => $vendorDir . '/wikimedia/donation-interface/extras/civiproxy/CiviproxyConnect.php',
     'CleanupRecurringLength' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
     'ClientErrorApi' => $vendorDir . '/wikimedia/donation-interface/gateway_common/clientError.api.php',
     'ClientSideValidationHelper' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
+    'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'ConfigurationReader' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
     'Console_Table' => $vendorDir . '/pear/console_table/Table.php',
     'ContributionTrackingPlusUnique' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
@@ -125,6 +133,7 @@ return array(
     'ResponseProcessingException' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',
     'ResultPages' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ResultPages.php',
     'ResultSwitcher' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ResultSwitcher.php',
+    'ReturnUrl' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ReturnUrl.php',
     'RiskScore' => $vendorDir . '/wikimedia/donation-interface/adyen_gateway/RiskScore.php',
     'SessionUpdateTimestampHandlerInterface' => $vendorDir . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
     'StagingHelper' => $vendorDir . '/wikimedia/donation-interface/gateway_common/StagingHelper.php',

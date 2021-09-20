@@ -2,6 +2,14 @@ img.submethod-logo {
 	max-width: 100%;
 }
 
+#payment-footer {
+	font-size: 12px;
+	width: 100%;
+	text-align: center;
+	line-height: 1.4;
+	padding: 24px 15% 8px;
+}
+
 div#payment_gateway-donate-submessage {
 	line-height: 120%;
 }
@@ -157,6 +165,7 @@ span#selected-amount {
 	color: #000;
 	font-family: inherit;
 	font-size: 13px;
+	line-height: 17px;
 	padding: 0.8em;
 	margin-bottom: 0.2em;
 	-webkit-transition: border-color 200ms cubic-bezier( 0.4, 0.55, 0.55, 1 ), box-shadow 200ms cubic-bezier( 0.4, 0.55, 0.55, 1 );
@@ -425,6 +434,10 @@ ul#moreinfolinks {
 }
 
 @media screen and ( max-device-width: 981px ) {
+	#card-container {
+		margin-top: 40px;
+	}
+
 	body {
 		background-color: #f5f5f5;
 	}

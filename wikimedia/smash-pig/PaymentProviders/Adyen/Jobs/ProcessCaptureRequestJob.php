@@ -12,6 +12,7 @@ use SmashPig\CrmLink\Messages\DonationInterfaceAntifraudFactory;
 use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\Adyen\CardPaymentProvider;
 use SmashPig\PaymentProviders\Adyen\ExpatriatedMessages\Authorisation;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
  * Job that checks authorization IPN messages from Adyen and requests payment
@@ -40,7 +41,8 @@ class ProcessCaptureRequestJob extends RunnableJob {
 	protected $logger;
 	protected $propertiesExcludedFromExport = [ 'logger' ];
 
-	const ACTION_DUPLICATE = 'duplicate'; // known duplicate - cancel the authorization
+	const ACTION_DUPLICATE = 'duplicate'; // duplicate payment attempt - cancel the authorization
+	const ACTION_IGNORE = 'ignore'; // duplicate authorisation IPN - ignore
 	const ACTION_MISSING = 'missing'; // missing donor details - shunt job to damaged queue
 
 	public static function factory( Authorisation $authMessage ) {
@@ -114,6 +116,7 @@ class ProcessCaptureRequestJob extends RunnableJob {
 					if ( !$messageIsFromFredge ) {
 						// If we read the message from pending, update it.
 						$dbMessage['captured'] = true;
+						$dbMessage['gateway_txn_id'] = $this->pspReference;
 						$db->storeMessage( $dbMessage );
 					}
 				} else {
@@ -148,6 +151,10 @@ class ProcessCaptureRequestJob extends RunnableJob {
 				if ( !$this->isLikelyRecurring() ) {
 					throw new RetryableException( 'Missing donor details' );
 				}
+			case self::ACTION_IGNORE:
+				// We got a second Authorisation IPN for the same donation attempt with
+				// the exact same PSP reference. Just drop the second one.
+				break;
 		}
 
 		return $success;
@@ -167,11 +174,19 @@ class ProcessCaptureRequestJob extends RunnableJob {
 			return self::ACTION_MISSING;
 		}
 		if ( !empty( $dbMessage['captured'] ) ) {
-			$this->logger->info(
-				"Duplicate PSP Reference '{$this->pspReference}' for order ID '{$this->merchantReference}'.",
-				$dbMessage
-			);
-			return self::ACTION_DUPLICATE;
+			if ( $this->pspReference === $dbMessage['gateway_txn_id'] ) {
+				$this->logger->info(
+					"Duplicate Authorisation IPN for PSP reference '{$this->pspReference}' and order ID '{$this->merchantReference}'.",
+					$dbMessage
+				);
+				return self::ACTION_IGNORE;
+			} else {
+				$this->logger->info(
+					"Duplicate PSP Reference '{$this->pspReference}' for order ID '{$this->merchantReference}'.",
+					$dbMessage
+				);
+				return self::ACTION_DUPLICATE;
+			}
 		}
 		return $this->getRiskAction( $dbMessage );
 	}
@@ -221,7 +236,7 @@ class ProcessCaptureRequestJob extends RunnableJob {
 	 * @return CardPaymentProvider
 	 */
 	protected function getProvider() {
-		return new CardPaymentProvider();
+		return PaymentProviderFactory::getProviderForMethod( 'cc' );
 	}
 
 	protected function cancelAuthorization() {

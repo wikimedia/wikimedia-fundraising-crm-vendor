@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '1a9a1529ed363a8e63e437155d26a25e55bec36d',
+    'reference' => 'a07f7feda804388d51d3730956293bebb43576db',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -281,12 +281,12 @@
     ),
     'jackgleeson/stats-collector' => 
     array (
-      'pretty_version' => 'v1.4.10',
-      'version' => '1.4.10.0',
+      'pretty_version' => 'v1.4.11',
+      'version' => '1.4.11.0',
       'aliases' => 
       array (
       ),
-      'reference' => '4ee7d1bab178b3e8b2d2f28509c046eb2a0cdbe5',
+      'reference' => '5d6e1a8b58bea5c06e63841a7187cb961272a9f2',
     ),
     'league/csv' => 
     array (
@@ -765,12 +765,12 @@
     ),
     'wikimedia/donation-interface' => 
     array (
-      'pretty_version' => 'v2.5.3',
-      'version' => '2.5.3.0',
+      'pretty_version' => 'v2.5.5',
+      'version' => '2.5.5.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'fadde18daa9402fdf3d249360d2d804f0d708216',
+      'reference' => '505bb9bda95cf0c6631637e9535cc25506a2039d',
     ),
     'wikimedia/fundraising-crm' => 
     array (
@@ -779,7 +779,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '1a9a1529ed363a8e63e437155d26a25e55bec36d',
+      'reference' => 'a07f7feda804388d51d3730956293bebb43576db',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
@@ -792,12 +792,12 @@
     ),
     'wikimedia/smash-pig' => 
     array (
-      'pretty_version' => 'v0.6.11',
-      'version' => '0.6.11.0',
+      'pretty_version' => 'v0.7.3.1',
+      'version' => '0.7.3.1',
       'aliases' => 
       array (
       ),
-      'reference' => 'b42e591039a61432d92a05ab4ddafb2887ca08a5',
+      'reference' => 'b39b63ab37e362bf03f835123f059b0fc4f993b2',
     ),
     'willdurand/geocoder' => 
     array (

@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Ajeje Brazorf",
 			"Albe Albe460",
 			"Alexmar983",
 			"Aushulz",
@@ -39,8 +40,8 @@
 	"donate_interface-comment-label": "Commento:",
 	"donate_interface-email-agreement": "Accetto di ricevere aggiornamenti occasionali tramite e-mail dalla Wikimedia Foundation.",
 	"donate_interface-comment-title": "Commento pubblico",
-	"donate_interface-donation-description": "Wikimedia donate@wikimedia.org",
-	"donate_interface-monthly-donation-description": "Wikimedia donate@wikimedia.org - Donazione mensile",
+	"donate_interface-donation-description": "Wikimedia 877 600 9454",
+	"donate_interface-monthly-donation-description": "Wikimedia 877 600 9454",
 	"donate_interface-amount-error": "Si prega di selezionare un importo da donare",
 	"donate_interface-smallamount-error": "Si prega di selezionare un importo (minimo $1)",
 	"donate_interface-bigamount-error": "Non possiamo accettare donazioni superiori a $4 USD ($1 $2) attraverso il nostro sito web. Si prega di contattare il nostro ufficio per le grandi donazioni all'indirizzo $3.",
@@ -202,7 +203,6 @@
 	"donate_interface-error-msg-invalid-postal_code-us": "Per favore correggi gli errori nel campo 'CAP'",
 	"donate_interface-error-msg-invalid-postal_code": "Per favore correggi gli errori nel campo 'codice postale'",
 	"donate_interface-error-msg-country": "Per favore, inserisci la tua nazione",
-	"donate_interface-error-msg-card_type": "tipo di carta di credito",
 	"donate_interface-error-msg-card_num": "numero della carta di credito",
 	"donate_interface-error-msg-expiration": "Inserisci la data di scadenza della carta",
 	"donate_interface-error-msg-cvv": "CVV sul retro della carta",
@@ -405,6 +405,8 @@
 	"donate_interface-onetime-short": "Una volta",
 	"donate_interface-error-http-403": "Non si dispone dei permessi necessari per accedere a questa pagina.",
 	"donate_interface-statement": "Wikimedia $1",
+	"donate_interface-monthly-convert-no-button-variant-006": "No, grazie",
+	"donate_interface-monthly-convert-no-button-variant-011": "No, grazie!",
 	"donate_interface-fundraiser-maintenance-header": "Temporaneamente fuori servizio per manutenzione",
 	"donate_interface-fundraiser-maintenance-notice": "Stiamo al momento effettuando la manutenzione programmata e non siamo in grado di accettare donazioni. Si prega di riprovare fra poco. Per qualsiasi domanda potete scriverci a $1."
 }
