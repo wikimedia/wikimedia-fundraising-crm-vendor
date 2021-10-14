@@ -5,7 +5,7 @@
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '9e3e278f797f53008d3b6dde091a742a196fb855',
+        'reference' => 'b91ecdc413b41d31b36e1b0bc9280733c5bea0a9',
         'name' => 'wikimedia/fundraising-crm',
         'dev' => false,
     ),
@@ -266,15 +266,6 @@
             'install_path' => __DIR__ . '/../guzzlehttp/psr7',
             'aliases' => array(),
             'reference' => '239400de7a173fe9901b9ac7c06497751f00727a',
-            'dev_requirement' => false,
-        ),
-        'ircmaxell/password-compat' => array(
-            'pretty_version' => 'v1.0.4',
-            'version' => '1.0.4.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../ircmaxell/password-compat',
-            'aliases' => array(),
-            'reference' => '5c5cde8822a69545767f7c7f3058cb15ff84614c',
             'dev_requirement' => false,
         ),
         'jackgleeson/stats-collector' => array(
@@ -648,13 +639,10 @@
             ),
         ),
         'symfony/polyfill-php55' => array(
-            'pretty_version' => 'v1.9.0',
-            'version' => '1.9.0.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../symfony/polyfill-php55',
-            'aliases' => array(),
-            'reference' => '578b8528da843de0fc65ec395900fa3181f2ead7',
             'dev_requirement' => false,
+            'replaced' => array(
+                0 => '*',
+            ),
         ),
         'symfony/polyfill-php70' => array(
             'pretty_version' => 'v1.18.1',
@@ -770,7 +758,7 @@
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '9e3e278f797f53008d3b6dde091a742a196fb855',
+            'reference' => 'b91ecdc413b41d31b36e1b0bc9280733c5bea0a9',
             'dev_requirement' => false,
         ),
         'wikimedia/omnimail-silverpop' => array(
