@@ -147,7 +147,7 @@ class Api {
 		$restParams['shopperStatement'] = $params['description'] ?? '';
 		$isRecurring = $params['recurring'] ?? '';
 		if ( $isRecurring ) {
-			$restParams = array_merge( $restParams, $this->addRecurringParams( $params ) );
+			$restParams = array_merge( $restParams, $this->addRecurringParams( $params, true ) );
 		}
 		$result = $this->makeRestApiCall( $restParams, 'payments', 'POST' );
 		return $result['body'];
@@ -203,6 +203,10 @@ class Api {
 			],
 			'returnUrl' => $params['return_url']
 		];
+		$isRecurring = $params['recurring'] ?? '';
+		if ( $isRecurring ) {
+			$restParams = array_merge( $restParams, $this->addRecurringParams( $params, true ) );
+		}
 
 		$result = $this->makeRestApiCall( $restParams, 'payments', 'POST' );
 		return $result['body'];
@@ -220,7 +224,7 @@ class Api {
 		];
 		$isRecurring = $params['recurring'] ?? '';
 		if ( $isRecurring ) {
-			$restParams = array_merge( $restParams, $this->addRecurringParams( $params ) );
+			$restParams = array_merge( $restParams, $this->addRecurringParams( $params, true ) );
 		}
 
 		$result = $this->makeRestApiCall(
@@ -230,6 +234,32 @@ class Api {
 		);
 
 		return $result['body'];
+	}
+
+	/**
+	 * Get an Apple Pay session directly from Apple without going through
+	 * Adyen's servers. Note: only needed when using your own merchant
+	 * certificate. When using Adyen's merchant certificate, this is all
+	 * handled for you in Adyen's code.
+	 * https://developer.apple.com/documentation/apple_pay_on_the_web/apple_pay_js_api/requesting_an_apple_pay_payment_session
+	 */
+	public function createApplePaySession( array $params ) : array {
+		$request = new OutboundRequest( $params['validation_url'], 'POST' );
+		$request->setBody( json_encode( [
+			// Your Apple Pay merchant ID
+			'merchantIdentifier' => $params['merchant_identifier'],
+			// A string of 64 or fewer UTF-8 characters containing the canonical name
+			// for your store, suitable for display. Do not localize the name.
+			'displayName' => $params['display_name'],
+			// For Apple Pay JS this should always be 'web'
+			'initiative' => 'web',
+			// fully qualified domain name associated with your Apple Pay Merchant Identity Certificate
+			'initiativeContext' => $params['domain_name']
+		] ) );
+		$request->setCertPath( $params['certificate_path'] );
+		$request->setCertPassword( $params['certificate_password'] );
+		$response = $request->execute();
+		return json_decode( $response['body'], true );
 	}
 
 	/**
@@ -492,14 +522,17 @@ class Api {
 	 * Adds the parameters to set up a recurring payment.
 	 *
 	 * @param array $params
+	 * @param bool $needInteractionAndModel Set to 'true' for card or Apple Pay transactions
+	 *  which need the shopperInteraction and recurringProcessModel parameters set.
+	 *
 	 * @return array
 	 */
-	private function addRecurringParams( $params ) {
+	private function addRecurringParams( $params, $needInteractionAndModel ) {
 		// credit card, apple pay, and iDeal all need shopperReference and storePaymentMethod
 		$recurringParams['shopperReference'] = $params['order_id'];
 		$recurringParams['storePaymentMethod'] = true;
 
-		if ( $params['payment_method'] == 'cc' || $params['payment_method'] == 'apple' ) {
+		if ( $needInteractionAndModel ) {
 			// credit card and apple pay also need shopperInteraction and recurringProcessingModel
 			$recurringParams['shopperInteraction'] = static::RECURRING_SHOPPER_INTERACTION_SETUP;
 			$recurringParams['recurringProcessingModel'] = static::RECURRING_PROCESSING_MODEL;
