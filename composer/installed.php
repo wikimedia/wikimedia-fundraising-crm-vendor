@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => 'caf3b14d8b6b8802527a17cb68e7e836c6e79106',
+    'reference' => 'b3e2a12280fa54db3e8cf078631129ed01396df4',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -455,12 +455,12 @@
     ),
     'phpmailer/phpmailer' => 
     array (
-      'pretty_version' => 'v6.4.1',
-      'version' => '6.4.1.0',
+      'pretty_version' => 'v6.5.1',
+      'version' => '6.5.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '9256f12d8fb0cd0500f93b19e18c356906cbed3d',
+      'reference' => 'dd803df5ad7492e1b40637f7ebd258fee5ca7355',
     ),
     'phpseclib/phpseclib' => 
     array (
@@ -768,7 +768,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => 'caf3b14d8b6b8802527a17cb68e7e836c6e79106',
+      'reference' => 'b3e2a12280fa54db3e8cf078631129ed01396df4',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
