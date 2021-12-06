@@ -13,6 +13,25 @@
 		var config = {};
 		switch ( type ) {
 			case 'card':
+				// Note: Debug messages are only sent and logged server-side if
+				// $wgDonationInterfaceLogDebug (or $wgAdyenCheckoutGatewayLogDebug) is true
+
+				config.onBrand = function ( brandInfo ) {
+					var message = brandInfo.brand ?
+						'onBrand returned brand: ' + brandInfo.brand :
+						'onBrand returned: ' + JSON.stringify( brandInfo );
+					mw.donationInterface.forms.addDebugMessage( message );
+				};
+
+				config.onBinLookup = function ( binLookupInfo ) {
+					var message = binLookupInfo.detectedBrands && binLookupInfo.detectedBrands.length > 0 ?
+						'onBinLookup returned detected brands: ' + JSON.stringify( binLookupInfo.detectedBrands ) :
+						'onBinLookup returned: ' + JSON.stringify( binLookupInfo );
+					mw.donationInterface.forms.addDebugMessage( message );
+				};
+
+				return config;
+
 			case 'ideal':
 				// for cc and ideal, additional config is optional
 				return config;
@@ -59,6 +78,27 @@
 				// text as opposed to our standard blue Donate button
 				config.showPayButton = true;
 				config.buttonType = 'donate';
+				// When the donor clicks the donate button, this event is fired with
+				// a validationUrl provided by Apple. We have to make a server-side
+				// request to get a big blob of Apple Pay session data, then send it
+				// via the resolve function back to the component, which apparently
+				// sends it back to the native widget via completeMerchantValidation.
+				// https://developer.apple.com/documentation/apple_pay_on_the_web/apple_pay_js_api/providing_merchant_validation
+				config.onValidateMerchant = function ( resolve, reject, validationUrl ) {
+					var api = new mw.Api();
+					api.post( {
+						action: 'di_applesession_adyen',
+						validation_url: validationUrl,
+						wmf_token: $( '#wmf_token' ).val()
+					} ).then( function ( data ) {
+						if ( data.result && data.result.errors ) {
+							mw.donationInterface.validation.showErrors( data.result.errors );
+							reject();
+						} else {
+							resolve( data.session );
+						}
+					} );
+				};
 
 				return config;
 			default:
@@ -243,7 +283,8 @@
 			component,
 			component_config,
 			config,
-			ui_container_name;
+			ui_container_name,
+			oldShowErrors;
 
 		payment_method = $( '#payment_method' ).val();
 		component_type = mapPaymentMethodToComponentType( payment_method );
@@ -256,6 +297,29 @@
 			'<div id="action-container" />'
 		);
 
+		// Override validation's showErrors function to add error
+		// highlights to the outer div around the secure field iframe.
+		// FIXME: cleaner object-oriented JS with inheritance would
+		// make this prettier. See https://phabricator.wikimedia.org/T293287
+		oldShowErrors = mw.donationInterface.validation.showErrors;
+		mw.donationInterface.validation.showErrors = function ( errors ) {
+			var adyenFieldName;
+			$.each( errors, function ( field ) {
+				adyenFieldName = false;
+				if ( field === 'card_num' ) {
+					adyenFieldName = 'encryptedCardNumber';
+				} else if ( field === 'cvv' ) {
+					adyenFieldName = 'encryptedSecurityCode';
+				}
+				if ( adyenFieldName ) {
+					$( 'span[data-cse=' + adyenFieldName + ']' )
+						.closest( '.adyen-checkout__input-wrapper' )
+						.addClass( 'errorHighlight' );
+				}
+			} );
+			oldShowErrors( errors );
+		};
+
 		// TODO: useful comments
 		config = mw.config.get( 'adyenConfiguration' );
 		checkout = getCheckout( config );
@@ -266,7 +330,12 @@
 			component.isAvailable().then( function () {
 				component.mount( '#' + ui_container_name );
 			} ).catch( function () {
-				throw Error( 'Apple Pay is not available!' );
+				mw.donationInterface.validation.showErrors( {
+					general: mw.message(
+						'donate_interface-error-msg-apple_pay_unsupported',
+						mw.config.get( 'DonationInterfaceOtherWaysURL' )
+					).plain()
+				} );
 			} );
 			// For Apple Pay, we need contact data from the onAuthorized event and token
 			// data from the onSubmit event before we can make our MediaWiki API call.

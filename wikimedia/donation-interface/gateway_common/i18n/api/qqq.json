@@ -46,6 +46,7 @@
 	"apihelp-donate-param-country": "{{doc-apihelp-param|donate|country}}",
 	"apihelp-donate-param-card_num": "{{doc-apihelp-param|donate|card_num}}",
 	"apihelp-donate-param-card_type": "{{doc-apihelp-param|donate|card_type}}",
+	"apihelp-donate-param-debug_messages": "{{doc-apihelp-param|donate|debug_messages}}",
 	"apihelp-donate-param-expiration": "{{doc-apihelp-param|donate|expiration}}",
 	"apihelp-donate-param-cvv": "{{doc-apihelp-param|donate|cvv}}",
 	"apihelp-donate-param-payment_method": "{{doc-apihelp-param|donate|payment_method}}",
@@ -79,5 +80,6 @@
 	"apihelp-employerSearch-description": "{{doc-apihelp-description|employerSearch}}",
 	"apihelp-employerSearch-summary": "{{doc-apihelp-summary|employerSearch}}",
 	"apihelp-employerSearch-param-employer": "{{doc-apihelp-param|employerSearch|employer}}",
-	"apihelp-employerSearch-example-1": "{{doc-apihelp-example|employerSearch}}"
+	"apihelp-employerSearch-example-1": "{{doc-apihelp-example|employerSearch}}",
+	"apihelp-di_applesession_adyen-summary": "{{doc-apihelp-summary|di_applesession_adyen}}"
 }

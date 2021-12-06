@@ -47,6 +47,7 @@
 	"APIModules": {
 		"di_amazon_bill": "AmazonBillingApi",
 		"di_donate_adyen": "AdyenDonationApi",
+		"di_applesession_adyen": "AdyenAppleApi",
 		"donate": "DonationApi",
 		"di_recurring_convert": "RecurringConversionApi",
 		"logPaymentsFormError": "ClientErrorApi",
@@ -144,6 +145,7 @@
 		"IngenicoAdapter": "ingenico_gateway/ingenico.adapter.php",
 		"IngenicoLocale": "ingenico_gateway/IngenicoLocale.php",
 		"IngenicoPaymentSubmethod": "ingenico_gateway/IngenicoPaymentSubmethod.php",
+		"IngenicoRecurringBooleanValue": "ingenico_gateway/IngenicoRecurringBooleanValue.php",
 		"GlobalCollectOrphanAdapter": "globalcollect_gateway/orphan.adapter.php",
 		"GlobalCollectOrphanRectifier": "globalcollect_gateway/GlobalCollectOrphanRectifier.php",
 		"IngenicoOrphanAdapter": "ingenico_gateway/orphan.adapter.php",
@@ -163,6 +165,7 @@
 		"AdyenAdapter": "adyen_gateway/adyen.adapter.php",
 		"Adyen3DSecure": "adyen_gateway/checkout/Adyen3DSecure.php",
 		"AdyenDonationApi": "adyen_gateway/checkout/adyen.api.php",
+		"AdyenAppleApi": "adyen_gateway/checkout/adyen_apple.api.php",
 		"AdyenCheckoutAdapter": "adyen_gateway/checkout/adyen_checkout.adapter.php",
 		"AdyenCheckoutGateway": "adyen_gateway/checkout/adyen_checkout_gateway.body.php",
 		"AdyenCheckoutGatewayResult": "adyen_gateway/checkout/adyen_checkout_resultswitcher.body.php",
@@ -275,7 +278,10 @@
 		"ext.donationInterface.adyenCheckout": {
 			"scripts": "adyen_gateway/checkout/forms/adyen.js",
 			"styles": "adyen_gateway/checkout/forms/adyen.css",
-			"dependencies": "ext.donationInterface.forms"
+			"dependencies": "ext.donationInterface.forms",
+			"messages": [
+				"donate_interface-error-msg-apple_pay_unsupported"
+			]
 		},
 		"ext.donationInterface.ingenico.scripts": {
 			"scripts": "globalcollect_gateway/forms/js/ingenico.js",

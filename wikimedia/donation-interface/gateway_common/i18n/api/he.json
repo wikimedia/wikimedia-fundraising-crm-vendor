@@ -23,6 +23,7 @@
 	"apihelp-donate-param-country": "קוד מדינה.",
 	"apihelp-donate-param-card_num": "מספר כרטיס האשראי.",
 	"apihelp-donate-param-card_type": "סוג כרטיס האשראי.",
+	"apihelp-donate-param-debug_messages": "הודעות ניפוי שגיאות להוספה ליומן.",
 	"apihelp-donate-param-expiration": "תאריך התפוגה.",
 	"apihelp-donate-param-cvv": "ספרות אחרונות בגב הכרטיס (CVV).",
 	"apihelp-donate-param-payment_method": "באיזו שיטת תשלום להשתמש.",
@@ -56,5 +57,6 @@
 	"apihelp-employerSearch-description": "ה־API הזה מאפשר לך לחפש מעסיקים שמשתתפים בתוכנית התאמת בתרומות של קרן ויקימדיה.",
 	"apihelp-employerSearch-summary": "ה־API הזה מאפשר לך לחפש מעסיקים שמשתתפים בתוכנית התאמת בתרומות של קרן ויקימדיה.",
 	"apihelp-employerSearch-param-employer": "איזה מעסיק לחפש, למשל הצלב האדום (Red Cross), הקרן העולמית לשימור חיות הבר (WWF), צבא הישע (Salvation Army), וכו'.",
-	"apihelp-employerSearch-example-1": "חיפוש מעסיק"
+	"apihelp-employerSearch-example-1": "חיפוש מעסיק",
+	"apihelp-di_applesession_adyen-summary": "מאפשר בקשת התחברות לאפל פיי ישירות מאפל"
 }

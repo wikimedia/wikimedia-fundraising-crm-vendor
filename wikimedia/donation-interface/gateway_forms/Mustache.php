@@ -1,9 +1,9 @@
 <?php
 
-use SmashPig\Core\PaymentError;
-use SmashPig\Core\ValidationError;
 use LightnCandy\LightnCandy;
 use MediaWiki\MediaWikiServices;
+use SmashPig\Core\PaymentError;
+use SmashPig\Core\ValidationError;
 
 /**
  * Gateway form rendering using Mustache
@@ -137,6 +137,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$this->addFormFields( $data );
 		$this->handleOptIn( $data );
 		$this->addCurrencyData( $data );
+		$data['show_continue'] = $this->gatewayPage->showContinueButton();
 		$data['recurring'] = (bool)$data['recurring'];
 		return $data;
 	}
@@ -180,6 +181,11 @@ class Gateway_Form_Mustache extends Gateway_Form {
 	}
 
 	protected function addSubmethods( &$data ) {
+		if ( !$this->gatewayPage->showSubmethodButtons() ) {
+			$data['show_submethods'] = false;
+			return;
+		}
+
 		$availableSubmethods = $this->gateway->getAvailableSubmethods();
 		$showPresetSubmethod = !empty( $data['payment_submethod'] ) &&
 			array_key_exists( $data['payment_submethod'], $availableSubmethods );
@@ -361,7 +367,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 			$data['currency'],
 			$data['language'] . '_' . $data['country']
 		);
-		if ( doubleval( $data['amount'] ) === 0.0 ) {
+		if ( floatval( $data['amount'] ) === 0.0 ) {
 			$data['amount'] = '';
 		}
 	}

@@ -39,7 +39,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 	/**
 	 * The gateway adapter object
-	 * @var GatewayAdapter $adapter
+	 * @var GatewayAdapter
 	 */
 	public $adapter;
 
@@ -244,7 +244,7 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 		if ( $this->adapter->getGlobal( 'DisplayDebug' ) !== true ) {
 			return;
-  }
+		}
 
 		$output = $this->getOutput();
 
@@ -468,8 +468,11 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	public function setClientVariables( &$vars ) {
 		$language = $this->adapter->getData_Unstaged_Escaped( 'language' );
 		$country = $this->adapter->getData_Unstaged_Escaped( 'country' );
+
 		$vars['wgDonationInterfacePriceFloor'] = $this->adapter->getGlobal( 'PriceFloor' );
 		$vars['wgDonationInterfacePriceCeiling'] = $this->adapter->getGlobal( 'PriceCeiling' );
+		$vars['wgDonationInterfaceLogDebug'] = $this->adapter->getGlobal( 'LogDebug' );
+
 		try {
 			$clientRules = $this->adapter->getClientSideValidationRules();
 			if ( !empty( $clientRules ) ) {
@@ -510,5 +513,23 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			}
 		}
 		return $variant;
+	}
+
+	/**
+	 * Integrations that do not show submethod buttons should override to return false.
+	 *
+	 * @return bool
+	 */
+	public function showSubmethodButtons() {
+		return true;
+	}
+
+	/**
+	 * Integrations that never need a continue button should override to return false.
+	 *
+	 * @return bool
+	 */
+	public function showContinueButton() {
+		return true;
 	}
 }

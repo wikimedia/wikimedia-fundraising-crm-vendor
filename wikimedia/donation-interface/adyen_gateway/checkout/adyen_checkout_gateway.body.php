@@ -45,5 +45,28 @@ class AdyenCheckoutGateway extends GatewayPage {
 		$vars['DonationInterfaceFailUrl'] = $failPage;
 		$vars['DonationInterfaceThreeDecimalCurrencies'] = CurrencyRoundingHelper::$threeDecimalCurrencies;
 		$vars['DonationInterfaceNoDecimalCurrencies'] = CurrencyRoundingHelper::$noDecimalCurrencies;
+		$vars['DonationInterfaceOtherWaysURL'] = $this->adapter->localizeGlobal( 'OtherWaysURL' );
+	}
+
+	/**
+	 * Overrides parent function to return false.
+	 *
+	 * @return bool
+	 *
+	 * @see GatewayPage::showSubmethodButtons()
+	 */
+	public function showSubmethodButtons() {
+		return false;
+	}
+
+	/**
+	 * Overrides parent function to return false.
+	 *
+	 * @return bool
+	 *
+	 * @see GatewayPage::showContinueButton()
+	 */
+	public function showContinueButton() {
+		return false;
 	}
 }

@@ -1,8 +1,3 @@
-/* Hide submethod buttons */
-/* TODO Stop adding submethod elements to the form */
-dl.submethods {
-	display: none;
-}
 /* Style form elements to look the same (those added by Adyen and our own).
 
    Note: Coordinate with gateway_forms/mustache/forms.css, skinOverride.css and
@@ -53,7 +48,6 @@ span.adyen-checkout__label__text {
 
 	/* inherit cancels the rules set by Adyen; these text properties are
 	   then inherited from the enclosing element, set in the vector skin. */
-	font-size: inherit;
 	font-size: inherit;
 	line-height: inherit;
 }
@@ -152,7 +146,6 @@ span.adyen-checkout__error-text {
 	/* For error messages, cancel the text sizes set by Adyen; these properties are
 	   then inherited from the enclosing element, set in the vector skin. */
 	font-size: inherit;
-	font-size: inherit;
 	line-height: inherit;
 
 	/* Harmonize error text color. Note: coordinate with Vector skin */
@@ -176,8 +169,7 @@ div.adyen-checkout__dropdown__button input.adyen-checkout__filter-input:focus {
 	border-radius: 0px 0px 2px 2px;
 }
 
-/* Remove extra "continue" button on rtbt
-   TODO: Something to do with the "force" class? */
-#paymentContinue.force {
-	display: none;
+/* Center the Apple Pay button */
+div#applepay-container {
+	text-align: center;
 }

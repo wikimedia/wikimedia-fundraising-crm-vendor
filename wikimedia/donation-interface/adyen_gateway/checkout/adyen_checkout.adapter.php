@@ -2,6 +2,7 @@
 
 use Psr\Log\LogLevel;
 use SmashPig\Core\PaymentError;
+use SmashPig\Core\ValidationError;
 use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\PaymentDetailResponse;
@@ -38,6 +39,12 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 		$this->logger->info( "Calling createPayment for {$authorizeParams['email']}" );
 		$authorizeResult = $provider->createPayment( $authorizeParams );
 		$this->logger->info( "Returned PSP Reference {$authorizeResult->getGatewayTxnId()}" );
+		$validationErrors = $authorizeResult->getValidationErrors();
+		// If there are validation errors, present them for correction with a
+		// 'refresh' type PaymentResult
+		if ( count( $validationErrors ) > 0 ) {
+			return $this->getLocalizedValidationErrorResult( $validationErrors );
+		}
 		if ( $authorizeResult->requiresRedirect() ) {
 			// Looks like we're not going to finish the payment in this
 			// request - our dear donor needs to take more actions on
@@ -93,12 +100,7 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 			$errorLogMessage .= json_encode( $authorizeResult->getRawResponse() );
 			$this->logger->info( $errorLogMessage );
 		} elseif ( $authorizeResult->requiresApproval() ) {
-			$riskScores = $authorizeResult->getRiskScores();
-			$this->addResponseData( [
-				'avs_result' => $riskScores['avs'] ?? 0,
-				'cvv_result' => $riskScores['cvv'] ?? 0
-			] );
-			$this->runAntifraudFilters();
+			$this->runFraudFiltersIfNeeded( $authorizeResult );
 			switch ( $this->getValidationAction() ) {
 				case ValidationAction::PROCESS:
 					$this->logger->info( "Calling approvePayment on PSP reference {$authorizeResult->getGatewayTxnId()}" );
@@ -119,7 +121,11 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 					}
 					break;
 				case ValidationAction::REJECT:
-					$paymentResult = PaymentResult::newFailure();
+					$paymentResult = PaymentResult::newFailure( [ new PaymentError(
+						'internal-0000',
+						"Failed pre-process checks for payment.",
+						LogLevel::INFO
+					) ] );
 					$this->logger->info( 'Created payment rejected by our fraud filters' );
 					break;
 				default:
@@ -138,7 +144,12 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 		}
 		// Log and send the payments-init message, and clean out the session
 		$this->finalizeInternalStatus( $transactionStatus );
+
 		// Run some post-donation filters and send donation queue message
+		// NOTE: recurring iDEAL will not be added to the donations queue
+		// as the recurring_token is still needed from the ipn message.
+		// We are still sending it through the postProcessDonation flow
+		// to get the additional filters and logging
 		$this->postProcessDonation();
 		return $paymentResult;
 	}
@@ -240,12 +251,24 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 
 	public function getRequiredFields( $knownData = null ) {
 		$fields = parent::getRequiredFields( $knownData );
+		return array_diff( $fields, $this->getFieldsToRemove() );
+	}
+
+	public function getFormFields( $knownData = null ) {
+		$fields = parent::getFormFields( $knownData );
+		return array_diff_key(
+			$fields,
+			array_fill_keys( $this->getFieldsToRemove(), true )
+		);
+	}
+
+	protected function getFieldsToRemove() {
 		$method = $knownData['payment_method'] ?? $this->getData_Unstaged_Escaped( 'payment_method' );
 		if ( $method === 'apple' ) {
 			// For Apple Pay, do not require any of the following fields in forms,
 			// regardless of what may be specified in config/country_fields.yaml
 			// We can gather them instead from the Apple Pay UI.
-			$fieldsFromPaySheet = [
+			return [
 				'first_name',
 				'last_name',
 				'email',
@@ -254,9 +277,8 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 				'city',
 				'state_province'
 			];
-			$fields = array_diff( $fields, $fieldsFromPaySheet );
 		}
-		return $fields;
+		return [];
 	}
 
 	public function getCheckoutConfiguration() {
@@ -317,4 +339,82 @@ class AdyenCheckoutAdapter extends GatewayAdapter {
 		// Default behavior is to finalize and return success
 		return parent::processDonorReturn( $requestValues );
 	}
+
+	/**
+	 * Adds a catch to stop recurring iDEALs from being sent to the donations queue
+	 * but otherwise sends to the queues as normal
+	 *
+	 * @param string $queue What queue to send the message to
+	 * @param bool $contactOnly If we only have the donor's contact information
+	 *
+	 */
+	protected function pushMessage( $queue, $contactOnly = false ) {
+		// Don't send recurring iDEALs to the donations queue
+		// recurring iDEAL's recurring_payment_token comes in on a RECURRING_CONTRACT
+		// ipn message, SmashPig's ipn listener is what will push them to the donations queue
+		if (
+			$this->getPaymentSubmethod() == 'rtbt_ideal' &&
+			$this->getData_Unstaged_Escaped( 'recurring' ) &&
+			$queue == 'donations'
+		) {
+			return;
+		}
+		// Send all other adyen messages to the queues as normal
+		parent::pushMessage( $queue, $contactOnly );
+	}
+
+	/**
+	 * Runs antifraud filters if the appropriate for the current payment method.
+	 * Sets $this->action to one of the ValidationAction constants.
+	 *
+	 * @param PaymentDetailResponse $authorizeResult
+	 */
+	protected function runFraudFiltersIfNeeded( PaymentDetailResponse $authorizeResult ): void {
+		if ( $this->getPaymentMethod() === 'apple' ) {
+			// Adyen guidance is that Apple Pay fraud rates are minuscule enough
+			// to skip fraud filters.
+			$this->setValidationAction( ValidationAction::PROCESS );
+		} else {
+			$riskScores = $authorizeResult->getRiskScores();
+			$this->addResponseData( [
+				'avs_result' => $riskScores['avs'] ?? 0,
+				'cvv_result' => $riskScores['cvv'] ?? 0
+			] );
+			$this->runAntifraudFilters();
+		}
+	}
+
+	/**
+	 * @param array $validationErrors
+	 * @return PaymentResult
+	 */
+	protected function getLocalizedValidationErrorResult( array $validationErrors ): PaymentResult {
+		// Errors from SmashPig don't have message* parameters set,
+		// so we create a new array of localized errors
+		// FIXME: those should probably be different classes
+		// see https://phabricator.wikimedia.org/T294957
+		$localizedErrors = [];
+		foreach ( $validationErrors as $error ) {
+			$field = $error->getField();
+			if ( $field === 'payment_submethod' ) {
+				// This means the donor tried an unsupported card type.
+				$messageKey = 'donate_interface-donate-error-try-a-different-card-html';
+				$messageParams = [
+					$this->localizeGlobal( 'OtherWaysURL' ),
+					$this->getGlobal( 'ProblemsEmail' )
+				];
+			} else {
+				$messageKey = 'donate_interface-error-msg-' . $field;
+				$messageParams = [];
+			}
+			$localizedErrors[] = new ValidationError(
+				$field, $messageKey, $messageParams
+			);
+			$this->logger->info(
+				'createPayment call came back with validation error in ' . $field
+			);
+		}
+		return PaymentResult::newRefresh( $localizedErrors );
+	}
+
 }

@@ -145,6 +145,12 @@
 			$.extend( sendData, extraData );
 		}
 
+		// If debug logging is enabled and there are debug messages, send them.
+		if ( mw.config.get( 'wgDonationInterfaceLogDebug' ) &&
+			di.forms.debugMessages.length > 0 ) {
+			sendData.debug_messages = di.forms.debugMessages.join( '\n' );
+		}
+
 		$.ajax( {
 			url: mw.util.wikiScript( 'api' ),
 			data: sendData,
@@ -154,11 +160,13 @@
 				if ( typeof data.error !== 'undefined' ) {
 					// FIXME alert sux
 					alert( mw.msg( 'donate_interface-error-msg-general' ) );
-					$( '#paymentContinue' ).show(); // Show continue button in 2nd section
+					// Show continue button in 2nd section if it exists
+					$( '#paymentContinue' ).show();
 				} else if ( typeof data.result !== 'undefined' ) {
 					if ( data.result.errors ) {
 						mw.donationInterface.validation.showErrors( data.result.errors );
-						$( '#paymentContinue' ).show(); // Show continue button in 2nd section
+						// Show continue button in 2nd section if it exists
+						$( '#paymentContinue' ).show();
 					} else {
 						successCallback( data.result );
 					}
@@ -198,7 +206,11 @@
 		callDonateApi: callDonateApi,
 		isIframe: isIframe,
 		resetSubmethod: resetSubmethod,
-		getOptIn: getOptIn
+		getOptIn: getOptIn,
+		debugMessages: [],
+		addDebugMessage: function ( message ) {
+			di.forms.debugMessages.push( message );
+		}
 	};
 
 	$( function () {
@@ -225,6 +237,9 @@
 			}
 		} );
 
+		// Some forms show a 'continue' button when validation errors are found
+		// server-side on the initial submit. When shown, it should validate
+		// and submit the form.
 		$( '#paymentContinueBtn' ).on( 'click', function () {
 			if ( di.validation.validate() ) {
 				di.forms.submit();
