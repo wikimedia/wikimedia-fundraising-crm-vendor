@@ -41,6 +41,7 @@ return array(
     'CleanupRecurringLength' => $vendorDir . '/wikimedia/donation-interface/paypal_gateway/CleanupRecurringLength.php',
     'ClientErrorApi' => $vendorDir . '/wikimedia/donation-interface/gateway_common/clientError.api.php',
     'ClientSideValidationHelper' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
+    'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'ConfigurationReader' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
     'Console_Table' => $vendorDir . '/pear/console_table/Table.php',
     'ContributionTrackingPlusUnique' => $vendorDir . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
