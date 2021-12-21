@@ -6,7 +6,7 @@
     'aliases' => 
     array (
     ),
-    'reference' => '3af7a7cf04b9ba4a0a27e4c5fade149d341f0b55',
+    'reference' => '2459fa609818c4c996e32ce769c3e6fd1008be40',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -768,7 +768,7 @@
       'aliases' => 
       array (
       ),
-      'reference' => '3af7a7cf04b9ba4a0a27e4c5fade149d341f0b55',
+      'reference' => '2459fa609818c4c996e32ce769c3e6fd1008be40',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (
@@ -781,12 +781,12 @@
     ),
     'wikimedia/smash-pig' => 
     array (
-      'pretty_version' => 'v0.7.8.1',
-      'version' => '0.7.8.1',
+      'pretty_version' => 'v0.7.8.2',
+      'version' => '0.7.8.2',
       'aliases' => 
       array (
       ),
-      'reference' => '3546a0203f7b51b358f948e36759af9ed4aa9de6',
+      'reference' => '595be6b0e6217ce7ab174e95b9e835f345a03df2',
     ),
     'willdurand/geocoder' => 
     array (
