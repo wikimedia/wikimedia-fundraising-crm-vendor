@@ -30,7 +30,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '2459fa609818c4c996e32ce769c3e6fd1008be40',
+    'reference' => 'e5e958525e60a5d89a97dd9a2d3e185a4eb45797',
     'name' => 'wikimedia/fundraising-crm',
   ),
   'versions' => 
@@ -778,12 +778,12 @@ private static $installed = array (
     ),
     'wikimedia/donation-interface' => 
     array (
-      'pretty_version' => 'v2.5.7',
-      'version' => '2.5.7.0',
+      'pretty_version' => 'v2.5.7.1',
+      'version' => '2.5.7.1',
       'aliases' => 
       array (
       ),
-      'reference' => 'a6bcb3aa717f1362226746a28ee5a36af870b6b5',
+      'reference' => 'b37f4732d810d1bd46a529603afef7fa65127b30',
     ),
     'wikimedia/fundraising-crm' => 
     array (
@@ -792,7 +792,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '2459fa609818c4c996e32ce769c3e6fd1008be40',
+      'reference' => 'e5e958525e60a5d89a97dd9a2d3e185a4eb45797',
     ),
     'wikimedia/omnimail-silverpop' => 
     array (

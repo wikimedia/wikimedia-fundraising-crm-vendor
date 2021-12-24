@@ -4623,12 +4623,12 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.5.7",
-            "version_normalized": "2.5.7.0",
+            "version": "v2.5.7.1",
+            "version_normalized": "2.5.7.1",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "a6bcb3aa717f1362226746a28ee5a36af870b6b5"
+                "reference": "b37f4732d810d1bd46a529603afef7fa65127b30"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -4653,7 +4653,7 @@
                 "wikimedia/remex-html": "~2.2",
                 "wikimedia/testing-access-wrapper": "~1.0"
             },
-            "time": "2021-11-04T19:52:33+00:00",
+            "time": "2021-12-24T00:14:26+00:00",
             "type": "library",
             "extra": {
                 "phan-taint-check-plugin": "2.0.2"
