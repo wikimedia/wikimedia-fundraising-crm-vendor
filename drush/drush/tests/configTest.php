@@ -9,7 +9,7 @@ namespace Unish;
  */
 class ConfigCase extends CommandUnishTestCase {
 
-  function setUp() {
+  function set_up() {
     if (UNISH_DRUPAL_MAJOR_VERSION < 8) {
       $this->markTestSkipped('Config only available on D8+.');
     }
@@ -47,7 +47,9 @@ class ConfigCase extends CommandUnishTestCase {
     $options = $this->options();
     // Get path to sync dir.
     $this->drush('core-status', array('config-sync'), $options + array('format' => 'json'));
-    $sync = $this->webroot() . '/' . $this->getOutputFromJSON('config-sync');
+    $sync_relative_path = $this->getOutputFromJSON('config-sync');
+    $this->assertNotEmpty($sync_relative_path);
+    $sync = $this->webroot() . '/' . $sync_relative_path;
     $system_site_yml = $sync . '/system.site.yml';
     $core_extension_yml = $sync . '/core.extension.yml';
 
@@ -62,7 +64,7 @@ class ConfigCase extends CommandUnishTestCase {
     $this->drush('config-import', array(), $options);
     $this->drush('config-get', array('system.site', 'page'), $options + array('format' => 'json'));
     $page = $this->getOutputFromJSON('system.site:page');
-    $this->assertContains('unish', $page->front, 'Config was successfully imported.');
+    $this->assertStringContainsString('unish', $page->front, 'Config was successfully imported.');
 
     // Similar, but this time via --partial option.
     $contents = file_get_contents($system_site_yml);
@@ -73,7 +75,7 @@ class ConfigCase extends CommandUnishTestCase {
     $this->drush('config-import', array(), $options + array('partial' => NULL, 'source' => $partial_path));
     $this->drush('config-get', array('system.site', 'page'), $options + array('format' => 'json'));
     $page = $this->getOutputFromJSON('system.site:page');
-    $this->assertContains('unish partial', $page->front, '--partial was successfully imported.');
+    $this->assertStringContainsString('unish partial', $page->front, '--partial was successfully imported.');
   }
 
   function options() {

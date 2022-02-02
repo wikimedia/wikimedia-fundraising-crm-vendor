@@ -15,12 +15,17 @@ class pmDownloadCase extends CommandUnishTestCase {
     $this->assertArrayHasKey('DRUSH_PM_COULD_NOT_FIND_VERSION', $parsed['error_log']);
   }
 
+  protected function exectedReadme() {
+    if (version_compare(UNISH_DRUPAL_MAJOR_VERSION . UNISH_DRUPAL_MINOR_VERSION, '8.8.0', '>=')) {
+      return 'README.md';
+    }
+    return 'README.txt';
+  }
+
   // @todo Test pure drush commandfile projects. They get special destination.
   public function testDestination() {
-    // TODO: enable test when devel available for Drupal 9
-    if (UNISH_DRUPAL_MAJOR_VERSION >= 9) {
-      $this->markTestSkipped('Drupal 9 version of devel not available yet.');
-    }
+    $expectedReadme = $this->exectedReadme();
+
     // Setup two Drupal sites. Skip install for speed.
     $sites = $this->setUpDrupal(2, FALSE);
     $uri = key($sites);
@@ -39,13 +44,13 @@ class pmDownloadCase extends CommandUnishTestCase {
       'uri' => $uri,
     ) + $devel_options;
     $this->drush('pm-download', array('devel'), $options);
-    $this->assertFileExists($root . '/' . $this->drupalSitewideDirectory() . '/modules/devel/README.txt');
+    $this->assertFileExists($root . '/' . $this->drupalSitewideDirectory() . '/modules/devel/' . $expectedReadme);
 
     //  --use-site-dir
     // Expand above $options.
     $options += array('use-site-dir' => NULL);
     $this->drush('pm-download', array('devel'), $options);
-    $this->assertFileExists("$root/sites/$uri/modules/devel/README.txt");
+    $this->assertFileExists("$root/sites/$uri/modules/devel/$expectedReadme");
     unish_file_delete_recursive("{$root}/sites/{$uri}/modules/devel", TRUE);
 
     // If we are in site specific dir, then download belongs there.
@@ -53,7 +58,7 @@ class pmDownloadCase extends CommandUnishTestCase {
     // dir gets created by --use-site-dir above,
     $options = $devel_options;
     $this->drush('pm-download', array('devel'), $options, NULL, $path_stage);
-    $this->assertFileExists($path_stage . '/modules/devel/README.txt');
+    $this->assertFileExists($path_stage . '/modules/devel/' . $expectedReadme);
 
     // --destination with absolute path.
     $destination = UNISH_SANDBOX . '/test-destination1';
@@ -85,7 +90,7 @@ class pmDownloadCase extends CommandUnishTestCase {
     $output = $this->getOutput();
      // 4 items are: Select message + Cancel + 2 versions.
     $this->assertEquals(4, count($items), '--select offerred 2 options.');
-    $this->assertContains('6.x-1.x-dev', $output, 'Dev release was shown by --select.');
+    $this->assertStringContainsString('6.x-1.x-dev', $output, 'Dev release was shown by --select.');
 
     // --select --dev. Specify 6.x since that has so many releases.
     $this->drush('pm-download', array('devel-6.x'), $options + array('dev' => NULL), NULL, NULL, CommandUnishTestCase::UNISH_EXITCODE_USER_ABORT);
@@ -93,7 +98,7 @@ class pmDownloadCase extends CommandUnishTestCase {
     $output = $this->getOutput();
     // 12 items are: Select message + Cancel + 1 option.
     $this->assertEquals(3, count($items), '--select --dev expected to offer only one option.');
-    $this->assertContains('6.x-1.x-dev', $output, 'Assure that --dev lists the only dev release.');
+    $this->assertStringContainsString('6.x-1.x-dev', $output, 'Assure that --dev lists the only dev release.');
 
     // --select --all. Specify 5.x since this is frozen.
     $this->drush('pm-download', array('devel-5.x'), $options + array('all' => NULL), NULL, NULL, CommandUnishTestCase::UNISH_EXITCODE_USER_ABORT);
@@ -101,14 +106,10 @@ class pmDownloadCase extends CommandUnishTestCase {
     $output = $this->getOutput();
     // 12 items are: Select message + Cancel + 9 options.
     $this->assertEquals(11, count($items), '--select --all offerred 8 options.');
-    $this->assertContains('5.x-0.1', $output, 'Assure that --all lists very old releases.');
+    $this->assertStringContainsString('5.x-0.1', $output, 'Assure that --all lists very old releases.');
   }
 
   public function testPackageHandler() {
-    // TODO: enable test when devel available for Drupal 9
-    if (UNISH_DRUPAL_MAJOR_VERSION >= 9) {
-      $this->markTestSkipped('Drupal 9 version of devel not available yet.');
-    }
     $options = array(
       'cache' => NULL,
       'package-handler' => 'git_drupalorg',

@@ -41,18 +41,22 @@ class SqlDumpTest extends CommandUnishTestCase {
       $this->drush('sql-dump', array(), array_merge($options, $site_selection_options, array('extra' => '--skip-add-drop-table')));
       $this->assertFileExists($full_dump_file_path);
       $full_dump_file = file_get_contents($full_dump_file_path);
-      $this->assertNotContains('DROP TABLE IF EXISTS', $full_dump_file);
+      $this->assertStringNotContainsString('DROP TABLE IF EXISTS', $full_dump_file);
     }
 
+    $table_to_check = 'history';
+    if (UNISH_DRUPAL_MAJOR_VERSION > 7) {
+      $table_to_check = 'cache_config';
+    }
 
     // First, do a test without any aliases, and dump the whole database
     $this->drush('sql-dump', array(), array_merge($options, $site_selection_options));
     $this->assertFileExists($full_dump_file_path);
     $full_dump_file = file_get_contents($full_dump_file_path);
     // Test that we have sane contents.
-    $this->assertContains('queue', $full_dump_file);
+    $this->assertStringContainsString('queue', $full_dump_file);
     // Test skip-files-list and wildcard expansion.
-    $this->assertNotContains('history', $full_dump_file);
+    $this->assertStringNotContainsString($table_to_check, $full_dump_file);
     // Next, set up an alias file and run a couple of simulated
     // tests to see if options are propagated correctly.
     // Control: insure options are not set when not specified
@@ -62,9 +66,9 @@ class SqlDumpTest extends CommandUnishTestCase {
     $this->assertFileExists($full_dump_file_path);
     $full_dump_file = file_get_contents($full_dump_file_path);
     // Test that we have sane contents.
-    $this->assertContains('queue', $full_dump_file);
+    $this->assertStringContainsString('queue', $full_dump_file);
     // Test skip-files-list and wildcard expansion.
-    $this->assertContains('history', $full_dump_file);
+    $this->assertStringContainsString($table_to_check, $full_dump_file);
 
     $aliasPath = UNISH_SANDBOX . '/aliases';
     mkdir($aliasPath);
@@ -91,18 +95,18 @@ EOD;
     $this->assertFileExists($full_dump_file_path);
     $full_dump_file = file_get_contents($full_dump_file_path);
     // Test that we have sane contents.
-    $this->assertContains('queue', $full_dump_file);
+    $this->assertStringContainsString('queue', $full_dump_file);
     // Test skip-files-list and wildcard expansion.
-    $this->assertNotContains('history', $full_dump_file);
+    $this->assertStringNotContainsString($table_to_check, $full_dump_file);
     // Repeat control test:  options not recovered in absence of an alias.
     unlink($full_dump_file_path);
     $this->drush('sql-dump', array(), array_merge($options, $site_selection_options));
     $this->assertFileExists($full_dump_file_path);
     $full_dump_file = file_get_contents($full_dump_file_path);
     // Test that we have sane contents.
-    $this->assertContains('queue', $full_dump_file);
+    $this->assertStringContainsString('queue', $full_dump_file);
     // Test skip-files-list and wildcard expansion.
-    $this->assertContains('history', $full_dump_file);
+    $this->assertStringContainsString($table_to_check, $full_dump_file);
     // Now run yet with @self, and test to see that Drush can recover the option
     // --skip-tables-list, defined in @test.
     unlink($full_dump_file_path);
@@ -110,8 +114,8 @@ EOD;
     $this->assertFileExists($full_dump_file_path);
     $full_dump_file = file_get_contents($full_dump_file_path);
     // Test that we have sane contents.
-    $this->assertContains('queue', $full_dump_file);
+    $this->assertStringContainsString('queue', $full_dump_file);
     // Test skip-files-list and wildcard expansion.
-    $this->assertNotContains('history', $full_dump_file);
+    $this->assertStringNotContainsString($table_to_check, $full_dump_file);
   }
 }

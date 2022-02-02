@@ -10,6 +10,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
@@ -53,6 +54,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'S' => 
         array (
+            'Symfony\\Polyfill\\Php80\\' => 23,
             'Symfony\\Polyfill\\Php72\\' => 23,
             'Symfony\\Polyfill\\Php70\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
@@ -61,6 +63,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Symfony\\Polyfill\\Ctype\\' => 23,
             'Symfony\\Component\\Yaml\\' => 23,
             'Symfony\\Component\\VarDumper\\' => 28,
+            'Symfony\\Component\\Process\\' => 26,
             'Symfony\\Component\\HttpFoundation\\' => 33,
             'Symfony\\Component\\Finder\\' => 25,
             'Symfony\\Component\\EventDispatcher\\' => 34,
@@ -183,6 +186,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             0 => __DIR__ . '/..' . '/theiconic/name-parser/src',
             1 => __DIR__ . '/..' . '/theiconic/name-parser/tests',
         ),
+        'Symfony\\Polyfill\\Php80\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
         'Symfony\\Polyfill\\Php72\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php72',
@@ -214,6 +221,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Symfony\\Component\\VarDumper\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/var-dumper',
+        ),
+        'Symfony\\Component\\Process\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/process',
         ),
         'Symfony\\Component\\HttpFoundation\\' => 
         array (
@@ -469,7 +480,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'D' => 
         array (
-            'Drush' => 
+            'Drush\\' => 
             array (
                 0 => __DIR__ . '/..' . '/drush/drush/lib',
             ),
@@ -480,7 +491,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'C' => 
         array (
-            'Consolidation' => 
+            'Consolidation\\' => 
             array (
                 0 => __DIR__ . '/..' . '/drush/drush/lib',
             ),
@@ -521,6 +532,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'AstroPayMethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/AstroPayMethodCodec.php',
         'AstroPaySignature' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/AstroPaySignature.php',
         'AstroPayStatusQuery' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/scripts/status.php',
+        'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'BannerHistoryLogIdProcessor' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/banner_history/BannerHistoryLogIdProcessor.php',
         'BlankAddressFields' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
         'CiviproxyConnect' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/civiproxy/CiviproxyConnect.php',
@@ -622,10 +634,13 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'SessionUpdateTimestampHandlerInterface' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
         'StagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StagingHelper.php',
         'StreetAddress' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StreetAddress.php',
+        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
         'Subdivisions' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/includes/Subdivisions.php',
         'TypeError' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/TypeError.php',
+        'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
         'UnstagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/UnstagingHelper.php',
         'ValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ValidationHelper.php',
+        'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
         'WmfFrameworkLogHandler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFrameworkLogHandler.php',
         'WmfFramework_Drupal' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.drupal.php',
         'WmfFramework_Mediawiki' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.mediawiki.php',

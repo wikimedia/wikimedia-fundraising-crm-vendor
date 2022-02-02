@@ -11,6 +11,7 @@ use Drupal\Core\Config\StorageComparer;
 use Drupal\Core\Config\ConfigImporter;
 use Drupal\Core\Config\ConfigException;
 use Drupal\Core\Config\FileStorage;
+use Drupal\Core\Site\Settings;
 use Drupal\Component\Utility\NestedArray;
 use Drush\Config\StorageWrapper;
 use Drush\Config\CoreExtensionFilter;
@@ -410,6 +411,10 @@ function drush_config_export($destination = NULL) {
       drush_mkdir($destination_dir);
     }
   }
+  elseif ($config_directories === NULL) {
+    // For Drupal 8.8+ see https://www.drupal.org/node/3018145 change.
+    $destination_dir = Settings::get('config_sync_directory');
+  }
   else {
     $choices = drush_map_assoc(array_keys($config_directories));
     unset($choices[CONFIG_ACTIVE_DIRECTORY]);
@@ -422,7 +427,7 @@ function drush_config_export($destination = NULL) {
     elseif (!isset($destination)) {
       $destination = CONFIG_SYNC_DIRECTORY;
     }
-    $destination_dir = config_get_config_directory($destination);
+    $destination_dir = drush_config_get_config_directory($destination);
   }
 
   // Prepare a new branch, if applicable
@@ -464,6 +469,10 @@ function drush_config_export($destination = NULL) {
 }
 
 function _drush_config_export($destination, $destination_dir, $branch) {
+  if (!defined('CONFIG_SYNC_DIRECTORY')) {
+    // For Drupal 8.8+ see https://www.drupal.org/node/3018145 change.
+    define('CONFIG_SYNC_DIRECTORY', Settings::get('config_sync_directory'));
+  }
   $commit = drush_get_option('commit');
   $comment = drush_get_option('message', 'Exported configuration.');
   if (count(glob($destination_dir . '/*')) > 0) {
@@ -593,24 +602,31 @@ function drush_config_import_validate() {
  */
 function drush_config_import($source = NULL) {
   global $config_directories;
+  if (!defined('CONFIG_SYNC_DIRECTORY')) {
+    // For Drupal 8.8+ see https://www.drupal.org/node/3018145 change.
+    define('CONFIG_SYNC_DIRECTORY', Settings::get('config_sync_directory'));
+  }
 
   // Determine source directory.
   if ($target = drush_get_option('source')) {
     $source_dir = $target;
   }
   else {
-    $choices = drush_map_assoc(array_keys($config_directories));
-    unset($choices[CONFIG_ACTIVE_DIRECTORY]);
-    if (!isset($source) && count($choices) >= 2) {
-      $source= drush_choice($choices, 'Choose a source.');
-      if (empty($source)) {
-        return drush_user_abort();
+    $source = CONFIG_SYNC_DIRECTORY;
+    if (!empty($config_directories) && defined('CONFIG_ACTIVE_DIRECTORY')) {
+      $choices = drush_map_assoc(array_keys($config_directories));
+      unset($choices[CONFIG_ACTIVE_DIRECTORY]);
+      if (!isset($source) && count($choices) >= 2) {
+        $source= drush_choice($choices, 'Choose a source.');
+        if (empty($source)) {
+          return drush_user_abort();
+        }
+      }
+      elseif (!isset($source)) {
+        $source = CONFIG_SYNC_DIRECTORY;
       }
     }
-    elseif (!isset($source)) {
-      $source = CONFIG_SYNC_DIRECTORY;
-    }
-    $source_dir = config_get_config_directory($source);
+    $source_dir = drush_config_get_config_directory($source);
   }
 
   if ($source == CONFIG_SYNC_DIRECTORY) {
@@ -669,17 +685,7 @@ function drush_config_import($source = NULL) {
 
 // Copied from submitForm() at /core/modules/config/src/Form/ConfigSync.php
 function _drush_config_import(StorageComparer $storage_comparer) {
-  $config_importer = new ConfigImporter(
-    $storage_comparer,
-    \Drupal::service('event_dispatcher'),
-    \Drupal::service('config.manager'),
-    \Drupal::lock(),
-    \Drupal::service('config.typed'),
-    \Drupal::moduleHandler(),
-    \Drupal::service('module_installer'),
-    \Drupal::service('theme_handler'),
-    \Drupal::service('string_translation')
-  );
+  $config_importer = _drush_create_config_importer($storage_comparer);
   if ($config_importer->alreadyImporting()) {
     drush_log('Another request may be synchronizing configuration already.', LogLevel::WARNING);
   }
@@ -719,6 +725,36 @@ function _drush_config_import(StorageComparer $storage_comparer) {
       return drush_set_error('config_import_fail', $message);
     }
   }
+}
+
+function _drush_create_config_importer(StorageComparer $storage_comparer) {
+  // Drupal 9 ConfigImporter
+  if (drush_drupal_major_version() >= 9) {
+    return new ConfigImporter(
+      $storage_comparer,
+      \Drupal::service('event_dispatcher'),
+      \Drupal::service('config.manager'),
+      \Drupal::lock(),
+      \Drupal::service('config.typed'),
+      \Drupal::moduleHandler(),
+      \Drupal::service('module_installer'),
+      \Drupal::service('theme_handler'),
+      \Drupal::service('string_translation'),
+      \Drupal::service('extension.list.module')
+    );
+  }
+  // Drupal 8 ConfigImporter
+  return new ConfigImporter(
+    $storage_comparer,
+    \Drupal::service('event_dispatcher'),
+    \Drupal::service('config.manager'),
+    \Drupal::lock(),
+    \Drupal::service('config.typed'),
+    \Drupal::moduleHandler(),
+    \Drupal::service('module_installer'),
+    \Drupal::service('theme_handler'),
+    \Drupal::service('string_translation')
+  );
 }
 
 /**
