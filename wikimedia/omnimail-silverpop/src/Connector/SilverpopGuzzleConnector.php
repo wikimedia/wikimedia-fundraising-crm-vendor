@@ -21,9 +21,9 @@ use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
  * UPDATE to below - since writing this some patches I wrote have been merged upstream
  * and I feel positive about getting those things merged & switching back to the main repo.
  * I have retained these override classes for now but probably will switch back
- * 
+ *
  * Longer term I'm on the fence as to whether to simply improve the classes
- * in this package to the point where the dependency on the silverpop-php-connector package gets 
+ * in this package to the point where the dependency on the silverpop-php-connector package gets
  * removed. There are a couple of things I don't like about the silverpop-php-connector package
  * 1) [UPDATE: have support for structure change to address this]
  *   The addition of api calls appears to be adhoc and, in particular, I feel like the choice of parameters
@@ -31,7 +31,7 @@ use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
  * 2) [UPDATE: NO LONGER TRUE] Although the package is active I have yet to get a response to the PR I submitted.
  * 3) This is kind of really minor, but also quite a pain... The retention of trailing spaces means
  * I have to reconfigure my IDE to work with this code. It's not a convention I hit anywhere else.
- * 
+ *
  * On the other hand
  * 1) the package is quite active
  * 2) I think the way it wraps the different interfaces is quite nice. I did start with a different
@@ -43,17 +43,17 @@ class SilverpopGuzzleConnector extends SilverpopConnector{
 
     /**
      * Instance of the connector object.
-     * 
+     *
      * @var SilverpopBaseConnector
      */
     protected static $instance=null;
-    
+
     /**
      * Construct a connector object. If you will be authenticating with only a
      * single set of credentials, it is recommended that you use the singleton
      * getInstance() method instead. Use this constructor if you require
      * multiple connector objects for more than one set of credentials.
-     * 
+     *
      * Overridden to return the SilverpopGuzzleXmlConnector.
      *
      * @param string $baseUrl The base API URL for all requests.

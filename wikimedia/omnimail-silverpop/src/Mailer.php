@@ -88,6 +88,64 @@ class Mailer extends AbstractMailer implements MailerInterface
   }
 
   /**
+   * Get Group Members.
+   *
+   * @param array $parameters
+   *
+   * @see https://developer.goacoustic.com/acoustic-campaign/reference/addcontacttocontactlist
+   *
+   * @return \Omnimail\Silverpop\Requests\AddContactToContactList
+   */
+  public function addGroupMembers($parameters = []) {
+    return $this->createRequest('AddContactToContactList', array_merge($parameters, array(
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+    )));
+  }
+
+  /**
+   * Get Contact.
+   *
+   * @param array $parameters
+   *
+   * @return \Omnimail\Silverpop\Requests\AddRecipientRequest
+   */
+  public function addContact($parameters = []) {
+    return $this->createRequest('AddRecipient', array_merge($parameters, [
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+    ]));
+  }
+
+  /**
+   * Get Group Members.
+   *
+   * @param array $parameters
+   *
+   * @return \Omnimail\Silverpop\Requests\SelectRecipientData
+   */
+  public function getContact($parameters = []) {
+    return $this->createRequest('SelectRecipientData', array_merge($parameters, [
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+    ]));
+  }
+
+  /**
+   * Get Group Members.
+   *
+   * @param array $parameters
+   *
+   * @return \Omnimail\Silverpop\Requests\CreateContactListRequest
+   */
+  public function createGroup($parameters = []) {
+    return $this->createRequest('CreateContactListRequest', array_merge($parameters, [
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+    ]));
+  }
+
+  /**
    * Get Recipients.
    *
    * @param array $parameters
@@ -143,7 +201,7 @@ class Mailer extends AbstractMailer implements MailerInterface
    * @param string $class The request class name
    * @param array $parameters
    *
-   * @return RequestInterface
+   * @return \Omnimail\Common\Requests\RequestInterface
    */
   protected function createRequest($class, array $parameters)
   {

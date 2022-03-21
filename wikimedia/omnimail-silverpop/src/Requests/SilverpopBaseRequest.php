@@ -11,8 +11,7 @@ use Omnimail\Common\Helper;
 use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
 use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
 
-abstract class SilverpopBaseRequest extends BaseRequest implements RequestInterface
-{
+abstract class SilverpopBaseRequest extends BaseRequest {
   /**
    * @var \Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector
    */

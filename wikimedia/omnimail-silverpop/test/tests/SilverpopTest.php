@@ -4,6 +4,7 @@ namespace Omnimail\Silverpop\Tests;
 
 use Omnimail\Omnimail;
 use Omnimail\Silverpop\Credentials;
+use Omnimail\Silverpop\Responses\GroupMembersResponse;
 use Omnimail\Silverpop\Responses\RecipientsResponse;
 use Omnimail\Silverpop\Responses\MailingsResponse;
 use Omnimail\Silverpop\Tests\BaseTestClass;
@@ -74,7 +75,7 @@ class SilverpopTest extends BaseTestClass {
     /**
      * Test retrieving a mailing group.
      */
-    public function testGetGroupMembers() {
+    public function testGetGroupMembers(): void {
         $requests = [
             file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
             file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
@@ -82,7 +83,16 @@ class SilverpopTest extends BaseTestClass {
         /* @var $request \Omnimail\Silverpop\Requests\ExportListRequest */
         $request = Omnimail::create('Silverpop', ['client' => $this->getMockRequest($requests)])->getGroupMembers();
         $response = $request->getResponse();
-        $this->assertTrue(is_a($response, 'Omnimail\Silverpop\Responses\GroupMembersResponse'));
+        $this->assertInstanceOf(GroupMembersResponse::class, $response);
+    }
+
+    /**
+     * Test creating a list in acoustic using OmniGroup.create api
+     */
+    public function testGroupCreate(): void {
+        /* @var $request \Omnimail\Silverpop\Requests\CreateContactListRequest */
+        $request = Omnimail::create('Silverpop', ['client' => $this->getMockRequest([], FALSE)])->createGroup();
+        $response = $request->getResponse();
     }
 
     /**

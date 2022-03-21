@@ -3,9 +3,7 @@
 namespace SilverpopConnector;
 
 use Omnimail\Exception\Exception;
-use SilverpopConnector\SilverpopBaseConnector;
-use SilverpopConnector\SilverpopRestConnector;
-use SilverpopConnector\SilverpopConnectorException;
+use SilverpopConnector\Xml\CreateContactList;
 use SilverpopConnector\Xml\ExportList;
 use SilverpopConnector\Xml\GetQuery;
 use SimpleXmlElement;
@@ -13,6 +11,7 @@ use SilverpopConnector\Xml\GetMailingTemplate;
 use SilverpopConnector\Xml\GetAggregateTrackingForMailing;
 use SilverpopConnector\Xml\CalculateQuery;
 use SilverpopConnector\Xml\GetSentMailingsForOrg;
+use SilverpopConnector\Xml\AddContactToContactList;
 use phpseclib\Net\SFTP;
 use GuzzleHttp\Client;
 
@@ -442,8 +441,8 @@ class SilverpopXmlConnector extends SilverpopBaseConnector {
    */
   public function getMailingTemplate($params) {
     $template = new GetMailingTemplate($params);
-    $params = $template->getXml();
-    $result = $this->post($params);
+    $xml = $template->getXml();
+    $result = $this->post($xml);
     return $template->formatResult($result);
   }
 
@@ -457,8 +456,42 @@ class SilverpopXmlConnector extends SilverpopBaseConnector {
    */
   public function getAggregateTrackingForMailing($params) {
     $template = new GetAggregateTrackingForMailing($params);
-    $params = $template->getXml();
-    $result = $this->post($params);
+    $xml = $template->getXml();
+    $result = $this->post($xml);
+    return $template->formatResult($result);
+  }
+
+  /**
+   * Create a contact list - CreateContactList.
+   *
+   * @param array $params
+   *
+   * @return SimpleXmlElement
+   *
+   * @throws \SilverpopConnector\SilverpopConnectorException
+   */
+  public function createContactList($params): SimpleXmlElement {
+    $template = new CreateContactList($params);
+    $xml = $template->getXml();
+    $result = $this->post($xml);
+    return $template->formatResult($result);
+  }
+
+  /**
+   * Adds contact/s to an Acoustic Campaign contact list.
+   *
+   * @param array $params
+   *
+   * @see https://developer.goacoustic.com/acoustic-campaign/reference/addcontacttocontactlist
+   *
+   * @return SimpleXmlElement
+   *
+   * @throws \SilverpopConnector\SilverpopConnectorException
+   */
+  public function addContactToContactList($params): bool {
+    $template = new AddContactToContactList($params);
+    $xml = $template->getXml();
+    $result = $this->post($xml);
     return $template->formatResult($result);
   }
 
@@ -680,9 +713,9 @@ class SilverpopXmlConnector extends SilverpopBaseConnector {
       $params .= "\t</COLUMN>\n";
     }
     $params .= '</UpdateRecipient>';
-    $params = new SimpleXmlElement($params);
+    $xml = new SimpleXmlElement($params);
 
-    $result = $this->post($params);
+    $result = $this->post($xml);
     $recipientId = $result->Body->RESULT->RecipientId;
     if (!preg_match('/^\d+$/', $recipientId)) {
       $recipientId = (int)$recipientId;
