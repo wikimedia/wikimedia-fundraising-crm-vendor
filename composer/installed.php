@@ -5,7 +5,7 @@
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'a4e6440d8171edd4d9ae898048a5c4946a83ffb6',
+        'reference' => '5d78efd492427e7ca3bd922c4def986c7219c6ba',
         'name' => 'wikimedia/fundraising-crm',
         'dev' => false,
     ),
@@ -776,7 +776,7 @@
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'a4e6440d8171edd4d9ae898048a5c4946a83ffb6',
+            'reference' => '5d78efd492427e7ca3bd922c4def986c7219c6ba',
             'dev_requirement' => false,
         ),
         'wikimedia/omnimail-silverpop' => array(
@@ -789,12 +789,12 @@
             'dev_requirement' => false,
         ),
         'wikimedia/smash-pig' => array(
-            'pretty_version' => 'v0.7.9.6',
-            'version' => '0.7.9.6',
+            'pretty_version' => 'v0.7.9.8',
+            'version' => '0.7.9.8',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/smash-pig',
             'aliases' => array(),
-            'reference' => '8cc8a1e51c8ae531ab2456947986af40b2486fab',
+            'reference' => '63c5d5faf2aa3170558a819b202087b9682e4cbd',
             'dev_requirement' => false,
         ),
         'willdurand/geocoder' => array(
