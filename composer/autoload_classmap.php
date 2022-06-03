@@ -91,8 +91,6 @@ return array(
     'GlobalCollectGatewayResult' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/globalcollect_resultswitcher.body.php',
     'GlobalCollectGetDirectory' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/scripts/get_directory.php',
     'GlobalCollectRefundMaintenance' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/scripts/refund.php',
-    'Google_Service_Exception' => $vendorDir . '/google/apiclient/src/Google/Service/Exception.php',
-    'Google_Service_Resource' => $vendorDir . '/google/apiclient/src/Google/Service/Resource.php',
     'Ingenico3DSecure' => $vendorDir . '/wikimedia/donation-interface/ingenico_gateway/Ingenico3DSecure.php',
     'IngenicoAdapter' => $vendorDir . '/wikimedia/donation-interface/ingenico_gateway/ingenico.adapter.php',
     'IngenicoFinancialNumber' => $vendorDir . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoFinancialNumber.php',
