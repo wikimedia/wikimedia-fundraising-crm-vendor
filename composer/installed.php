@@ -5,7 +5,7 @@
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '93e517f7fea5bac3357f683f5a103af31770e727',
+        'reference' => 'ca04d09130ede5823d892faef82064feaa8d494a',
         'name' => 'wikimedia/fundraising-crm',
         'dev' => false,
     ),
@@ -242,12 +242,12 @@
             'dev_requirement' => false,
         ),
         'league/csv' => array(
-            'pretty_version' => '9.3.0',
-            'version' => '9.3.0.0',
+            'pretty_version' => '9.6.2',
+            'version' => '9.6.2.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../league/csv',
             'aliases' => array(),
-            'reference' => 'd16f85d1f958a765844db4bc7174017edf2dd637',
+            'reference' => 'f28da6e483bf979bac10e2add384c90ae9983e4e',
             'dev_requirement' => false,
         ),
         'maxmind-db/reader' => array(
@@ -740,7 +740,7 @@
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '93e517f7fea5bac3357f683f5a103af31770e727',
+            'reference' => 'ca04d09130ede5823d892faef82064feaa8d494a',
             'dev_requirement' => false,
         ),
         'wikimedia/omnimail-silverpop' => array(
