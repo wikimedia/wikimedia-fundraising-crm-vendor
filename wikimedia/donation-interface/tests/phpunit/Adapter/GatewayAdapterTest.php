@@ -38,23 +38,6 @@ use Wikimedia\TestingAccessWrapper;
  */
 class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTestCase {
 
-	public function setUp(): void {
-		parent::setUp();
-
-		$this->setMwGlobals( [
-			'wgDonationInterfaceAllowedHtmlForms' => [
-				'testytest' => [
-					'gateway' => 'globalcollect', // RAR.
-				],
-				'rapidFailError' => [
-					'file' => 'error-cc.html',
-					'gateway' => [ 'globalcollect', 'adyen', 'amazon', 'astropay', 'paypal' ],
-					'special_type' => 'error',
-				]
-			],
-		] );
-	}
-
 	/**
 	 *
 	 * @covers GatewayAdapter::__construct
@@ -193,7 +176,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 	 * @covers DonationData::__construct
 	 */
 	public function testConstructorHasDonationData() {
-		$_SERVER['REQUEST_URI'] = '/index.php/Special:GlobalCollectGateway?form_name=TwoStepAmount';
+		$_SERVER['REQUEST_URI'] = '/index.php/Special:GlobalCollectGateway';
 
 		$options = $this->getDonorTestData();
 		$gateway = $this->getFreshGatewayObject( $options );
@@ -244,8 +227,7 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 		unset( $init['order_id'] );
 
 		$secondRequest = $this->setUpRequest( $init, $session );
-		$adyen_gateway = new TestingAdyenAdapter();
-		$adyen_gateway->batch_mode = true;
+		$adyen_gateway = new AdyenCheckoutAdapter( [ 'batch_mode' => true ] );
 
 		$session = $secondRequest->getSessionArray();
 		$ctId = $adyen_gateway->getData_Unstaged_Escaped( 'contribution_tracking_id' );
@@ -395,39 +377,6 @@ class DonationInterface_Adapter_GatewayAdapterTest extends DonationInterfaceTest
 			$exposed->getData_Unstaged_Escaped( 'postal_code' ),
 			'The postal code placeholder is only for AVS, not for our records.'
 		);
-	}
-
-	public function testGetRapidFailPage() {
-		$this->setMwGlobals( [
-			'wgDonationInterfaceRapidFail' => true,
-		] );
-		$options = $this->getDonorTestData( 'US' );
-		$options['payment_method'] = 'cc';
-		$gateway = $this->getFreshGatewayObject( $options );
-		$this->assertEquals( 'rapidFailError', ResultPages::getFailPage( $gateway ) );
-	}
-
-	public function testGetFallbackFailPage() {
-		$this->setMwGlobals( [
-			'wgDonationInterfaceRapidFail' => false,
-			'wgDonationInterfaceFailPage' => 'Main_Page', // coz we know it exists
-		] );
-		$options = $this->getDonorTestData( 'US' );
-		$gateway = $this->getFreshGatewayObject( $options );
-		$page = ResultPages::getFailPage( $gateway );
-		$expectedTitle = Title::newFromText( 'Main_Page' );
-		$expectedURL = wfAppendQuery( $expectedTitle->getFullURL(), 'uselang=en' );
-		$this->assertEquals( $expectedURL, $page );
-	}
-
-	/**
-	 * TODO: Move to ResultsPagesTest.php
-	 */
-	public function testGetFailPageForType() {
-		$url = ResultPages::getFailPageForType( 'GlobalCollectAdapter' );
-		$expectedTitle = Title::newFromText( 'Donate-error' );
-		$expectedURL = wfAppendQuery( $expectedTitle->getFullURL(), 'uselang=en' );
-		$this->assertEquals( $expectedURL, $url );
 	}
 
 	public function testCancelPage() {

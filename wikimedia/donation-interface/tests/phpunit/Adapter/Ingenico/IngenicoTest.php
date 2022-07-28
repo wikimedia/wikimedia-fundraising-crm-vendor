@@ -185,7 +185,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 				],
 				"status" => "PAYMENT_APPROVED"
 			]
-		);
+		)->setSuccessful( true );
 
 		$gateway = $this->getFreshGatewayObject( $init );
 		$this->hostedCheckoutProvider->expects( $this->once() )
@@ -215,7 +215,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 			[
 				"status" => "IN_PROGRESS",
 			]
-		);
+		)->setSuccessful( false );
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'getHostedPaymentStatus' )
@@ -240,7 +240,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 			[
 				"status" => "CANCELLED_BY_CONSUMER",
 			]
-		);
+		)->setSuccessful( false );
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'getHostedPaymentStatus' )
@@ -270,7 +270,6 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 		] );
 
 		$init = $this->getDonorTestData();
-		$init['ffname'] = 'cc-vmad';
 		$init['order_id'] = '55555';
 		$init['email'] = 'innocent@manichean.com';
 		$init['contribution_tracking_id'] = mt_rand();
@@ -322,7 +321,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 				],
 				"status" => "PAYMENT_CREATED"
 			]
-		);
+		)->setSuccessful( true );
 
 		$this->hostedCheckoutProvider->expects( $this->once() )
 			->method( 'getHostedPaymentStatus' )
@@ -383,7 +382,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 							"isAuthorized" => true
 						]
 					]
-				] )
+				] )->setSuccessful( true )
 			);
 		$gateway->do_transaction( 'approvePayment' );
 		$data = $gateway->getTransactionData();
@@ -465,6 +464,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 			'currency' => 'USD',
 			'email' => 'FaketyFake@gmail.com',
 			'first_name' => 'Fakety',
+			'full_name' => '',
 			'format' => 'json',
 			'gateway' => 'ingenico',
 			'language' => 'en',
@@ -586,6 +586,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 		$init['payment_submethod'] = 'visa';
 		$init['email'] = 'innocent@localhost.net';
 		$init['opt_in'] = '1';
+		$init['full_name'] = null;
 		$init['order_id'] = mt_rand();
 		$session['Donor'] = $init;
 		$this->setUpRequest( $init, $session );
@@ -791,6 +792,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 		$response->setGatewayTxnId( $rawResponse['payment']['id'] );
 		$status = ( new PaymentStatus() )->normalizeStatus( $rawResponse['payment']['status'] );
 		$response->setStatus( $status );
+		$response->setSuccessful( true );
 		return $response;
 	}
 }

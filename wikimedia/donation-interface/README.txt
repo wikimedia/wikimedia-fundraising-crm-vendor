@@ -6,8 +6,8 @@ To install the DonationInterface extension, put the following line in LocalSetti
 All of this extension's globals can be overridden on a per-gateway basis by
 adding a setting with the same name, but with 'DonationInterface' replaced
 with the gateway's name. To override $wgDonationInterfaceUseSyslog just for
-Adyen, add
-  $wgAdyenGatewayUseSyslog = true;
+Ingenico, add
+  $wgIngenicoGatewayUseSyslog = true;
 to LocalSettings.php.
 
 
@@ -18,11 +18,9 @@ Set these to true to enable each payment processor integration:
 
 $wgGlobalCollectGatewayEnabled = false
 $wgAmazonGatewayEnabled = false
-$wgAdyenGatewayEnabled = false
 $wgAdyenCheckoutGatewayEnabled = false
 $wgAstroPayGatewayEnabled = false
 $wgPaypalExpressGatewayEnabled = false
-$wgPaypalGatewayEnabled = false
 
 You must also configure account information for each processor as
 described in 'Processors and accounts' below.
@@ -38,7 +36,7 @@ $wgDonationInterfaceTimeout = 5
 Test mode flag, alters various behavior
 $wgDonationInterfaceTest = false
 
-$wgDonationInterfaceEnableFormChooser = false
+$wgDonationInterfaceEnableGatewayChooser = false
 /**
  * A string or array of strings for making tokens more secure
  *
@@ -72,8 +70,6 @@ These databases can be obtained at https://dev.maxmind.com/geoip/geoip2/geolite2
 $wgDonationInterfaceGeoIpDbPath = '/usr/share/GeoIP/GeoLite2-Country.mmdb'
 
 ==== Form appearance and content ====
-
-Besides these settings, please see DonationInterfaceFormSettings.php
 
 Title to transclude in form template as {{{ appeal_text }}}.
 $appeal and $language will be substituted before transclusion
@@ -117,11 +113,6 @@ $wgDonationInterfaceNoScriptRedirect = null
 
 Dummy email address associated with donation if donor does not provide one
 $wgDonationInterfaceDefaultEmail = 'nobody@wikimedia.org'
-/**
- * When true, error forms will be preferred over FailPage specified below
- * @var bool
- */
-$wgDonationInterfaceRapidFail = false
 
 /**
  * Default Thank You and Fail pages for all of donationinterface - language will be calc'd and appended at runtime.
@@ -179,11 +170,18 @@ $wgDonationInterfaceLogCompleted = false
 
 ==== Currency and amounts ====
 
-Configure price ceiling and floor for valid contribution amount.  Values
-should be in USD.
+Configure price ceiling and floor for valid contribution amount. The top
+level key should be 'default' for all countries, or a two letter country
+code to set the min and max for a specific country. A currency should be
+specified for each country and the default. These are set in the
+donation_rules.yaml file in the top-level config directory and can also
+be set for specific gateways in a file of the same name in the gateway's
+own config directory.
 
-$wgDonationInterfacePriceFloor = 1.00
-$wgDonationInterfacePriceCeiling = 10000.00
+default:
+    currency: USD
+    min: 1.00
+    max: 10000.00
 
 If set to a currency code, gateway forms will try to convert amounts
 in unsupported currencies to the fallback instead of just showing
@@ -286,12 +284,6 @@ $wgAmazonGatewayAccountInfo['example'] = [
 // This URL appears to be global and usable for both sandbox and non-sandbox
 $wgAmazonGatewayLoginScript = 'https://api-cdn.amazon.com/sdk/login1.js'
 
-$wgPaypalGatewayURL = 'https://www.paypal.com/cgi-bin/webscr'
-$wgPaypalGatewayTestingURL = 'https://www.sandbox.paypal.com/cgi-bin/webscr'
-$wgPaypalGatewayRecurringLength = '0' // 0 should mean forever
-
-$wgPaypalGatewayXclickCountries = []
-
 # Example PayPal Express Checkout account:
 #
 # $wgPaypalExpressGatewayAccountInfo['test'] = [
@@ -306,11 +298,6 @@ $wgPaypalGatewayXclickCountries = []
 #     'RedirectURL' => 'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&useraction=commit&token=',
 # ]
 
-# Example legacy PayPal
-#	$wgPaypalGatewayAccountInfo['example'] = [
-#		'AccountEmail' => "",
-#	]
-
 # https://developer.paypal.com/docs/classic/api/endpoints/
 # TODO: Move to configuration.
 # We use different URLs depending on: authentication method and testingness.
@@ -319,21 +306,7 @@ $wgPaypalExpressGatewaySignatureURL = 'https://api-3t.paypal.com/nvp'
 $wgPaypalExpressGatewayTestingCertificateURL = 'https://api.sandbox.paypal.com/nvp'
 $wgPaypalExpressGatewayTestingSignatureURL = 'https://api-3t.sandbox.paypal.com/nvp'
 
-$wgAdyenGatewayURL = 'https://live.adyen.com'
-$wgAdyenGatewayTestingURL = 'https://test.adyen.com'
-
-// Adyen automatically declines any payment with a fraud score over 100.
-// This variable caps the score we send them so donations we've flagged in
-// error can be reviewed and manually captured.
-$wgAdyenGatewayMaxRiskScore = 95
-
-#	$wgAdyenGatewayAccountInfo['example'] = [
-#		'AccountName' => '' // account identifier, not login name
-#		'SharedSecret' => '' // entered in the skin editor
-#		'SkinCode' => ''
-#	]
-
-$wgAdyenCheckoutGatewayAccountInfo['example'] = [
+$wgAdyenCheckoutGatewayAccountInfo['exampleMerchantAccountName'] = [
 	// Latest values for Script & Css at https://docs.adyen.com/online-payments/release-notes
 	'Script' => [
 		'src' => 'https://checkoutshopper-test.adyen.com/checkoutshopper/sdk/4.3.0/adyen.js',
@@ -345,6 +318,7 @@ $wgAdyenCheckoutGatewayAccountInfo['example'] = [
 	],
 	'ClientKey' => '', // find under web service user 'Authentication' block within adyen API credentials area
 	'Environment' => 'test',
+	'GoogleMerchantId' => '1234' // merchant ID from Google for Google Pay
 ]
 
 // Set base URLs here.  Individual transactions have their own paths
@@ -687,7 +661,7 @@ $wgDonationInterfaceEnableMinFraud = false //this is definitely an Extra
 
 /**
  * @global boolean Set to false to disable all filters, or set a gateway-
- * specific value such as $wgPaypalGatewayEnableCustomFilters = false.
+ * specific value such as $wgPaypalExpressGatewayEnableCustomFilters = false.
  */
 $wgDonationInterfaceEnableCustomFilters = true
 $wgDonationInterfaceEnableReferrerFilter = false //extra

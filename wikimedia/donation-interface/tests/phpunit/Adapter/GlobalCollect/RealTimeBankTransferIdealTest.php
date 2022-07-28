@@ -56,14 +56,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 
 		$this->setMwGlobals( [
 			'wgGlobalCollectGatewayEnabled' => true,
-			'wgDonationInterfaceAllowedHtmlForms' => [
-				'rtbt-ideal' => [
-					'gateway' => 'globalcollect',
-					'payment_methods' => [ 'rtbt' => 'rtbt_ideal' ],
-					'countries' => [ '+' => 'NL' ],
-					'currencies' => [ '+' => 'EUR' ],
-				],
-			],
 		] );
 	}
 
@@ -74,7 +66,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 		$init = $this->getDonorTestData( 'NL' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'rtbt';
-		$init['ffname'] = 'rtbt-ideal';
 
 		$assertNodes = [
 			'amount' => [
@@ -109,7 +100,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId21() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -136,7 +126,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId31() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -163,7 +152,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId91() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -190,7 +178,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId161() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -217,7 +204,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId511() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -244,7 +230,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId721() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -271,7 +256,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId751() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -298,7 +282,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId761() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,
@@ -325,7 +308,6 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	public function testBuildRequestXmlWithIssuerId771() {
 		$optionsForTestData = [
-			'form_name' => 'TwoStepAmount',
 			'payment_method' => 'rtbt',
 			'payment_submethod' => 'rtbt_ideal',
 			'payment_product_id' => 809,

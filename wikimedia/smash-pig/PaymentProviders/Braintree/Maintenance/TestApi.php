@@ -14,8 +14,6 @@ class TestApi extends MaintenanceBase {
 
 	public function __construct() {
 		parent::__construct();
-
-		$this->addOption( 'method', 'payment method to instatiate, e.g. "cc"', 'test', 'm' );
 		$this->desiredOptions['config-node']['default'] = 'braintree';
 	}
 
@@ -23,7 +21,7 @@ class TestApi extends MaintenanceBase {
 	 * Do the actual work of the script.
 	 */
 	public function execute() {
-		$provider = PaymentProviderFactory::getProviderForMethod( $this->getOption( 'method' ) );
+		$provider = PaymentProviderFactory::getProviderForMethod( 'test' );
 		$response = $provider->ping();
 		Logger::info( print_r( $response, true ) );
 	}

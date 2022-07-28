@@ -11,6 +11,7 @@ visa:
         MX: true
         PE: true
         UY: true
+        ZA: true
     logo: card-visa-lg.png
 mc:
     bank_code: MC
@@ -25,6 +26,7 @@ mc:
         MX: true
         PE: true
         UY: true
+        ZA: true
     logo: card-mastercard.png
     logo_hd:
         2x: card-mastercard_2x.png
@@ -45,7 +47,6 @@ amex:
         AR: true
 #       CL: true  #waiting on AstroPay
         CO: true
-        IN: true
         PE: true
     logo: card-amex-lg.png
 visa-debit:
@@ -55,6 +56,7 @@ visa-debit:
     countries:
         MX: true
         PE: true
+        ZA: true
     logo: card-visa-lg.png
     sub_text_key: donate_interface-debit
 mc-debit:
@@ -63,6 +65,7 @@ mc-debit:
     group: cc
     countries:
         MX: true
+        ZA: true
     logo: card-mastercard.png
     logo_hd:
         2x: card-mastercard_2x.png
@@ -83,7 +86,6 @@ diners:
         BR: true
 #       CL: true  #waiting on AstroPay
         CO: true
-        IN: true
         PE: true
         UY: true
     logo: card-dinersclub-lg.png
@@ -101,6 +103,26 @@ mercadolivre:
     countries:
         BR: true
     logo: card-mercadolivre.png
+pix:
+    bank_code: PQ
+    label: Pix
+    group: bt
+    countries:
+        BR: true
+    logo: bank-pix.png
+    logo_hd:
+        2x: bank-pix_2x.png
+        3x: bank-pix_3x.png
+ach:
+    bank_code: IO
+    label: ACH
+    group: bt
+    countries:
+        ZA: true
+    logo: bank-ach.png
+    logo_hd:
+        2x: bank-ach_2x.png
+        3x: bank-ach_3x.png
 cabal:
     bank_code: CL
     label: Cabal
@@ -175,7 +197,7 @@ lider:
         1.5x: card-lider_1.5x.png
         2x: card-lider_2x.png
 oca:
-    bank_code: LI
+    bank_code: OA
     label: OCA
     group: cc
     countries:
@@ -287,6 +309,16 @@ cash_pago_efectivo:
     countries:
         PE: true
     logo: cash-pago-efectivo.png
+cash_abitab:
+    bank_code: AI
+    label: Abitab
+    group: cash
+    countries:
+        UY: true
+    logo: cash-abitab.png
+    logo_hd:
+        2x: cash-abitab_2x.png
+        3x: cash-abitab_3x.png
 cash_red_pagos:
     bank_code: RE
     label: Red Pagos
@@ -294,6 +326,36 @@ cash_red_pagos:
     countries:
         UY: true
     logo: cash-red-pagos.png
+bcp:
+    bank_code: BC
+    label: BCP
+    group: bt
+    countries:
+        PE: true
+    logo: bank-bcp.png
+    logo_hd:
+        2x: bank-bcp_2x.png
+        3x: bank-bcp_3x.png
+interbank:
+    bank_code: IB
+    label: Interbank
+    group: bt
+    countries:
+        PE: true
+    logo: bank-interbank.png
+    logo_hd:
+        2x: bank-interbank_2x.png
+        3x: bank-interbank_3x.png
+bbva:
+    bank_code: BP
+    label: BBVA
+    group: bt
+    countries:
+        PE: true
+    logo: bank-bbva.png
+    logo_hd:
+        2x: bank-bbva_2x.png
+        3x: bank-bbva_3x.png
 #india
 netbanking:
     bank_code: NB

@@ -25,7 +25,7 @@
 	},
 	"callback": "DonationInterface::registerExtension",
 	"SpecialPages": {
-		"GatewayFormChooser": "GatewayFormChooser",
+		"GatewayChooser": "GatewayChooser",
 		"SystemStatus": "SystemStatus",
 		"EmailPreferences": "EmailPreferences",
 		"FundraiserMaintenance": "FundraiserMaintenance",
@@ -34,20 +34,20 @@
 		"IngenicoGateway": "IngenicoGateway",
 		"IngenicoGatewayResult": "IngenicoGatewayResult",
 		"AmazonGateway": "AmazonGateway",
-		"AdyenGateway": "AdyenGateway",
-		"AdyenGatewayResult": "AdyenGatewayResult",
 		"AdyenCheckoutGateway": "AdyenCheckoutGateway",
 		"AdyenCheckoutGatewayResult": "AdyenCheckoutGatewayResult",
+		"BraintreeGateway": "BraintreeGateway",
+		"BraintreeGatewayResult": "BraintreeGatewayResult",
 		"AstroPayGateway": "AstroPayGateway",
 		"AstroPayGatewayResult": "AstroPayGatewayResult",
 		"PaypalExpressGateway": "PaypalExpressGateway",
-		"PaypalExpressGatewayResult": "PaypalExpressGatewayResult",
-		"PaypalLegacyGateway": "PaypalLegacyGateway"
+		"PaypalExpressGatewayResult": "PaypalExpressGatewayResult"
 	},
 	"APIModules": {
 		"di_amazon_bill": "AmazonBillingApi",
 		"di_donate_adyen": "AdyenDonationApi",
 		"di_applesession_adyen": "AdyenAppleApi",
+		"di_donate_braintree": "BraintreeDonationApi",
 		"donate": "DonationApi",
 		"di_recurring_convert": "RecurringConversionApi",
 		"logPaymentsFormError": "ClientErrorApi",
@@ -65,7 +65,7 @@
 			"globalcollect_gateway/i18n",
 			"adyen_gateway/i18n",
 			"astropay_gateway/i18n",
-			"paypal_gateway/i18n",
+			"paypal_ec_gateway/i18n",
 			"email_forms/i18n"
 		]
 	},
@@ -76,13 +76,15 @@
 		"IngenicoGatewayAlias": "ingenico_gateway/ingenico_gateway.alias.php",
 		"AdyenGatewayAlias": "adyen_gateway/adyen_gateway.alias.php",
 		"AstroPayGatewayAlias": "astropay_gateway/astropay_gateway.alias.php",
-		"PaypalGatewayAlias": "paypal_gateway/paypal_gateway.alias.php"
+		"PaypalGatewayAlias": "paypal_ec_gateway/paypal_gateway.alias.php",
+		"BraintreeGatewayAlias": "braintree_gateway/braintree_gateway.alias.php"
 	},
 	"AutoloadClasses": {
 		"Amount": "gateway_common/Amount.php",
 		"AmountInCents": "gateway_common/AmountInCents.php",
 		"ArrayHelper": "gateway_common/ArrayHelper.php",
 		"FiscalNumber": "gateway_common/FiscalNumber.php",
+		"EmployerFieldValidation": "gateway_common/EmployerFieldValidation.php",
 		"ClientErrorApi": "gateway_common/clientError.api.php",
 		"EmployerSearchAPI": "gateway_common/employerSearch.api.php",
 		"CiviproxyConnect": "extras/civiproxy/CiviproxyConnect.php",
@@ -153,21 +155,16 @@
 		"AmazonGateway": "amazon_gateway/amazon_gateway.body.php",
 		"AmazonAdapter": "amazon_gateway/amazon.adapter.php",
 		"AmazonBillingApi": "amazon_gateway/amazon.api.php",
-		"AdyenGateway": "adyen_gateway/adyen_gateway.body.php",
-		"AdyenGatewayResult": "adyen_gateway/adyen_resultswitcher.body.php",
-		"AdyenHostedSignature": "adyen_gateway/AdyenHostedSignature.php",
-		"AdyenMethodCodec": "adyen_gateway/AdyenMethodCodec.php",
-		"AdyenSubmethodCodec": "adyen_gateway/AdyenSubmethodCodec.php",
-		"AdyenAdapter": "adyen_gateway/adyen.adapter.php",
-		"Adyen3DSecure": "adyen_gateway/checkout/Adyen3DSecure.php",
-		"AdyenDonationApi": "adyen_gateway/checkout/adyen.api.php",
-		"AdyenAppleApi": "adyen_gateway/checkout/adyen_apple.api.php",
-		"AdyenCheckoutAdapter": "adyen_gateway/checkout/adyen_checkout.adapter.php",
-		"AdyenCheckoutGateway": "adyen_gateway/checkout/adyen_checkout_gateway.body.php",
-		"AdyenCheckoutGatewayResult": "adyen_gateway/checkout/adyen_checkout_resultswitcher.body.php",
-		"FullNameWithExceptions": "adyen_gateway/FullNameWithExceptions.php",
-		"RiskScore": "adyen_gateway/RiskScore.php",
-		"AmountInMinorUnits": "adyen_gateway/AmountInMinorUnits.php",
+		"Adyen3DSecure": "adyen_gateway/Adyen3DSecure.php",
+		"AdyenDonationApi": "adyen_gateway/adyen.api.php",
+		"BraintreeDonationApi": "braintree_gateway/braintree.api.php",
+		"AdyenAppleApi": "adyen_gateway/adyen_apple.api.php",
+		"AdyenCheckoutAdapter": "adyen_gateway/adyen_checkout.adapter.php",
+		"AdyenCheckoutGateway": "adyen_gateway/adyen_checkout_gateway.body.php",
+		"AdyenCheckoutGatewayResult": "adyen_gateway/adyen_checkout_resultswitcher.body.php",
+		"BraintreeAdapter": "braintree_gateway/braintree.adapter.php",
+		"BraintreeGateway": "braintree_gateway/braintree_gateway.body.php",
+		"BraintreeGatewayResult": "braintree_gateway/braintree_resultswitcher.body.php",
 		"BlankAddressFields": "adyen_gateway/BlankAddressFields.php",
 		"AstroPayGateway": "astropay_gateway/astropay_gateway.body.php",
 		"AstroPayGatewayResult": "astropay_gateway/astropay_resultswitcher.body.php",
@@ -176,15 +173,11 @@
 		"AstroPayMethodCodec": "astropay_gateway/AstroPayMethodCodec.php",
 		"AstroPaySignature": "astropay_gateway/AstroPaySignature.php",
 		"PlaceholderFiscalNumber": "astropay_gateway/PlaceholderFiscalNumber.php",
-		"CleanupRecurringLength": "paypal_gateway/CleanupRecurringLength.php",
-		"PayPalCountry": "paypal_gateway/PayPalCountry.php",
-		"PaypalExpressAdapter": "paypal_gateway/express_checkout/paypal_express.adapter.php",
-		"PaypalExpressGateway": "paypal_gateway/express_checkout/paypal_express_gateway.body.php",
-		"PaypalExpressGatewayResult": "paypal_gateway/express_checkout/paypal_express_resultswitcher.body.php",
-		"PaypalExpressReturnUrl": "paypal_gateway/express_checkout/PaypalExpressReturnUrl.php",
-		"PaypalLegacyAdapter": "paypal_gateway/legacy/paypal_legacy.adapter.php",
-		"PaypalLegacyGateway": "paypal_gateway/legacy/paypal_legacy_gateway.body.php",
-		"PaypalLegacyLocale": "paypal_gateway/legacy/PaypalLegacyLocale.php",
+		"PayPalCountry": "paypal_ec_gateway/PayPalCountry.php",
+		"PaypalExpressAdapter": "paypal_ec_gateway/paypal_express.adapter.php",
+		"PaypalExpressGateway": "paypal_ec_gateway/paypal_express_gateway.body.php",
+		"PaypalExpressGatewayResult": "paypal_ec_gateway/paypal_express_resultswitcher.body.php",
+		"PaypalExpressReturnUrl": "paypal_ec_gateway/PaypalExpressReturnUrl.php",
 		"Gateway_Extras": "extras/extras.body.php",
 		"FraudFilter": "extras/FraudFilter.php",
 		"Gateway_Extras_CustomFilters": "extras/custom_filters/custom_filters.body.php",
@@ -196,13 +189,14 @@
 		"Gateway_Extras_CustomFilters_IP_Velocity": "extras/custom_filters/filters/ip_velocity/ip_velocity.body.php",
 		"BannerHistoryLogIdProcessor": "extras/banner_history/BannerHistoryLogIdProcessor.php",
 		"Gateway_Extras_SessionVelocityFilter": "extras/session_velocity/session_velocity.body.php",
-		"GatewayFormChooser": "special/GatewayFormChooser.php",
+		"GatewayChooser": "special/GatewayChooser.php",
 		"SystemStatus": "special/SystemStatus.php",
 		"EmailPreferences": "special/EmailPreferences.php",
 		"DonationApi": "gateway_common/donation.api.php",
 		"DonationApiBase": "gateway_common/DonationApiBase.php",
 		"RecurringConversionApi": "gateway_common/RecurringConversion.api.php",
-		"FundraiserMaintenance": "special/FundraiserMaintenance.php"
+		"FundraiserMaintenance": "special/FundraiserMaintenance.php",
+		"RecurringConversionTrait": "gateway_common/RecurringConversionTrait.php"
 	},
 	"ResourceModules": {
 		"iframe.liberator": {
@@ -222,10 +216,15 @@
 			"styles": "modules/css/noCardSelect.css",
 			"dependencies": "ext.donationInterface.forms"
 		},
+		"ext.donationInterface.emailPreferencesStyles": {
+			"styles": "modules/css/emailPreferences.css"
+		},
 		"ext.donationInterface.emailPreferences": {
 			"scripts": "modules/js/ext.donationInterface.emailPreferences.js",
-			"styles": "modules/css/emailPreferences.css",
-			"dependencies": "donationInterface.skinOverride"
+			"dependencies": [
+				"donationInterface.skinOverride",
+				"ext.donationInterface.emailPreferencesStyles"
+			]
 		},
 		"ext.donationInterface.alwaysRedirect": {
 			"scripts": "modules/js/ext.donationInterface.alwaysRedirect.js",
@@ -234,9 +233,12 @@
 		"donationInterface.styles": {
 			"styles": "modules/css/gateway.css"
 		},
+		"donationInterface.skinOverrideStyles": {
+			"styles": "modules/css/skinOverride.css"
+		},
 		"donationInterface.skinOverride": {
 			"scripts": "modules/js/skinOverride.js",
-			"styles": "modules/css/skinOverride.css"
+			"dependencies": "donationInterface.skinOverrideStyles"
 		},
 		"ext.donationInterface.errorLog": {
 			"scripts": "modules/js/ext.donationInterface.errorLog.js"
@@ -267,16 +269,28 @@
 		"ext.donationInterface.mustache.styles": {
 			"styles": "gateway_forms/mustache/forms.css"
 		},
-		"ext.donationInterface.adyen.scripts": {
-			"scripts": "adyen_gateway/forms/js/adyen.js",
-			"dependencies": "ext.donationInterface.forms"
-		},
 		"ext.donationInterface.adyenCheckout": {
-			"scripts": "adyen_gateway/checkout/forms/adyen.js",
-			"styles": "adyen_gateway/checkout/forms/adyen.css",
+			"scripts": "adyen_gateway/forms/adyen.js",
+			"styles": "adyen_gateway/forms/adyen.css",
 			"dependencies": "ext.donationInterface.forms",
 			"messages": [
-				"donate_interface-error-msg-apple_pay_unsupported"
+				"donate_interface-error-msg-apple_pay_unsupported",
+				"donate_interface-error-msg-google_pay_unsupported",
+				"donate_interface-credit-card-number",
+				"donate_interface-credit-card-expiration",
+				"donate_interface-cvv",
+				"donate_interface-expiry-date-field-placeholder",
+				"donate_interface-cvv-placeholder-3-digits",
+				"donate_interface-cvv-placeholder-4-digits",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-expiry-date-field-invalid",
+				"donate_interface-error-msg-incomplete-field",
+				"donate_interface-error-msg-field-not-valid",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-card-number-do-not-match-card-brand",
+				"donate_interface-error-msg-unsupported-card-entered",
+				"donate_interface-error-msg-card-too-old",
+				"donate_interface-error-msg-date-too-far-in-the-future"
 			]
 		},
 		"ext.donationInterface.ingenico.scripts": {
@@ -289,7 +303,7 @@
 			"dependencies": "ext.donationInterface.forms"
 		},
 		"ext.donationInterface.paypal.scripts": {
-			"scripts": "paypal_gateway/express_checkout/forms/js/paypal.js",
+			"scripts": "paypal_ec_gateway/forms/js/paypal.js",
 			"dependencies": "ext.donationInterface.forms"
 		},
 		"ext.donationInterface.amazon.styles": {
@@ -300,6 +314,19 @@
 			"dependencies": "ext.donationInterface.validation",
 			"messages": [
 				"donate_interface-otherways-short"
+			]
+		},
+		"ext.donationInterface.braintree": {
+			"scripts": "braintree_gateway/forms/braintree.js",
+			"styles": "braintree_gateway/forms/braintree.css",
+			"dependencies": "ext.donationInterface.forms"
+		},
+		"ext.donationInterface.astropay": {
+			"scripts": "astropay_gateway/forms/astropay.js",
+			"dependencies": "ext.donationInterface.forms",
+			"messages": [
+				"donate_interface-redirect-explanation",
+				"donate_interface-donor-fiscal_number-explain-in"
 			]
 		},
 		"gc.iframe": {
@@ -401,17 +428,6 @@
 		"ext.donationInterface.monthlyConvertButtonFlip": {
 			"scripts": "modules/js/ext.donationInterface.monthlyConvertButtonFlip.js",
 			"dependencies": "ext.donationInterface.monthlyConvert"
-		},
-		"ext.donationInterface.panExplain": {
-			"scripts": "modules/js/ext.donationInterface.panExplain.js",
-			"dependencies": "ext.donationInterface.forms",
-			"messages": [
-				"donate_interface-donor-fiscal_number-explain-in"
-			]
-		},
-		"ext.donationInterface.adyenIframe": {
-			"scripts": "adyen_gateway/forms/js/adyen-iframe.js",
-			"dependencies": "ext.donationInterface.forms"
 		}
 	},
 	"ResourceFileModulePaths": {
@@ -504,15 +520,6 @@
 		},
 		"DonationInterfaceNoScriptRedirect": {
 			"value": null
-		},
-		"DonationInterfacePriceFloor": {
-			"value": 1
-		},
-		"DonationInterfacePriceCeiling": {
-			"value": 10000
-		},
-		"DonationInterfaceRapidFail": {
-			"value": false
 		},
 		"DonationInterfaceThankYouPage": {
 			"value": "Donate-thanks"
@@ -635,18 +642,6 @@
 		"AmazonGatewayLoginScript": {
 			"value": "https://api-cdn.amazon.com/sdk/login1.js"
 		},
-		"PaypalGatewayURL": {
-			"value": "https://www.paypal.com/cgi-bin/webscr"
-		},
-		"PaypalGatewayTestingURL": {
-			"value": "https://www.sandbox.paypal.com/cgi-bin/webscr"
-		},
-		"PaypalGatewayRecurringLength": {
-			"value": "0"
-		},
-		"PaypalGatewayXclickCountries": {
-			"value": []
-		},
 		"PaypalExpressGatewayCertificateURL": {
 			"value": "https://api.paypal.com/nvp"
 		},
@@ -658,15 +653,6 @@
 		},
 		"PaypalExpressGatewayTestingSignatureURL": {
 			"value": "https://api-3t.sandbox.paypal.com/nvp"
-		},
-		"AdyenGatewayURL": {
-			"value": "https://live.adyen.com"
-		},
-		"AdyenGatewayTestingURL": {
-			"value": "https://test.adyen.com"
-		},
-		"AdyenGatewayMaxRiskScore": {
-			"value": 95
 		},
 		"AstroPayGatewayURL": {
 			"value": "https://api.dlocal.com/"
@@ -728,6 +714,9 @@
 		"DonationInterfaceNameFilterRules": {
 			"value": []
 		},
+		"DonationInterfaceIPDenyFailScore": {
+			"value": 100
+		},
 		"DonationInterfaceIPVelocityFailScore": {
 			"value": 100
 		},
@@ -788,26 +777,50 @@
 		"AmazonGatewayEnabled": {
 			"value": false
 		},
-		"AdyenGatewayEnabled": {
-			"value": false
-		},
 		"AdyenCheckoutGatewayEnabled": {
 			"value": false
 		},
 		"AstroPayGatewayEnabled": {
 			"value": false
 		},
-		"PaypalGatewayEnabled": {
+		"PaypalExpressGatewayEnabled": {
 			"value": false
 		},
-		"PaypalExpressGatewayEnabled": {
+		"BraintreeGatewayEnabled": {
 			"value": false
 		},
 		"DonationInterfaceEnableCustomFilters": {
 			"value": true
 		},
-		"DonationInterfaceEnableFormChooser": {
+		"DonationInterfaceEnableGatewayChooser": {
 			"value": false
+		},
+		"DonationInterfaceGatewayPriorityRules": {
+			"value": [
+				{
+					"conditions": {
+						"country": [ "AR", "BR", "CL", "CO", "MX", "PE", "UY", "ZA" ],
+						"payment_method": "cc"
+					},
+					"gateways": [ "astropay", "ingenico", "adyen" ]
+				},
+				{
+					"conditions": {
+						"country": [ "AT", "BE", "DK", "ES", "FR", "IL", "LU", "MY", "NL", "NO", "PT" ],
+						"payment_method": "cc"
+					},
+					"gateways": [ "adyen", "ingenico" ]
+				},
+				{
+					"conditions": {
+						"payment_method": "rtbt"
+					},
+					"gateways": [ "adyen", "ingenico" ]
+				},
+				{
+					"gateways": [ "ingenico", "adyen", "paypal_ec", "amazon", "astropay", "braintree" ]
+				}
+			]
 		},
 		"DonationInterfaceEnableReferrerFilter": {
 			"value": false
@@ -841,11 +854,8 @@
 				"adyen": "AdyenCheckoutAdapter",
 				"astropay": "AstroPayAdapter",
 				"paypal_ec": "PaypalExpressAdapter",
-				"paypal": "PaypalLegacyAdapter"
+				"braintree": "BraintreeAdapter"
 			}
-		},
-		"DonationInterfaceAllowedHtmlForms": {
-			"value": []
 		},
 		"DonationInterfaceTaxDedCountries": {
 			"value": [ "FR" ]
@@ -862,33 +872,494 @@
 		"DonationInterfaceMonthlyConvertDefaultModule": {
 			"value": "ext.donationInterface.monthlyConvert"
 		},
+		"DonationInterfaceMonthlyConvertAmounts": {
+			"value": {
+				"USD": [
+					[ 2.74, 0 ],
+					[ 9, 1.75 ],
+					[ 12, 2 ],
+					[ 15, 2.5 ],
+					[ 18, 3 ],
+					[ 21, 3.5 ],
+					[ 24, 4 ],
+					[ 27, 4.5 ],
+					[ 30, 5 ],
+					[ 33, 5.5 ],
+					[ 36, 6 ],
+					[ 39, 6.5 ],
+					[ 42, 7 ],
+					[ 45, 7.5 ],
+					[ 48, 8 ],
+					[ 51, 8.5 ],
+					[ 54, 9 ],
+					[ 57, 9.5 ],
+					[ 60, 10 ],
+					[ 63, 10.5 ],
+					[ 66, 11 ],
+					[ 69, 11.5 ],
+					[ 72, 12 ],
+					[ 75, 12.5 ],
+					[ 102, 17 ],
+					[ 250, 25 ],
+					[ 499, 50 ]
+				],
+				"GBP": [
+					[ 1.99, 0 ],
+					[ 9, 1.75 ],
+					[ 12, 2 ],
+					[ 15, 2.5 ],
+					[ 18, 3 ],
+					[ 21, 3.5 ],
+					[ 24, 4 ],
+					[ 27, 4.5 ],
+					[ 30, 5 ],
+					[ 33, 5.5 ],
+					[ 36, 6 ],
+					[ 39, 6.5 ],
+					[ 42, 7 ],
+					[ 45, 7.5 ],
+					[ 48, 8 ],
+					[ 51, 8.5 ],
+					[ 54, 9 ],
+					[ 57, 9.5 ],
+					[ 60, 10 ],
+					[ 63, 10.5 ],
+					[ 66, 11 ],
+					[ 69, 11.5 ],
+					[ 72, 12 ],
+					[ 75, 12.5 ],
+					[ 102, 17 ],
+					[ 250, 25 ],
+					[ 499, 50 ]
+				],
+				"JPY": [
+					[ 299, 0 ],
+					[ 900, 150 ],
+					[ 1200, 200 ],
+					[ 1500, 250 ],
+					[ 1800, 300 ],
+					[ 2100, 350 ],
+					[ 2400, 400 ],
+					[ 2700, 450 ],
+					[ 3000, 500 ],
+					[ 3300, 550 ],
+					[ 3600, 600 ],
+					[ 3900, 650 ],
+					[ 4200, 700 ],
+					[ 4500, 750 ],
+					[ 4800, 800 ],
+					[ 5100, 850 ],
+					[ 5400, 900 ],
+					[ 5700, 950 ],
+					[ 6000, 1000 ],
+					[ 6300, 1050 ],
+					[ 6600, 1100 ],
+					[ 6900, 1150 ],
+					[ 7200, 1200 ],
+					[ 7500, 1250 ],
+					[ 10800, 1800 ],
+					[ 18000, 3000 ],
+					[ 50000, 6000 ]
+				],
+				"SEK": [
+					[ 25, 0 ],
+					[ 50, 25 ],
+					[ 100, 30 ],
+					[ 200, 50 ],
+					[ 300, 70 ],
+					[ 500, 90 ],
+					[ 1000, 110 ],
+					[ 2500, 250 ],
+					[ 5000, 500 ]
+				],
+				"HUF": [
+					[ 499, 0 ],
+					[ 3000, 500 ],
+					[ 6000, 1000 ],
+					[ 9000, 1500 ],
+					[ 12000, 2000 ],
+					[ 18000, 3000 ],
+					[ 24000, 4000 ],
+					[ 30000, 5000 ],
+					[ 36000, 6000 ],
+					[ 42000, 7000 ],
+					[ 48000, 8000 ],
+					[ 54000, 9000 ],
+					[ 60000, 10000 ]
+				],
+				"ILS": [
+					[ 9, 0 ],
+					[ 10, 5 ],
+					[ 60, 10 ],
+					[ 90, 15 ],
+					[ 120, 20 ],
+					[ 180, 30 ],
+					[ 240, 40 ],
+					[ 300, 50 ],
+					[ 360, 60 ],
+					[ 420, 70 ],
+					[ 480, 80 ],
+					[ 540, 90 ],
+					[ 600, 100 ]
+				],
+				"ZAR": [
+					[ 29, 0 ],
+					[ 30, 20 ],
+					[ 50, 30 ],
+					[ 100, 40 ],
+					[ 300, 50 ],
+					[ 450, 75 ],
+					[ 600, 100 ],
+					[ 900, 150 ],
+					[ 1200, 200 ],
+					[ 1500, 250 ],
+					[ 1800, 300 ],
+					[ 2400, 400 ],
+					[ 3000, 500 ],
+					[ 3600, 600 ]
+				],
+				"MYR": [
+					[ 9, 0 ],
+					[ 30, 5 ],
+					[ 50, 10 ],
+					[ 120, 20 ],
+					[ 180, 30 ],
+					[ 240, 40 ],
+					[ 300, 50 ],
+					[ 360, 60 ],
+					[ 420, 70 ],
+					[ 480, 80 ],
+					[ 540, 90 ],
+					[ 600, 100 ],
+					[ 900, 150 ]
+				],
+				"DKK": [
+					[ 19, 0 ],
+					[ 20, 10 ],
+					[ 120, 20 ],
+					[ 180, 30 ],
+					[ 300, 50 ],
+					[ 450, 75 ],
+					[ 600, 100 ],
+					[ 750, 125 ],
+					[ 900, 150 ],
+					[ 1200, 200 ],
+					[ 1500, 250 ],
+					[ 1800, 300 ],
+					[ 2100, 350 ]
+				]
+			},
+			"merge_strategy": "array_plus"
+		},
+		"DonationInterfaceEmailPrefCtrCountries": {
+			"value": [
+				"AF",
+				"AX",
+				"AL",
+				"DZ",
+				"AS",
+				"AD",
+				"AO",
+				"AI",
+				"AQ",
+				"AG",
+				"AR",
+				"AM",
+				"AW",
+				"AU",
+				"AT",
+				"AZ",
+				"BS",
+				"BH",
+				"BD",
+				"BB",
+				"BY",
+				"BE",
+				"BZ",
+				"BJ",
+				"BM",
+				"BT",
+				"BO",
+				"BQ",
+				"BA",
+				"BW",
+				"BV",
+				"BR",
+				"IO",
+				"BN",
+				"BG",
+				"BF",
+				"BI",
+				"KH",
+				"CM",
+				"CA",
+				"CV",
+				"KY",
+				"CF",
+				"TD",
+				"CL",
+				"CN",
+				"CX",
+				"CC",
+				"CO",
+				"KM",
+				"CG",
+				"CD",
+				"CK",
+				"CR",
+				"CI",
+				"HR",
+				"CU",
+				"CW",
+				"CY",
+				"CZ",
+				"DK",
+				"DJ",
+				"DM",
+				"DO",
+				"EC",
+				"EG",
+				"SV",
+				"GQ",
+				"ER",
+				"EE",
+				"SZ",
+				"ET",
+				"FK",
+				"FO",
+				"FJ",
+				"FI",
+				"FR",
+				"GF",
+				"PF",
+				"TF",
+				"GA",
+				"GM",
+				"GE",
+				"DE",
+				"GH",
+				"GI",
+				"GR",
+				"GL",
+				"GD",
+				"GP",
+				"GU",
+				"GT",
+				"GG",
+				"GN",
+				"GW",
+				"GY",
+				"HT",
+				"HM",
+				"VA",
+				"HN",
+				"HK",
+				"HU",
+				"IS",
+				"IN",
+				"ID",
+				"IR",
+				"IQ",
+				"IE",
+				"IM",
+				"IL",
+				"IT",
+				"JM",
+				"JP",
+				"JE",
+				"JO",
+				"KZ",
+				"KE",
+				"KI",
+				"KP",
+				"KR",
+				"XK",
+				"KW",
+				"KG",
+				"LA",
+				"LV",
+				"LB",
+				"LS",
+				"LR",
+				"LY",
+				"LI",
+				"LT",
+				"LU",
+				"MO",
+				"MG",
+				"MW",
+				"MY",
+				"MV",
+				"ML",
+				"MT",
+				"MH",
+				"MQ",
+				"MR",
+				"MU",
+				"YT",
+				"MX",
+				"FM",
+				"MD",
+				"MC",
+				"MN",
+				"ME",
+				"MS",
+				"MA",
+				"MZ",
+				"MM",
+				"NA",
+				"NR",
+				"NP",
+				"NL",
+				"NC",
+				"NZ",
+				"NI",
+				"NE",
+				"NG",
+				"NU",
+				"NF",
+				"MK",
+				"MP",
+				"NO",
+				"OM",
+				"PK",
+				"PW",
+				"PS",
+				"PA",
+				"PG",
+				"PY",
+				"PE",
+				"PH",
+				"PN",
+				"PL",
+				"PT",
+				"PR",
+				"QA",
+				"RE",
+				"RO",
+				"RU",
+				"RW",
+				"BL",
+				"SH",
+				"KN",
+				"LC",
+				"MF",
+				"PM",
+				"VC",
+				"WS",
+				"SM",
+				"ST",
+				"SA",
+				"SN",
+				"RS",
+				"CS",
+				"SC",
+				"SL",
+				"SG",
+				"SX",
+				"SK",
+				"SI",
+				"SB",
+				"SO",
+				"ZA",
+				"GS",
+				"SS",
+				"ES",
+				"LK",
+				"SD",
+				"SR",
+				"SJ",
+				"SE",
+				"CH",
+				"SY",
+				"TW",
+				"TJ",
+				"TZ",
+				"TH",
+				"TL",
+				"TG",
+				"TK",
+				"TO",
+				"TT",
+				"TN",
+				"TR",
+				"TM",
+				"TC",
+				"TV",
+				"UG",
+				"UA",
+				"AE",
+				"GB",
+				"US",
+				"UM",
+				"UY",
+				"UZ",
+				"VU",
+				"VE",
+				"VN",
+				"VG",
+				"VI",
+				"WF",
+				"EH",
+				"YE",
+				"ZM",
+				"ZW"
+			]
+		},
 		"DonationInterfaceEmailPrefCtrLanguages": {
 			"value": [
-				"ca",
-				"da",
-				"de",
-				"en",
-				"es",
-				"es-mx",
-				"fr-ca",
-				"fr",
-				"he",
-				"hu",
-				"it",
-				"ja",
-				"lv",
-				"mk",
-				"nb",
-				"nl",
-				"pl",
-				"pt-br",
-				"pt",
-				"ro",
-				"ru",
-				"sk",
-				"sv",
-				"uk",
-				"zh"
+				"af_ZA",
+				"sq_AL",
+				"ar_EG",
+				"bg_BG",
+				"ca_ES",
+				"zh_CN",
+				"zh_TW",
+				"cs_CZ",
+				"da_DK",
+				"nl_NL",
+				"nl_BE",
+				"en_AU",
+				"en_CA",
+				"en_GB",
+				"en_US",
+				"et_EE",
+				"fi_FI",
+				"fr_CA",
+				"fr_FR",
+				"de_DE",
+				"de_CH",
+				"el_GR",
+				"he_IL",
+				"hi_IN",
+				"hu_HU",
+				"id_ID",
+				"it_IT",
+				"ja_JP",
+				"km_KH",
+				"lt_LT",
+				"lv_LV",
+				"mk_MK",
+				"nb_NO",
+				"no_NO",
+				"fa_IR",
+				"pl_PL",
+				"pt_BR",
+				"pt_PT",
+				"ro_RO",
+				"ru_RU",
+				"sr_RS",
+				"sk_SK",
+				"sl_SI",
+				"es_ES",
+				"es_MX",
+				"es_PR",
+				"sv_SE",
+				"te_IN",
+				"th_TH",
+				"tr_TR",
+				"uk_UA",
+				"vi_VN"
 			]
 		},
 		"DonationInterfaceCiviproxyURLBase": {

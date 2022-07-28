@@ -42,8 +42,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 	 * @var array
 	 */
 	public static $initial_vars = [
-		'ffname' => 'testytest',
-		'referrer' => 'www.yourmom.com', // please don't go there.
+		'referrer' => 'www.blandfakedomainname.com',
 		'currency' => 'USD',
 	];
 
@@ -75,12 +74,10 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 
 	public static function resetTestingAdapters() {
 		$testing_adapters = [
-			TestingAdyenAdapter::class,
 			TestingAstroPayAdapter::class,
 			TestingGenericAdapter::class,
 			TestingGlobalCollectAdapter::class,
 			TestingPaypalExpressAdapter::class,
-			TestingPaypalLegacyAdapter::class,
 		];
 		foreach ( $testing_adapters as $testing_adapter ) {
 			$testing_adapter::setDummyGatewayResponseCode( null );
@@ -92,6 +89,24 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 		// SmashPig core logger.
 		DonationLoggerFactory::$overrideLogger = new TestingDonationLogger();
 		self::setUpSmashPigContext();
+
+		// TODO use TestConfiguration.php instead?
+		$this->setMwGlobals( [
+			// Setting this to its default value
+			// FIXME is this right?
+			'wgDonationInterface3DSRules' => [ 'INR' => [] ],
+
+			// Just putting this here since there's no other shared superclass for
+			// GlobalCollect tests.
+			'wgGlobalCollectGatewayCustomFiltersInitialFunctions' => []
+		] );
+
+		TestingGenericAdapter::$donationRules = [
+			'currency' => 'USD',
+			'min' => 1.00,
+			'max' => 10000.00
+		];
+
 		parent::setUp();
 	}
 
@@ -148,6 +163,11 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 	protected function setInitialFiltersToFail() {
 		$this->setMwGlobals( [
 			'wgDonationInterfaceCustomFiltersInitialFunctions' => [
+				'getScoreUtmSourceMap' => 100
+			],
+			// We have to set this explicitly, since setMwGlobals doesn't provide
+			// a way to unset a global setting.
+			'wgGlobalCollectGatewayCustomFiltersInitialFunctions' => [
 				'getScoreUtmSourceMap' => 100
 			],
 			'wgDonationInterfaceUtmSourceMap' => [
@@ -313,6 +333,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 				'city' => 'Chennai',
 				'first_name' => 'Test',
 				'last_name' => 'India',
+				'full_name' => '',
 				'amount' => '100',
 				'language' => 'en',
 				'email' => 'testindia@test.com'
@@ -334,6 +355,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 				'payment_submethod' => 'test_bank',
 				'first_name' => 'Nome',
 				'last_name' => 'Apelido',
+				'full_name' => '',
 				'amount' => '100',
 				'language' => 'pt',
 				'email' => 'nobody@example.org'
@@ -850,6 +872,7 @@ abstract class DonationInterfaceTestCase extends MediaWikiIntegrationTestCase {
 				'country' => 'US',
 				'first_name' => 'Flighty',
 				'last_name' => 'Dono',
+				'full_name' => '',
 				'email' => 'test+wmf@eff.org',
 				'gateway' => 'globalcollect',
 				'gateway_txn_id' => "txn-{$uniq}",

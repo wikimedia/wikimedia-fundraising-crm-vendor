@@ -51,44 +51,6 @@ class BaseIngenicoTestCase extends DonationInterfaceTestCase {
 		];
 		$this->setMwGlobals( [
 			'wgIngenicoGatewayEnabled' => true,
-			'wgDonationInterfaceAllowedHtmlForms' => [
-				'cc-vmad' => [
-					'gateway' => 'ingenico',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex', 'discover' ] ],
-					'countries' => [
-						'+' => $vmad_countries,
-					],
-				],
-				'cc-vmaj' => [
-					'gateway' => 'ingenico',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex', 'jcb' ] ],
-					'countries' => [
-						'+' => $vmaj_countries,
-					],
-				],
-				'cc-vma' => [
-					'gateway' => 'ingenico',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex' ] ],
-					'countries' => [
-						// Array merge with cc-vmaj as fallback in case 'j' goes down
-						// Array merge with cc-vmad as fallback in case 'd' goes down
-						'+' => array_merge(
-							$vmaj_countries,
-							$vmad_countries,
-							$vma_countries
-						),
-					],
-				],
-				'rtbt-sofo' => [
-					'gateway' => 'ingenico',
-					'countries' => [
-						'+' => [ 'AT', 'BE', 'CH', 'DE' ],
-						'-' => 'GB'
-					],
-					'currencies' => [ '+' => 'EUR' ],
-					'payment_methods' => [ 'rtbt' => 'rtbt_sofortuberweisung' ],
-				],
-			],
 		] );
 
 		$this->partialUrl = 'poweredbyglobalcollect.com/pay8915-53ebca407e6b4a1dbd086aad4f10354d:' .
@@ -146,6 +108,7 @@ class BaseIngenicoTestCase extends DonationInterfaceTestCase {
 
 		$this->hostedPaymentStatusResponse = new PaymentDetailResponse();
 		$this->hostedPaymentStatusResponse->setRawResponse( $this->hostedPaymentStatusRawResponse );
+		$this->hostedPaymentStatusResponse->setSuccessful( true );
 
 		$this->hostedPaymentStatusRawResponseBadCvv = $this->hostedPaymentStatusRawResponse;
 		$this->hostedPaymentStatusRawResponseBadCvv['createdPaymentOutput']['payment']
@@ -154,6 +117,7 @@ class BaseIngenicoTestCase extends DonationInterfaceTestCase {
 
 		$this->hostedPaymentStatusResponseBadCvv = new PaymentDetailResponse();
 		$this->hostedPaymentStatusResponseBadCvv->setRawResponse( $this->hostedPaymentStatusRawResponseBadCvv );
+		$this->hostedPaymentStatusResponse->setSuccessful( true );
 
 		$this->approvePaymentResponse = ( new ApprovePaymentResponse() )
 			->setRawResponse(
@@ -194,6 +158,7 @@ class BaseIngenicoTestCase extends DonationInterfaceTestCase {
 				]
 			)
 			->setStatus( FinalStatus::COMPLETE )
+			->setSuccessful( true )
 			->setGatewayTxnId( '000000850010000188180000200001' );
 	}
 

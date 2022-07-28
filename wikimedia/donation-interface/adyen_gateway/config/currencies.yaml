@@ -52,6 +52,7 @@
 - DKK # Danish Krone
 - DOP # Dominican R. Peso
 - DZD # Algerian Dinar
+- ECS # Ecuador Sucre
 - EGP # Egyptian Pound
 - ESP # Spanish Peseta
 - ETB # Ethiopian Birr
@@ -100,9 +101,7 @@
 - LKR # Sri Lankan Rupee
 - LRD # Liberian Dollar
 - LSL # Lesotho Loti
-- LTL # Lithuanian Litas
 - LUF # Luxembourg Franc
-- LVL # Latvian Lats
 - LYD # Libyan Dinar
 - MAD # Moroccan Dirham
 - MDL # Moldovan Leu
@@ -141,7 +140,6 @@
 - ROL # Romanian Lei
 - RON # Romanian New Lei
 - RSD # Serbian Dinar
-- RUB # Russian Rouble
 - RWF # Rwandan Franc
 - SAR # Saudi Riyal
 - SBD # Solomon Islands Dollar

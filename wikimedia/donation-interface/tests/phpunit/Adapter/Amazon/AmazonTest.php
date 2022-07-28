@@ -60,19 +60,6 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 
 		$this->setMwGlobals( [
 			'wgAmazonGatewayEnabled' => true,
-			'wgDonationInterfaceAllowedHtmlForms' => [
-				'amazon' => [
-					'gateway' => 'amazon',
-					'payment_methods' => [ 'amazon' => 'ALL' ],
-					'redirect',
-				],
-				'amazon-recurring' => [
-					'gateway' => 'amazon',
-					'payment_methods' => [ 'amazon' => 'ALL' ],
-					'redirect',
-					'recurring',
-				],
-			],
 		] );
 	}
 
@@ -89,7 +76,6 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'CA' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'amazon';
-		$init['ffname'] = 'amazon';
 		$init['language'] = $language;
 		$rates = CurrencyRates::getCurrencyRates();
 		$cadRate = $rates['CAD'];
@@ -128,7 +114,6 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData();
 		$init['OTT'] = 'SALT123456789';
 		$init['amount'] = '-100.00';
-		$init['ffname'] = 'amazon';
 		$session = [ 'Donor' => $init ];
 		$errorMessage = wfMessage( 'donate_interface-error-msg-invalid-amount' )->text();
 		$assertNodes = [
@@ -155,8 +140,7 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$gateway = $this->getFreshGatewayObject( $init );
 		$result = $gateway->doPayment();
 		$this->assertFalse( $result->isFailed(), 'Result should not be failed when responses are good' );
-		$this->assertEquals( 'Testy', $gateway->getData_Unstaged_Escaped( 'first_name' ), 'Did not populate first name from Amazon data' );
-		$this->assertEquals( 'Test', $gateway->getData_Unstaged_Escaped( 'last_name' ), 'Did not populate last name from Amazon data' );
+		$this->assertEquals( 'Testy Test', $gateway->getData_Unstaged_Escaped( 'full_name' ), 'Did not populate full name from Amazon data' );
 		$this->assertEquals( 'nobody@wikimedia.org', $gateway->getData_Unstaged_Escaped( 'email' ), 'Did not populate email from Amazon data' );
 		$mockClient = $this->providerConfig->object( 'payments-client' );
 		$setOrderReferenceDetailsArgs = $mockClient->calls['setOrderReferenceDetails'][0];
@@ -168,6 +152,7 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$message = QueueWrapper::getQueue( 'donations' )->pop();
 		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
 		$this->assertEquals( 'S01-0391295-0674065-C095112', $message['gateway_txn_id'], 'Queue message has wrong txn ID' );
+		$this->assertEquals( 'Testy Test', $message['full_name'] );
 	}
 
 	/**
@@ -246,6 +231,9 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$this->assertNull( $donationMessage );
 		$paymentInitMessages = QueueWrapper::getQueue( 'payments-init' )->pop();
 		$this->assertEquals( FinalStatus::PENDING, $paymentInitMessages['payments_final_status'] );
+		$pendingMessage = QueueWrapper::getQueue( 'pending' )->pop();
+		$this->assertNotNull( $pendingMessage );
+		$this->assertEquals( 'Testy Test', $pendingMessage['full_name'] );
 	}
 
 	/**
@@ -292,8 +280,7 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$result = $gateway->doPayment();
 		// FIXME: PaymentResult->isFailed returns null for false
 		$this->assertTrue( !( $result->isFailed() ), 'Result should not be failed when responses are good' );
-		$this->assertEquals( 'Testy', $gateway->getData_Unstaged_Escaped( 'first_name' ), 'Did not populate first name from Amazon data' );
-		$this->assertEquals( 'Test', $gateway->getData_Unstaged_Escaped( 'last_name' ), 'Did not populate last name from Amazon data' );
+		$this->assertEquals( 'Testy Test', $gateway->getData_Unstaged_Escaped( 'full_name' ), 'Did not populate full name from Amazon data' );
 		$this->assertEquals( 'nobody@wikimedia.org', $gateway->getData_Unstaged_Escaped( 'email' ), 'Did not populate email from Amazon data' );
 		$mockClient = $this->providerConfig->object( 'payments-client' );
 		$setBillingAgreementDetailsArgs = $mockClient->calls['setBillingAgreementDetails'][0];
@@ -306,5 +293,6 @@ class DonationInterface_Adapter_Amazon_Test extends DonationInterfaceTestCase {
 		$this->assertNotNull( $message, 'Not sending a message to the donations queue' );
 		$this->assertEquals( 'S01-5318994-6362993-C004044', $message['gateway_txn_id'], 'Queue message has wrong txn ID' );
 		$this->assertEquals( $init['subscr_id'], $message['subscr_id'], 'Queue message has wrong subscription ID' );
+		$this->assertEquals( 'Testy Test', $message['full_name'] );
 	}
 }

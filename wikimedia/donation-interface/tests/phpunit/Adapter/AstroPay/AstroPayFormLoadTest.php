@@ -26,28 +26,8 @@ class AstroPayFormLoadTest extends DonationInterfaceTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$cc_countries = [ 'CO' ];
-		$bt_countries = [ 'IN' ];
-
 		$this->setMwGlobals( [
 			'wgAstroPayGatewayEnabled' => true,
-			'wgDonationInterfaceAllowedHtmlForms' => [
-				'cc-vma' => [
-					'gateway' => 'astropay',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex' ] ],
-					'countries' => [
-						'+' => $cc_countries
-					],
-				],
-				'rtbt-netbanking' => [
-					'gateway' => 'astropay',
-					'countries' => [
-						'+' => $bt_countries
-					],
-					'currencies' => [ '+' => 'INR' ],
-					'payment_methods' => [ 'bt' => 'netbanking' ],
-				],
-			],
 		] );
 	}
 
@@ -55,7 +35,6 @@ class AstroPayFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'CO' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vma';
 
 		$assertNodes = [
 			'submethod-visa' => [
@@ -82,7 +61,6 @@ class AstroPayFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'IN' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'bt';
-		$init['ffname'] = 'rtbt-netbanking';
 
 		$assertNodes = [
 			'selected-amount' => [
@@ -104,7 +82,6 @@ class AstroPayFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'IN' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'bt';
-		$init['ffname'] = 'rtbt-netbanking';
 		$init['payment_submethod'] = 'netbanking';
 
 		$assertNodes = [

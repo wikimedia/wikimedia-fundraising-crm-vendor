@@ -12,8 +12,10 @@ use SmashPig\Core\DataStores\QueueWrapper;
 class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 
 	public function setUp(): void {
+		// TODO Use TestConfiguration.php instead?
 		$this->setMwGlobals( [
-			'wgGlobalCollectGatewayEnabled' => true
+			'wgGlobalCollectGatewayEnabled' => true,
+			'wgGlobalCollectGatewayCustomFiltersInitialFunctions' => []
 		] );
 		parent::setUp();
 	}
@@ -96,9 +98,6 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 		$init['action'] = 'donate';
 		$init['opt_in'] = '1';
 
-		// ffname causes a validation trip up
-		// set here: DonationInterface/tests/phpunit/DonationInterfaceTestCase.php:41
-		unset( $init['ffname'] );
 		$init['wmf_token'] = $this->saltedToken;
 		$session = $this->getDonorSession();
 
@@ -116,9 +115,6 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 		$init['action'] = 'donate';
 		$init['opt_in'] = '0';
 
-		// ffname causes a validation trip up
-		// set here: DonationInterface/tests/phpunit/DonationInterfaceTestCase.php:41
-		unset( $init['ffname'] );
 		$init['wmf_token'] = $this->saltedToken;
 		$session = $this->getDonorSession();
 
@@ -135,7 +131,6 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 		$init['payment_method'] = 'cc';
 		$init['gateway'] = 'globalcollect';
 		$init['action'] = 'donate';
-		unset( $init['ffname'] );
 		$init['wmf_token'] = $this->saltedToken;
 		$session = $this->getDonorSession();
 
@@ -149,5 +144,17 @@ class GlobalCollectApiTest extends DonationInterfaceApiTestCase {
 			'Donor' => [ 'contribution_tracking_id' => mt_rand( 0, 10000000 ) ],
 			'globalcollectEditToken' => 'blahblah',
 		];
+	}
+
+	protected function setInitialFiltersToFail() {
+		$this->setMwGlobals( [
+			// We have to set this explicitly, since setMwGlobals doesn't provide
+			// a way to unset a global setting.
+			'wgGlobalCollectGatewayCustomFiltersInitialFunctions' => [
+				'getScoreUtmSourceMap' => 100
+			]
+		] );
+
+		parent::setInitialFiltersToFail();
 	}
 }

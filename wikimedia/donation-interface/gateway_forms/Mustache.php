@@ -73,11 +73,6 @@ class Gateway_Form_Mustache extends Gateway_Form {
 
 		self::$fieldErrors = $data['errors']['field'];
 
-		// FIXME: is this really necessary for rendering retry links?
-		if ( isset( $data['ffname'] ) ) {
-			$this->gateway->session_pushFormName( $data['ffname'] );
-		}
-
 		$hookContainer = MediaWikiServices::getInstance()->getHookContainer();
 		$hookContainer->run(
 			'AlterPaymentFormData',
@@ -117,7 +112,7 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		$data['appeal_text'] = $output->parseAsContent( '{{' . $appealWikiTemplate . '}}' );
 		$data['is_cc'] = ( $this->gateway->getPaymentMethod() === 'cc' );
 
-		// 'is_tax_ded' is a boolean variable to check if a country falls tax-exempt countries
+		// 'is_tax_ded' is a boolean variable to check if a country falls under tax-exempt countries
 		$tax_ded_countries = $this->gateway->getGlobal( 'TaxDedCountries' );
 		$data['is_tax_ded'] = in_array( $data['country'], $tax_ded_countries );
 		if ( $data['is_tax_ded'] ) {
@@ -128,10 +123,8 @@ class Gateway_Form_Mustache extends Gateway_Form {
 		// Only render monthly convert when we come back from a qualified processor
 		if (
 			// Or when we force display with a querystring flag
-			RequestContext::getMain()->getRequest()->getBool( 'debugMonthlyConvert' ) || (
-				$this->gateway->showMonthlyConvert() &&
-				$this->gatewayPage instanceof ResultSwitcher
-			)
+			RequestContext::getMain()->getRequest()->getBool( 'debugMonthlyConvert' ) ||
+			( $this->gateway->showMonthlyConvert() && $this->gatewayPage->supportsMonthlyConvert )
 		) {
 			$data['monthly_convert'] = true;
 		}

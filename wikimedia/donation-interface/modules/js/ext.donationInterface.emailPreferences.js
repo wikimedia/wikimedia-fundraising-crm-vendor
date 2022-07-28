@@ -1,6 +1,12 @@
 ( function ( $ ) {
 	$( function () {
-		var $submitButton = $( '#continue' ),
+		$( '.epc-form-col-content-salutation-email-edit-link' ).click( function ( e ) {
+				e.preventDefault();
+			$( '.epc-form-col-content-salutation-email-edit-input' ).show();
+			$( '.epc-form-col-content-salutation-email' ).hide();
+			$( '.epc-form-col-content-salutation-email-edit' ).hide();
+		} );
+		var $submitButton = $( '#save' ),
 			$emailField = $( '#email' ),
 			isEmailValid = function () {
 				var email = $emailField.val().trim(),
@@ -37,5 +43,6 @@
 				}
 			} );
 		}
+
 	} );
 } )( jQuery );

@@ -1,2 +1,2 @@
 scripts:
-    ext.donationInterface.adyen.scripts
+    ext.donationInterface.adyenCheckout

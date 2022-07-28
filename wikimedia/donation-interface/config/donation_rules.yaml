@@ -1,0 +1,4 @@
+default:
+    currency: USD
+    min: 1
+    max: 10000

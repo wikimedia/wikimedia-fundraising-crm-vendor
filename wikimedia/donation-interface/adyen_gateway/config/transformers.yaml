@@ -3,13 +3,9 @@
 - CountryValidation
 - DonorEmail
 - StreetAddress
+- ReturnUrl
 # Adyen-specific
-- AdyenMethodCodec
-- AdyenSubmethodCodec
-- AmountInMinorUnits
-- FullNameWithExceptions
+- Adyen3DSecure
 - DonorLocale
-- RiskScore
 - BlankAddressFields
-# Signature should always come last
-- AdyenHostedSignature
+- EmployerFieldValidation

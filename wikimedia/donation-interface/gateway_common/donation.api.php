@@ -1,5 +1,7 @@
 <?php
 
+use Wikimedia\ParamValidator\ParamValidator;
+
 /**
  * Generic Donation API
  * This API should be able to accept donation submissions for any gateway or payment type
@@ -53,6 +55,7 @@ class DonationApi extends DonationApiBase {
 			'amount' => $this->defineParam( false ),
 			'currency' => $this->defineParam( false ),
 			'first_name' => $this->defineParam( false ),
+			'full_name' => $this->defineParam( false ),
 			'last_name' => $this->defineParam( false ),
 			'street_address' => $this->defineParam( false ),
 			'supplemental_address_1' => $this->defineParam( false ),
@@ -85,9 +88,9 @@ class DonationApi extends DonationApiBase {
 
 	protected function defineParam( $required = false, $type = 'string' ) {
 		if ( $required ) {
-			$param = [ ApiBase::PARAM_TYPE => $type, ApiBase::PARAM_REQUIRED => true ];
+			$param = [ ParamValidator::PARAM_TYPE => $type, ParamValidator::PARAM_REQUIRED => true ];
 		} else {
-			$param = [ ApiBase::PARAM_TYPE => $type ];
+			$param = [ ParamValidator::PARAM_TYPE => $type ];
 		}
 		return $param;
 	}

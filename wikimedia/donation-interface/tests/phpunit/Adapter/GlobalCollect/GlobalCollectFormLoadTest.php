@@ -40,44 +40,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		];
 		$this->setMwGlobals( [
 			'wgGlobalCollectGatewayEnabled' => true,
-			'wgDonationInterfaceAllowedHtmlForms' => [
-				'cc-vmad' => [
-					'gateway' => 'globalcollect',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex', 'discover' ] ],
-					'countries' => [
-						'+' => $vmad_countries,
-					],
-				],
-				'cc-vmaj' => [
-					'gateway' => 'globalcollect',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex', 'jcb' ] ],
-					'countries' => [
-						'+' => $vmaj_countries,
-					],
-				],
-				'cc-vma' => [
-					'gateway' => 'globalcollect',
-					'payment_methods' => [ 'cc' => [ 'visa', 'mc', 'amex' ] ],
-					'countries' => [
-						// Array merge with cc-vmaj as fallback in case 'j' goes down
-						// Array merge with cc-vmad as fallback in case 'd' goes down
-						'+' => array_merge(
-							$vmaj_countries,
-							$vmad_countries,
-							$vma_countries
-						),
-					],
-				],
-				'rtbt-sofo' => [
-					'gateway' => 'globalcollect',
-					'countries' => [
-						'+' => [ 'AT', 'BE', 'CH', 'DE' ],
-						'-' => 'GB'
-					],
-					'currencies' => [ '+' => 'EUR' ],
-					'payment_methods' => [ 'rtbt' => 'rtbt_sofortuberweisung' ],
-				],
-			],
 		] );
 	}
 
@@ -85,7 +47,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'US' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmad';
 
 		$assertNodes = [
 			'submethod-mc' => [
@@ -112,7 +73,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'FR' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmaj';
 
 		$assertNodes = [
 			'selected-amount' => [
@@ -145,7 +105,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'IT' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmaj';
 
 		$assertNodes = [
 			'selected-amount' => [
@@ -183,7 +142,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'BE' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmaj';
 		$init['language'] = $language;
 
 		$assertNodes = [
@@ -222,7 +180,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'CA' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vma';
 		$init['language'] = $language;
 
 		$assertNodes = [
@@ -270,7 +227,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'GB' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmad';
 
 		$assertNodes = [
 			'opt_in_yes' => [
@@ -292,7 +248,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'GB' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmad';
 		$init['opt_in'] = '1';
 
 		$assertNodes = [
@@ -311,7 +266,6 @@ class GlobalCollectFormLoadTest extends DonationInterfaceTestCase {
 		$init = $this->getDonorTestData( 'GB' );
 		unset( $init['order_id'] );
 		$init['payment_method'] = 'cc';
-		$init['ffname'] = 'cc-vmad';
 		$init['opt_in'] = '0';
 
 		$assertNodes = [

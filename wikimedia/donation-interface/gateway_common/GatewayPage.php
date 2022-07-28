@@ -15,6 +15,7 @@
  * GNU General Public License for more details.
  *
  */
+
 use Psr\Log\LogLevel;
 use SmashPig\Core\Logging\Logger;
 use SmashPig\Core\PaymentError;
@@ -27,8 +28,15 @@ use SmashPig\PaymentData\FinalStatus;
  * this class, with most of the gateway-specific control logic in its handleRequest
  * function. For instance: extensions/DonationInterface/globalcollect_gateway/globalcollect_gateway.body.php
  *
+ * *** Constraint for implementing classes *** The special page name must always be the gateway
+ * adapter class name with 'Adapter' replaced with 'Gateway'.
  */
 abstract class GatewayPage extends UnlistedSpecialPage {
+	/**
+	 * flag for setting Monthly Convert modal on template
+	 * @var bool
+	 */
+	public $supportsMonthlyConvert = false;
 
 	/**
 	 * Derived classes must override this with the identifier of the gateway
@@ -50,6 +58,12 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	protected $logger;
 
 	/**
+	 * When true, display an error form rather than the standard payment form
+	 * @var bool
+	 */
+	protected $showError = false;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -65,9 +79,11 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	public function execute( $par ) {
 		// FIXME: Deprecate "language" param.
 		$language = $this->getRequest()->getVal( 'language' );
+		$this->showError = $this->getRequest()->getBool( 'showError' );
+
 		if ( !$language ) {
 			// For some result pages, language does not come in on a standard URL param
-			// (langauge or uselang). For those cases, it's pretty safe to assume the
+			// (language or uselang). For those cases, it's pretty safe to assume the
 			// correct language is in session.
 			// FIXME Restrict the places where we access session data
 			$donorData = WmfFramework::getSessionValue( 'Donor' );
@@ -100,7 +116,11 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 
 			$out = $this->getOutput();
 			$out->preventClickjacking();
+			// Use addModuleStyles to load these CSS rules in early and avoid
+			// a flash of MediaWiki elements.
 			$out->addModuleStyles( 'donationInterface.styles' );
+			$out->addModuleStyles( 'donationInterface.skinOverrideStyles' );
+
 			$out->addModules( 'donationInterface.skinOverride' );
 			// Stolen from Minerva skin
 			$out->addHeadItem( 'viewport',
@@ -141,8 +161,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			return;
 		}
 
-		Hooks::register( 'MakeGlobalVariablesScript', [ $this, 'setClientVariables' ] );
-
 		try {
 			$this->handleRequest();
 		} catch ( Exception $ex ) {
@@ -167,55 +185,40 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 * Build and display form to user
 	 */
 	public function displayForm() {
-		$output = $this->getOutput();
-
-		$form_class = $this->adapter->getFormClass();
-		// TODO: use interface.  static ctor.
-		if ( $form_class && class_exists( $form_class ) ) {
-			$form_obj = new $form_class();
-			$form_obj->setGateway( $this->adapter );
-			$form_obj->setGatewayPage( $this );
-			$form = $form_obj->getForm();
-			$output->addModules( $form_obj->getResources() );
-			$output->addModuleStyles( $form_obj->getStyleModules() );
-			$output->addHTML( $form );
+		if ( $this->showError ) {
+			$form = new MustacheErrorForm();
 		} else {
-			$this->logger->error( "Displaying fail page for bad form class '$form_class'" );
-			$this->displayFailPage( false );
+			$form = new Gateway_Form_Mustache();
+			// Only register the setClientVariables callback if we're loading a real form.
+			// Error forms don't load any gateway-specific scripts so don't need these variables.
+			$this->getHookContainer()->register( 'MakeGlobalVariablesScript', [ $this, 'setClientVariables' ] );
 		}
+		$form->setGateway( $this->adapter );
+		$form->setGatewayPage( $this );
+
+		$output = $this->getOutput();
+		$output->addModules( $form->getResources() );
+		$output->addModuleStyles( $form->getStyleModules() );
+
+		$formHtml = $form->getForm();
+		$output->addHTML( $formHtml );
 	}
 
 	/**
 	 * Display a failure page
-	 *
-	 * @param bool $allowRapid Whether to allow rendering a RapidFail form
-	 *  renderForm sets this to false on failure to avoid an infinite loop
 	 */
-	public function displayFailPage( $allowRapid = true ) {
-		$output = $this->getOutput();
-
-		if ( $this->adapter && $allowRapid ) {
-			$page = ResultPages::getFailPage( $this->adapter );
-			// FIXME: Structured data $page rather than a union.  displayForm
-			// will add the ffname if needed.
-			if ( !filter_var( $page, FILTER_VALIDATE_URL ) ) {
-				// If it's not a URL, we're rendering a RapidFail form
-				$this->logger->info( "Displaying fail form $page" );
-				$this->adapter->addRequestData( [ 'ffname' => $page ] );
-				$this->displayForm();
-				return;
-			}
+	public function displayFailPage() {
+		if ( $this->adapter ) {
+			$this->showError = true;
+			$this->displayForm();
 		} else {
-			$gatewayName = $this->getGatewayIdentifier();
-			$className = DonationInterface::getAdapterClassForGateway( $gatewayName );
-			$page = ResultPages::getFailPageForType(
-				$className,
-				$this->getLogPrefix()
-			);
+			$output = $this->getOutput();
+			$output->prepareErrorPage( $this->msg( 'donate_interface-error-msg-general' ) );
+			$output->addHTML( $this->msg(
+				'donate_interface-otherways',
+				[ $this->getConfig()->get( 'DonationInterfaceOtherWaysURL' ) ]
+			)->plain() );
 		}
-		$log_message = "Redirecting to [{$page}]";
-		$this->logger->info( $log_message );
-		$output->redirect( $page );
 	}
 
 	/**
@@ -386,13 +389,6 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 			$this->displayForm();
 
 			$this->renderIframe( $url );
-		} elseif ( $form = $result->getForm() ) {
-			// Show another form.
-
-			$this->adapter->addRequestData( [
-				'ffname' => $form,
-			] );
-			$this->displayForm();
 		} elseif (
 			count( $result->getErrors() )
 		) {
@@ -466,10 +462,14 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	public function setClientVariables( &$vars ) {
 		$language = $this->adapter->getData_Unstaged_Escaped( 'language' );
 		$country = $this->adapter->getData_Unstaged_Escaped( 'country' );
-
-		$vars['wgDonationInterfacePriceFloor'] = $this->adapter->getGlobal( 'PriceFloor' );
-		$vars['wgDonationInterfacePriceCeiling'] = $this->adapter->getGlobal( 'PriceCeiling' );
+		$vars['wgDonationInterfaceAmountRules'] = $this->adapter->getDonationRules();
 		$vars['wgDonationInterfaceLogDebug'] = $this->adapter->getGlobal( 'LogDebug' );
+		if ( $this->adapter->showMonthlyConvert() ) {
+			$thankYouUrl = ResultPages::getThankYouPage( $this->adapter );
+			$vars['wgDonationInterfaceThankYouUrl'] = $thankYouUrl;
+			$vars['showMConStartup'] = $this->getRequest()->getBool( 'debugMonthlyConvert' );
+			$vars['wgDonationInterfaceMonthlyConvertAmounts'] = $this->getMonthlyConvertAmounts();
+		}
 
 		try {
 			$clientRules = $this->adapter->getClientSideValidationRules();
@@ -496,6 +496,35 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 				$ex->getMessage()
 			);
 		}
+	}
+
+	/**
+	 * Add the suggested monthly donation amounts for each donation level
+	 * according to the currency saved in session for this donation attempt.
+	 * For currencies that are neither in the config nor these fallback rules,
+	 * we leave the variable unset here and the JavaScript just redirects the
+	 * donor to the Thank You page. Defaults include rules for USD, GBP, and JPY
+	 * @return array|null
+	 */
+	protected function getMonthlyConvertAmounts(): ?array {
+		$convertAmounts = $this->adapter->getGlobal( 'MonthlyConvertAmounts' );
+		$currency = $this->adapter->getData_Unstaged_Escaped( 'currency' );
+		if ( isset( $convertAmounts[$currency] ) ) {
+			return $convertAmounts[$currency];
+		} elseif ( $currency === 'EUR' ) {
+			// If EUR not specifically configured, fall back to GBP rules
+			return $convertAmounts['GBP'];
+		} elseif ( $currency === 'NOK' ) {
+			// If NOK not specifically configured, fall back to DKK rules
+			return $convertAmounts['DKK'];
+		} elseif ( in_array( $currency, [ 'PLN', 'RON' ], true ) ) {
+			// If these currencies aren't configured, fall back to MYR rules
+			return $convertAmounts['MYR'];
+		} elseif ( in_array( $currency, [ 'AUD', 'CAD', 'NZD' ], true ) ) {
+			// If these currencies aren't configured, fall back to USD rules
+			return $convertAmounts['USD'];
+		}
+		return null;
 	}
 
 	protected function getVariant() {
@@ -529,5 +558,33 @@ abstract class GatewayPage extends UnlistedSpecialPage {
 	 */
 	public function showContinueButton() {
 		return true;
+	}
+
+	/**
+	 * Get the name of the special page for a gateway.
+	 *
+	 * @param string $gatewayId
+	 * @param Config $mwConfig MediaWiki Config
+	 * @return string
+	 */
+	public static function getGatewayPageName( string $gatewayId, Config $mwConfig ): string {
+		$gatewayClasses = $mwConfig->get( 'DonationInterfaceGatewayAdapters' );
+
+		// T302939: in order to pass the SpecialPageFatalTest::testSpecialPageDoesNotFatal unit test
+		// since no aliases are defined for those TestingAdapters
+		// will remove below if condition once those TestingAdapter gone from the test cases
+		if ( str_starts_with( $gatewayClasses[ $gatewayId ], 'Testing' ) ) {
+			$specialPage = 'GatewayChooser';
+		} else {
+			// The special page name is the gateway adapter class name with 'Adapter'
+			// replaced with 'Gateway'.
+			$specialPage = str_replace(
+				'Adapter',
+				'Gateway',
+				$gatewayClasses[ $gatewayId ]
+			);
+		}
+
+		return $specialPage;
 	}
 }

@@ -77,13 +77,6 @@ abstract class GatewayAdapter implements GatewayType {
 	protected $error_map = [];
 
 	/**
-	 * @see GlobalCollectAdapter::defineGoToThankYouOn()
-	 *
-	 * @var array
-	 */
-	protected $goToThankYouOn = [];
-
-	/**
 	 * $var_map maps gateway variables to client variables
 	 *
 	 * @var array
@@ -211,14 +204,6 @@ abstract class GatewayAdapter implements GatewayType {
 	}
 
 	/**
-	 * Get @see GatewayAdapter::$goToThankYouOn
-	 * @return array
-	 */
-	public function getGoToThankYouOn() {
-		return $this->goToThankYouOn;
-	}
-
-	/**
 	 * Constructor
 	 *
 	 * @param array	$options
@@ -281,12 +266,6 @@ abstract class GatewayAdapter implements GatewayType {
 
 		BannerHistoryLogIdProcessor::onGatewayReady( $this );
 	}
-
-	/**
-	 * Get the directory for processor-specific classes and configuration
-	 * @return string
-	 */
-	abstract protected function getBasedir();
 
 	/**
 	 * defineTransactions will define the $transactions array.
@@ -358,13 +337,10 @@ abstract class GatewayAdapter implements GatewayType {
 	abstract protected function defineOrderIDMeta();
 
 	public function loadConfig( $variant = null ) {
-		$configurationReader = new ConfigurationReader(
-			$this->getBasedir(),
-			static::getIdentifier(),
-			$this->getGlobal( 'LocalConfigurationDirectory' ),
-			$this->getGlobal( 'VariantConfigurationDirectory' )
+		$configurationReader = ConfigurationReader::createForGateway(
+			static::getIdentifier(), $variant, WmfFramework::getConfig()
 		);
-		$this->config = $configurationReader->readConfiguration( $variant );
+		$this->config = $configurationReader->readConfiguration();
 	}
 
 	public function getConfig( $key = null ) {
@@ -1101,25 +1077,6 @@ abstract class GatewayAdapter implements GatewayType {
 			}
 			$commType = $this->getCommunicationType();
 			switch ( $commType ) {
-				case 'redirect':
-					// in the event that we have a redirect transaction that never displays the form,
-					// save this most recent one before we leave.
-					$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
-
-					$this->transaction_response->setCommunicationStatus( true );
-
-					// Build the redirect URL.
-					$redirectUrl = $this->getProcessorUrl();
-					$redirectParams = $this->buildRequestParams();
-					if ( $redirectParams ) {
-						// Add GET parameters, if provided.
-						$redirectUrl .= '?' . http_build_query( $redirectParams );
-					}
-
-					$this->transaction_response->setRedirect( $redirectUrl );
-
-					return $this->transaction_response;
-
 				case 'xml':
 					$this->profiler->getStopwatch( "buildRequestXML", true ); // begin profiling
 					$curlme = $this->buildRequestXML(); // build the XML
@@ -1364,6 +1321,22 @@ abstract class GatewayAdapter implements GatewayType {
 	protected function setGatewayDefaults( $options = [] ) {
 	}
 
+	/**
+	 * Add donation rules for the users country & currency combo.
+	 *
+	 * @return array
+	 */
+	public function getDonationRules(): array {
+		$country = $this->getData_Unstaged_Escaped( 'country' );
+		// Check for country-specific rules
+		if ( isset( $this->config['donation_rules'][$country] ) ) {
+			$rules = $this->config['donation_rules'][$country];
+		} else {
+			$rules = $this->config['donation_rules']['default'];
+		}
+		return $rules;
+	}
+
 	public function getCurrencies( $options = [] ) {
 		return $this->config['currencies'];
 	}
@@ -1554,10 +1527,6 @@ abstract class GatewayAdapter implements GatewayType {
 		// Feed the message into the pending queue, so the CRM queue consumer
 		// can read it to fill in donor details when it gets a partial message
 		$this->sendPendingMessage();
-
-		// Avoid 'bad ffname' logspam on return and try again links.
-		// TODO: deprecate
-		$this->session_pushFormName( $this->getData_Unstaged_Escaped( 'ffname' ) );
 	}
 
 	/**
@@ -1811,6 +1780,25 @@ abstract class GatewayAdapter implements GatewayType {
 		return self::getIdentifier() . '_gateway';
 	}
 
+	/**
+	 * Return an array of all the currently enabled gateways.
+	 *
+	 * @param Config $mwConfig MediaWiki Config
+	 *
+	 * @return array of gateway identifiers.
+	 */
+	public static function getEnabledGateways( Config $mwConfig ): array {
+		$gatewayClasses = $mwConfig->get( 'DonationInterfaceGatewayAdapters' );
+
+		$enabledGateways = [];
+		foreach ( $gatewayClasses as $identifier => $gatewayClass ) {
+			if ( $gatewayClass::getGlobal( 'Enabled' ) ) {
+				$enabledGateways[] = $identifier;
+			}
+		}
+		return $enabledGateways;
+	}
+
 	protected function xmlChildrenToArray( $xml, $nodename ) {
 		$data = [];
 		foreach ( $xml->getElementsByTagName( $nodename ) as $node ) {
@@ -1975,6 +1963,12 @@ abstract class GatewayAdapter implements GatewayType {
 
 		$messageKeys = DonationData::getMessageFields();
 
+		// only includes these keys if recurring = 1
+		$recurringKeys = [
+			'recurring_payment_token',
+			'processor_contact_id'
+		];
+
 		$requiredKeys = [
 			'amount',
 			'contribution_tracking_id',
@@ -1996,7 +1990,14 @@ abstract class GatewayAdapter implements GatewayType {
 		// FIXME: This is "normalized" data.  We should refer to it as such,
 		// and rename the getData_Unstaged_Escaped function.
 		$data = $this->getData_Unstaged_Escaped();
+		$isRecurring = $data['recurring'];
+
 		foreach ( $messageKeys as $key ) {
+			// skip the keys in the queueMessage in recurring keys when we are not doing recurring
+			if ( !$isRecurring && in_array( $key, $recurringKeys ) ) {
+				continue;
+			}
+
 			if ( isset( $queueMessage[$key] ) ) {
 				// don't clobber the pre-sets
 				continue;
@@ -2009,11 +2010,12 @@ abstract class GatewayAdapter implements GatewayType {
 			}
 			$value = Encoding::toUTF8( $data[$key] );
 			if ( isset( $remapKeys[$key] ) ) {
-				$queueMessage[$remapKeys[$key]] = $value;
+				$queueMessage[$remapKeys[$key]] = Amount::round( $value, $data['currency'] );
 			} else {
 				$queueMessage[$key] = $value;
 			}
 		}
+
 		// FIXME: Note that we're not using any existing date or ts fields.  Why is that?
 		$queueMessage['date'] = time();
 
@@ -2350,15 +2352,6 @@ abstract class GatewayAdapter implements GatewayType {
 			return $this->transaction_response->getData();
 		}
 		return false;
-	}
-
-	public function getFormClass() {
-		$ffname = $this->dataObj->getVal( 'ffname' );
-		if ( strpos( $ffname, 'error' ) === 0
-			|| strpos( $ffname, 'maintenance' ) === 0 ) {
-			return 'MustacheErrorForm';
-		}
-		return 'Gateway_Form_Mustache';
 	}
 
 	public function getGatewayAdapterClass() {
@@ -3273,58 +3266,6 @@ abstract class GatewayAdapter implements GatewayType {
 	}
 
 	/**
-	 * Add a form name (ffname) to this abridged history of where we've
-	 * been in this session. This lets us do things like construct useful
-	 * "back" links that won't crush all session everything.
-	 * @param string $form_key The 'ffname' that the form layer uses to load a
-	 * payments form. Additional: ffname maps to a first-level key in
-	 * $wgDonationInterfaceAllowedHtmlForms
-	 */
-	public function session_pushFormName( $form_key ) {
-		if ( !$form_key ) {
-			return;
-		}
-
-		$this->session_ensure();
-
-		$paymentForms = $this->session_getData( 'PaymentForms' );
-		if ( !is_array( $paymentForms ) ) {
-			$paymentForms = [];
-		}
-
-		// don't want duplicates
-		if ( $this->session_getLastFormName() != $form_key ) {
-			$paymentForms[] = $form_key;
-			WmfFramework::setSessionValue( 'PaymentForms', $paymentForms );
-		}
-	}
-
-	/**
-	 * Get the 'ffname' of the last payment form that successfully loaded
-	 * for this session.
-	 * @return mixed ffname of the last valid payments form if there is one,
-	 * otherwise false.
-	 */
-	public function session_getLastFormName() {
-		$this->session_ensure();
-		$paymentForms = $this->session_getData( 'PaymentForms' );
-		if ( !is_array( $paymentForms ) ) {
-			return false;
-		}
-		$ffname = end( $paymentForms );
-		if ( !$ffname ) {
-			return false;
-		}
-		$data = $this->getData_Unstaged_Escaped();
-		// have to check to see if the last loaded form is *still* valid.
-		if ( GatewayFormChooser::isValidForm( $ffname, $data ) ) {
-			return $ffname;
-		} else {
-			return false;
-		}
-	}
-
-	/**
 	 * token_applyMD5AndSalt
 	 * Takes a clear-text token, and returns the MD5'd result of the token plus
 	 * the configured gateway salt.
@@ -3825,7 +3766,7 @@ abstract class GatewayAdapter implements GatewayType {
 	/**
 	 * Returns some useful debugging JSON we can append to loglines for
 	 * increased debugging happiness.
-	 * This is working pretty well for debugging FormChooser problems, so
+	 * This is working pretty well for debugging GatewayChooser problems, so
 	 * let's use it other places. Still, this should probably still be used
 	 * sparingly...
 	 * @return string JSON-encoded donation data
@@ -3833,7 +3774,6 @@ abstract class GatewayAdapter implements GatewayType {
 	public function getLogDebugJSON() {
 		$logObj = [
 			'amount',
-			'ffname',
 			'country',
 			'currency',
 			'payment_method',
@@ -4014,6 +3954,12 @@ abstract class GatewayAdapter implements GatewayType {
 		if ( !$this instanceof RecurringConversion ) {
 			return false;
 		}
+		if ( !in_array(
+			$this->getPaymentMethod(),
+			$this->getPaymentMethodsSupportingRecurringConversion()
+		) ) {
+			return false;
+		}
 		// FIXME:: make a hook, move this check to EndowmentHooks
 		$medium = $this->getData_Unstaged_Escaped( 'utm_medium' );
 		// never show for endowment
@@ -4026,6 +3972,7 @@ abstract class GatewayAdapter implements GatewayType {
 		}
 		$isMonthlyConvert = strstr( $variant, 'monthlyConvert' ) !== false;
 		$isRecurring = $this->getData_Unstaged_Escaped( 'recurring' );
+
 		if ( !$isMonthlyConvert && $this->isMonthlyConvertCountry() ) {
 			$isMonthlyConvert = true;
 		}

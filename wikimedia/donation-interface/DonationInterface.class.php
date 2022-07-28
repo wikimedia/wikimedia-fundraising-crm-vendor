@@ -32,9 +32,6 @@ class DonationInterface {
 		 */
 		$wgDonationInterfaceErrorTemplate = __DIR__ . '/gateway_forms/mustache/error_form.html.mustache';
 
-		// Load the default form settings.
-		require_once __DIR__ . '/DonationInterfaceFormSettings.php';
-
 		// Include composer's autoload if the vendor directory exists.  If we have been
 		// included via Composer, our dependencies should already be autoloaded at the
 		// top level.
@@ -71,14 +68,12 @@ class DonationInterface {
 		$wgAutoloadClasses['DonationInterfaceApiTestCase'] = $testDir . 'DonationInterfaceApiTestCase.php';
 		$wgAutoloadClasses['BaseAdyenCheckoutTestCase'] = $testDir . 'BaseAdyenCheckoutTestCase.php';
 		$wgAutoloadClasses['BaseIngenicoTestCase'] = $testDir . 'BaseIngenicoTestCase.php';
-		$wgAutoloadClasses['TestingAdyenAdapter'] = $testDir . 'includes/test_gateway/TestingAdyenAdapter.php';
 		$wgAutoloadClasses['TestingAstroPayAdapter'] = $testDir . 'includes/test_gateway/TestingAstroPayAdapter.php';
 		$wgAutoloadClasses['TestingDonationLogger'] = $testDir . 'includes/TestingDonationLogger.php';
 		$wgAutoloadClasses['TestingGatewayPage'] = $testDir . 'includes/TestingGatewayPage.php';
 		$wgAutoloadClasses['TestingGenericAdapter'] = $testDir . 'includes/test_gateway/TestingGenericAdapter.php';
 		$wgAutoloadClasses['TestingGlobalCollectAdapter'] = $testDir . 'includes/test_gateway/TestingGlobalCollectAdapter.php';
 		$wgAutoloadClasses['TestingPaypalExpressAdapter'] = $testDir . 'includes/test_gateway/TestingPaypalExpressAdapter.php';
-		$wgAutoloadClasses['TestingPaypalLegacyAdapter'] = $testDir . 'includes/test_gateway/TestingPaypalLegacyAdapter.php';
 
 		$wgAutoloadClasses['TestingRequest'] = $testDir . 'includes/test_request/test.request.php';
 		$wgAutoloadClasses['TTestingAdapter'] = $testDir . 'includes/test_gateway/test.adapter.php';

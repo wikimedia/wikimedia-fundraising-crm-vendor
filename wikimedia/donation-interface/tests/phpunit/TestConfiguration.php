@@ -57,12 +57,9 @@ define( 'TESTS_ADAPTER_DEFAULT', TestingGlobalCollectAdapter::class );
 global $wgDonationInterfaceTest,
 	$wgDonationInterfaceMerchantID,
 	$wgDonationInterfaceGatewayAdapters,
-	$wgDonationInterfaceAllowedHtmlForms,
 	$wgDonationInterfaceThankYouPage,
 	$wgDonationInterface3DSRules,
 	$wgGlobalCollectGatewayAccountInfo,
-	$wgPaypalGatewayAccountInfo,
-	$wgPaypalGatewayReturnURL,
 	$wgPaypalExpressGatewayURL,
 	$wgPaypalExpressGatewayTestingURL,
 	$wgPaypalExpressGatewaySignatureURL,
@@ -71,15 +68,12 @@ global $wgDonationInterfaceTest,
 	$wgAmazonGatewayAccountInfo,
 	$wgAmazonGatewayFallbackCurrency,
 	$wgAmazonGatewayNotifyOnConvert,
-	$wgAdyenGatewayURL,
-	$wgAdyenGatewayAccountInfo,
 	$wgAdyenCheckoutGatewayURL,
 	$wgAdyenCheckoutGatewayAccountInfo,
 	$wgAstroPayGatewayURL,
 	$wgAstroPayGatewayTestingURL,
 	$wgAstroPayGatewayAccountInfo,
 	$wgAstroPayGatewayFallbackCurrency,
-	$wgAstroPayGatewayPriceFloor,
 	$wgDonationInterfaceMinFraudAccountId,
 	$wgDonationInterfaceMinFraudLicenseKey,
 	$wgDonationInterfaceMinFraudClientOptions,
@@ -110,7 +104,7 @@ $wgDonationInterfaceGatewayAdapters = [
 	'adyen' => AdyenCheckoutAdapter::class,
 	'astropay' => TestingAstroPayAdapter::class,
 	'paypal_ec' => TestingPaypalExpressAdapter::class,
-	'paypal' => TestingPaypalLegacyAdapter::class,
+	'braintree' => BraintreeAdapter::class
 ];
 /**
  * Make sure the test setup is used, else we'll have the wrong classes.
@@ -126,13 +120,6 @@ $wgGlobalCollectGatewayAccountInfo = [];
 $wgGlobalCollectGatewayAccountInfo['test'] = [
 	'MerchantID' => 'test',
 ];
-
-/** Paypal */
-$wgPaypalGatewayAccountInfo = [];
-$wgPaypalGatewayAccountInfo['testing'] = [
-	'AccountEmail' => 'phpunittesting@wikimedia.org',
-];
-$wgPaypalGatewayReturnURL = 'http://donate.wikimedia.org'; // whatever, doesn't matter.
 
 /** Paypal Express Checkout */
 $wgPaypalExpressGatewayURL = 'https://api-3t.sandbox.paypal.com/nvp';
@@ -158,27 +145,10 @@ $wgAmazonGatewayAccountInfo['test'] = [
 $wgAmazonGatewayFallbackCurrency = false;
 $wgAmazonGatewayNotifyOnConvert = false;
 
-/** Adyen */
-$wgAdyenGatewayURL = 'https://testorwhatever.adyen.com';
-$wgAdyenGatewayAccountInfo = [];
-$wgAdyenGatewayAccountInfo['test'] = [
-	'AccountName' => 'wikitest',
-	'Skins' => [
-		'testskin' => [
-			'SharedSecret' => 'C7F1D9E29479CF18131063A742CD2703FB9D48BAB0160693045E3FB7B8508E59',
-			'Name' => 'base',
-		],
-		'altskin' => [
-			'SharedSecret' => 'A78B329F29872E21291063A742CD2703FB9D48BAB01606930421291063A742CD',
-			'Name' => 'redirect',
-		]
-	],
-];
-
 /** Adyen Checkout */
 $wgAdyenCheckoutGatewayURL = 'https://testorwhatevercheckout.adyen.com';
 $wgAdyenCheckoutGatewayAccountInfo = [];
-$wgAdyenCheckoutGatewayAccountInfo['test'] = [
+$wgAdyenCheckoutGatewayAccountInfo['testMerchantAccountName'] = [
 	'Script' => [
 		'src' => 'test-pear.js',
 		'integrity' => 'test-hash'
@@ -189,6 +159,7 @@ $wgAdyenCheckoutGatewayAccountInfo['test'] = [
 	],
 	'ClientKey' => 'test',
 	'Environment' => 'test',
+	'GoogleMerchantId' => '1234'
 ];
 
 /** AstroPay */
@@ -280,7 +251,5 @@ $wgDonationInterfaceEmailDomainMap = [
 	'wikimedia.org' => 42,
 	'wikipedia.org' => 50,
 ];
-
-$wgAstroPayGatewayPriceFloor = 1;
 
 $wgDonationInterface3DSRules = [ 'INR' => 'IN' ];
