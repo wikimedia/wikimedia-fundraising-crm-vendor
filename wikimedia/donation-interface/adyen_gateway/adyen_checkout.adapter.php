@@ -3,6 +3,7 @@
 use Psr\Log\LogLevel;
 use SmashPig\Core\PaymentError;
 use SmashPig\Core\ValidationError;
+use SmashPig\PaymentData\RecurringModel;
 use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\PaymentDetailResponse;
@@ -39,9 +40,14 @@ class AdyenCheckoutAdapter extends GatewayAdapter implements RecurringConversion
 		$this->tuneForPaymentMethod();
 		$authorizeParams = $this->buildRequestArray();
 
-		// only if showMonthlyConvert true and payment method is not bank transfer, then we set the recurring param to 1 to tokenize the payment.
+		// If we are going to ask for a monthly donation after a one-time donation completes, set the
+		// recurring param to 1 to tokenize the payment.
 		if ( $this->showMonthlyConvert() ) {
 			$authorizeParams['recurring'] = 1;
+			// Since we're not sure if we're going to ever use the token, flag the transaction as
+			// 'card on file' rather than 'subscription' (the default for recurring). This may avoid
+			// donor complaints of one-time donations appearing as recurring on their card statement.
+			$authorizeParams['recurring_model'] = RecurringModel::CARD_ON_FILE;
 		}
 		$this->logger->info( "Calling createPayment for {$authorizeParams['email']}" );
 		$authorizeResult = $provider->createPayment( $authorizeParams );
@@ -318,14 +324,24 @@ class AdyenCheckoutAdapter extends GatewayAdapter implements RecurringConversion
 		$methodparams['currency'] = $this->staged_data['currency'];
 		$methodparams['amount'] = $this->staged_data['amount'];
 		$methodparams['language'] = $this->staged_data['language'];
-		// this has all the payment methods available
-		// Todo: what happens if it doesnt return anything
-		$paymentMethodResult = $provider->getPaymentMethods( $methodparams )->getRawResponse();
+		// This should have all the payment methods available
+		$paymentMethodResult = $provider->getPaymentMethods( $methodparams );
+		if ( $paymentMethodResult->hasErrors() ) {
+			foreach ( $paymentMethodResult->getErrors() as $error ) {
+				$this->logger->warning( "paymentMethod lookup error: {$error->getMessage()}" );
+			}
+			foreach ( $paymentMethodResult->getValidationErrors() as $validationError ) {
+				$this->logger->warning( "paymentMethod lookup validation error with parameter: {$validationError->getField()}" );
+			}
+			$paymentMethodString = 'Error looking up payment methods';
+		} else {
+			$paymentMethodString = $paymentMethodResult->getRawResponse();
+		}
 
 		return [
 			'clientKey' => $this->getAccountConfig( 'ClientKey' ),
 			'locale' => str_replace( '_', '-', $this->getData_Staged( 'language' ) ),
-			'paymentMethodsResponse' => $paymentMethodResult,
+			'paymentMethodsResponse' => $paymentMethodString,
 			// TODO: maybe make this dynamic based on donor location
 			'environment' => $this->getAccountConfig( 'Environment' ),
 			'merchantAccountName' => $this->account_name,
