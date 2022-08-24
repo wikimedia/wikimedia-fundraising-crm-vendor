@@ -168,25 +168,52 @@ class GatewayChooser extends UnlistedSpecialPage {
 
 				$supportedPaymentMethods = $gatewayConfig[ 'payment_methods' ];
 				if ( !isset( $supportedPaymentMethods[ $paymentMethod ] ) ) {
+					// Specified payment method not supported for this gateway
+					continue;
+				}
+
+				// Check whether the payment method is restricted by country, and if so
+				// skip when the donor's country is not on the list
+				if (
+					isset( $supportedPaymentMethods[ $paymentMethod ][ 'countries' ] ) &&
+					!in_array( $country, $supportedPaymentMethods[ $paymentMethod ][ 'countries' ] )
+				) {
+					// Specified country not supported by payment method for this gateway
 					continue;
 				}
 
 				// Recurring availability for the payment method is indicated by a key
 				// on the associative array that is the value for the payment method
-				if ( $recurring &&
-					empty( $supportedPaymentMethods[ $paymentMethod ][ 'recurring' ] ) ) {
+				if (
+					$recurring &&
+					empty( $supportedPaymentMethods[ $paymentMethod ][ 'recurring' ] )
+				) {
+					// Specified payment method does not support recurring for this gateway
 					continue;
 				}
 			}
 
-			// Check availability of requested payment submethod in this country
-			if (
-				$paymentSubmethod
-				&& !empty( $gatewayConfig[ 'payment_submethods' ] )
-				&& !empty( $gatewayConfig[ 'payment_submethods' ][ 'countries' ] )
-				&& empty( $gatewayConfig[ 'payment_submethods' ][ 'countries' ][ $country ] )
-			) {
-				continue;
+			// When a submethod is specified, check to see whether it is supported, then
+			// whether it is restricted by country. If there are country restrictions, skip
+			// the gateway when the donor's country is not on the list.
+			if ( $paymentSubmethod && !empty( $gatewayConfig[ 'payment_submethods' ] ) ) {
+				$supportedSubmethods = $gatewayConfig[ 'payment_submethods' ];
+				if ( !isset( $supportedSubmethods[ $paymentSubmethod ] ) ) {
+					// Specified submethod not supported by gateway
+					continue;
+				}
+				// FIXME: submethod-level country restrictions are not a flat array of country
+				// codes like the lists for gateway and method-level restrictions, but an associative
+				// array of country code => bool. None are set to false in the shipped defaults.
+				// Switch that over to a flat array so we can use !in_array() rather than empty()
+				if (
+					isset( $supportedSubmethods[ $paymentSubmethod ][ 'countries' ] ) &&
+					empty( $supportedSubmethods[ $paymentSubmethod ][ 'countries' ][ $country ] )
+				) {
+					// Specified country not in submethod's country list for this gateway, or
+					// is present with a value of false.
+					continue;
+				}
 			}
 
 			$possibleGateways[] = $enabledGateway;

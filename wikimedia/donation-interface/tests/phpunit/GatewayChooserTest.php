@@ -92,8 +92,14 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 
 	/**
 	 * @dataProvider expectedGatewayDataProvider
+	 * @param array $params Query-string parameters provided to GatewayChooser
+	 * @param string|null $expectedSpecialGateway When a string, expect a redirect to the indicated special page.
+	 *  When null, expect no redirect.
+	 * @throws BadTitleError
+	 * @throws FatalError
+	 * @throws MWException
 	 */
-	public function testAssertExpectedGateway( $params, $expectedSpecialGateway ) {
+	public function testAssertExpectedGateway( array $params, ?string $expectedSpecialGateway ) {
 		$context = RequestContext::getMain();
 		$newOutput = new OutputPage( $context );
 		$newTitle = Title::newFromText( 'nonsense is apparently fine' );
@@ -103,8 +109,13 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 
 		$fc = new GatewayChooser();
 		$fc->execute( null );
-		$fc->getOutput()->output();
+		$fc->getOutput()->output( true );
 		$url = $fc->getRequest()->response()->getheader( 'Location' );
+
+		if ( $expectedSpecialGateway === null ) {
+			$this->assertNull( $url );
+			return;
+		}
 
 		if ( !$url ) {
 			$this->fail( 'No gateway returned for this configuration.' );
@@ -125,12 +136,15 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 		// AdyenCheckoutGateway
 		// PaypalExpressGateway
 		// IngenicoGateway
+		// A null value as the expected gateway means that no redirect is expected
 
 		// TODO Add test cases for Google Pay
 
 		return [
-			// paypal payment method is only provided by PaypalExpressGateway
+			// paypal payment method should be routed to PaypalExpressGateway
 			[ [ 'payment_method' => 'paypal', 'country' => 'US', 'currency' => 'USD' ], 'PaypalExpressGateway' ],
+			// When country is supported at the gateway level but not at the method level, don't redirect
+			[ [ 'payment_method' => 'paypal', 'country' => 'GH', 'currency' => 'GHS' ], null ],
 			// amazon payment method is only provided by AmazonGateway
 			[ [ 'payment_method' => 'amazon', 'country' => 'US', 'currency' => 'USD' ], 'AmazonGateway' ],
 
@@ -160,6 +174,11 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 
 			// iDEAL (NL-only realtime bank transfer)
 			[ [ 'payment_method' => 'rtbt', 'country' => 'NL', 'currency' => 'EUR' ], 'AdyenCheckoutGateway' ],
+			// Should work with or without submethod specified
+			[ [ 'payment_method' => 'rtbt', 'payment_submethod' => 'rtbt_ideal', 'country' => 'NL', 'currency' => 'EUR' ], 'AdyenCheckoutGateway' ],
+			// Test country restriction on submethod
+			[ [ 'payment_method' => 'rtbt', 'payment_submethod' => 'rtbt_ideal', 'country' => 'FR', 'currency' => 'EUR' ], null ],
+
 			// obt (BPay) removed, see T309475
 			// [ [ 'payment_method' => 'obt', 'country' => 'AU', 'currency' => 'AUD' ], 'GlobalCollectGateway' ],
 
