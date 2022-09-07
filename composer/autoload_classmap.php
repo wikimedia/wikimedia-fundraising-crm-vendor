@@ -101,6 +101,7 @@ return array(
     'MustacheErrorForm' => $vendorDir . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',
     'MustacheHelper' => $vendorDir . '/wikimedia/donation-interface/gateway_forms/MustacheHelper.php',
     'Normalizer' => $vendorDir . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
+    'PayPalAmount' => $vendorDir . '/wikimedia/donation-interface/gateway_common/PayPalAmount.php',
     'PayPalCountry' => $vendorDir . '/wikimedia/donation-interface/paypal_ec_gateway/PayPalCountry.php',
     'PaymentMethod' => $vendorDir . '/wikimedia/donation-interface/gateway_common/PaymentMethod.php',
     'PaymentResult' => $vendorDir . '/wikimedia/donation-interface/gateway_common/PaymentResult.php',

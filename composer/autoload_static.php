@@ -568,6 +568,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'MustacheErrorForm' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',
         'MustacheHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheHelper.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
+        'PayPalAmount' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PayPalAmount.php',
         'PayPalCountry' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/PayPalCountry.php',
         'PaymentMethod' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentMethod.php',
         'PaymentResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentResult.php',
