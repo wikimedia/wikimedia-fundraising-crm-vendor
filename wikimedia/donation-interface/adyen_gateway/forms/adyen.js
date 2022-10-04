@@ -349,6 +349,7 @@
 	function handleApiResult( result ) {
 		if ( result.isFailed ) {
 			document.location.replace( mw.config.get( 'DonationInterfaceFailUrl' ) );
+			return;
 		}
 
 		if ( result.formData && Object.keys( result.formData ).length > 0 ) {
@@ -372,6 +373,8 @@
 			mw.monthlyConvert.init();
 		} else if ( result.redirect ) {
 			document.location.replace( result.redirect );
+		} else {
+			document.location.replace( mw.config.get( 'DonationInterfaceThankYouPage' ) );
 		}
 	}
 

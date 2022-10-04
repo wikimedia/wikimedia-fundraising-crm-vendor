@@ -1,9 +1,9 @@
 <?php
 
 use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentProviders\Adyen\DirectDebitPaymentProvider;
-use SmashPig\PaymentProviders\CreatePaymentResponse;
-use SmashPig\PaymentProviders\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Adyen\IdealBankTransferPaymentProvider;
+use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
+use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 
 /**
  * @group Fundraising
@@ -14,7 +14,7 @@ use SmashPig\PaymentProviders\PaymentDetailResponse;
  */
 class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 	/**
-	 * @var \PHPUnit\Framework\MockObject\MockObject|DirectDebitPaymentProvider
+	 * @var \PHPUnit\Framework\MockObject\MockObject|IdealBankTransferPaymentProvider
 	 */
 	protected $idealPaymentProvider;
 
@@ -23,7 +23,7 @@ class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 		$this->setLanguage( 'nl' );
 
 		$this->idealPaymentProvider = $this->getMockBuilder(
-			DirectDebitPaymentProvider::class
+			IdealBankTransferPaymentProvider::class
 		)->disableOriginalConstructor()->getMock();
 
 		$this->providerConfig->overrideObjectInstance(
@@ -47,7 +47,7 @@ class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 		$this->idealPaymentProvider->expects( $this->once() )
 			->method( 'createPayment' )
 			->with( [
-				'amount' => '1.55',
+				'amount' => '4.55',
 				'country' => 'NL',
 				'currency' => 'EUR',
 				'description' => 'Wikimedia 877 600 9454',
@@ -149,7 +149,7 @@ class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 			'first_name' => 'Voornaam',
 			'gateway' => 'adyen',
 			'gateway_txn_id' => $pspReferenceAuth,
-			'gross' => '1.55',
+			'gross' => '4.55',
 			'language' => 'nl',
 			'last_name' => 'Achternaam',
 			'order_id' => $init['order_id'],
@@ -173,7 +173,7 @@ class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 				'payments_final_status' => 'complete',
 				'payment_submethod' => 'rtbt_ideal',
 				'country' => 'NL',
-				'amount' => '1.55',
+				'amount' => '4.55',
 				'currency' => 'EUR',
 				'gateway' => 'adyen',
 				'gateway_txn_id' => $pspReferenceAuth,
@@ -237,7 +237,7 @@ class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 				'payments_final_status' => 'failed',
 				'payment_submethod' => 'rtbt_ideal',
 				'country' => 'NL',
-				'amount' => '1.55',
+				'amount' => '4.55',
 				'currency' => 'EUR',
 				'gateway' => 'adyen',
 				'gateway_txn_id' => $pspReferenceAuth,

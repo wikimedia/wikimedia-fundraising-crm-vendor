@@ -1,10 +1,10 @@
 <?php
 
 use SmashPig\Core\ValidationError;
+use SmashPig\PaymentData\DonorDetails;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Braintree\PaypalPaymentProvider;
-use SmashPig\PaymentProviders\CreatePaymentResponse;
-use SmashPig\PaymentProviders\DonorDetails;
+use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 
 /**
  * @group Fundraising
@@ -79,6 +79,7 @@ class PaypalPaymentTest extends DonationInterfaceTestCase {
 
 	public function testPaypalDoPayment() {
 		$init = $this->getTestDonor();
+		$init['amount'] = '1.55';
 		$gateway = $this->getFreshGatewayObject( $init );
 
 		$expectedPaymentToken = $init['payment_token'];
@@ -165,6 +166,7 @@ class PaypalPaymentTest extends DonationInterfaceTestCase {
 
 	public function testPaypalDoPaymentInvalidPaymentToken() {
 		$init = $this->getTestDonor();
+		$init['amount'] = '1.55';
 		$init['payment_token'] = "NOT_THE_RIGHT_PAYMENT_ID_TOKEN";
 		$gateway = $this->getFreshGatewayObject( $init );
 

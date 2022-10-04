@@ -20,10 +20,10 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentData\ValidationAction;
-use SmashPig\PaymentProviders\ApprovePaymentResponse;
-use SmashPig\PaymentProviders\CancelPaymentResponse;
 use SmashPig\PaymentProviders\Ingenico\PaymentStatus;
-use SmashPig\PaymentProviders\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
+use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use Wikimedia\TestingAccessWrapper;
 
 /**
@@ -690,7 +690,7 @@ class DonationInterface_Adapter_Ingenico_IngenicoTest extends BaseIngenicoTestCa
 				$order = [
 					'amountOfMoney' => [
 						'currencyCode' => 'USD',
-						'amount' => 155.0
+						'amount' => 455.0
 					],
 					'customer' => [
 						'billingAddress' => [
