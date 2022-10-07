@@ -34,7 +34,7 @@ class DonationInterface_Adapter_Ingenico_RealTimeBankTransferIdealTest extends B
 	 */
 	protected $bankPaymentProvider;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->markTestSkipped( 'RTBT not implemented' );
 		$config = TestingProviderConfiguration::createForProvider(
@@ -43,9 +43,7 @@ class DonationInterface_Adapter_Ingenico_RealTimeBankTransferIdealTest extends B
 		);
 		TestingContext::get()->providerConfigurationOverride = $config;
 
-		$this->bankPaymentProvider = $this->getMockBuilder(
-			BankPaymentProvider::class
-		)->disableOriginalConstructor()->getMock();
+		$this->bankPaymentProvider = $this->createMock( BankPaymentProvider::class );
 
 		$config->overrideObjectInstance( 'payment-provider/rtbt', $this->bankPaymentProvider );
 

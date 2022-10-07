@@ -18,13 +18,11 @@ class CheckoutIdealTest extends BaseAdyenCheckoutTestCase {
 	 */
 	protected $idealPaymentProvider;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->setLanguage( 'nl' );
 
-		$this->idealPaymentProvider = $this->getMockBuilder(
-			IdealBankTransferPaymentProvider::class
-		)->disableOriginalConstructor()->getMock();
+		$this->idealPaymentProvider = $this->createMock( IdealBankTransferPaymentProvider::class );
 
 		$this->providerConfig->overrideObjectInstance(
 			'payment-provider/rtbt',

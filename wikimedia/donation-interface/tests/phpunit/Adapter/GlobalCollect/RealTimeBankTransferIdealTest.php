@@ -34,7 +34,7 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 	 */
 	protected $bankPaymentProvider;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$config = TestingProviderConfiguration::createForProvider(
@@ -42,9 +42,7 @@ class DonationInterface_Adapter_GlobalCollect_RealTimeBankTransferIdealTest exte
 		);
 		TestingContext::get()->providerConfigurationOverride = $config;
 
-		$this->bankPaymentProvider = $this->getMockBuilder(
-			BankPaymentProvider::class
-		)->disableOriginalConstructor()->getMock();
+		$this->bankPaymentProvider = $this->createMock( BankPaymentProvider::class );
 
 		$config->overrideObjectInstance( 'payment-provider/rtbt', $this->bankPaymentProvider );
 
