@@ -197,8 +197,8 @@
 	function getCheckout( config ) {
 		config.onSubmit = onSubmit;
 		config.onAdditionalDetails = onAdditionalDetails;
+		config.onError = onError;
 		config.showPayButton = false;
-		// Note: onError not set because error highlighting is handled in css.
 
 		return new AdyenCheckout( config );
 	}
@@ -368,7 +368,9 @@
 
 	function handleApiResult( result ) {
 		if ( result.isFailed ) {
-			document.location.replace( mw.config.get( 'DonationInterfaceFailUrl' ) );
+			mw.donationInterface.validation.showErrors( {
+				general: mw.msg( 'donate_interface-error-msg-general' )
+			} );
 			return;
 		}
 
@@ -400,6 +402,23 @@
 
 	function onAdditionalDetails( state, dropin ) {
 		// Handle 3D secure
+	}
+
+	// T292571 try catch the adyen error, see if any connection been blocked, e.g. iframe
+	function onError( error ) {
+		// ignore validation error codes (start with error.va) - we catch those elsewhere
+		// Also ignore blank string - that means a previous error was cleared up
+		if (
+			error.error.slice( 0, 8 ) === 'error.va' ||
+			error.error === ''
+		) {
+			return;
+		}
+		// handle component error
+		mw.donationInterface.validation.showErrors( {
+			general: mw.msg( 'donate_interface-error-msg-general' )
+		} );
+		throw error;
 	}
 
 	function setLocaleAndTranslations( config, localeFromServer ) {
@@ -514,6 +533,7 @@
 		checkout = getCheckout( config );
 		component_config = getComponentConfig( component_type, config );
 		component = checkout.create( component_type, component_config );
+
 		if ( component_type === 'googlepay' ) {
 			component.isAvailable().then( function () {
 				component.mount( '#' + ui_container_name );
@@ -569,7 +589,14 @@
 				throw err;
 			} );
 		} else {
-			component.mount( '#' + ui_container_name );
+			try {
+				component.mount( '#' + ui_container_name );
+			} catch ( err ) {
+				mw.donationInterface.validation.showErrors( {
+					general: mw.msg( 'donate_interface-error-msg-general' )
+				} );
+				throw err;
+			}
 			// For everything except Apple and google
 			// Pay, show our standard 'Donate' button
 			$( '#paymentSubmit' ).show();
