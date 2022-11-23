@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
@@ -22,30 +24,40 @@ abstract class Address extends AbstractModel
 {
     /**
      * @internal
+     *
+     * @var bool|null
      */
     protected $isPostalInCity;
 
     /**
      * @internal
+     *
+     * @var float|null
      */
     protected $latitude;
 
     /**
      * @internal
+     *
+     * @var float|null
      */
     protected $longitude;
 
     /**
      * @internal
+     *
+     * @var int|null
      */
     protected $distanceToIpLocation;
 
     /**
      * @internal
+     *
+     * @var bool|null
      */
     protected $isInIpCountry;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(?array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
 

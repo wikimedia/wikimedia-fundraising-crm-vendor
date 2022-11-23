@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
@@ -10,6 +12,8 @@ namespace MaxMind\MinFraud\Model;
  *
  * * `BILLING_CITY_NOT_FOUND` - the billing city could not be found in our
  *   database.
+ * * `BILLING_COUNTRY_MISSING` - billing address information was provided
+ *   without providing a billing country.
  * * `BILLING_COUNTRY_NOT_FOUND` - the billing country could not be found in
  *   our database.
  * * `BILLING_POSTAL_NOT_FOUND` - the billing postal could not be found in our
@@ -21,6 +25,8 @@ namespace MaxMind\MinFraud\Model;
  * * `IP_ADDRESS_NOT_FOUND` - the IP address could not be geolocated.
  * * `SHIPPING_CITY_NOT_FOUND` - the shipping city could not be found in our
  *   database.
+ * * `SHIPPING_COUNTRY_MISSING` - shipping address information was provided
+ *   without providing a shipping country.
  * * `SHIPPING_COUNTRY_NOT_FOUND` - the shipping country could not be found in
  *   our database.
  * * `SHIPPING_POSTAL_NOT_FOUND` - the shipping postal could not be found in
@@ -31,29 +37,35 @@ namespace MaxMind\MinFraud\Model;
  * @property-read string $warning This property provides a human-readable
  * explanation of the warning. The description may change at any time and
  * should not be matched against.
- * @property-read array|null $input A JSON Pointer to the input field that the
- * warning is associated with. For instance, if the warning was about the
- * billing city, this would be `/billing/city`. If it was for the price in
+ * @property-read array|null $inputPointer A JSON Pointer to the input field
+ * that the warning is associated with. For instance, if the warning was about
+ * the billing city, this would be `/billing/city`. If it was for the price in
  * the second shopping cart item, it would be `/shopping_cart/1/price`.
  */
 class Warning extends AbstractModel
 {
     /**
      * @internal
+     *
+     * @var string
      */
     protected $code;
 
     /**
      * @internal
+     *
+     * @var string
      */
     protected $warning;
 
     /**
      * @internal
+     *
+     * @var string
      */
     protected $inputPointer;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
@@ -8,24 +10,27 @@ namespace MaxMind\MinFraud\Model;
  * @property-read int|null $distanceToBillingAddress The distance in kilometers
  * from the shipping address to billing address.
  * @property-read bool|null $isHighRisk This property is true if the shipping
- * address is in the IP country. The property is false when the address is not
- * in the IP country. If the shipping address could not be parsed or was not
- * provided or the IP address could not be geolocated, then the property is
- * null.
+ * address is an address associated with fraudulent transactions. The property
+ * is false when the address is not associated with increased risk. The
+ * property will be `null` when a shipping address is not provided.
  */
 class ShippingAddress extends Address
 {
     /**
      * @internal
+     *
+     * @var bool|null
      */
     protected $isHighRisk;
 
     /**
      * @internal
+     *
+     * @var int|null
      */
     protected $distanceToBillingAddress;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(?array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
         $this->isHighRisk = $this->safeArrayLookup($response['is_high_risk']);

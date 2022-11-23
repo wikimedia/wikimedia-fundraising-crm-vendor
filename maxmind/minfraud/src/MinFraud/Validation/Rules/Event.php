@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Validation\Rules;
 
 use Respect\Validation\Rules\AbstractWrapper;
@@ -12,9 +14,16 @@ class Event extends AbstractWrapper
 {
     public function __construct()
     {
-        $this->validatable = v::keySet(
+        parent::__construct(v::keySet(
             v::key('shop_id', v::stringType(), false),
-            v::key('time', v::date(\DateTime::RFC3339), false),
+            v::key(
+                'time',
+                v::anyOf(
+                    v::dateTime(\DateTime::RFC3339),
+                    v::dateTime(\DateTime::RFC3339_EXTENDED)
+                ),
+                false
+            ),
             v::key(
                 'type',
                 v::in(
@@ -33,6 +42,6 @@ class Event extends AbstractWrapper
                 false
             ),
             v::key('transaction_id', v::stringType(), false)
-        );
+        ));
     }
 }

@@ -17,6 +17,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '2df68f9e79c919e2d88506611769ed2e' => __DIR__ . '/..' . '/respect/stringifier/src/stringify.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
@@ -74,6 +75,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'R' => 
         array (
             'Respect\\Validation\\' => 19,
+            'Respect\\Stringifier\\' => 20,
         ),
         'P' => 
         array (
@@ -250,6 +252,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Respect\\Validation\\' => 
         array (
             0 => __DIR__ . '/..' . '/respect/validation/library',
+        ),
+        'Respect\\Stringifier\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/respect/stringifier/src',
         ),
         'Psy\\' => 
         array (

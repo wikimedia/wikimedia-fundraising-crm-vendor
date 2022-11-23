@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
@@ -9,7 +11,7 @@ use Respect\Validation\Exceptions\ValidationException;
  */
 class TelephoneCountryCodeException extends ValidationException
 {
-    public static $defaultTemplates = [
+    public $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => '{{name}} must be a valid telephone country code',
         ],

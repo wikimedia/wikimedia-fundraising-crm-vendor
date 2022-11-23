@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
@@ -13,10 +15,12 @@ class ScoreIpAddress extends AbstractModel
 {
     /**
      * @ignore
+     *
+     * @var float
      */
     protected $risk;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(?array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
         $this->risk = $this->safeArrayLookup($response['risk']);

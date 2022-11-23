@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
- * Model of the Insights score response.
+ * Model of the Insights response.
  *
  * @property-read \MaxMind\MinFraud\Model\BillingAddress $billingAddress An object
  * containing minFraud data related to the billing address used in the
@@ -25,35 +27,47 @@ class Insights extends Score
 {
     /**
      * @internal
+     *
+     * @var BillingAddress
      */
     protected $billingAddress;
 
     /**
      * @internal
+     *
+     * @var CreditCard
      */
     protected $creditCard;
 
     /**
      * @internal
+     *
+     * @var Device
      */
     protected $device;
 
     /**
      * @internal
+     *
+     * @var Email
      */
     protected $email;
 
     /**
      * @internal
+     *
+     * @var IpAddress
      */
     protected $ipAddress;
 
     /**
      * @internal
+     *
+     * @var ShippingAddress
      */
     protected $shippingAddress;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
 

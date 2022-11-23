@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
@@ -8,7 +10,8 @@ namespace MaxMind\MinFraud\Model;
  * In order to receive device output from minFraud Insights or minFraud
  * Factors, you must be using the Device Tracking Add-on.
  *
- * @link https://dev.maxmind.com/minfraud/device/ Device Tracking Add-on
+ * @link https://dev.maxmind.com/minfraud/track-devices?lang=en Device Tracking
+ * Add-on
  *
  * @property-read float|null $confidence This number represents our confidence that
  * the `device_id` refers to a unique device as opposed to a cluster of
@@ -29,25 +32,33 @@ class Device extends AbstractModel
 {
     /**
      * @internal
+     *
+     * @var float|null
      */
     protected $confidence;
 
     /**
      * @internal
+     *
+     * @var string|null
      */
     protected $id;
 
     /**
      * @internal
+     *
+     * @var string|null
      */
     protected $lastSeen;
 
     /**
      * @internal
+     *
+     * @var string|null
      */
     protected $localTime;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(?array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
         $this->confidence = $this->safeArrayLookup($response['confidence']);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
@@ -9,7 +11,7 @@ use Respect\Validation\Exceptions\ValidationException;
  */
 class Md5Exception extends ValidationException
 {
-    public static $defaultTemplates = [
+    public $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => '{{name}} must be an MD5',
         ],

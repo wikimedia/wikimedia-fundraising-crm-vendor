@@ -1,6 +1,204 @@
 CHANGELOG
 =========
 
+1.22.0 (2022-08-05)
+-------------------
+
+* The model class names are no longer constructed by concatenating strings.
+  This change was made to improve support for tools like PHP-Scoper.
+* Added `shopify_payments` to the payment processor validation.
+* Box 4.0.1 is now used to generate the `geoip2.phar` file.
+
+1.21.0 (2022-03-28)
+-------------------
+
+* Added the input `/credit_card/country`. This is the country where the issuer
+  of the card is located. This may be passed instead of
+  `/credit_card/issuer_id_number` if you do not wish to pass partial account
+  numbers or if your payment processor does not provide them.
+* Fixed PHP 8.1 deprecation warning in internal validation classes.
+
+1.20.0 (2022-01-25)
+-------------------
+
+* Upgraded `geoip2/geoip2` to 2.12.0. This adds mobile country code (MCC)
+  and mobile network code (MNC) to minFraud Insights and Factors responses.
+  These are available at `$response->ipAddress->traits->mobileCountryCode` and
+  `$response->ipAddress->traits->mobileNetworkCode`. We expect this data to be
+  available by late January, 2022.
+* `minfraud.phar` is now generated with Box 3.x.
+* Added the following new values to the payment processor validation:
+  * `boacompra`
+  * `boku`
+  * `coregateway`
+  * `fiserv`
+  * `neopay`
+  * `neosurf`
+  * `openbucks`
+  * `paysera`
+  * `payvision`
+  * `trustly`
+  * `windcave`
+* The `/credit_card/last_4_digits` input has been deprecated in favor of
+  `/credit_card/last_digits` and will be removed in a future release.
+  `last_digits`/`last_4_digits` also now supports two digit values in
+  addition to the previous four digit values.
+* Eight digit `/credit_card/issuer_id_number` inputs are now supported in
+  addition to the previously accepted six digit `issuer_id_number`. In most
+  cases, you should send the last four digits for `last_digits`. If you send
+  an `issuer_id_number` that contains an eight digit IIN, and if the credit
+  card brand is not one of the following, you should send the last two digits
+  for `last_digits`:
+  * `Discover`
+  * `JCB`
+  * `Mastercard`
+  * `UnionPay`
+  * `Visa`
+
+1.19.0 (2021-08-25)
+-------------------
+
+* Added `datacap` to the payment processor validation.
+* Added `ruleLabel` to minFraud output `Disposition`.
+* Added `was_3d_secure_successful` to `/credit_card` validation.
+
+1.18.0 (2021-06-07)
+-------------------
+
+* Added the following new values to the payment processor validation:
+  * `cardknox`
+  * `creditguard`
+  * `credorax`
+  * `dlocal`
+  * `onpay`
+  * `safecharge`
+
+1.17.0 (2021-02-02)
+-------------------
+
+* IMPORTANT: PHP 7.3 or greater is now required.
+* The dependency `Respect\Validation` has been upgraded from 1.x to 2.1.
+* The `with()` method on `MaxMind\MinFraud` may now be used when
+  `device` and `shopping_cart` are not set.
+* Added the following new values to the payment processor validation:
+  * `apple_pay`
+  * `aps_payments`
+* You may now enable client-side email hashing by setting `hashEmail` to
+  `true` in the `MaxMind\MinFraud` constructor's options parameter. When set,
+  this normalizes the email address and sends an MD5 hash of it to the web
+  service rather than the plain-text address. Note that the email domain will
+  still be sent in plain text.
+* Added support for the IP address risk reasons in the minFraud Insights and
+  Factors responses. This is available at `->ipAddress->riskReasons`. It is
+  an array of `MaxMind\MinFraud\Model\IpRiskReason` objects.
+
+1.16.1 (2020-11-02)
+-------------------
+
+* `maxmind/web-service-common` has been updated to 0.8.1 to fix an issue when
+  using the `reportTransaction` method. Reported by Dmitry Malashko. GitHub
+  #99.
+
+1.16.0 (2020-10-13)
+-------------------
+
+* Added `tsys` to the payment processor validation.
+* The device IP address is no longer a required input.
+
+1.15.0 (2020-10-01)
+-------------------
+
+* IMPORTANT: PHP 7.2 or greater is now required.
+* Additional type hints have been added.
+* Added the `isResidentialProxy` property to `GeoIp2\Record\Traits`.
+
+1.14.0 (2020-08-05)
+-------------------
+
+* Added the following new values to the payment processor validation:
+  * `cashfree`
+  * `first_atlantic_commerce`
+  * `komoju`
+  * `paytm`
+  * `razorpay`
+  * `systempay`
+* Added support for the `/subscores/device`, `/subscores/email_local_part` and
+  `/subscores/shipping_address` outputs. They are exposed as the `device`,
+  `emailLocalPart` and `shippingAddress` properties on
+  `MaxMind\MinFraud\Model\Subscores`.
+
+1.13.0 (2020-05-29)
+-------------------
+
+* Added support for the Report Transactions API. We encourage the use of this
+  API as we use data received through this channel to continually improve the
+  accuracy of our fraud detection algorithms.
+
+1.12.0 (2020-04-06)
+-------------------
+
+* Added support for the new credit card output `/credit_card/is_business`.
+  This indicates whether the card is a business card. It may be accessed via
+  `$response->creditCard->isBusiness` on the minFraud Insights and Factors
+  response objects.
+
+1.11.0 (2020-03-26)
+-------------------
+
+* Added support for the new email domain output `/email/domain/first_seen`.
+  This may be accessed via `$response->email->domain->firstSeen` on the
+  minFraud Insights and Factors response objects.
+* The validation of `/event/time` now allows sub-second RFC 3339 timestamps
+  in the request.
+* Added the following new values to the payment processor validation:
+  * `cardpay`
+  * `epx`
+
+1.10.0 (2020-02-21)
+-------------------
+
+* Added support for the `/email/is_disposable` output. This is available as
+  the `isDisposable` property on `MaxMind\MinFraud\Model\Email`.
+* Updated the validation on `/order/amount` and `/shopping_cart/*/price` to
+  allow 0. This was an inconsistency between this library and the web
+  service. Reported by Sn0wCrack. GitHub #78.
+
+1.9.0 (2019-12-12)
+------------------
+
+* PHP 5.6 is now required.
+* The client-side validation for numeric custom inputs has been updated to
+  match the server-side validation. The valid range is -9,999,999,999,999
+  to 9,999,999,999,999. Previously, larger numbers were allowed.
+* Added the following new values to the payment processor validation:
+  * `affirm`
+  * `afterpay`
+  * `cetelem`
+  * `dotpay`
+  * `ecommpay`
+  * `g2a_pay`
+  * `interac`
+  * `klarna`
+  * `mercanet`
+  * `paysafecard`
+* Deprecated `emailTenure` and `ipTenure` properties in
+  `MaxMind\MinFraud\Model\Subscores`.
+* Deprecated `isHighRisk` property in `MaxMind\MinFraud\Model\GeoIp2Country`.
+
+1.8.0 (2019-03-07)
+------------------
+
+* Added the following new values to the payment processor validation:
+  * `datacash`
+  * `gocardless`
+  * `payeezy`
+  * `paylike`
+  * `payment_express`
+  * `smartdebit`
+  * `synapsefi`
+* Be more explicit in the documentation about the fact that we create and
+  return new MinFraud objects in each `->with*()` call.
+
 1.7.0 (2018-04-10)
 ------------------
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Validation\Rules;
 
 use Respect\Validation\Validator as v;
@@ -7,9 +9,9 @@ use Respect\Validation\Validator as v;
 /**
  * @internal
  */
-trait Address
+class Address
 {
-    public static function keys()
+    public static function keys(): array
     {
         return [
             v::key('address', new IntOrString(), false),

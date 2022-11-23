@@ -32,6 +32,7 @@ return array(
     'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
     'SilverpopConnector\\' => array($vendorDir . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector'),
     'Respect\\Validation\\' => array($vendorDir . '/respect/validation/library'),
+    'Respect\\Stringifier\\' => array($vendorDir . '/respect/stringifier/src'),
     'Psy\\' => array($vendorDir . '/psy/psysh/src'),
     'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),

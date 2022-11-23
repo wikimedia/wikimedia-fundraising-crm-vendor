@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
@@ -23,25 +25,33 @@ class Issuer extends AbstractModel
 {
     /**
      * @internal
+     *
+     * @var string|null
      */
     protected $name;
 
     /**
      * @internal
+     *
+     * @var bool|null
      */
     protected $matchesProvidedName;
 
     /**
      * @internal
+     *
+     * @var string|null
      */
     protected $phoneNumber;
 
     /**
      * @internal
+     *
+     * @var bool|null
      */
     protected $matchesProvidedPhoneNumber;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(?array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
 

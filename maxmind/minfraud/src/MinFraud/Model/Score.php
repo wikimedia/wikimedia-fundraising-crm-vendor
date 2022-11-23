@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 /**
  * Model of the Score response.
  *
- * @property-read int $fundsRemaining The approximate US dollar value of the
+ * @property-read float $fundsRemaining The approximate US dollar value of the
  * funds remaining on your MaxMind account.
  * @property-read int $queriesRemaining The approximate number of queries
  * remaining for this service before your account runs out of funds.
@@ -19,59 +21,74 @@ namespace MaxMind\MinFraud\Model;
  * score of 20 indicates a 20% chance that a transaction is fraudulent. We
  * never return a risk score of 0, since all transactions have the possibility
  * of being fraudulent. Likewise we never return a risk score of 100.
- * @property-read \MaxMind\MinFraud\Model\Disposition disposition An object
+ * @property-read \MaxMind\MinFraud\Model\Disposition $disposition An object
  * containing the disposition set by custom rules.
  * @property-read \MaxMind\MinFraud\Model\ScoreIpAddress $ipAddress An object
  * containing the IP risk for the transaction.
  * @property-read array $warnings This array contains
- * {@link \MaxMind\MinFraud\Model\Warning Warning} objects detailing issues
- * with the request that was sent, such as invalid or unknown inputs. It
- * is highly recommended that you check this array for issues when integrating
- * the web service.
+ * \MaxMind\MinFraud\Model\Warning objects detailing issues with the request
+ * that was sent, such as invalid or unknown inputs. It is highly recommended
+ * that you check this array for issues when integrating the web service.
  */
 class Score extends AbstractModel
 {
     /**
      * @internal
+     *
+     * @var Disposition
      */
     protected $disposition;
 
     /**
      * @internal
+     *
+     * @var float
      */
     protected $fundsRemaining;
 
     /**
      * @internal
+     *
+     * @var string
      */
     protected $id;
 
     /**
      * @internal
+     *
+     * @var ScoreIpAddress
      */
     protected $ipAddress;
 
     /**
      * @internal
+     *
+     * @var int
      */
     protected $queriesRemaining;
 
     /**
      * @internal
+     *
+     * @var array
      */
     protected $rawResponse;
 
     /**
      * @internal
+     *
+     * @var float
      */
     protected $riskScore;
 
     /**
      * @internal
+     *
+     * @var array<Warning>
      */
     protected $warnings;
 
-    public function __construct($response, $locales = ['en'])
+    public function __construct(array $response, array $locales = ['en'])
     {
         parent::__construct($response, $locales);
 
@@ -86,7 +103,7 @@ class Score extends AbstractModel
 
         $this->warnings = [];
         foreach ($this->safeArrayLookup($response['warnings'], []) as $warning) {
-            array_push($this->warnings, new Warning($warning));
+            $this->warnings[] = new Warning($warning);
         }
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MaxMind\MinFraud\Model;
 
 use GeoIp2\Record\Location;
@@ -16,6 +18,8 @@ class GeoIp2Location extends Location
 {
     /**
      * @internal
+     *
+     * @var array<string>
      */
     protected $validAttributes = [
         'accuracyRadius',
