@@ -21,12 +21,25 @@ class AdyenCheckoutGateway extends GatewayPage {
 		$script = $this->adapter->getAccountConfig( 'Script' );
 		$css = $this->adapter->getAccountConfig( 'Css' );
 		if ( $this->adapter->getPaymentMethod() == 'google' ) {
-			$out->addScript( '<script src="https://pay.google.com/gp/p/js/pay.js"></script>' );
+			$googleScript = $this->adapter->getAccountConfig( 'GoogleScript' );
+			$out->addLink(
+				[
+					'src' => $googleScript,
+					'rel' => 'preload',
+					'as' => 'script',
+				]
+			);
 		}
-		$out->addScript(
-			"<script src=\"{$script['src']}\" " .
-			"integrity=\"{$script['integrity']}\" " .
-			'crossorigin="anonymous"></script>'
+		// We preload the Adyen script here, but add the actual script tag in our adyen.js
+		// so we can follow its loading using onload and onerror attributes.
+		$out->addLink(
+			[
+				'src' => $script['src'],
+				'integrity' => $script['integrity'],
+				'rel' => 'preload',
+				'as' => 'script',
+				'crossorigin' => 'anonymous',
+			]
 		);
 		$out->addLink(
 			[

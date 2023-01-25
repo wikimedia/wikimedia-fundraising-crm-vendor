@@ -1,6 +1,6 @@
 {
 	"name": "Donation Interface",
-	"version": "2.5.8.11",
+	"version": "2.5.8.13",
 	"author": [
 		"Elliott Eggleston",
 		"Katie Horn",
@@ -48,6 +48,7 @@
 	"APIModules": {
 		"di_amazon_bill": "AmazonBillingApi",
 		"di_donate_adyen": "AdyenDonationApi",
+		"di_donate_dlocal": "DlocalDonationApi",
 		"di_applesession_adyen": "AdyenAppleApi",
 		"di_donate_braintree": "BraintreeDonationApi",
 		"donate": "DonationApi",
@@ -160,6 +161,7 @@
 		"AmazonBillingApi": "amazon_gateway/amazon.api.php",
 		"Adyen3DSecure": "adyen_gateway/Adyen3DSecure.php",
 		"AdyenDonationApi": "adyen_gateway/adyen.api.php",
+		"DlocalDonationApi": "dlocal_gateway/dlocal.api.php",
 		"BraintreeDonationApi": "braintree_gateway/braintree.api.php",
 		"AdyenAppleApi": "adyen_gateway/adyen_apple.api.php",
 		"AdyenCheckoutAdapter": "adyen_gateway/adyen_checkout.adapter.php",
@@ -300,6 +302,74 @@
 				"donate_interface-error-msg-date-too-far-in-the-future"
 			]
 		},
+		"ext.donationInterface.jaVariant01A": {
+			"scripts": "modules/js/ext.donationInterface.jaVariant01A.js",
+			"styles": "modules/css/jaVariants.css",
+			"messages": [
+				"donate_interface-expiry-date-field-placeholder"
+			]
+		},
+		"ext.donationInterface.adyenCheckoutWithJaVariant01A": {
+			"scripts": "adyen_gateway/forms/adyen.js",
+			"styles": "adyen_gateway/forms/adyen.css",
+			"dependencies": [
+				"ext.donationInterface.forms",
+				"ext.donationInterface.jaVariant01A"
+			],
+			"messages": [
+				"donate_interface-error-msg-apple_pay_unsupported",
+				"donate_interface-error-msg-google_pay_unsupported",
+				"donate_interface-credit-card-number",
+				"donate_interface-credit-card-expiration",
+				"donate_interface-cvv",
+				"donate_interface-expiry-date-field-placeholder",
+				"donate_interface-cvv-placeholder-3-digits",
+				"donate_interface-cvv-placeholder-4-digits",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-expiry-date-field-invalid",
+				"donate_interface-error-msg-incomplete-field",
+				"donate_interface-error-msg-field-not-valid",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-card-number-do-not-match-card-brand",
+				"donate_interface-error-msg-unsupported-card-entered",
+				"donate_interface-error-msg-card-too-old",
+				"donate_interface-error-msg-date-too-far-in-the-future"
+			]
+		},
+		"ext.donationInterface.jaVariant02": {
+			"scripts": "modules/js/ext.donationInterface.jaVariant02.js",
+			"styles": "modules/css/jaVariants.css",
+			"messages": [
+				"donate_interface-expiry-date-field-placeholder"
+			]
+		},
+		"ext.donationInterface.adyenCheckoutWithJaVariant02": {
+			"scripts": "adyen_gateway/forms/adyen.js",
+			"styles": "adyen_gateway/forms/adyen.css",
+			"dependencies": [
+				"ext.donationInterface.forms",
+				"ext.donationInterface.jaVariant02"
+			],
+			"messages": [
+				"donate_interface-error-msg-apple_pay_unsupported",
+				"donate_interface-error-msg-google_pay_unsupported",
+				"donate_interface-credit-card-number",
+				"donate_interface-credit-card-expiration",
+				"donate_interface-cvv",
+				"donate_interface-expiry-date-field-placeholder",
+				"donate_interface-cvv-placeholder-3-digits",
+				"donate_interface-cvv-placeholder-4-digits",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-expiry-date-field-invalid",
+				"donate_interface-error-msg-incomplete-field",
+				"donate_interface-error-msg-field-not-valid",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-card-number-do-not-match-card-brand",
+				"donate_interface-error-msg-unsupported-card-entered",
+				"donate_interface-error-msg-card-too-old",
+				"donate_interface-error-msg-date-too-far-in-the-future"
+			]
+		},
 		"ext.donationInterface.ingenico.scripts": {
 			"scripts": "globalcollect_gateway/forms/js/ingenico.js",
 			"dependencies": "ext.donationInterface.forms"
@@ -336,10 +406,22 @@
 				"donate_interface-donor-fiscal_number-explain-in"
 			]
 		},
-		"ext.donationInterface.dlocal.styles": {
+		"ext.donationInterface.dlocal.scripts": {
 			"scripts": "dlocal_gateway/forms/dlocal.js",
-			"styles": "dlocal_gateway/forms/dlocal.css",
-			"dependencies": "ext.donationInterface.forms"
+			"dependencies": "ext.donationInterface.forms",
+			"messages": [
+				"donate_interface-donor-card-num",
+				"donate_interface-donor-expiration",
+				"donate_interface-cvv",
+				"donate_interface-donor-fiscal_number-explain-in",
+				"donate_interface-expiry-date-field-placeholder",
+				"donate_interface-error-msg-invalid-card-number",
+				"donate_interface-error-msg-invalid-cvv-format",
+				"donate_interface-error-msg-card-too-old"
+			]
+		},
+		"ext.donationInterface.dlocal.styles": {
+			"styles": "dlocal_gateway/forms/dlocal.css"
 		},
 		"gc.iframe": {
 			"styles": "globalcollect_gateway/forms/css/iframe.css"
@@ -475,6 +557,9 @@
 		},
 		"DonationInterfacePolicyURL": {
 			"value": "https://foundation.wikimedia.org/wiki/Special:LandingCheck?basic=true&landing_page=Donor_privacy_policy&language=$language&country=$country"
+		},
+		"DonationInterfaceChooserProblemURL": {
+			"value": "https://donate.wikimedia.org"
 		},
 		"DonationInterfaceProblemsEmail": {
 			"value": "donate@wikimedia.org"
@@ -822,8 +907,8 @@
 				{
 					"conditions": {
 						"country": [
-							"AT", "AU", "BE", "BG", "CA", "DK", "ES", "FR", "HK", "HU", "GB", "IE", "IL", "IT", "JP", "KW", "LU", "LV", "MY", "NL", "NO", "NZ",
-							"PL", "PT", "RO", "SK", "US"
+							"AT", "AU", "BE", "BG", "CA", "DK", "ES", "FR", "GB", "HK", "HR", "HU", "IE", "IL", "IT",
+							"JP", "KW", "LU", "LV", "MY", "NL", "NO", "NZ", "PL", "PT", "RO", "SK", "US"
 						],
 						"payment_method": "cc"
 					},

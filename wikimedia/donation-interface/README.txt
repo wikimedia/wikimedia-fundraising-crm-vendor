@@ -20,6 +20,7 @@ $wgGlobalCollectGatewayEnabled = false
 $wgAmazonGatewayEnabled = false
 $wgAdyenCheckoutGatewayEnabled = false
 $wgAstroPayGatewayEnabled = false
+$wgDlocalGatewayEnabled = false
 $wgPaypalExpressGatewayEnabled = false
 
 You must also configure account information for each processor as
@@ -319,9 +320,12 @@ $wgAdyenCheckoutGatewayAccountInfo['exampleMerchantAccountName'] = [
 	'ClientKey' => '', // find under web service user 'Authentication' block within adyen API credentials area
 	'Environment' => 'test',
 	'GoogleMerchantId' => '1234' // merchant ID from Google for Google Pay
+	'GoogleScript'=> 'https://pay.google.com/gp/p/js/pay.js',
 ]
 
 // Set base URLs here.  Individual transactions have their own paths
+$wgDlocalGatewayURL = 'https://api.dlocal.com/'
+$wgDlocalGatewayTestingURL = 'https://sandbox.dlocal.com/'
 $wgAstroPayGatewayURL = 'https://api.dlocal.com/'
 $wgAstroPayGatewayTestingURL = 'https://sandbox.dlocal.com/'
 #	$wgAstroPayGatewayAccountInfo['example'] = [

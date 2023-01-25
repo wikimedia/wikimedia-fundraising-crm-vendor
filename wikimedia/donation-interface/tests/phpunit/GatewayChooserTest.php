@@ -53,6 +53,7 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 			'wgDonationInterfaceEnableGatewayChooser' => true,
 			'wgIngenicoGatewayEnabled' => true,
 			'wgAstroPayGatewayEnabled' => true,
+			'wgDlocalGatewayEnabled' => true,
 			'wgBraintreeGatewayEnabled' => true,
 			'wgPaypalExpressGatewayEnabled' => true,
 			'wgAdyenCheckoutGatewayEnabled' => true,
@@ -88,6 +89,40 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 			'language' => 'en'
 		];
 		$this->verifyFormOutput( 'GatewayChooser', $initial, $assertNodes, false );
+	}
+
+	/**
+	 * @dataProvider expectedInvalidGatewayDataProvider
+	 * @param array $params
+	 * @param bool $redirectToDonateWiki
+	 *
+	 * @return void
+	 * @throws \BadTitleError
+	 * @throws \FatalError
+	 * @throws \MWException
+	 */
+	public function testNoNeedParamGateWayChooser( array $params, bool $redirectToDonateWiki ) {
+		$this->setMwGlobals( [ 'wgDonationInterfaceChooserProblemURL' => 'https://test.example' ] );
+		$context = RequestContext::getMain();
+		$newOutput = new OutputPage( $context );
+		$newTitle = Title::newFromText( 'nonsense is apparently fine' );
+		$context->setRequest( new FauxRequest( $params, false ) );
+		$context->setOutput( $newOutput );
+		$context->setTitle( $newTitle );
+
+		$fc = new GatewayChooser();
+		$fc->execute( null );
+		$fc->getOutput()->output( true );
+		$url = $fc->getRequest()->response()->getheader( 'Location' );
+		$redirectMediaWikiUrl = 'https://test.example';
+		if ( count( $params ) > 0 ) {
+			$redirectMediaWikiUrl .= '?' . http_build_query( $params );
+		}
+		if ( $redirectToDonateWiki ) {
+			$this->assertEquals( $redirectMediaWikiUrl, $url, 'invalid params redirect to donate wiki' );
+		} else {
+			$this->assertNotEquals( $redirectMediaWikiUrl, $url, 'valid params also redirect to donate wiki' );
+		}
 	}
 
 	/**
@@ -127,6 +162,16 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 
 		$this->assertEquals( $expectedSpecialGateway, $gateway, 'Gateway not match' );
 		$this->assertArraySubmapSame( $params, $query, 'Should pass through params to querystring' );
+	}
+
+	public function expectedInvalidGatewayDataProvider() {
+		// redirect to donate wiki if no payment_method or currency provided
+		return [
+			[ [ 'country' => 'US', 'currency' => 'USD' ], true ],
+			[ [ 'payment_method' => 'cc','currency' => 'USD' ], true ],
+			[ [ 'currency' => 'USD' ], true ],
+			[ [ 'payment_method' => 'cc', 'country' => 'US', 'currency' => 'USD' ], false ],
+		];
 	}
 
 	public function expectedGatewayDataProvider() {
@@ -240,7 +285,7 @@ class DonationInterface_GatewayChooserTest extends DonationInterfaceTestCase {
 			[ [ 'payment_method' => 'cc', 'country' => 'GU', 'currency' => 'USD' ], 'IngenicoGateway' ],
 			[ [ 'payment_method' => 'cc', 'country' => 'HK', 'currency' => 'HKD' ], 'AdyenCheckoutGateway' ],
 			[ [ 'payment_method' => 'cc', 'country' => 'HN', 'currency' => 'HNL' ], 'IngenicoGateway' ],
-			[ [ 'payment_method' => 'cc', 'country' => 'HR', 'currency' => 'HRK' ], 'IngenicoGateway' ],
+			[ [ 'payment_method' => 'cc', 'country' => 'HR', 'currency' => 'EUR' ], 'AdyenCheckoutGateway' ],
 			[ [ 'payment_method' => 'cc', 'country' => 'HU', 'currency' => 'HUF' ], 'AdyenCheckoutGateway' ],
 			[ [ 'payment_method' => 'cc', 'country' => 'ID', 'currency' => 'IDR' ], 'IngenicoGateway' ],
 			[ [ 'payment_method' => 'cc', 'country' => 'IE', 'currency' => 'EUR' ], 'AdyenCheckoutGateway' ],
