@@ -311,7 +311,7 @@ abstract class GatewayAdapter implements GatewayType {
 	 * information about the origin and state of the order_id data.
 	 *
 	 * Should contain the following keys/values:
-	 * 'alt_locations' => [ $dataset_name, $dataset_key ]
+	 * 'alt_locations' (optional) => [ $dataset_name, $dataset_key ]
 	 * 	** alt_locations is intended to contain a list of arrays that
 	 * 	are always available (or should be), from which we can pull the
 	 * 	order_id.
@@ -1121,10 +1121,12 @@ abstract class GatewayAdapter implements GatewayType {
 			$decodeResponse = json_decode( $rawResponse, true );
 			// do not send card to rawResponse for log, below two was for ingenico getHostedPaymentStatus, approvePayment and cancelPayment
 			if ( isset( $decodeResponse['createdPaymentOutput']['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card'] ) ) {
-				unset( $decodeResponse['createdPaymentOutput']['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card'] );
+				unset( $decodeResponse['createdPaymentOutput']['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card']['cardNumber'] );
+				unset( $decodeResponse['createdPaymentOutput']['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card']['expiryDate'] );
 			}
 			if ( isset( $decodeResponse['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card'] ) ) {
-				unset( $decodeResponse['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card'] );
+				unset( $decodeResponse['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card']['cardNumber'] );
+				unset( $decodeResponse['payment']['paymentOutput']['cardPaymentMethodSpecificOutput']['card']['expiryDate'] );
 			}
 			$rawResponse = $decodeResponse ? json_encode( $decodeResponse ) : $rawResponse;
 			$this->logger->info( "RETURNED FROM CURL:" . print_r( $rawResponse, true ) );

@@ -1,6 +1,6 @@
 {
 	"name": "Donation Interface",
-	"version": "2.5.8.13",
+	"version": "2.5.8.14",
 	"author": [
 		"Elliott Eggleston",
 		"Katie Horn",
@@ -530,8 +530,7 @@
 	},
 	"Hooks": {
 		"Language::getMessagesFileName": "DonationInterface::onGetMessagesFileName",
-		"UnitTestsList": "DonationInterface::onDonationInterfaceUnitTests",
-		"MediaWikiPHPUnitTest::startTest": "DonationInterface::onMediaWikiPHPUnitTeststartTest"
+		"UnitTestsList": "DonationInterface::onDonationInterfaceUnitTests"
 	},
 	"config": {
 		"DonationInterfaceTest": {
@@ -907,8 +906,8 @@
 				{
 					"conditions": {
 						"country": [
-							"AT", "AU", "BE", "BG", "CA", "DK", "ES", "FR", "GB", "HK", "HR", "HU", "IE", "IL", "IT",
-							"JP", "KW", "LU", "LV", "MY", "NL", "NO", "NZ", "PL", "PT", "RO", "SK", "US"
+							"AT", "AU", "BE", "BG", "CA", "CZ", "DK", "ES", "FR", "GB", "HK", "HR", "HU", "IE", "IL", "IT",
+							"JP", "KW", "LU", "LV", "MY", "NL", "NO", "NZ", "PL", "PT", "RO", "SE", "SK", "US"
 						],
 						"payment_method": "cc"
 					},
