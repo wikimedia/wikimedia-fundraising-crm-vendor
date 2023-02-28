@@ -6,7 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'cogpowered\\FineDiff' => array($vendorDir . '/cogpowered/finediff/src'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'PHPQueue' => array($vendorDir . '/coderkungfu/php-queue/src'),
     'ForceUTF8\\' => array($vendorDir . '/neitanod/forceutf8/src'),

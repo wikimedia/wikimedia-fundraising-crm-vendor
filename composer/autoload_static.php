@@ -426,13 +426,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
     );
 
     public static $prefixesPsr0 = array (
-        'c' => 
-        array (
-            'cogpowered\\FineDiff' => 
-            array (
-                0 => __DIR__ . '/..' . '/cogpowered/finediff/src',
-            ),
-        ),
         'T' => 
         array (
             'Twig_' => 
@@ -585,6 +578,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'PaypalExpressGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/paypal_express_resultswitcher.body.php',
         'PaypalExpressReturnUrl' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/PaypalExpressReturnUrl.php',
         'PaypalRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/scripts/refund.php',
+        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'PlaceholderFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/PlaceholderFiscalNumber.php',
         'RecurringConversion' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.php',
         'RecurringConversionApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.api.php',

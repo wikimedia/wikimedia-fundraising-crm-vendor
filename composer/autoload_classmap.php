@@ -112,6 +112,7 @@ return array(
     'PaypalExpressGatewayResult' => $vendorDir . '/wikimedia/donation-interface/paypal_ec_gateway/paypal_express_resultswitcher.body.php',
     'PaypalExpressReturnUrl' => $vendorDir . '/wikimedia/donation-interface/paypal_ec_gateway/PaypalExpressReturnUrl.php',
     'PaypalRefundMaintenance' => $vendorDir . '/wikimedia/donation-interface/paypal_ec_gateway/scripts/refund.php',
+    'PhpToken' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
     'PlaceholderFiscalNumber' => $vendorDir . '/wikimedia/donation-interface/astropay_gateway/PlaceholderFiscalNumber.php',
     'RecurringConversion' => $vendorDir . '/wikimedia/donation-interface/gateway_common/RecurringConversion.php',
     'RecurringConversionApi' => $vendorDir . '/wikimedia/donation-interface/gateway_common/RecurringConversion.api.php',
