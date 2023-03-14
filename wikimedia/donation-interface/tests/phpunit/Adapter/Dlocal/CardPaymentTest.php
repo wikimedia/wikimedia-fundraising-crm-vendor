@@ -64,6 +64,55 @@ class CardPaymentTest extends BaseDlocalTestCase {
 		$this->assertCount( 1, $messages['donations'] );
 	}
 
+	public function testDoCardPaymentWithRecurring(): void {
+		$testDonorData = $this->getTestDonorCardData();
+		$testDonorData['recurring'] = 1;
+
+		$DlocalAdapter = $this->getFreshGatewayObject( $testDonorData );
+
+		$authID = 'D-2486-91e73695-3e0a-4a77-8594-f2220f8c6515';
+		$captureID = 'D-2486-91e73695-3e0a-4a77-8594-f2220f8c7200';
+		$cardID = 'CID-d69850ea-37fe-4392-abdd-402cca966e51';
+
+		$expectedCapturePaymentParams = $this->getCreatePaymentParams( $testDonorData );
+		$expectedCapturePaymentParams['recurring'] = 1;
+
+		$expectedApprovePaymentParams = $this->getApprovePaymentParams( $testDonorData, $authID );
+
+		$this->cardPaymentProvider->expects( $this->once() )
+				->method( 'createPayment' )
+				->with( $expectedCapturePaymentParams )
+				->willReturn(
+					( new CreatePaymentResponse() )
+						->setRawStatus( 'AUTHORIZED' )
+						->setStatus( FinalStatus::PENDING_POKE )
+						->setSuccessful( true )
+						->setGatewayTxnId( $authID )
+						->setRecurringPaymentToken( $cardID )
+				);
+
+		$this->cardPaymentProvider->expects( $this->once() )
+				->method( 'approvePayment' )
+				->with( $expectedApprovePaymentParams )
+				->willReturn(
+					( new ApprovePaymentResponse() )
+						->setRawStatus( 'PAID' )
+						->setStatus( FinalStatus::COMPLETE )
+						->setSuccessful( true )
+						->setGatewayTxnId( $captureID )
+				);
+
+		$result = $DlocalAdapter->doPayment();
+		$this->assertFalse( $result->isFailed() );
+
+		$messages = self::getAllQueueMessages();
+		$this->assertCount( 1, $messages['donations'] );
+
+		$donationsMsg = $messages['donations'][0];
+		$this->assertEquals( $cardID, $donationsMsg['recurring_payment_token'] );
+		$this->assertEquals( $testDonorData['fiscal_number'], $donationsMsg['fiscal_number'] );
+	}
+
 	public function testDoCardPaymentCreatePaymentFail(): void {
 		$testDonorData = $this->getTestDonorCardData();
 		$DlocalAdapter = $this->getFreshGatewayObject( $testDonorData );
@@ -79,7 +128,7 @@ class CardPaymentTest extends BaseDlocalTestCase {
 														->setStatus( FinalStatus::FAILED )
 														->setSuccessful( false )
 														->addErrors( new PaymentError(
-																		ErrorMapper::$errorCodes['300'],
+																		ErrorMapper::$paymentStatusErrorCodes['300'],
 																		"The payment was rejected.",
 																		LogLevel::ERROR
 														) )
@@ -146,7 +195,7 @@ class CardPaymentTest extends BaseDlocalTestCase {
 														->setStatus( FinalStatus::FAILED )
 														->setSuccessful( false )
 														->addErrors( new PaymentError(
-																		ErrorMapper::$errorCodes['300'],
+																		ErrorMapper::$paymentStatusErrorCodes['300'],
 																		"The payment was rejected.",
 																		LogLevel::ERROR
 														) )
@@ -159,7 +208,7 @@ class CardPaymentTest extends BaseDlocalTestCase {
 		$this->assertTrue( $result->isFailed() );
 
 		$messages = self::getAllQueueMessages();
-		$this->assertCount( 0, $messages['payments-init'] );
+		$this->assertCount( 1, $messages['payments-init'] );
 		$this->assertCount( 0, $messages['donations'] );
 	}
 
@@ -232,7 +281,7 @@ class CardPaymentTest extends BaseDlocalTestCase {
 								->setStatus( FinalStatus::FAILED )
 								->setSuccessful( false )
 								->addErrors( new PaymentError(
-										ErrorMapper::$errorCodes['300'],
+										ErrorMapper::$paymentStatusErrorCodes['300'],
 										"The payment was rejected.",
 										LogLevel::ERROR
 								) )
@@ -268,13 +317,14 @@ class CardPaymentTest extends BaseDlocalTestCase {
 	protected function getTestDonorCardData(): array {
 		$testDonorData = $this->getDonorTestData( 'IN' );
 		$testDonorData['payment_method'] = 'cc';
-		$testDonorData['payment_token'] = 'D' . '-' . (string)mt_rand( 1000000, 10000000 );
+		$testDonorData['payment_token'] = 'D' . '-' . mt_rand( 1000000, 10000000 );
 		$testDonorData['user_ip'] = '127.0.0.1';
 		$testDonorData['contribution_tracking_id'] = (string)mt_rand( 1000000, 10000000 );
 		$testDonorData['amount'] = '1.55';
 		$testDonorData['postal_code'] = '23111';
 		$testDonorData['city'] = 'Mumbai';
 		$testDonorData['order_id'] = $testDonorData['contribution_tracking_id'] . '.1';
+		$testDonorData['fiscal_number'] = '123456789';
 		return $testDonorData;
 	}
 

@@ -19,7 +19,6 @@
 	"donate_interface-comment-label": "הערה:",
 	"donate_interface-email-agreement": "כ'בין מסכים צו באקומען דערהיינטיקונגען פון דער וויקימעדיע פונדאציע דורך ע־פאסט פון צייט צו צייט.",
 	"donate_interface-comment-title": "עפֿנטליכע הערה",
-	"donate_interface-donation-description": "Wikimedia 877 600 9454",
 	"donate_interface-monthly-donation-description": "מאנאטלעכע נדבה צו דער וויקימעדיע פונדאציע",
 	"donate_interface-amount-error": "ביטע קלויבט אַ סומע מנדב צו זיין",
 	"donate_interface-smallamount-error": "ביטע קלויבט אויס א סכום (כאטש $1)",
@@ -263,10 +262,11 @@
 	"donate_interface-email-unsub-delay": "ביטע לאזן ביז פיר (4) טעג כדי די ענדערונגען זאלן ווערן גילטיק. מיר בעטן מחילה טאמער איר באקומט בליצבריוון אינצווישן. אז איר האט עפעס א שאלה, זייט אזוי גוט פארבינדט זיך מיט  <$1>",
 	"donate_interface-email-unsub-fail": "ס'איז פארגעקומען א פעלער ביים פראצעסירן אייער בקשה, זייט אזוי גוט פארבינדט זיך מיט  <$1>.",
 	"donate_interface-email-unsub-confirm": "צי ווילט איר טאקע אומאבאנירן <b>$1</b>?",
-	"donate_interface-faqs": "אפט געפרעגטע שאלות",
+	"donate_interface-faqs": "מערסטע געפֿרעגטע פֿראַגעס",
 	"donate_interface-currency-change": "טוישן?",
 	"donate_interface-taxded-link-int": "שטייער און אנדער לעגאלע אינפארמאציע",
 	"donate_interface-taxded-link-us": "שטייער אפרעכענען אינפארמאציע",
 	"donate_interface-monthly-short": "מאנאטלעך",
-	"donate_interface-onetime-short": "איינמאליק"
+	"donate_interface-onetime-short": "איינמאליק",
+	"donate_interface-emailprefs-thank-you-title": "אַ דאַנק"
 }

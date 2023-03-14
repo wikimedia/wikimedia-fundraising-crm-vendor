@@ -25,6 +25,7 @@
 			"Takot",
 			"Whym",
 			"Yusuke1109",
+			"もなー(偽物)",
 			"藤田健士朗",
 			"青子守歌",
 			"아라"
@@ -43,7 +44,6 @@
 	"donate_interface-comment-label": "コメント:",
 	"donate_interface-email-agreement": "ウィキメディア財団が今後不定期に送信するメールを受け取ることに同意します。",
 	"donate_interface-comment-title": "公開コメント",
-	"donate_interface-donation-description": "Wikimedia 877 600 9454",
 	"donate_interface-monthly-donation-description": "Wikimedia 877 600 9454",
 	"donate_interface-amount-error": "寄付する金額を選択してください",
 	"donate_interface-smallamount-error": "金額を選択してください (少なくとも$1のご寄付が必要です)",
@@ -342,6 +342,7 @@
 	"donate_interface-donation": "寄付",
 	"donate_interface-email-receipt": "メール領収書の宛先:",
 	"donate_interface-monthly-donation": "毎月寄付をする",
+	"donate_interface-monthly-only-credit": "毎月の寄付にはクレジットカードのみ受け付けています（デビットカードは利用できません）。",
 	"donate_interface-via-paypal": "(PayPal で)",
 	"donate_interface-select": "選択してください",
 	"donate_interface-donation-must-equal": "寄付は$1から受け付けています。",
@@ -414,7 +415,7 @@
 	"donate_interface-monthly-convert-title": "来月から、毎月<span class=\"mc-convert-ask\"></span>を寄付していただけますか？",
 	"donate_interface-monthly-convert-title-variant-003": " <span class=\"mc-convert-donated-amount\"></span>のご寄付をいただきありがとうございました。より大きなインパクトをもたらすために、来月から毎月<span class=\"mc-convert-ask\"></span> の定額寄付をご検討いただけませんか？",
 	"donate_interface-monthly-convert-title-variant-004": "<span class=\"mc-convert-donated-amount\"></span>をご寄付いただきありがとうございました。よろしければ、来月から毎月<span class=\"mc-convert-ask\"></span>の定額寄付をご検討いただけませんか？",
-	"donate_interface-monthly-convert-text": "毎月の定期寄付は、ウィキペディアの繁栄を支えるための最適な方法です。",
+	"donate_interface-monthly-convert-text": "ウィキペディアの繁栄を支えるための最適な方法は、毎月の定期寄付です。",
 	"donate_interface-monthly-convert-change-amount": "はい、でも違う金額を毎月寄付します。",
 	"donate_interface-monthly-convert-enter-amount": "来月から開始する、毎月の定期寄付の金額をご入力ください。",
 	"donate_interface-monthly-convert-max-amount": "一回限りのご寄付としていただいた金額を超える定期寄付は受け付けられません。",
@@ -428,5 +429,6 @@
 	"donate_interface-fundraiser-maintenance-notice": "現在、定期的なメンテナンス作業を行っているため寄付を受け付けることができません。ご質問があれば、$1 にメールをください。",
 	"donate_interface-redirect-explanation": "ウィキメディアの決済処理パートナーのサイトにリダイレクトされます。",
 	"donate_interface-amount-legend-variant-01A": "寄付する金額",
-	"donate_interface-cc-form-header-personal-variant-01A": "お支払情報"
+	"donate_interface-cc-form-header-personal-variant-01A": "お支払情報",
+	"donate_interface-submit-button-variant-01A": "この内容で寄付する"
 }

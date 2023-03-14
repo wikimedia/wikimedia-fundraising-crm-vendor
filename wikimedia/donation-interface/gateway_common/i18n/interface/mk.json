@@ -359,6 +359,7 @@
 	"donate_interface-donation": "Дарување",
 	"donate_interface-email-receipt": "Испрати сметкопотврда на е-пошта:",
 	"donate_interface-monthly-donation": "Месечен прилог",
+	"donate_interface-monthly-only-credit": "Прифаќаме само кредитни картички (не дебитни) за месечни прилози.",
 	"donate_interface-via-paypal": "(преку PayPal)",
 	"donate_interface-select": "Големина:",
 	"donate_interface-donation-must-equal": "Прилогот мора да изнесува барем $1.",
@@ -458,5 +459,6 @@
 	"donate_interface-fundraiser-maintenance-notice": "Во моментов вршиме планирано одржување и не можеме да прифаќаме уплати. Вратете се малку подоцна. Ако имате некакви прашања, обратете се на $1.",
 	"donate_interface-redirect-explanation": "Ќе бидете префрлени на обработувачот на уплати за Викимедија.",
 	"donate_interface-amount-legend-variant-01A": "Износ на доброволниот прилог",
-	"donate_interface-cc-form-header-personal-variant-01A": "Информации за уплатата"
+	"donate_interface-cc-form-header-personal-variant-01A": "Информации за уплатата",
+	"donate_interface-submit-button-variant-01A": "Подарете го овој износ"
 }

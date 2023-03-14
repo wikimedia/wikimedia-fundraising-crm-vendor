@@ -1,19 +1,26 @@
 (function ($, mw) {
+	var country = $( '#country' ).val(),
+		isRecurring = !!$( '#recurring' ).val();
+	if ( country === 'IN' ) {
+		$( '#fiscal_number' ).after(
+			$( '<input type="hidden" value="Mumbai" name="city" id="city">' +
+				'<p style="font-size: 10px">' + mw.msg( 'donate_interface-donor-fiscal_number-explain-in' ) +
+				'</p>' )
+		);
+	}
 	function setup() {
-		if ( $('#country').val() === 'IN' ) {
-			$( '#fiscal_number' ).after(
-				$( '<input type="hidden" value="Mumbai" name="city" id="city">' +
-					'<p style="font-size: 10px">' + mw.msg( 'donate_interface-donor-fiscal_number-explain-in' ) +
-					'</p>' )
-			);
+		// only cc use setup
+		if ( country === 'BR' && isRecurring ) {
+			$( '.submethods' ).before( $( '<p>' +
+				mw.msg( 'donate_interface-monthly-only-credit' ) +
+				'</p>' ) );
 		}
 
-		// todo:: another task to make sure script load first both dlocal, Adyen and amazon
 		var dlocalInstance = dlocal(mw.config.get('wgDlocalSmartFieldApiKey'));
 
 		var fields = dlocalInstance.fields({
 			locale: mapLang($('#language').val()),
-			country: $('#country').val()
+			country: country
 		});
 
 		// https://docs.dlocal.com/reference/the-dlocal-object#dlocalfieldsoptions
@@ -56,15 +63,15 @@
 			}
 		};
 
-		oldShowErrors = mw.donationInterface.validation.showErrors;
+		var oldShowErrors = mw.donationInterface.validation.showErrors;
 		mw.donationInterface.validation.showErrors = function ( errors ) {
 			var dLocalFields = [ 'cardNumber', 'expiration', 'cvv' ];
 			$.each( errors, function ( field ) {
-					if ( dLocalFields.includes( field ) ) {
-						$( '#' + field ).find('.DlocalField').addClass('DlocalField--invalid');
-						$( '#' + field + 'ErrorMsg' ).text( errors[field] );
-						delete errors[field];
-					}
+				if ( dLocalFields.includes( field ) ) {
+					$( '#' + field ).find('.DlocalField').addClass('DlocalField--invalid');
+					$( '#' + field + 'ErrorMsg' ).text( errors[field] );
+					delete errors[field];
+				}
 			});
 			oldShowErrors( errors );
 		};
@@ -137,7 +144,7 @@
 		function validateInputs() {
 			var formValid =  mw.donationInterface.validation.validate();
 			var cvvFieldHasErrors = cvvFieldError || cvvFieldEmpty;
-   			var cardFieldHasErrors = cardFieldError || cardFieldEmpty;
+			var cardFieldHasErrors = cardFieldError || cardFieldEmpty;
 			var expFieldHasErrors = expirationFieldError || expirationFieldEmpty;
 			if ( !formValid || cvvFieldHasErrors || cardFieldHasErrors || expFieldHasErrors ) {
 				var errors = {};
@@ -184,7 +191,7 @@
 						// Send the token to your server.
 						mw.donationInterface.forms.callDonateApi(
 							handleApiResult,
-							{ 
+							{
 								payment_token: result.token,
 								fiscal_number: $( '#fiscal_number' ).val()
 							},
@@ -245,14 +252,21 @@
 	 *  to a <link rel=preload> we add in DlocalGateway::execute
 	 */
 	$(function (){
-		var scriptNode = document.createElement( 'script' );
-		scriptNode.onload = setup;
-		scriptNode.onerror = function () {
-			mw.donationInterface.validation.showErrors(
-				{ general: 'Could not load payment provider Javascript. Please reload or try again later.' }
+		// only cc load smart field script and submit button, others show redirect with continue button
+		if($('#payment_method' ).val() === 'cc') {
+			var scriptNode = document.createElement( 'script' );
+			scriptNode.onload = setup;
+			scriptNode.onerror = function () {
+				mw.donationInterface.validation.showErrors(
+					{ general: 'Could not load payment provider Javascript. Please reload or try again later.' }
+				);
+			};
+			scriptNode.src = mw.config.get( 'dlocalScript' );
+			document.body.append( scriptNode );
+		} else {
+			$( '.submethods' ).after(
+				$( '<p id="redirect-explanation">' + mw.message( 'donate_interface-redirect-explanation' ) + '</p>' )
 			);
-		};
-		scriptNode.src = mw.config.get( 'dlocalScript' );
-		document.body.append( scriptNode );
+		}
 	});
 } )( jQuery, mediaWiki );
