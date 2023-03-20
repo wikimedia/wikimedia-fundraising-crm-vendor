@@ -579,7 +579,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'PaypalExpressReturnUrl' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/PaypalExpressReturnUrl.php',
         'PaypalRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/scripts/refund.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
-        'PlaceholderFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/PlaceholderFiscalNumber.php',
+        'PlaceholderFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PlaceholderFiscalNumber.php',
         'RecurringConversion' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.php',
         'RecurringConversionApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.api.php',
         'RecurringConversionTrait' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversionTrait.php',
