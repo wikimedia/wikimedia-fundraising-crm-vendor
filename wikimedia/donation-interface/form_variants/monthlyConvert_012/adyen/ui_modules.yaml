@@ -1,4 +1,0 @@
-scripts:
-    - ext.donationInterface.adyenCheckout
-    - ext.donationInterface.monthlyConvert_011
-    - ext.donationInterface.monthlyConvertButtonFlip

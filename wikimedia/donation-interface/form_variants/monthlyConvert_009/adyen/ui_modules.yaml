@@ -1,5 +1,0 @@
-scripts:
-  - ext.donationInterface.adyenCheckout
-  - ext.donationInterface.monthlyConvert_001
-  - ext.donationInterface.monthlyConvert_003
-  - ext.donationInterface.monthlyConvert_006

@@ -1,6 +1,0 @@
-# Skip AmountInCents, we want to pass the real amount x1.
-- Amount
-- CountryValidation
-- DonorEmail
-- DonorFullName
-- StreetAddress

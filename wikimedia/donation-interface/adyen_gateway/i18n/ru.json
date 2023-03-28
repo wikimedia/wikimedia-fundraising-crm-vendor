@@ -1,9 +1,0 @@
-{
-	"@metadata": {
-		"authors": [
-			"DCamer"
-		]
-	},
-	"adyen_gateway-desc": "Обработка платежей Adyen",
-	"adyen_gateway-response-default": "При обработке вашей транзакции возникла ошибка.\nПожалуйста, повторите попытку позже."
-}

@@ -1,9 +1,0 @@
-.svn
-*~
-*.kate-swp
-.*.swp
-vendor
-composer.lock
-.version-stamp
-node_modules
-.eslintcache

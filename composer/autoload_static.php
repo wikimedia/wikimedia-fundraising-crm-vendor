@@ -8,16 +8,15 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
-        '2df68f9e79c919e2d88506611769ed2e' => __DIR__ . '/..' . '/respect/stringifier/src/stringify.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
@@ -25,7 +24,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         '9e4824c5afbdc1482b6025ce3d4dfde8' => __DIR__ . '/..' . '/league/csv/src/functions_include.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
-        'bf34263f834e2781b79cae4d55a1d350' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -72,11 +70,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'SmashPig\\' => 9,
             'SilverpopConnector\\' => 19,
         ),
-        'R' => 
-        array (
-            'Respect\\Validation\\' => 19,
-            'Respect\\Stringifier\\' => 20,
-        ),
         'P' => 
         array (
             'Psy\\' => 4,
@@ -96,10 +89,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'M' => 
         array (
             'Monolog\\' => 8,
-            'MaxMind\\WebService\\' => 19,
-            'MaxMind\\Exception\\' => 18,
-            'MaxMind\\Db\\' => 11,
-            'MaxMind\\' => 8,
         ),
         'L' => 
         array (
@@ -128,7 +117,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Geocoder\\Provider\\Addok\\' => 24,
             'Geocoder\\Http\\' => 14,
             'Geocoder\\' => 9,
-            'GeoIp2\\' => 7,
         ),
         'D' => 
         array (
@@ -138,12 +126,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             'Consolidation\\OutputFormatters\\' => 31,
             'Consolidation\\AnnotatedCommand\\' => 31,
-            'Composer\\CaBundle\\' => 18,
             'Clue\\StreamFilter\\' => 18,
-        ),
-        'A' => 
-        array (
-            'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 38,
         ),
     );
 
@@ -249,14 +232,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector',
         ),
-        'Respect\\Validation\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/respect/validation/library',
-        ),
-        'Respect\\Stringifier\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/respect/stringifier/src',
-        ),
         'Psy\\' => 
         array (
             0 => __DIR__ . '/..' . '/psy/psysh/src',
@@ -301,22 +276,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Monolog\\' => 
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
-        ),
-        'MaxMind\\WebService\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/WebService',
-        ),
-        'MaxMind\\Exception\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/Exception',
-        ),
-        'MaxMind\\Db\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
-        ),
-        'MaxMind\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maxmind/minfraud/src',
         ),
         'League\\Csv\\' => 
         array (
@@ -395,10 +354,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/willdurand/geocoder',
         ),
-        'GeoIp2\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
-        ),
         'Drush\\' => 
         array (
             0 => __DIR__ . '/..' . '/drush/drush/src',
@@ -411,17 +366,9 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/consolidation/annotated-command/src',
         ),
-        'Composer\\CaBundle\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
-        ),
         'Clue\\StreamFilter\\' => 
         array (
             0 => __DIR__ . '/..' . '/clue/stream-filter/src',
-        ),
-        'Addshore\\Psr\\Cache\\MWBagOStuffAdapter\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/addshore/psr-6-mediawiki-bagostuff-adapter/src',
         ),
     );
 
@@ -438,13 +385,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'PHPQueue' => 
             array (
                 0 => __DIR__ . '/..' . '/coderkungfu/php-queue/src',
-            ),
-        ),
-        'F' => 
-        array (
-            'ForceUTF8\\' => 
-            array (
-                0 => __DIR__ . '/..' . '/neitanod/forceutf8/src',
             ),
         ),
         'D' => 
@@ -472,132 +412,15 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
     );
 
     public static $classMap = array (
-        'Abstract3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/Abstract3DSecure.php',
-        'Adyen3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/Adyen3DSecure.php',
-        'AdyenAppleApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_apple.api.php',
-        'AdyenCheckoutAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_checkout.adapter.php',
-        'AdyenCheckoutGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_checkout_gateway.body.php',
-        'AdyenCheckoutGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen_checkout_resultswitcher.body.php',
-        'AdyenDonationApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/adyen.api.php',
-        'AmazonAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon.adapter.php',
-        'AmazonBillingApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon.api.php',
-        'AmazonGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/amazon_gateway/amazon_gateway.body.php',
-        'Amount' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/Amount.php',
-        'AmountInCents' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/AmountInCents.php',
-        'ArrayHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ArrayHelper.php',
-        'AstroPayAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/astropay.adapter.php',
-        'AstroPayFinancialNumbers' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/AstroPayFinancialNumbers.php',
-        'AstroPayGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/astropay_gateway.body.php',
-        'AstroPayGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/astropay_resultswitcher.body.php',
-        'AstroPayMethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/AstroPayMethodCodec.php',
-        'AstroPaySignature' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/AstroPaySignature.php',
-        'AstroPayStatusQuery' => __DIR__ . '/..' . '/wikimedia/donation-interface/astropay_gateway/scripts/status.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
-        'BannerHistoryLogIdProcessor' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/banner_history/BannerHistoryLogIdProcessor.php',
-        'BlankAddressFields' => __DIR__ . '/..' . '/wikimedia/donation-interface/adyen_gateway/BlankAddressFields.php',
-        'CiviproxyConnect' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/civiproxy/CiviproxyConnect.php',
-        'ClientErrorApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/clientError.api.php',
-        'ClientSideValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ClientSideValidationHelper.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-        'Config' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/Config.php',
-        'ConfigurationReader' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ConfigurationReader.php',
         'Console_Table' => __DIR__ . '/..' . '/pear/console_table/Table.php',
-        'ContributionTrackingPlusUnique' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ContributionTrackingPlusUnique.php',
-        'CountryValidation' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/CountryValidation.php',
-        'CurrencyCountryRule' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/CurrencyCountryRule.php',
-        'DataValidator' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DataValidator.php',
-        'DonationApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/donation.api.php',
-        'DonationApiBase' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationApiBase.php',
-        'DonationData' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationData.php',
-        'DonationInterface' => __DIR__ . '/..' . '/wikimedia/donation-interface/DonationInterface.class.php',
-        'DonationLogProcessor' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationLogProcessor.php',
-        'DonationLoggerFactory' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationLoggerFactory.php',
-        'DonationProfiler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonationProfiler.php',
-        'DonorEmail' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorEmail.php',
-        'DonorFullName' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorFullName.php',
-        'DonorLanguage' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorLanguage.php',
-        'DonorLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DonorLocale.php',
-        'DrupalFakeMwConfig' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/DrupalFakeMwConfig.php',
         'DrupalFinder\\DrupalFinder' => __DIR__ . '/..' . '/webflo/drupal-finder/src/DrupalFinder.php',
-        'EmployerFieldValidation' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EmployerFieldValidation.php',
-        'EmployerSearchAPI' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/employerSearch.api.php',
-        'EncodingMangler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EncodingMangler.php',
-        'EndowmentHooks' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/EndowmentHooks.php',
-        'ErrorState' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ErrorState.php',
-        'FallbackLogPrefixer' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/FallbackLogPrefixer.php',
-        'FiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/FiscalNumber.php',
-        'FraudFilter' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/FraudFilter.php',
-        'GatewayAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/gateway.adapter.php',
-        'GatewayPage' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/GatewayPage.php',
-        'GatewayType' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/GatewayType.php',
-        'Gateway_Extras' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/extras.body.php',
-        'Gateway_Extras_ConversionLog' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/conversion_log/conversion_log.body.php',
-        'Gateway_Extras_CustomFilters' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/custom_filters/custom_filters.body.php',
-        'Gateway_Extras_CustomFilters_Functions' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/custom_filters/filters/functions/functions.body.php',
-        'Gateway_Extras_CustomFilters_IP_Velocity' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/custom_filters/filters/ip_velocity/ip_velocity.body.php',
-        'Gateway_Extras_CustomFilters_MinFraud' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/custom_filters/filters/minfraud/minfraud.body.php',
-        'Gateway_Extras_CustomFilters_Referrer' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/custom_filters/filters/referrer/referrer.body.php',
-        'Gateway_Extras_CustomFilters_Source' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/custom_filters/filters/source/source.body.php',
-        'Gateway_Extras_SessionVelocityFilter' => __DIR__ . '/..' . '/wikimedia/donation-interface/extras/session_velocity/session_velocity.body.php',
-        'Gateway_Form' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/Form.php',
-        'Gateway_Form_Mustache' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/Mustache.php',
-        'GlobalCollect3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/GlobalCollect3DSecure.php',
-        'GlobalCollectAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/globalcollect.adapter.php',
-        'GlobalCollectGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/globalcollect_gateway.body.php',
-        'GlobalCollectGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/globalcollect_resultswitcher.body.php',
-        'GlobalCollectGetDirectory' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/scripts/get_directory.php',
-        'GlobalCollectRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/scripts/refund.php',
-        'Ingenico3DSecure' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/Ingenico3DSecure.php',
-        'IngenicoAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/ingenico.adapter.php',
-        'IngenicoFinancialNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoFinancialNumber.php',
-        'IngenicoFormVariant' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/IngenicoFormVariant.php',
-        'IngenicoGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/ingenico_gateway.body.php',
-        'IngenicoGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/ingenico_resultswitcher.body.php',
-        'IngenicoGetOrderStatusMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/scripts/get_orderstatus.php',
-        'IngenicoLanguage' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoLanguage.php',
-        'IngenicoLocale' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/IngenicoLocale.php',
-        'IngenicoMethodCodec' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoMethodCodec.php',
-        'IngenicoPaymentSubmethod' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/IngenicoPaymentSubmethod.php',
-        'IngenicoRecurringBooleanValue' => __DIR__ . '/..' . '/wikimedia/donation-interface/ingenico_gateway/IngenicoRecurringBooleanValue.php',
-        'IngenicoReturntoHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/globalcollect_gateway/IngenicoReturntoHelper.php',
-        'IsoDate' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/IsoDate.php',
-        'LocalClusterPsr6Cache' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LocalClusterPsr6Cache.php',
-        'LogPrefixProvider' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/LogPrefixProvider.php',
-        'MessageUtils' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/MessageUtils.php',
-        'MustacheErrorForm' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheErrorForm.php',
-        'MustacheHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/MustacheHelper.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
-        'PayPalAmount' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PayPalAmount.php',
-        'PayPalCountry' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/PayPalCountry.php',
-        'PaymentMethod' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentMethod.php',
-        'PaymentResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentResult.php',
-        'PaymentTransactionResponse' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PaymentTransactionResponse.php',
-        'PaypalCancelMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/scripts/cancel.php',
-        'PaypalExpressAdapter' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/paypal_express.adapter.php',
-        'PaypalExpressGateway' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/paypal_express_gateway.body.php',
-        'PaypalExpressGatewayResult' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/paypal_express_resultswitcher.body.php',
-        'PaypalExpressReturnUrl' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/PaypalExpressReturnUrl.php',
-        'PaypalRefundMaintenance' => __DIR__ . '/..' . '/wikimedia/donation-interface/paypal_ec_gateway/scripts/refund.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
-        'PlaceholderFiscalNumber' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/PlaceholderFiscalNumber.php',
-        'RecurringConversion' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.php',
-        'RecurringConversionApi' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversion.api.php',
-        'RecurringConversionTrait' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/RecurringConversionTrait.php',
-        'ResponseProcessingException' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResponseProcessingException.php',
-        'ResultPages' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultPages.php',
-        'ResultSwitcher' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ResultSwitcher.php',
-        'ReturnUrl' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ReturnUrl.php',
-        'StagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StagingHelper.php',
-        'StreetAddress' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/StreetAddress.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
-        'Subdivisions' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_forms/includes/Subdivisions.php',
         'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
-        'UnstagingHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/UnstagingHelper.php',
-        'ValidationHelper' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/ValidationHelper.php',
         'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
-        'WmfFrameworkLogHandler' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFrameworkLogHandler.php',
-        'WmfFramework_Drupal' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.drupal.php',
-        'WmfFramework_Mediawiki' => __DIR__ . '/..' . '/wikimedia/donation-interface/gateway_common/WmfFramework.mediawiki.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
