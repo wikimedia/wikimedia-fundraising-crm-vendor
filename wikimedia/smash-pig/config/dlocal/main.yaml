@@ -4,6 +4,9 @@
 #   /etc/smashpig/dlocal/main.yaml
 #   $HOME/.smashpig/dlocal/main.yaml
 
+logging:
+    root-context: SmashPig-Dlocal
+
 actions:
     - SmashPig\Core\Actions\IncomingMessage
 
@@ -35,4 +38,4 @@ payment-provider:
     cash:
         class: SmashPig\PaymentProviders\dlocal\HostedPaymentProvider
     bt:
-        class: SmashPig\PaymentProviders\dlocal\HostedPaymentProvider
+        class: SmashPig\PaymentProviders\dlocal\BankTransferPaymentProvider

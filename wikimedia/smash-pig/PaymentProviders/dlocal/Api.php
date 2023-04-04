@@ -41,11 +41,6 @@ class Api {
 	/**
 	 * @var string
 	 */
-	public const SUBSCRIPTION_FREQUENCY_UNIT = 'ONDEMAND';
-
-	/**
-	 * @var string
-	 */
 	protected $endpoint;
 
 	/**

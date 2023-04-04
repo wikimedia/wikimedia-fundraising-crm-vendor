@@ -7,6 +7,7 @@ use DateTimeZone;
 use Monolog\Test\TestCase;
 use SmashPig\PaymentProviders\dlocal\Api;
 use SmashPig\PaymentProviders\dlocal\ApiMappers\HostedPaymentApiRequestMapper;
+use SmashPig\PaymentProviders\dlocal\BankTransferPaymentProvider;
 
 /**
  * @group Dlocal
@@ -33,7 +34,9 @@ class HostedPaymentApiRequestMapperTest extends TestCase {
 		$params = $this->getBaseParams();
 		$apiParams = $params['params'];
 		$apiParams['recurring'] = 1;
+		$apiParams['upi_subscription_frequency'] = BankTransferPaymentProvider::SUBSCRIPTION_FREQUENCY_UNIT_ONDEMAND;
 		$expectedOutput = $params['transformedParams'];
+		$expectedOutput['payment_method_id'] = 'IR';
 
 		$subscriptionStartDate = ( new DateTime( 'now', new DateTimeZone( Api::INDIA_TIME_ZONE ) ) )->format( 'Ymd' );
 		$subscriptionEndDate = '20991231';
@@ -45,9 +48,9 @@ class HostedPaymentApiRequestMapperTest extends TestCase {
 			'username' => $expectedOutput['payer']['name'],
 			'email' => $expectedOutput['payer']['email'],
 			'recurring_info' => [
-				'prenotify' => true,
-				'subscription_frequency_unit' => Api::SUBSCRIPTION_FREQUENCY_UNIT,
+				'subscription_frequency_unit' => BankTransferPaymentProvider::SUBSCRIPTION_FREQUENCY_UNIT_ONDEMAND,
 				'subscription_frequency' => 1,
+				'subscription_max_amount' => $expectedOutput['amount'],
 				'subscription_start_at' => $subscriptionStartDate,
 				'subscription_end_at' => $subscriptionEndDate
 			],
@@ -74,6 +77,7 @@ class HostedPaymentApiRequestMapperTest extends TestCase {
 			'postal_code' => 'lore',
 			'street_address' => 'lore',
 			'street_number' => 2,
+			'payment_submethod' => 'upi',
 			'user_ip' => '127.0.0.1',
 		];
 		$transformedParams = [
@@ -81,6 +85,7 @@ class HostedPaymentApiRequestMapperTest extends TestCase {
 			'currency' => $input['currency'],
 			'country' => $input['country'],
 			'order_id' => $input['order_id'],
+			'payment_method_id' => 'UI',
 			'payment_method_flow' => Api::PAYMENT_METHOD_FLOW_REDIRECT,
 			'payer' => [
 				'name' => $input['first_name'] . ' ' . $input['last_name'],
@@ -94,11 +99,6 @@ class HostedPaymentApiRequestMapperTest extends TestCase {
 					'zip_code' => $input['postal_code'],
 					'street' => $input['street_address'],
 					'number' => $input['street_number'],
-				],
-			],
-			'wallet' => [
-				'recurring_info' => [
-					'prenotify' => true,
 				],
 			],
 		];
