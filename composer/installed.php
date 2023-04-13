@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'ec2df54fda3438f2018811a54f6c21317ac9cc79',
+        'reference' => '3d14ed4c6e5bbe6454fa1115de9f36f8c7db5b5f',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -271,15 +271,15 @@
         'php-http/async-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'php-http/discovery' => array(
@@ -674,7 +674,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'ec2df54fda3438f2018811a54f6c21317ac9cc79',
+            'reference' => '3d14ed4c6e5bbe6454fa1115de9f36f8c7db5b5f',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -690,9 +690,9 @@
             'dev_requirement' => false,
         ),
         'wikimedia/smash-pig' => array(
-            'pretty_version' => 'v0.8.4.11',
-            'version' => '0.8.4.11',
-            'reference' => '70a4b5c8190b0c281a472c209a09b33ea9deceea',
+            'pretty_version' => 'v0.8.4.12',
+            'version' => '0.8.4.12',
+            'reference' => 'd480ec6dba8b1e4e5acf7949cd04ee3f6e1a04d9',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/smash-pig',
             'aliases' => array(),

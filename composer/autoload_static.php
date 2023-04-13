@@ -292,8 +292,8 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/php-http/message-factory/src',
-            1 => __DIR__ . '/..' . '/php-http/message/src',
+            0 => __DIR__ . '/..' . '/php-http/message/src',
+            1 => __DIR__ . '/..' . '/php-http/message-factory/src',
         ),
         'Http\\Discovery\\' => 
         array (
