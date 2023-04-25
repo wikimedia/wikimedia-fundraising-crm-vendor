@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'bb304eb607c5e66379fa9c10678f8d4e4062a0bc',
+        'reference' => 'a6f3c48ecfa236310219abe842eb6bdbb8c28c39',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -188,9 +188,9 @@
             'dev_requirement' => false,
         ),
         'guzzlehttp/psr7' => array(
-            'pretty_version' => '1.9.0',
-            'version' => '1.9.0.0',
-            'reference' => 'e98e3e6d4f86621a9b75f623996e6bbdeb4b9318',
+            'pretty_version' => '1.9.1',
+            'version' => '1.9.1.0',
+            'reference' => 'e4490cabc77465aaee90b20cfc9a770f8c04be6b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../guzzlehttp/psr7',
             'aliases' => array(),
@@ -408,8 +408,8 @@
         'psr/http-message-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/log' => array(
@@ -674,7 +674,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'bb304eb607c5e66379fa9c10678f8d4e4062a0bc',
+            'reference' => 'a6f3c48ecfa236310219abe842eb6bdbb8c28c39',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
