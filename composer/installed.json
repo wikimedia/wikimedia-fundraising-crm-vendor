@@ -1739,17 +1739,17 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v4.4.0",
-            "version_normalized": "4.4.0.0",
+            "version": "v4.16.0",
+            "version_normalized": "4.16.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "bd43ec7152eaaab3bd8c6d0aa95ceeb1df8ee120"
+                "reference": "19526a33fb561ef417e822e85f08a00db4059c17"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/bd43ec7152eaaab3bd8c6d0aa95ceeb1df8ee120",
-                "reference": "bd43ec7152eaaab3bd8c6d0aa95ceeb1df8ee120",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/19526a33fb561ef417e822e85f08a00db4059c17",
+                "reference": "19526a33fb561ef417e822e85f08a00db4059c17",
                 "shasum": ""
             },
             "require": {
@@ -1757,17 +1757,17 @@
                 "php": ">=7.0"
             },
             "require-dev": {
-                "ircmaxell/php-yacc": "0.0.5",
-                "phpunit/phpunit": "^6.5 || ^7.0 || ^8.0"
+                "ircmaxell/php-yacc": "^0.0.7",
+                "phpunit/phpunit": "^6.5 || ^7.0 || ^8.0 || ^9.0"
             },
-            "time": "2020-04-10T16:34:50+00:00",
+            "time": "2023-06-25T14:52:30+00:00",
             "bin": [
                 "bin/php-parse"
             ],
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "4.3-dev"
+                    "dev-master": "4.9-dev"
                 }
             },
             "installation-source": "dist",
@@ -1790,6 +1790,10 @@
                 "parser",
                 "php"
             ],
+            "support": {
+                "issues": "https://github.com/nikic/PHP-Parser/issues",
+                "source": "https://github.com/nikic/PHP-Parser/tree/v4.16.0"
+            },
             "install-path": "../nikic/php-parser"
         },
         {
@@ -4549,17 +4553,17 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.5.8",
-            "version_normalized": "0.8.5.8",
+            "version": "v0.8.6",
+            "version_normalized": "0.8.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "8616d6d38f0324447a380920e2e5cce3fdd395ce"
+                "reference": "4af0209cd13569f8e2d31edfea78a88a73bf0de3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/8616d6d38f0324447a380920e2e5cce3fdd395ce",
-                "reference": "8616d6d38f0324447a380920e2e5cce3fdd395ce",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/4af0209cd13569f8e2d31edfea78a88a73bf0de3",
+                "reference": "4af0209cd13569f8e2d31edfea78a88a73bf0de3",
                 "shasum": ""
             },
             "require": {
@@ -4583,7 +4587,7 @@
                 "php-parallel-lint/php-parallel-lint": "^1.2",
                 "phpunit/phpunit": "^9.5"
             },
-            "time": "2023-07-24T18:19:46+00:00",
+            "time": "2023-08-09T01:05:57+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -4636,7 +4640,7 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.5.8"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.6"
             },
             "install-path": "../wikimedia/smash-pig"
         },
