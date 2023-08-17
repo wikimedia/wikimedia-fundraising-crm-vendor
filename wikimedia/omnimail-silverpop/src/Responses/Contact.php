@@ -201,7 +201,6 @@ class Contact {
     return $this;
   }
 
-
   /**
    * Set the timestamp for emails to resume.
    *

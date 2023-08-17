@@ -38,11 +38,41 @@ class AddRecipient extends SilverpopBaseRequest
   protected $email;
 
   /**
+   * Email to add.
+   *
+   * @var string
+   */
+  protected $snoozeTimeStamp;
+
+  /**
    * @var array
    */
   protected $fields;
 
+    /**
+     * Get the snooze end date - in the insane date format the api likes...
+     *
+     * @return string|null
+     */
+  protected function getSnoozeDate(): ?string {
+    return $this->snoozeTimeStamp ? date('m/d/Y', $this->snoozeTimeStamp) : NULL;
+  }
+
+  protected function getSnoozeTimeStamp() {
+    return $this->snoozeTimeStamp;
+  }
+
   /**
+   * @param string|null $snoozeTimeStamp
+   *
+   * @return AddRecipient
+   */
+  public function setSnoozeTimeStamp(?string $snoozeTimeStamp): AddRecipient {
+    $this->snoozeTimeStamp = $snoozeTimeStamp;
+    return $this;
+  }
+
+    /**
    * @return array
    */
   public function getFields(): array {
@@ -119,8 +149,16 @@ class AddRecipient extends SilverpopBaseRequest
       TRUE,
       FALSE,
       3,
-      $this->getGroupIdentifier()
+      $this->getGroupIdentifier(),
     );
+    if ($this->getSnoozeDate()) {
+      $updateResult = $this->silverPop->updateRecipient(
+        $this->getDatabaseID(),
+          (int) $result[0],
+        [],
+        ['snoozeDate' => $this->getSnoozeDate()],
+      );
+    }
     if ($result) {
       $response = new Contact([]);
       $response->setGroupIdentifier($this->getGroupIdentifier());
