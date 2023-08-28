@@ -152,6 +152,26 @@ class Mailing
     }
 
     /**
+     * Get the number of clicks on the mailing.
+     *
+     * @return int
+     */
+    public function getNumberClicked()
+    {
+        return $this->getStatistic('NumGrossClick');
+    }
+
+    /**
+     * Get the number of clicks from unique individuals on the mailing.
+     *
+     * @return int
+     */
+    public function getNumberUniqueClicked()
+    {
+        return $this->getStatistic('NumUniqueClick');
+    }
+
+    /**
      * Get the number of emails suppressed by the provider.
      *
      * Mailing providers may contain their own lists of contacts to not sent mail to.
