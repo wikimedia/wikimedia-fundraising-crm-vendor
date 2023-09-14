@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,6 +16,7 @@ use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\StaticPropertyFetch;
@@ -34,16 +35,19 @@ use Psy\Sudo;
  */
 class SudoVisitor extends NodeVisitorAbstract
 {
-    const PROPERTY_FETCH         = 'fetchProperty';
-    const PROPERTY_ASSIGN        = 'assignProperty';
-    const METHOD_CALL            = 'callMethod';
-    const STATIC_PROPERTY_FETCH  = 'fetchStaticProperty';
+    const PROPERTY_FETCH = 'fetchProperty';
+    const PROPERTY_ASSIGN = 'assignProperty';
+    const METHOD_CALL = 'callMethod';
+    const STATIC_PROPERTY_FETCH = 'fetchStaticProperty';
     const STATIC_PROPERTY_ASSIGN = 'assignStaticProperty';
-    const STATIC_CALL            = 'callStatic';
-    const CLASS_CONST_FETCH      = 'fetchClassConst';
+    const STATIC_CALL = 'callStatic';
+    const CLASS_CONST_FETCH = 'fetchClassConst';
+    const NEW_INSTANCE = 'newInstance';
 
     /**
      * {@inheritdoc}
+     *
+     * @return int|Node|null Replacement node (or special return value)
      */
     public function enterNode(Node $node)
     {
@@ -57,8 +61,8 @@ class SudoVisitor extends NodeVisitorAbstract
             return $this->prepareCall(self::PROPERTY_FETCH, $args);
         } elseif ($node instanceof Assign && $node->var instanceof PropertyFetch) {
             $target = $node->var;
-            $name   = $target->name instanceof Identifier ? $target->name->toString() : $target->name;
-            $args   = [
+            $name = $target->name instanceof Identifier ? $target->name->toString() : $target->name;
+            $args = [
                 $target->var,
                 \is_string($name) ? new String_($name) : $name,
                 $node->expr,
@@ -76,7 +80,7 @@ class SudoVisitor extends NodeVisitorAbstract
         } elseif ($node instanceof StaticPropertyFetch) {
             $class = $node->class instanceof Name ? $node->class->toString() : $node->class;
             $name = $node->name instanceof Identifier ? $node->name->toString() : $node->name;
-            $args  = [
+            $args = [
                 \is_string($class) ? new String_($class) : $class,
                 \is_string($name) ? new String_($name) : $name,
             ];
@@ -84,9 +88,9 @@ class SudoVisitor extends NodeVisitorAbstract
             return $this->prepareCall(self::STATIC_PROPERTY_FETCH, $args);
         } elseif ($node instanceof Assign && $node->var instanceof StaticPropertyFetch) {
             $target = $node->var;
-            $class  = $target->class instanceof Name ? $target->class->toString() : $target->class;
-            $name   = $target->name instanceof Identifier ? $target->name->toString() : $target->name;
-            $args   = [
+            $class = $target->class instanceof Name ? $target->class->toString() : $target->class;
+            $name = $target->name instanceof Identifier ? $target->name->toString() : $target->name;
+            $args = [
                 \is_string($class) ? new String_($class) : $class,
                 \is_string($name) ? new String_($name) : $name,
                 $node->expr,
@@ -94,9 +98,9 @@ class SudoVisitor extends NodeVisitorAbstract
 
             return $this->prepareCall(self::STATIC_PROPERTY_ASSIGN, $args);
         } elseif ($node instanceof StaticCall) {
-            $args  = $node->args;
+            $args = $node->args;
             $class = $node->class instanceof Name ? $node->class->toString() : $node->class;
-            $name  = $node->name instanceof Identifier ? $node->name->toString() : $node->name;
+            $name = $node->name instanceof Identifier ? $node->name->toString() : $node->name;
             \array_unshift($args, new Arg(\is_string($name) ? new String_($name) : $name));
             \array_unshift($args, new Arg(\is_string($class) ? new String_($class) : $class));
 
@@ -104,17 +108,24 @@ class SudoVisitor extends NodeVisitorAbstract
             return new StaticCall(new FullyQualifiedName(Sudo::class), self::STATIC_CALL, $args);
         } elseif ($node instanceof ClassConstFetch) {
             $class = $node->class instanceof Name ? $node->class->toString() : $node->class;
-            $name  = $node->name instanceof Identifier ? $node->name->toString() : $node->name;
-            $args  = [
+            $name = $node->name instanceof Identifier ? $node->name->toString() : $node->name;
+            $args = [
                 \is_string($class) ? new String_($class) : $class,
                 \is_string($name) ? new String_($name) : $name,
             ];
 
             return $this->prepareCall(self::CLASS_CONST_FETCH, $args);
+        } elseif ($node instanceof New_) {
+            $args = $node->args;
+            $class = $node->class instanceof Name ? $node->class->toString() : $node->class;
+            \array_unshift($args, new Arg(\is_string($class) ? new String_($class) : $class));
+
+            // not using prepareCall because the $node->args we started with are already Arg instances
+            return new StaticCall(new FullyQualifiedName(Sudo::class), self::NEW_INSTANCE, $args);
         }
     }
 
-    private function prepareCall($method, $args)
+    private function prepareCall(string $method, array $args): StaticCall
     {
         return new StaticCall(new FullyQualifiedName(Sudo::class), $method, \array_map(function ($arg) {
             return new Arg($arg);

@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,14 +11,18 @@
 
 namespace Psy\Command;
 
+use PhpParser\NodeTraverser;
+use PhpParser\PrettyPrinter\Standard as Printer;
 use Psy\CodeCleaner\NoReturnValue;
 use Psy\Context;
 use Psy\ContextAware;
 use Psy\Exception\ErrorException;
 use Psy\Exception\RuntimeException;
 use Psy\Exception\UnexpectedTargetException;
+use Psy\ParserFactory;
 use Psy\Reflection\ReflectionClassConstant;
 use Psy\Reflection\ReflectionConstant_;
+use Psy\Sudo\SudoVisitor;
 use Psy\Util\Mirror;
 
 /**
@@ -26,9 +30,9 @@ use Psy\Util\Mirror;
  */
 abstract class ReflectingCommand extends Command implements ContextAware
 {
-    const CLASS_OR_FUNC   = '/^[\\\\\w]+$/';
-    const CLASS_MEMBER    = '/^([\\\\\w]+)::(\w+)$/';
-    const CLASS_STATIC    = '/^([\\\\\w]+)::\$(\w+)$/';
+    const CLASS_OR_FUNC = '/^[\\\\\w]+$/';
+    const CLASS_MEMBER = '/^([\\\\\w]+)::(\w+)$/';
+    const CLASS_STATIC = '/^([\\\\\w]+)::\$(\w+)$/';
     const INSTANCE_MEMBER = '/^(\$\w+)(::|->)(\w+)$/';
 
     /**
@@ -37,6 +41,26 @@ abstract class ReflectingCommand extends Command implements ContextAware
      * @var Context
      */
     protected $context;
+
+    private $parser;
+    private $traverser;
+    private $printer;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __construct($name = null)
+    {
+        $parserFactory = new ParserFactory();
+        $this->parser = $parserFactory->createParser();
+
+        $this->traverser = new NodeTraverser();
+        $this->traverser->addVisitor(new SudoVisitor());
+
+        $this->printer = new Printer();
+
+        parent::__construct($name);
+    }
 
     /**
      * ContextAware interface.
@@ -57,10 +81,10 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return array (class or instance name, member name, kind)
      */
-    protected function getTarget($valueName)
+    protected function getTarget(string $valueName): array
     {
         $valueName = \trim($valueName);
-        $matches   = [];
+        $matches = [];
         switch (true) {
             case \preg_match(self::CLASS_OR_FUNC, $valueName, $matches):
                 return [$this->resolveName($matches[0], true), null, 0];
@@ -92,10 +116,8 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @param string $name
      * @param bool   $includeFunctions (default: false)
-     *
-     * @return string
      */
-    protected function resolveName($name, $includeFunctions = false)
+    protected function resolveName(string $name, bool $includeFunctions = false): string
     {
         $shell = $this->getApplication();
 
@@ -110,7 +132,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
             }
 
             $msg = \sprintf('Cannot use "%s" when no class scope is active', \strtolower($name));
-            throw new ErrorException($msg, 0, E_USER_ERROR, "eval()'d code", 1);
+            throw new ErrorException($msg, 0, \E_USER_ERROR, "eval()'d code", 1);
         }
 
         if (\substr($name, 0, 1) === '\\') {
@@ -120,17 +142,14 @@ abstract class ReflectingCommand extends Command implements ContextAware
         // Check $name against the current namespace and use statements.
         if (self::couldBeClassName($name)) {
             try {
-                $maybeAlias = $this->resolveCode($name . '::class');
-                if ($maybeAlias !== $name) {
-                    return $maybeAlias;
-                }
+                $name = $this->resolveCode($name.'::class');
             } catch (RuntimeException $e) {
                 // /shrug
             }
         }
 
         if ($namespace = $shell->getNamespace()) {
-            $fullName = $namespace . '\\' . $name;
+            $fullName = $namespace.'\\'.$name;
 
             if (\class_exists($fullName) || \interface_exists($fullName) || ($includeFunctions && \function_exists($fullName))) {
                 return $fullName;
@@ -143,10 +162,10 @@ abstract class ReflectingCommand extends Command implements ContextAware
     /**
      * Check whether a given name could be a class name.
      */
-    protected function couldBeClassName($name)
+    protected function couldBeClassName(string $name): bool
     {
         // Regex based on https://www.php.net/manual/en/language.oop5.basic.php#language.oop5.basic.class
-        return \preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $name);
+        return \preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $name) === 1;
     }
 
     /**
@@ -156,7 +175,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return array (value, Reflector)
      */
-    protected function getTargetAndReflector($valueName)
+    protected function getTargetAndReflector(string $valueName): array
     {
         list($value, $member, $kind) = $this->getTarget($valueName);
 
@@ -172,19 +191,45 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return mixed Variable value
      */
-    protected function resolveCode($code)
+    protected function resolveCode(string $code)
     {
         try {
-            $value = $this->getApplication()->execute($code, true);
-        } catch (\Exception $e) {
+            // Add an implicit `sudo` to target resolution.
+            $nodes = $this->traverser->traverse($this->parse($code));
+            $sudoCode = $this->printer->prettyPrint($nodes);
+            $value = $this->getApplication()->execute($sudoCode, true);
+        } catch (\Throwable $e) {
             // Swallow all exceptions?
         }
 
         if (!isset($value) || $value instanceof NoReturnValue) {
-            throw new RuntimeException('Unknown target: ' . $code);
+            throw new RuntimeException('Unknown target: '.$code);
         }
 
         return $value;
+    }
+
+    /**
+     * Lex and parse a string of code into statements.
+     *
+     * @param string $code
+     *
+     * @return array Statements
+     */
+    private function parse($code)
+    {
+        $code = '<?php '.$code;
+
+        try {
+            return $this->parser->parse($code);
+        } catch (\PhpParser\Error $e) {
+            if (\strpos($e->getMessage(), 'unexpected EOF') === false) {
+                throw $e;
+            }
+
+            // If we got an unexpected EOF, let's try it again with a semicolon.
+            return $this->parser->parse($code.';');
+        }
     }
 
     /**
@@ -196,7 +241,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return object Variable instance
      */
-    private function resolveObject($code)
+    private function resolveObject(string $code)
     {
         $value = $this->resolveCode($code);
 
@@ -214,9 +259,9 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return mixed Variable instance
      */
-    protected function resolveInstance($name)
+    protected function resolveInstance(string $name)
     {
-        @\trigger_error('`resolveInstance` is deprecated; use `resolveCode` instead.', E_USER_DEPRECATED);
+        @\trigger_error('`resolveInstance` is deprecated; use `resolveCode` instead.', \E_USER_DEPRECATED);
 
         return $this->resolveCode($name);
     }
@@ -228,7 +273,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return mixed
      */
-    protected function getScopeVariable($name)
+    protected function getScopeVariable(string $name)
     {
         return $this->context->get($name);
     }
@@ -238,7 +283,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
      *
      * @return array
      */
-    protected function getScopeVariables()
+    protected function getScopeVariables(): array
     {
         return $this->context->getAll();
     }
@@ -288,7 +333,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
                 if ($fileName = $reflector->getExecutingFile()) {
                     $vars['__file'] = $fileName;
                     $vars['__line'] = $reflector->getExecutingLine();
-                    $vars['__dir']  = \dirname($fileName);
+                    $vars['__dir'] = \dirname($fileName);
                 }
                 break;
 
@@ -303,7 +348,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
                 // no line for these, but this'll do
                 if ($fileName = $reflector->getDeclaringClass()->getFileName()) {
                     $vars['__file'] = $fileName;
-                    $vars['__dir']  = \dirname($fileName);
+                    $vars['__dir'] = \dirname($fileName);
                 }
                 break;
 
@@ -318,7 +363,7 @@ abstract class ReflectingCommand extends Command implements ContextAware
             if ($fileName = $reflector->getFileName()) {
                 $vars['__file'] = $fileName;
                 $vars['__line'] = $reflector->getStartLine();
-                $vars['__dir']  = \dirname($fileName);
+                $vars['__dir'] = \dirname($fileName);
             }
         }
 

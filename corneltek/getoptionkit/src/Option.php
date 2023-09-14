@@ -123,8 +123,10 @@ class Option
         $this->short = $short;
         $this->long = $long;
 
-        // option is required.
-        if (strpos($attributes, ':') !== false) {
+        if ($attributes === null) {
+            $this->flag();
+        } else if (strpos($attributes, ':') !== false) {
+            // option is required.
             $this->required();
         } else if (strpos($attributes, '+') !== false) {
             // option with multiple value
@@ -259,7 +261,7 @@ class Option
     {
         $val = $value;
 
-        if ($isa = ucfirst($this->isa)) {
+        if ($isa = ucfirst((string) $this->isa)) {
             $type = $this->getTypeClass();
             if ($type->test($value)) {
                 $val = $type->parse($value);

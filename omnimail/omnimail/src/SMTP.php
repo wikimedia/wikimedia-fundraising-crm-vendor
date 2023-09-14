@@ -42,7 +42,7 @@ class SMTP implements MailerInterface
 
         $mailer->Port = !isset($options['port']) ? 587 : intval($options['port']);
         $this->processor = $mailer;
-        $this->processor->SMTPDebug = 2;
+        $this->processor->SMTPDebug = isset($options['debug_level']) ? intval($options['debug_level']) : 0;
     }
 
     /**
@@ -64,7 +64,7 @@ class SMTP implements MailerInterface
     /**
      * @param EmailInterface $email
      * @return bool
-     * @throws \Omnimail\Exception\Exception
+     * @throws OmniMailException
      * @throws Exception
      */
     public function send(EmailInterface $email)

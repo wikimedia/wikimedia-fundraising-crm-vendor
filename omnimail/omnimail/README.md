@@ -1,11 +1,11 @@
-<p align="center"><img width="320"src="https://cdn.rawgit.com/gabrielbull/omnimail/master/omnimail-logo.svg"></p>
+<p align="center"><img width="320" src="https://raw.githubusercontent.com/omnimail/omnimail/development/omnimail-logo.svg"></p>
 
 <p align="center">
-  <a href="https://travis-ci.org/gabrielbull/omnimail"><img src="https://img.shields.io/travis/gabrielbull/omnimail.svg?style=flat-square" alt="Build Status"></a>
-  <a href="https://styleci.io/repos/12901491"><img src="https://styleci.io/repos/12901491/shield" alt="StyleCI"></a>
-  <a href="https://scrutinizer-ci.com/g/gabrielbull/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/g/gabrielbull/omnimail.svg?style=flat-square" alt="Scrutinizer Code Quality"></a>
-  <a href="https://scrutinizer-ci.com/g/gabrielbull/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/coverage/g/gabrielbull/omnimail.svg?style=flat-square" alt="Code Coverage"></a>
+  <a href="https://github.com/omnimail/omnimail/actions?query=workflow%3ACI"><img src="https://github.com/omnimail/omnimail/workflows/CI/badge.svg" alt="Build Status"></a>
+  <a href="https://scrutinizer-ci.com/g/omnimail/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/g/omnimail/omnimail.svg?style=flat-square" alt="Scrutinizer Code Quality"></a>
+  <a href="https://scrutinizer-ci.com/g/omnimail/omnimail/?branch=master"><img src="https://img.shields.io/scrutinizer/coverage/g/omnimail/omnimail.svg?style=flat-square" alt="Code Coverage"></a>
   <a href="https://packagist.org/packages/omnimail/omnimail"><img src="https://img.shields.io/packagist/v/omnimail/omnimail.svg?style=flat-square" alt="Latest Stable Version"></a>
+  <a href="https://gitter.im/omnimail/omnimail"><img src="https://badges.gitter.im/omnimail/omnimail.svg" alt="Join the chat at https://gitter.im/omnimail/omnimail"></a>
 </p>
 
 ## Send email across all platforms using one interface.
@@ -43,7 +43,7 @@
 <a name="requirements"></a>
 ## Requirements
 
-This library uses PHP 5.5+.
+This library uses PHP 5.6 and greater version.
 
 <a name="installation"></a>
 ## Installation
@@ -486,7 +486,7 @@ __getMailings__
         sleep(15);
       }
       else {
-        foreach (\Omnimail\Responses\MailingsResponse $mailings as \Omnimail\Responses\Mailing $mailing) {
+        foreach (\Omnimail\Common\Responses\BaseResponse $mailings as \Omnimail\Common\Responses\Mailing $mailing) {
 
            $detail => array(
              'subject' => $mailing→getSubject(),

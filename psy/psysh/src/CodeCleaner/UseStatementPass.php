@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2020 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -32,8 +32,8 @@ use PhpParser\NodeTraverser;
  */
 class UseStatementPass extends CodeCleanerPass
 {
-    private $aliases       = [];
-    private $lastAliases   = [];
+    private $aliases = [];
+    private $lastAliases = [];
     private $lastNamespace = null;
 
     /**
@@ -44,13 +44,15 @@ class UseStatementPass extends CodeCleanerPass
      * work like you'd expect.
      *
      * @param Node $node
+     *
+     * @return int|Node|null Replacement node (or special return value)
      */
     public function enterNode(Node $node)
     {
         if ($node instanceof Namespace_) {
             // If this is the same namespace as last namespace, let's do ourselves
             // a favor and reload all the aliases...
-            if (\strtolower($node->name) === \strtolower($this->lastNamespace)) {
+            if (\strtolower($node->name ?: '') === \strtolower($this->lastNamespace ?: '')) {
                 $this->aliases = $this->lastAliases;
             }
         }
@@ -63,6 +65,8 @@ class UseStatementPass extends CodeCleanerPass
      * remembered aliases to the code.
      *
      * @param Node $node
+     *
+     * @return int|Node|Node[]|null Replacement node (or special return value)
      */
     public function leaveNode(Node $node)
     {
@@ -92,8 +96,8 @@ class UseStatementPass extends CodeCleanerPass
         // Start fresh, since we're done with this namespace.
         if ($node instanceof Namespace_) {
             $this->lastNamespace = $node->name;
-            $this->lastAliases   = $this->aliases;
-            $this->aliases       = [];
+            $this->lastAliases = $this->aliases;
+            $this->aliases = [];
 
             return;
         }
@@ -128,8 +132,8 @@ class UseStatementPass extends CodeCleanerPass
         foreach ($this->aliases as $alias => $prefix) {
             if ($that === $alias) {
                 return new FullyQualifiedName($prefix->toString());
-            } elseif (\substr($that, 0, \strlen($alias) + 1) === $alias . '\\') {
-                return new FullyQualifiedName($prefix->toString() . \substr($name, \strlen($alias)));
+            } elseif (\substr($that, 0, \strlen($alias) + 1) === $alias.'\\') {
+                return new FullyQualifiedName($prefix->toString().\substr($name, \strlen($alias)));
             }
         }
     }

@@ -2,6 +2,7 @@
 
 namespace Omnimail\Common;
 
+use GuzzleHttp\Client;
 use Omnimail\MailerInterface;
 use Omnimail\Common\Requests\RequestInterface;
 use Omnimail\Common\Credentials;
@@ -11,7 +12,7 @@ abstract class AbstractMailer implements MailerInterface
     /**
      * Guzzle client, overridable with mock object in tests.
      *
-     * @var \GuzzleHttp\Client
+     * @var Client
      */
     protected $client;
 
@@ -37,7 +38,7 @@ abstract class AbstractMailer implements MailerInterface
     }
 
     /**
-     * @return \GuzzleHttp\Client
+     * @return Client
      */
     public function getClient()
     {
@@ -45,7 +46,7 @@ abstract class AbstractMailer implements MailerInterface
     }
 
     /**
-     * @param \GuzzleHttp\Client $client
+     * @param Client $client
      */
     public function setClient($client)
     {
@@ -85,7 +86,8 @@ abstract class AbstractMailer implements MailerInterface
     protected function createRequest($class, array $parameters)
     {
         if (!isset($parameters['credentials'])) {
-            $parameters['credentials'] = new Credentials(array_intersect_key($this->getCredentialFields(), $parameters));
+            $creds = array_intersect_key($this->getCredentialFields(), $parameters);
+            $parameters['credentials'] = new Credentials($creds);
         }
         return new $class($parameters);
     }
