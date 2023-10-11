@@ -130,7 +130,10 @@ class Api {
 			'amount' => $this->getArrayAmount( $params ),
 			'reference' => $params['order_id'],
 			'paymentMethod' => $params['encrypted_payment_data'],
-			'merchantAccount' => $this->account
+			'merchantAccount' => $this->account,
+			'additionalData' => [
+				'manualCapture' => true,
+			],
 		];
 		// TODO: map this from $params['payment_method']
 		// 'scheme' corresponds to our 'cc' value
@@ -219,6 +222,7 @@ class Api {
 			'merchantAccount' => $this->account
 		];
 
+		$restParams['additionalData']['manualCapture'] = $params['manual_capture'];
 		$restParams['paymentMethod']['type'] = $params['payment_method'];
 		// storedPaymentMethodId - token adyen sends back on auth
 		$restParams['paymentMethod']['storedPaymentMethodId'] = $params['recurring_payment_token'];
@@ -226,7 +230,12 @@ class Api {
 		$restParams['shopperInteraction'] = static::RECURRING_SHOPPER_INTERACTION;
 		$restParams['recurringProcessingModel'] = static::RECURRING_MODEL_SUBSCRIPTION;
 		$restParams = array_merge( $restParams, $this->getContactInfo( $params ) );
-
+		if ( $this->enableAutoRescue ) {
+			$restParams['additionalData'] = [
+				'autoRescue' => true,
+				'maxDaysToRescue' => $this->maxDaysToRescue
+			];
+		}
 		$result = $this->makeRestApiCall( $restParams, 'payments', 'POST' );
 		return $result['body'];
 	}
@@ -257,7 +266,10 @@ class Api {
 				'issuer' => $params['issuer_id'],
 				'type' => $typesByCountry[$params['country']],
 			],
-			'returnUrl' => $params['return_url']
+			'returnUrl' => $params['return_url'],
+			'additionalData' => [
+				'manualCapture' => false,
+			],
 		];
 		$isRecurring = $params['recurring'] ?? '';
 		if ( $isRecurring ) {
@@ -277,7 +289,10 @@ class Api {
 			'paymentMethod' => [
 				'type' => 'googlepay',
 				'googlePayToken' => $params['payment_token']
-			]
+			],
+			'additionalData' => [
+				'manualCapture' => true,
+			],
 		];
 		$isRecurring = $params['recurring'] ?? '';
 		if ( $isRecurring ) {
@@ -302,7 +317,10 @@ class Api {
 			'paymentMethod' => [
 				'type' => 'applepay',
 				'applePayToken' => $params['payment_token']
-			]
+			],
+			'additionalData' => [
+				'manualCapture' => true,
+			],
 		];
 		$isRecurring = $params['recurring'] ?? '';
 		if ( $isRecurring ) {
@@ -387,7 +405,7 @@ class Api {
 	public function getPaymentMethods( $params ) {
 		$restParams = [
 			'merchantAccount' => $this->account,
-			'channel' => 'Web',
+			'channel' => $params['channel'] ?? 'Web',
 		];
 
 		if ( !empty( $params['amount'] ) && !empty( $params['currency'] ) ) {
@@ -503,13 +521,12 @@ class Api {
 			$data->paymentRequest->shopperInteraction = static::RECURRING_SHOPPER_INTERACTION;
 			$data->paymentRequest->selectedRecurringDetailReference = static::RECURRING_SELECTED_RECURRING_DETAIL_REFERENCE;
 			$data->paymentRequest->shopperReference = $params['recurring_payment_token'];
-			if ( $this->enableAutoRescue ) {
-				$data->paymentRequest->additionalData['additionalData'] = [
-					'autoRescue' => true,
-					'maxDaysToRescue' => $this->maxDaysToRescue
-				];
-			}
 		}
+
+		$data->paymentRequest->additionalData = new WSDL\anyType2anyTypeMap();
+		$data->paymentRequest->additionalData->entry = new WSDL\entry();
+		$data->paymentRequest->additionalData->entry->key = 'manualCapture';
+		$data->paymentRequest->additionalData->entry->value = true;
 
 		// additional required fields that aren't listed in the docs as being required
 		$data->paymentRequest->reference = $params['order_id'];
@@ -684,12 +701,7 @@ class Api {
 		// credit card, apple pay, and iDeal all need shopperReference and storePaymentMethod
 		$recurringParams['shopperReference'] = $params['order_id'];
 		$recurringParams['storePaymentMethod'] = true;
-		if ( $this->enableAutoRescue ) {
-			$recurringParams['additionalData'] = [
-				'autoRescue' => true,
-				'maxDaysToRescue' => $this->maxDaysToRescue
-			];
-		}
+
 		if ( $needInteractionAndModel ) {
 			// credit card and apple pay also need shopperInteraction and recurringProcessingModel
 			$recurringParams['shopperInteraction'] = static::RECURRING_SHOPPER_INTERACTION_SETUP;
