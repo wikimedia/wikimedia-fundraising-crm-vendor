@@ -230,7 +230,8 @@ class Api {
 		$restParams['shopperInteraction'] = static::RECURRING_SHOPPER_INTERACTION;
 		$restParams['recurringProcessingModel'] = static::RECURRING_MODEL_SUBSCRIPTION;
 		$restParams = array_merge( $restParams, $this->getContactInfo( $params ) );
-		if ( $this->enableAutoRescue ) {
+		// T351340 we will do credit card which have method scheme first and then add SEPA which use sepadirectdebit later
+		if ( $this->enableAutoRescue && $params['payment_method'] !== 'sepadirectdebit' ) {
 			$restParams['additionalData'] = [
 				'autoRescue' => true,
 				'maxDaysToRescue' => $this->maxDaysToRescue
@@ -677,7 +678,9 @@ class Api {
 		} elseif ( CurrencyRoundingHelper::isFractionalCurrency( $currency ) ) {
 			$amount = $amount * 100;
 		}
-		return (int)$amount;
+		// PHP does indeed need us to round it off before casting to int.
+		// For example, try $36.80
+		return (int)round( $amount );
 	}
 
 	/**
