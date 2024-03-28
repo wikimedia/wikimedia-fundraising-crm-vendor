@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'ef2468cebfdfd066e63ee309087883122393f4ed',
+        'reference' => 'd3329dce76bea960dbbbc423d02b56350a9c32f2',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -232,15 +232,6 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'nyholm/psr7' => array(
-            'pretty_version' => '1.8.1',
-            'version' => '1.8.1.0',
-            'reference' => 'aa5fc277a4f5508013d571341ade0c3886d4d00e',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../nyholm/psr7',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
         'omnimail/omnimail' => array(
             'pretty_version' => '0.4.0',
             'version' => '0.4.0.0',
@@ -272,14 +263,12 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '*',
-                1 => '1.0',
             ),
         ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
                 0 => '*',
-                1 => '1.0',
             ),
         ),
         'php-http/discovery' => array(
@@ -288,15 +277,6 @@
             'reference' => '61e1a1eb69c92741f5896d9e05fb8e9d7e8bb0cb',
             'type' => 'composer-plugin',
             'install_path' => __DIR__ . '/../php-http/discovery',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'php-http/guzzle6-adapter' => array(
-            'pretty_version' => 'v2.0.2',
-            'version' => '2.0.2.0',
-            'reference' => '9d1a45eb1c59f12574552e81fb295e9e53430a56',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../php-http/guzzle6-adapter',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -406,23 +386,12 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '*',
-                1 => '1.0',
             ),
-        ),
-        'psr/http-factory' => array(
-            'pretty_version' => '1.0.2',
-            'version' => '1.0.2.0',
-            'reference' => 'e616d01114759c4c489f93b099585439f795fe35',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../psr/http-factory',
-            'aliases' => array(),
-            'dev_requirement' => false,
         ),
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
             ),
         ),
         'psr/http-message' => array(
@@ -701,9 +670,9 @@
             'dev_requirement' => false,
         ),
         'wikimedia/civicrm-data-table-provider' => array(
-            'pretty_version' => '5.0.0',
-            'version' => '5.0.0.0',
-            'reference' => '82a68b389340b779779db59673bd6d0e83e8120c',
+            'pretty_version' => '5.0.1',
+            'version' => '5.0.1.0',
+            'reference' => 'c6b1b0d2ebcb27966d430d02845d890fe90e4fe2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/civicrm-data-table-provider',
             'aliases' => array(),
@@ -721,7 +690,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'ef2468cebfdfd066e63ee309087883122393f4ed',
+            'reference' => 'd3329dce76bea960dbbbc423d02b56350a9c32f2',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
