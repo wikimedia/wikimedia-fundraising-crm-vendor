@@ -100,7 +100,7 @@ class Authorisation extends AdyenMessage {
 	protected function constructFromJSON( array $notification ) {
 		parent::constructFromJSON( $notification );
 
-		$this->paymentMethod = $notification['paymentMethod'];
+		$this->paymentMethod = $notification['paymentMethod'] ?? null; // AutoRescue messages inherit this method and do not have a paymethod property.
 
 		// Add AVS, CVV results, recurringProcessingModel, and recurringDetailReference from additionalData if any is provided
 		if ( empty( $notification['additionalData'] ) || !is_array( $notification['additionalData'] ) ) {
@@ -176,6 +176,15 @@ class Authorisation extends AdyenMessage {
 				return true;
 			}
 			return false;
+	}
+
+	/**
+	 * Only capture Authorisation AutoRescue message
+	 *
+	 * @return bool
+	 */
+	public function processAutoRescueCapture(): bool {
+		return true;
 	}
 
 	/**

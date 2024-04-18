@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'c59fdeff43a3f2131e858852846cc4731f927079',
+        'reference' => '6b66453b099c4c3ab3843fa758584b6853845ff9',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -272,9 +272,9 @@
             ),
         ),
         'php-http/discovery' => array(
-            'pretty_version' => '1.19.3',
-            'version' => '1.19.3.0',
-            'reference' => '7fbed2f92518827eb0ece6bf869f8c6b054d5730',
+            'pretty_version' => '1.19.4',
+            'version' => '1.19.4.0',
+            'reference' => '0700efda8d7526335132360167315fdab3aeb599',
             'type' => 'composer-plugin',
             'install_path' => __DIR__ . '/../php-http/discovery',
             'aliases' => array(),
@@ -385,8 +385,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '*',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory-implementation' => array(
@@ -664,7 +664,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'c59fdeff43a3f2131e858852846cc4731f927079',
+            'reference' => '6b66453b099c4c3ab3843fa758584b6853845ff9',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -680,9 +680,9 @@
             'dev_requirement' => false,
         ),
         'wikimedia/smash-pig' => array(
-            'pretty_version' => 'v0.8.9.19',
-            'version' => '0.8.9.19',
-            'reference' => 'b73495e36fe210c733a729a899107277a3ad34f2',
+            'pretty_version' => 'v0.8.10.4',
+            'version' => '0.8.10.4',
+            'reference' => 'f7f4ced683f8e0a44638eb0414b6e53dc28d9bca',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/smash-pig',
             'aliases' => array(),

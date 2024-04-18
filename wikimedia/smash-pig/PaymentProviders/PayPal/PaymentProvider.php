@@ -6,6 +6,8 @@ use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
 use SmashPig\Core\Logging\Logger;
 use SmashPig\Core\PaymentError;
+use SmashPig\Core\ProviderConfiguration;
+use SmashPig\PaymentData\Address;
 use SmashPig\PaymentData\DonorDetails;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
@@ -28,9 +30,11 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 	 */
 	protected $api;
 
+	protected ProviderConfiguration $providerConfiguration;
+
 	public function __construct() {
-		$providerConfiguration = Context::get()->getProviderConfiguration();
-		$this->api = $providerConfiguration->object( 'api' );
+		$this->providerConfiguration = Context::get()->getProviderConfiguration();
+		$this->api = $this->providerConfiguration->object( 'api' );
 	}
 
 	/**
@@ -57,8 +61,11 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 			$response->setRawStatus( $rawResponse['ACK'] );
 		}
 
+		$response->addErrors( $this->mapErrorsInResponse( $rawResponse ) );
+
 		if ( isset( $rawResponse['TOKEN'] ) ) {
 			$response->setPaymentSession( $rawResponse['TOKEN'] );
+			$response->setRedirectUrl( $this->createRedirectUrl( $rawResponse['TOKEN'] ) );
 		}
 
 		return $response;
@@ -87,6 +94,7 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 		} else {
 			$response->setStatus( FinalStatus::FAILED );
 		}
+		$response->addErrors( $this->mapErrorsInResponse( $rawResponse ) );
 
 		return $response;
 	}
@@ -118,8 +126,8 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 			$response->setSuccessful( false );
 			// when the API call fails we don't get a result in PAYMENTINFO_0_PAYMENTSTATUS so set the status here.
 			$response->setStatus( FinalStatus::FAILED );
-			$response->addErrors( $this->mapErrorsInResponse( $rawResponse ) );
 		}
+		$response->addErrors( $this->mapErrorsInResponse( $rawResponse ) );
 
 		return $response;
 	}
@@ -195,7 +203,7 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 	 */
 	public function getLatestPaymentStatus( array $params ): PaymentDetailResponse {
 		$rawResponse = $this->api->getExpressCheckoutDetails( $params['gateway_session_id'] );
-		return $this->mapGetDetailsResponse( $rawResponse );
+		return $this->mapGetDetailsResponse( $rawResponse, $params['gateway_session_id'] );
 	}
 
 	/**
@@ -207,22 +215,16 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 	 * BILLINGAGREEMENTACCEPTEDSTATUS, REDIRECTREQUIRED, PAYMENTREQUEST_0_AMT, PAYMENTREQUEST_0_CURRENCYCODE
 	 *
 	 * @param array $rawResponse
-	 *
+	 * @param string $token
 	 * @return PaymentDetailResponse
-	 * @throws UnexpectedValueException
 	 */
-	protected function mapGetDetailsResponse( array $rawResponse ): PaymentDetailResponse {
+	protected function mapGetDetailsResponse( array $rawResponse, string $token ): PaymentDetailResponse {
 		$response = ( new PaymentDetailResponse() )
 			->setRawResponse( $rawResponse );
 
 		if ( $this->isSuccessfulPaypalResponse( $rawResponse ) ) {
-			$details = ( new DonorDetails() )
-				->setEmail( $rawResponse['EMAIL'] ?? null )
-				->setFirstName( $rawResponse['FIRSTNAME'] ?? null )
-				->setLastName( $rawResponse['LASTNAME'] ?? null );
-
 			$response->setSuccessful( true )
-				->setDonorDetails( $details )
+				->setDonorDetails( $this->mapDonorDetails( $rawResponse ) )
 				->setProcessorContactID( $rawResponse['PAYERID'] ?? null )
 				->setAmount( $rawResponse['AMT'] ?? null )
 				->setCurrency( $rawResponse['CURRENCYCODE'] ?? null );
@@ -243,6 +245,12 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 			// when the API call fails we don't get a result in CHECKOUTSTATUS,
 			// while if the error code is just a timeout, we do not want to make status failed, so no need to set the status here yet.
 			$response->addErrors( $this->mapErrorsInResponse( $rawResponse ) );
+
+			if ( $response->hasError( ErrorCode::DECLINED ) ) {
+				// For PayPal, the 'declined' error code 10486 means we can send the donor back to PayPal to
+				// retry with a different funding source
+				$response->setRedirectUrl( $this->createRedirectUrl( $token ) );
+			}
 		}
 
 		return $response;
@@ -277,6 +285,60 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 			return true;
 		}
 		return false;
+	}
+
+	protected function mapDonorDetails( array $rawResponse ): DonorDetails {
+		$details = ( new DonorDetails() )
+			->setEmail( $rawResponse['EMAIL'] ?? null )
+			->setFirstName( $rawResponse['FIRSTNAME'] ?? null )
+			->setLastName( $rawResponse['LASTNAME'] ?? null );
+
+		// Decide which address to use. Prefer SHIPTO, but it needs to have a COUNTRYCODE
+		if ( !empty( $rawResponse['PAYMENTREQUEST_0_SHIPTOCOUNTRYCODE'] ) ) {
+			$addressPrefix = 'SHIPTO';
+		} elseif ( !empty( $rawResponse['PAYMENTREQUEST_0_FULFILLMENTADDRESSCOUNTRYCODE'] ) ) {
+			$addressPrefix = 'FULFILLMENTADDRESS';
+		} else {
+			$addressPrefix = '';
+		}
+
+		$address = new Address();
+		if ( empty( $addressPrefix ) ) {
+			// If neither SHIPTO nor FULFILLMENT has a country code, there's a top-level key to use
+			$address->setCountryCode( $this->normalizeCountryCode( $rawResponse['COUNTRYCODE'] ?? null ) );
+		} else {
+			$address
+				->setCountryCode( $this->normalizeCountryCode(
+					$rawResponse["PAYMENTREQUEST_0_{$addressPrefix}COUNTRYCODE"] ?? null
+				) )->setStreetAddress(
+					$rawResponse["PAYMENTREQUEST_0_{$addressPrefix}STREET"] ?? null
+				)->setCity(
+					$rawResponse["PAYMENTREQUEST_0_{$addressPrefix}CITY"] ?? null
+				)->setStateOrProvinceCode(
+					$rawResponse["PAYMENTREQUEST_0_{$addressPrefix}STATE"] ?? null
+				)->setPostalCode(
+					$rawResponse["PAYMENTREQUEST_0_{$addressPrefix}ZIP"] ?? null
+				);
+		}
+		$details->setBillingAddress( $address );
+		return $details;
+	}
+
+	/**
+	 * Map possibly non-standard PayPal country codes to the usual ones.
+	 *
+	 * @param string|null $code raw country code from the PayPal response
+	 * @return string|null normalized ISO code for the country
+	 */
+	protected function normalizeCountryCode( ?string $code ): ?string {
+		$nonStandardCodes = [
+			'C2' => 'CN', // mutant China code for merchants outside of China
+			'AN' => 'NL', // Netherlands Antilles is part of the Netherlands since 2010
+		];
+		if ( array_key_exists( $code, $nonStandardCodes ) ) {
+			return $nonStandardCodes[$code];
+		}
+		return $code;
 	}
 
 	/**
@@ -324,7 +386,7 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 			case '10412':
 				$mappedCode = ErrorCode::DUPLICATE_ORDER_ID;
 				break;
-			case '10486': // First attempt failed
+			case '10486': // This transaction couldn't be completed. Please redirect your customer to PayPal.
 				$mappedCode = ErrorCode::DECLINED;
 				break;
 			case '10411': // Timeout
@@ -344,5 +406,9 @@ class PaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvid
 				break;
 		}
 		return $mappedCode;
+	}
+
+	protected function createRedirectUrl( string $token ): string {
+		return $this->providerConfiguration->val( 'redirect-url' ) . $token . '&useraction=commit';
 	}
 }
