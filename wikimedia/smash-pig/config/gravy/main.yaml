@@ -18,10 +18,15 @@ endpoints:
 merchantAccountId: default
 
 privateKeyLocation: /srv/config/private/gr4vy/private_key.pem
-
+accounts:
+  webhook:
+    username: WikimediaFoundationTest
+    password: 'FoundationTest'
 payment-provider:
     cc:
         class: SmashPig\PaymentProviders\Gravy\CardPaymentProvider
+    dd:
+        class: SmashPig\PaymentProviders\Gravy\BankPaymentProvider
 
 fraud-filters:
     # Authorization notifications include AVS and CVV result codes.

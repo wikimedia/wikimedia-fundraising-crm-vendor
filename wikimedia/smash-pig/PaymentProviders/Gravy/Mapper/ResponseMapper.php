@@ -34,8 +34,10 @@ class ResponseMapper {
 	 * @return array
 	 * @link https://docs.gr4vy.com/reference/transactions/new-transaction
 	 */
-	public function mapFromCreatePaymentResponse( array $response ): array {
-		if ( ( isset( $response['type'] ) && $response['type'] == 'error' ) || isset( $response['error_code'] ) ) {
+	public function mapFromPaymentResponse( array $response ): array {
+		if ( ( isset( $response['type'] ) && $response['type'] == 'error' )
+		|| isset( $response['error_code'] )
+		|| $response['intent_outcome'] == 'failed' ) {
 			return $this->mapErrorFromResponse( $response );
 		}
 
@@ -50,6 +52,10 @@ class ResponseMapper {
 			'raw_response' => $response,
 			'risk_scores' => $this->getRiskScores( $response['avs_response_code'] ?? null, $response['cvv_response_code'] ?? null )
 		];
+
+		if ( $params['status'] == FinalStatus::FAILED ) {
+			$params['is_successful'] = false;
+		}
 
 		if ( !empty( $response['payment_method'] ) ) {
 			$params['recurring_payment_token'] = $response['payment_method']['id'];
@@ -87,19 +93,13 @@ class ResponseMapper {
 			}
 		}
 
-		return $params;
-	}
-
-	/**
-	 * @return array
-	 * @link https://docs.gr4vy.com/reference/transactions/capture-transaction
-	 */
-	public function mapFromApprovePaymentResponse( array $response ): array {
-		if ( ( isset( $response['type'] ) && $response['type'] == 'error' ) || isset( $response['error_code'] ) ) {
-			return $this->mapErrorFromResponse( $response );
+		if ( !empty( $response['payment_service'] ) ) {
+			if ( !empty( $response['payment_service']['payment_service_definition_id'] ) ) {
+				$params['backend_processor'] = explode( '-', $response['payment_service']['payment_service_definition_id'] )[0];
+			}
 		}
 
-		return $this->mapFromCreatePaymentResponse( $response );
+		return $params;
 	}
 
 	public function mapDonorResponse( array $response ) : array {
@@ -209,7 +209,7 @@ class ResponseMapper {
 				$normalizedStatus = FinalStatus::COMPLETE;
 				break;
 			default:
-				throw new UnexpectedValueException( "Unknown status $paymentProcessorStatus" );
+				throw new \UnexpectedValueException( "Unknown status $paymentProcessorStatus" );
 		}
 
 		return $normalizedStatus;
@@ -221,13 +221,15 @@ class ResponseMapper {
 	 */
 	private function mapErrorFromResponse( array $params ): array {
 		 $error = $params;
-		 $code = null;
+		 $code = '';
 		 $message = '';
 		 $description = '';
 		if ( $error['type'] == 'error' ) {
 			$code = $error['status'];
 			$message = $error['code'];
 			$description = $error['message'];
+		} elseif ( $error['intent_outcome'] == 'failed' ) {
+			$message = $error['status'];
 		} else {
 			$code = $error['error_code'];
 			$message = $error['raw_response_code'];
@@ -246,5 +248,4 @@ class ResponseMapper {
 
 		];
 	}
-
 }

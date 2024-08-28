@@ -40,7 +40,6 @@ class CardPaymentProvider extends PaymentProvider implements IPaymentProvider {
 	}
 
 	public function approvePayment( array $params ) : ApprovePaymentResponse {
-		// create our standard response object from the normalized response
 		$approvePaymentResponse = new ApprovePaymentResponse();
 
 		try {
@@ -57,7 +56,7 @@ class CardPaymentProvider extends PaymentProvider implements IPaymentProvider {
 
 			// map the response from the external format back to our normalized structure.
 			$gravyResponseMapper = new ResponseMapper();
-			$normalizedResponse = $gravyResponseMapper->mapFromApprovePaymentResponse( $rawGravyApprovePaymentResponse );
+			$normalizedResponse = $gravyResponseMapper->mapFromPaymentResponse( $rawGravyApprovePaymentResponse );
 
 			// populate our standard response object from the normalized response
 			// this could be extracted out to a factory as we do for dlocal
@@ -67,7 +66,7 @@ class CardPaymentProvider extends PaymentProvider implements IPaymentProvider {
 			GravyApprovePaymentResponseFactory::handleValidationException( $approvePaymentResponse, $e->getData() );
 		} catch ( \Exception $e ) {
 			// it threw an exception!
-			Logger::info( 'Processor failed to create new payment session with response:' . $e->getMessage() );
+			Logger::info( 'Processor failed to approve payment with response:' . $e->getMessage() );
 			GravyApprovePaymentResponseFactory::handleException( $approvePaymentResponse, $e->getMessage(), $e->getCode() );
 		}
 
@@ -88,7 +87,6 @@ class CardPaymentProvider extends PaymentProvider implements IPaymentProvider {
 	 * @return CreatePaymentResponse
 	 */
 	public function createPayment( array $params ) : CreatePaymentResponse {
-		// create our standard response object from the normalized response
 		$createPaymentResponse = new createPaymentResponse();
 		try {
 			// extract out the validation of input out to a separate class
@@ -112,7 +110,7 @@ class CardPaymentProvider extends PaymentProvider implements IPaymentProvider {
 
 			// normalize gravy response
 			$gravyResponseMapper = new ResponseMapper();
-			$normalizedResponse = $gravyResponseMapper->mapFromCreatePaymentResponse( $rawGravyCreatePaymentResponse );
+			$normalizedResponse = $gravyResponseMapper->mapFromPaymentResponse( $rawGravyCreatePaymentResponse );
 
 			// populate our standard response object from the normalized response
 			// this could be extracted out to a factory as we do for dlocal
