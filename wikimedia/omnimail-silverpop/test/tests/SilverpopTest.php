@@ -13,6 +13,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Middleware;
+use SilverpopConnector\SilverpopConnectorException;
 
 class SilverpopTest extends BaseTestClass {
 
@@ -90,9 +91,47 @@ class SilverpopTest extends BaseTestClass {
      * Test creating a list in acoustic using OmniGroup.create api
      */
     public function testGroupCreate(): void {
+        $requests = [
+            file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+            file_get_contents(__DIR__ . '/Responses/CreateContactListResponse.txt'),
+        ];
         /* @var $request \Omnimail\Silverpop\Requests\CreateContactListRequest */
-        $request = Omnimail::create('Silverpop', ['client' => $this->getMockRequest([], FALSE)])->createGroup();
+        $request = Omnimail::create('Silverpop', [
+            'client' => $this->getMockRequest($requests)
+        ])->createGroup([
+            'name' => 'my-group',
+            'databaseID' => 12345,
+            'visibility' => 1
+        ]);
         $response = $request->getResponse();
+        $this->assertOutgoingRequest('CreateContactListRequest.txt');
+    }
+
+    /**
+     * Test creating a list in acoustic using OmniGroup.create api
+     */
+    public function testImportList(): void {
+        $requests = [
+            file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+            file_get_contents(__DIR__ . '/Responses/CreateContactListResponse.txt'),
+        ];
+        /* @var $request \Omnimail\Silverpop\Requests\CreateContactListRequest */
+        $request = Omnimail::create('Silverpop', [
+                'client' => $this->getMockRequest($requests)
+                ]
+              )->importList(  [
+                  'xmlFile' => __DIR__ . '/Requests/importList.xml',
+                  'csvFile' => __DIR__ . '/Requests/importList.csv',
+                  'isAlreadyUploaded' => TRUE,
+         ]
+            );
+        try {
+            $response = $request->getResponse();
+        }
+        catch (SilverpopConnectorException $e) {
+
+        }
+        $this->assertOutgoingRequest('importListRequest.txt');
     }
 
     /**

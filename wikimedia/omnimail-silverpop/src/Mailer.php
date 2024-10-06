@@ -145,6 +145,25 @@ class Mailer extends AbstractMailer implements MailerInterface
     ]));
   }
 
+    /**
+     * Set up a csv import.
+     *
+     * This provides information to Acoustic about the csv and mappings that has
+     * been uploaded.
+     *
+     * https://developer.goacoustic.com/acoustic-campaign/reference/importlist
+     *
+     * @param array $parameters
+     *
+     * @return \Omnimail\Silverpop\Requests\ImportListRequest
+     */
+    public function importList($parameters = []) {
+        return $this->createRequest('ImportListRequest', array_merge($parameters, [
+            'credentials' => $this->getCredentials(),
+            'client' => $this->getClient(),
+        ]));
+    }
+
   /**
    * Get Recipients.
    *

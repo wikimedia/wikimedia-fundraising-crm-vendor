@@ -62,6 +62,8 @@ abstract class BaseRequest implements RequestInterface
    */
   protected $client;
 
+  protected $xmlConnector;
+
     /**
      * @var \Omnimail\Common\Credentials
      */
