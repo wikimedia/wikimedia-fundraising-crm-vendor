@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'c3a8972113fbbaef8ffcc87aed4f2c225d6e20e9',
+        'reference' => '7071fb21b6b655e9f011f113cfd86dcd1c3c9a94',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -703,7 +703,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'c3a8972113fbbaef8ffcc87aed4f2c225d6e20e9',
+            'reference' => '7071fb21b6b655e9f011f113cfd86dcd1c3c9a94',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

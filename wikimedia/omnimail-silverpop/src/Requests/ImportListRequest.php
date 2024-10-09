@@ -105,7 +105,7 @@ class ImportListRequest extends SilverpopBaseRequest
     public function getResponse() {
         if (!$this->isAlreadyUploaded()) {
             $this->silverPop->uploadFile($this->getXmlFileName(), $this->getXmlFile(), $this->getResultDirectory());
-            $this->silverPop->uploadFile($this->getCsvFileName(), basename($this->getCsvFile()), $this->getResultDirectory());
+            $this->silverPop->uploadFile($this->getCsvFileName(), $this->getCsvFile(), $this->getResultDirectory());
         }
 
         $result = $this->silverPop->importList(
