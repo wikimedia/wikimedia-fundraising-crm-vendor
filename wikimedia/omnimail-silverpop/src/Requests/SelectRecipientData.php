@@ -86,6 +86,22 @@ class SelectRecipientData extends SilverpopBaseRequest
   }
 
   /**
+   * Pairs of name value combinations to match on.
+   *   e.g ['Email' => 'mail@example.org']
+   * @var array
+   */
+  protected $syncFields;
+
+  public function getSyncFields(): array {
+    return $this->syncFields;
+  }
+
+  public function setSyncFields(array $syncFields): SelectRecipientData {
+    $this->syncFields = $syncFields;
+    return $this;
+  }
+
+  /**
    * Get Response
    *
    * @return Contact
@@ -93,7 +109,8 @@ class SelectRecipientData extends SilverpopBaseRequest
   public function getResponse() {
     $result = $this->silverPop->selectRecipientData(
       $this->getDatabaseID(),
-      ['Email' => $this->getEmail(), 'RETURN_CONTACT_LISTS' => TRUE]
+      ['Email' => $this->getEmail(), 'RETURN_CONTACT_LISTS' => TRUE],
+      $this->getSyncFields()
     );
     if ($result) {
       $response = new Contact([]);

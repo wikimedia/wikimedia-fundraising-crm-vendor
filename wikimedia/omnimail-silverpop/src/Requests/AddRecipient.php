@@ -49,6 +49,22 @@ class AddRecipient extends SilverpopBaseRequest
    */
   protected $fields;
 
+  /**
+   * Pairs of name value combinations to match on.
+   *   e.g ['Email' => 'mail@example.org']
+   * @var array
+   */
+  protected $syncFields;
+
+  public function getSyncFields(): array {
+    return $this->syncFields;
+  }
+
+  public function setSyncFields(array $syncFields): AddRecipient {
+    $this->syncFields = $syncFields;
+    return $this;
+  }
+
     /**
      * Get the snooze end date - in the insane date format the api likes...
      *
@@ -150,6 +166,7 @@ class AddRecipient extends SilverpopBaseRequest
       FALSE,
       3,
       $this->getGroupIdentifier(),
+      $this->getSyncFields()
     );
     if ($this->getSnoozeDate()) {
       $updateResult = $this->silverPop->updateRecipient(

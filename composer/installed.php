@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'f82ca1818fdac83a4fac1e7eee8f5fabaf05bf75',
+        'reference' => 'c3a8972113fbbaef8ffcc87aed4f2c225d6e20e9',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -244,7 +244,7 @@
         'mrmarkfrench/silverpop-php-connector' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '8399379fc41f8d5fab8431883ed4c802790de81b',
+            'reference' => '75b85a4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../mrmarkfrench/silverpop-php-connector',
             'aliases' => array(
@@ -703,16 +703,16 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'f82ca1818fdac83a4fac1e7eee8f5fabaf05bf75',
+            'reference' => 'c3a8972113fbbaef8ffcc87aed4f2c225d6e20e9',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'wikimedia/omnimail-silverpop' => array(
-            'pretty_version' => '1.7',
-            'version' => '1.7.0.0',
-            'reference' => '6df738ea3a84b4079dbc0e103d88986926c74baf',
+            'pretty_version' => '1.8',
+            'version' => '1.8.0.0',
+            'reference' => 'b14efce5647a3b77db1c004c0b37c0fc1757e083',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/omnimail-silverpop',
             'aliases' => array(),
