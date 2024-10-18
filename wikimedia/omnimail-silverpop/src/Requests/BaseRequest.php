@@ -20,6 +20,8 @@ abstract class BaseRequest implements RequestInterface
    */
   protected $silverPop;
 
+  private $restConnector;
+
   /**
    * Timestamp for start of period.
    *

@@ -1917,12 +1917,18 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "dev-master",
-            "version_normalized": "dev-master",
+            "version": "1.6.2",
+            "version_normalized": "1.6.2.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/silverpop-php-connector.git",
-                "reference": "75b85a4"
+                "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
+                "reference": "b00143d47ed8a0f97d514e82423d69b2979459e4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/b00143d47ed8a0f97d514e82423d69b2979459e4",
+                "reference": "b00143d47ed8a0f97d514e82423d69b2979459e4",
+                "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
@@ -1934,8 +1940,7 @@
             "require-dev": {
                 "phpunit/phpunit": "*"
             },
-            "time": "2024-10-09T03:04:35+00:00",
-            "default-branch": true,
+            "time": "2024-10-14T19:51:18+00:00",
             "type": "library",
             "installation-source": "source",
             "autoload": {
@@ -1943,11 +1948,7 @@
                     "SilverpopConnector\\": "src/SilverpopConnector"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "SilverpopConnector\\Tests\\": "test/tests"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1961,6 +1962,10 @@
             "keywords": [
                 "Silverpop"
             ],
+            "support": {
+                "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.2"
+            },
             "install-path": "../mrmarkfrench/silverpop-php-connector"
         },
         {
@@ -4820,12 +4825,12 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.8",
-            "version_normalized": "1.8.0.0",
+            "version": "1.9",
+            "version_normalized": "1.9.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "b14efce5647a3b77db1c004c0b37c0fc1757e083"
+                "reference": "ddfc082b0fa07ccbea7b7d5005d7b1aeb81f9cbb"
             },
             "require": {
                 "league/csv": "^9",
@@ -4837,7 +4842,7 @@
                 "guzzlehttp/guzzle": "*",
                 "phpunit/phpunit": "*"
             },
-            "time": "2024-10-09T03:07:17+00:00",
+            "time": "2024-10-17T07:35:22+00:00",
             "type": "library",
             "installation-source": "source",
             "autoload": {

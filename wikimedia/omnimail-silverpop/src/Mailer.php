@@ -178,6 +178,13 @@ class Mailer extends AbstractMailer implements MailerInterface
     )));
   }
 
+  public function getJobStatus($parameters = []) {
+    return $this->createRequest('JobStatusRequest', array_merge($parameters, array(
+        'credentials' => $this->getCredentials(),
+        'client' => $this->getClient(),
+    )));
+  }
+
     /**
      * Get Recipients.
      *
