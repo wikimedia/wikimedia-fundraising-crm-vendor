@@ -308,7 +308,7 @@ class SilverpopXmlConnector extends SilverpopBaseConnector {
     if ($statusUpdateDirectory) {
       fopen($completeFile, 'c');
     }
-    Civi::log('wmf')->info($sftp->getSFTPLog());
+    \Civi::log('wmf')->info($sftp->getSFTPLog());
     return TRUE;
   }
 
