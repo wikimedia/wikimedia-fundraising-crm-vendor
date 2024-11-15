@@ -293,7 +293,7 @@ class SilverpopXmlConnector extends SilverpopBaseConnector {
    *
    */
   public function uploadFile($fileName, $source, $statusUpdateDirectory = '') {
-    define('NET_SFTP_LOGGING', \phpseclib\Net\SFTP::LOG_COMPLEX);
+    define('NET_SFTP_LOGGING', \phpseclib\Net\SFTP::LOG_SIMPLE);
     $sftp = new SFTP($this->getSftpUrl());
     if (!$sftp->login($this->username, $this->password)) {
       throw new Exception('Login Failed');
