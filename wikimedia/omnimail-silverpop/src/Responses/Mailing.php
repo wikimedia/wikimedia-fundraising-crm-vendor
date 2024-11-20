@@ -222,7 +222,7 @@ class Mailing
         if (!$this->statistics) {
             $this->setStatistics();
         }
-        return (int)$this->statistics->$key;
+        return (int) $this->statistics->$key;
     }
 
     /**
@@ -236,13 +236,18 @@ class Mailing
         try {
             $this->statistics = $silverPop->getAggregateTrackingForMailing(array(
                 'MailingId' => $this->getMailingIdentifier(),
-                'ReportId' => (string)$this->data->ReportId,
+                'ReportId' => $this->getReportID(),
             ));
         } catch (SilverpopConnectorException $e) {
             if (stristr($e->getMessage(), 'is not valid')) {
                 throw new InvalidRequestException($e->getMessage());
             }
         }
+    }
+
+    public function getReportID(): string
+    {
+        return (string) $this->data->ReportId;
     }
 
     /**
