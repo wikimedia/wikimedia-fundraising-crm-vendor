@@ -5078,87 +5078,6 @@
             "install-path": "../theiconic/name-parser"
         },
         {
-            "name": "twig/twig",
-            "version": "v1.44.7",
-            "version_normalized": "1.44.7.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/twigphp/Twig.git",
-                "reference": "0887422319889e442458e48e2f3d9add1a172ad5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/0887422319889e442458e48e2f3d9add1a172ad5",
-                "reference": "0887422319889e442458e48e2f3d9add1a172ad5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.2.5",
-                "symfony/polyfill-ctype": "^1.8"
-            },
-            "require-dev": {
-                "psr/container": "^1.0",
-                "symfony/phpunit-bridge": "^4.4.9|^5.0.9"
-            },
-            "time": "2022-09-28T08:38:36+00:00",
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.44-dev"
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "psr-0": {
-                    "Twig_": "lib/"
-                },
-                "psr-4": {
-                    "Twig\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com",
-                    "homepage": "http://fabien.potencier.org",
-                    "role": "Lead Developer"
-                },
-                {
-                    "name": "Twig Team",
-                    "role": "Contributors"
-                },
-                {
-                    "name": "Armin Ronacher",
-                    "email": "armin.ronacher@active-4.com",
-                    "role": "Project Founder"
-                }
-            ],
-            "description": "Twig, the flexible, fast, and secure template language for PHP",
-            "homepage": "https://twig.symfony.com",
-            "keywords": [
-                "templating"
-            ],
-            "support": {
-                "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v1.44.7"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/twig/twig",
-                    "type": "tidelift"
-                }
-            ],
-            "install-path": "../twig/twig"
-        },
-        {
             "name": "webflo/drupal-finder",
             "version": "1.2.2",
             "version_normalized": "1.2.2.0",
@@ -5488,17 +5407,17 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.23",
-            "version_normalized": "0.8.23.0",
+            "version": "v0.8.24",
+            "version_normalized": "0.8.24.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "9f64602ef9b84fcd43eff1abbfbc13e7c21dec4d"
+                "reference": "69f35198b91d1ef0fe96fe6429b08a7cb82a0c3c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/9f64602ef9b84fcd43eff1abbfbc13e7c21dec4d",
-                "reference": "9f64602ef9b84fcd43eff1abbfbc13e7c21dec4d",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/69f35198b91d1ef0fe96fe6429b08a7cb82a0c3c",
+                "reference": "69f35198b91d1ef0fe96fe6429b08a7cb82a0c3c",
                 "shasum": ""
             },
             "require": {
@@ -5523,7 +5442,7 @@
                 "php-parallel-lint/php-parallel-lint": "^1.2",
                 "phpunit/phpunit": "^9.5"
             },
-            "time": "2024-11-18T17:36:43+00:00",
+            "time": "2024-11-26T16:52:26+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5576,7 +5495,7 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.23"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.24"
             },
             "install-path": "../wikimedia/smash-pig"
         },
