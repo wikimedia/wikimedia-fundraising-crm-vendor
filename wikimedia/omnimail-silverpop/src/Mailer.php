@@ -64,7 +64,7 @@ class Mailer extends AbstractMailer implements MailerInterface
    *
    * @param array $parameters
    *
-   * @return \Omnimail\Silverpop\Requests\SilverpopBaseRequest
+   * @return \Omnimail\Silverpop\Requests\GetSentMailingsForOrgRequest
    */
     public function getMailings($parameters = array()) {
       return $this->createRequest('GetSentMailingsForOrgRequest', array_merge($parameters, array(
@@ -199,7 +199,25 @@ class Mailer extends AbstractMailer implements MailerInterface
       )));
     }
 
-  /**
+    /**
+     * Get information about whether consent has been given to use a mobile phone for SMS.
+     *
+     * @param array $parameters
+     *   - database_id (int)
+     *   - data (array) e.g [['Email', a@example.com']['Email', b@example.com']]
+     *
+     * @return ConsentInformationRequest
+     */
+    public function consentInformationRequest($parameters = [])
+    {
+        return $this->createRequest('ConsentInformationRequest', array_merge($parameters, array(
+            'credentials' => $this->getCredentials(),
+            'client' => $this->getClient(),
+            'is_use_rest' => TRUE,
+        )));
+    }
+
+    /**
    * Initialize a request object
    *
    * This function is usually used to initialise objects of type

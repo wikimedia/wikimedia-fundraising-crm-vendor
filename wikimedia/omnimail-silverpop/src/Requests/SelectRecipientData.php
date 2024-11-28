@@ -38,6 +38,11 @@ class SelectRecipientData extends SilverpopBaseRequest
   protected $email;
 
   /**
+   * @var int|null
+   */
+  protected $recipientID;
+
+  /**
    * @return string
    */
   public function getEmail(): string {
@@ -68,6 +73,15 @@ class SelectRecipientData extends SilverpopBaseRequest
    */
   public function setDatabaseID(int $databaseID): self {
     $this->databaseID = $databaseID;
+    return $this;
+  }
+
+  public function getRecipientID(): ?int {
+    return $this->recipientID;
+  }
+
+  public function setRecipientID(?int $recipientID): self{
+    $this->recipientID = $recipientID;
     return $this;
   }
 
@@ -109,7 +123,10 @@ class SelectRecipientData extends SilverpopBaseRequest
   public function getResponse() {
     $result = $this->silverPop->selectRecipientData(
       $this->getDatabaseID(),
-      ['Email' => $this->getEmail(), 'RETURN_CONTACT_LISTS' => TRUE],
+      array_filter([
+        'RecipientId' => $this->getRecipientID(),
+        'Email' => $this->getEmail(),
+        'RETURN_CONTACT_LISTS' => TRUE]),
       $this->getSyncFields()
     );
     if ($result) {
