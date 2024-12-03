@@ -122,27 +122,31 @@ class Contact {
   protected $optOut;
 
   /**
-   * @var string timestamp
+   * Opt out timestamp.
+   *
+   * @var string|null
    */
   protected $optOutTimestamp;
 
   /**
-   * @var string unix timestamp for when opted in.
+   * Unix timestamp for when opted in.
+   *
+   * @var string|null
    */
   protected $optInTimestamp;
 
   /**
-   * @param string $optInTimestamp
+   * @param string|null $optInTimestamp
    *
    * @return Contact
    */
-  public function setOptInTimestamp(string $optInTimestamp): Contact {
+  public function setOptInTimestamp(?string $optInTimestamp): Contact {
     $this->optInTimestamp = $optInTimestamp;
     return $this;
   }
 
   /**
-   * @param string|null $optInTimestamp
+   * @param string|null $optOutTimestamp
    *
    * @return Contact
    */
