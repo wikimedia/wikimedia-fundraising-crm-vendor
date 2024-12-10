@@ -2,6 +2,7 @@
 
 namespace Omnimail\Silverpop\Requests;
 
+use GuzzleHttp\Exception\ClientException;
 use Omnimail\Silverpop\Responses\GroupMembersResponse;
 use Omnimail\Silverpop\Responses\Consent;
 
@@ -55,7 +56,7 @@ class ConsentInformationRequest extends SilverpopBaseRequest
   }
 
   /**
-   * @return array
+   * @return int
    */
   public function getPhone() {
      return $this->phone;
@@ -83,10 +84,19 @@ class ConsentInformationRequest extends SilverpopBaseRequest
    * Request data from the provider.
    */
   protected function requestData() {
-    return $this->silverPop->restGet(
-        $this->getDatabaseId(),
-        'databases',
-        ['consent', $this->channel . '-' . $this->getShortCode(), $this->getPhone()]);
+      try {
+          return $this->silverPop->restGet(
+              $this->getDatabaseId(),
+              'databases',
+              ['consent', $this->channel . '-' . $this->getShortCode(), $this->getPhone()]);
+      }
+      catch (ClientException $e) {
+          // 404 here indicates no consent record found.
+          if ($e->getResponse()->getStatusCode() == 404) {
+              return ['data' => []];
+          }
+          throw $e;
+      }
   }
 
   /**

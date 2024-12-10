@@ -22,22 +22,22 @@ class Consent {
     /**
      * @return int|null
      */
-    public function getStatus(): string {
-        return $this->data['status'];
+    public function getStatus(): ?string {
+        return $this->data['status'] ?? NULL;
     }
 
     /**
      * @return array
      */
-    public function getTimestamp(): int {
-        return strtotime($this->data['consentDate']);
+    public function getTimestamp(): ?int {
+        return $this->data['consentDate'] ? strtotime($this->data['consentDate']) : NULL;
     }
 
     /**
      * @return string
      */
     public function getSource(): ?string {
-        return $this->data['consentSource'];
+        return $this->data['consentSource'] ?? NULL;
     }
 
     /**

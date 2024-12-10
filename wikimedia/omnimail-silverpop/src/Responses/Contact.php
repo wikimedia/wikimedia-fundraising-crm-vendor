@@ -304,7 +304,7 @@ class Contact {
    * @return string
    */
   public function getEmail() {
-    return (string) addslashes($this->email ?: $this->data['Email']);
+    return (string) addslashes($this->email ?: ($this->data['Email'] ?? ''));
   }
 
   /**
