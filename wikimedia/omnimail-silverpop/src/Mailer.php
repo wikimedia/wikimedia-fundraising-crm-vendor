@@ -178,6 +178,20 @@ class Mailer extends AbstractMailer implements MailerInterface
     )));
   }
 
+  /**
+   * Get Recipients.
+   *
+   * @param array $parameters
+   *
+   * @return \Omnimail\Silverpop\Requests\WebTrackingDataExportRequest
+   */
+  public function getWebActions($parameters = array()) {
+    return $this->createRequest('WebTrackingDataExportRequest', array_merge($parameters, [
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+    ]));
+  }
+
   public function getJobStatus($parameters = []) {
     return $this->createRequest('JobStatusRequest', array_merge($parameters, array(
         'credentials' => $this->getCredentials(),

@@ -190,7 +190,7 @@ class AddRecipient extends SilverpopBaseRequest
    *
    * @return array
    */
-  public function getDefaultParameters() {
+  public function getDefaultParameters(): array {
     return parent::getDefaultParameters();
   }
 

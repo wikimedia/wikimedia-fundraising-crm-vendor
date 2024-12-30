@@ -30,7 +30,7 @@ class Consent {
      * @return array
      */
     public function getTimestamp(): ?int {
-        return $this->data['consentDate'] ? strtotime($this->data['consentDate']) : NULL;
+        return !empty($this->data['consentDate']) ? strtotime($this->data['consentDate']) : NULL;
     }
 
     /**

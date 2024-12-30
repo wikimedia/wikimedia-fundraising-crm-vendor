@@ -44,6 +44,13 @@ abstract class BaseRequest implements RequestInterface
   protected $endPoint;
 
   /**
+   * Domain for sftp endpoint.
+   *
+   * @var string
+   */
+  private $sftpEndPoint;
+
+  /**
    * User name
    *
    * @var string
@@ -113,6 +120,20 @@ abstract class BaseRequest implements RequestInterface
    */
   public function setEndPoint($endPoint) {
     $this->endPoint = $endPoint;
+  }
+
+  /**
+   * @return string
+   */
+  public function getSftpEndPoint() {
+    return $this->sftpEndPoint;
+  }
+
+  /**
+   * @param string $endPoint
+   */
+  public function setSftpEndPoint($endPoint) {
+    $this->sftpEndPoint = $endPoint;
   }
 
   /**
@@ -189,6 +210,9 @@ abstract class BaseRequest implements RequestInterface
   public function __construct($parameters) {
     Helper::initialize($this, array_merge($this->getDefaultParameters(), $parameters));
     $this->silverPop = SilverpopGuzzleConnector::getInstance($this->getEndPoint());
+    if ($this->sftpEndPoint) {
+        $this->silverPop->setSftpUrl($this->sftpEndPoint);
+    }
     if (!empty($parameters['is_use_rest'])) {
         $this->restConnector = SilverpopRestConnector::getInstance();
         if (!empty($parameters['client'])) {
@@ -212,9 +236,10 @@ abstract class BaseRequest implements RequestInterface
    * @return array
    */
   public function getDefaultParameters() {
-    return array(
+    return [
       'endpoint' => 'https://api4.silverpop.com',
-    );
+      'sftpEndPoint' => 'transfer4.silverpop.com',
+    ];
   }
 
 }

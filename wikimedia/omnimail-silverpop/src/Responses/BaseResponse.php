@@ -30,14 +30,12 @@ abstract class BaseResponse extends \arrayObject implements ResponseInterface
    */
   protected $endTimeStamp;
 
-
   /**
    * Url to direct requests to.
    *
    * @var string
    */
   protected $endPoint;
-
 
   /**
    * Offset from start of csv file.
@@ -142,10 +140,10 @@ abstract class BaseResponse extends \arrayObject implements ResponseInterface
    *
    * @return array
    */
-  public function getDefaultParameters() {
-    return array(
+  public function getDefaultParameters(): array {
+    return [
       'endpoint' => 'https://api4.silverpop.com',
-    );
+    ];
   }
 
   /**

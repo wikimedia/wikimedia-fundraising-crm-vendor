@@ -33,7 +33,15 @@ trait Downloader {
   public function downloadCsv() {
     $filePath = $this->getDownloadDirectory() . '/' . $this->getFileName();
     $csvFilePath = str_replace('.zip', '.csv', $filePath);
-    if ((!file_exists($filePath) && !file_exists($csvFilePath)) || !file_exists($csvFilePath . '.complete')) {
+    if (
+      // We Cannot find the csv or original file
+      (!file_exists($filePath) && !file_exists($csvFilePath))
+      ||
+      // Or we cannot find the file that marks the download has completed.
+      // Note this originally checked for the csv file - I think it should check
+      // for the other INSTEAD but have made it as well out of caution.
+      (!file_exists($csvFilePath . '.complete') && !file_exists($filePath . '.complete'))
+    ) {
       $this->downloadFile($this->getFileName(), $filePath);
     }
     if (!file_exists($csvFilePath) && substr($filePath, -4) === '.zip') {
