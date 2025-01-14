@@ -132,7 +132,7 @@ abstract class BaseRequest implements RequestInterface
   /**
    * @param string $endPoint
    */
-  public function setSftpEndPoint($endPoint) {
+  public function setSftpEndPoint(string $endPoint) {
     $this->sftpEndPoint = $endPoint;
   }
 

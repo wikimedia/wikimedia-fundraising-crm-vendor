@@ -206,7 +206,7 @@ abstract class SilverpopBaseRequest extends BaseRequest {
   public function getDefaultParameters() {
     return [
       'endpoint' => 'https://api4.silverpop.com',
-      'sftpEndpoint' => 'transfer.silverpop.com',
+      'sftpEndpoint' => 'transfer-campaign-us-4.goacoustic.com',
     ];
   }
 
