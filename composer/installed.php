@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'c6561c9baf09f49bec5fe30999ac42c80f02ecea',
+        'reference' => '64b9fc0c4ac75c9dce41a96c7c8e4d102bbe8aff',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -188,9 +188,9 @@
             ),
         ),
         'gr4vy/gr4vy-php' => array(
-            'pretty_version' => 'v0.21.4',
-            'version' => '0.21.4.0',
-            'reference' => '5fd242eb7b6c2434cd40b16d4e5b27b1152aad17',
+            'pretty_version' => 'v0.23.2',
+            'version' => '0.23.2.0',
+            'reference' => '1b0ece57c02f99536f8986d34685d2fa94e95ba3',
             'type' => 'library',
             'install_path' => __DIR__ . '/../gr4vy/gr4vy-php',
             'aliases' => array(),
@@ -448,8 +448,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/http-factory' => array(
@@ -464,8 +464,8 @@
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/http-message' => array(
@@ -480,8 +480,8 @@
         'psr/http-message-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
-                1 => '*',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/log' => array(
@@ -764,7 +764,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'c6561c9baf09f49bec5fe30999ac42c80f02ecea',
+            'reference' => '64b9fc0c4ac75c9dce41a96c7c8e4d102bbe8aff',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -780,9 +780,9 @@
             'dev_requirement' => false,
         ),
         'wikimedia/smash-pig' => array(
-            'pretty_version' => 'v0.8.25.1',
-            'version' => '0.8.25.1',
-            'reference' => 'b026b0a6eaaee1914684e738ca75e228e2cce20d',
+            'pretty_version' => 'v0.9.0',
+            'version' => '0.9.0.0',
+            'reference' => '0e250b6518fd0c71b4650d1f315260455e721274',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/smash-pig',
             'aliases' => array(),

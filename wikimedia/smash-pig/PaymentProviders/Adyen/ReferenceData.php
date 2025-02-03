@@ -5,6 +5,8 @@ use OutOfBoundsException;
 class ReferenceData {
 
 	/**
+	 * @var array mapping from Adyen's method names to our method/submethod
+	 *
 	 * Example for adding a new Payment Method
 	 *  'PaymentMethodNameFromPaymentProcessor' => [
 	 *    'method' => 'OurNameForThePaymentMethod',
@@ -18,7 +20,6 @@ class ReferenceData {
 	 *    ],
 	 *  ],
 	 */
-
 	protected static $methods = [
 		'ach' => [
 			'method' => 'dd',
@@ -275,7 +276,7 @@ class ReferenceData {
 	 * @param string $variant Adyen's 'Payment Method Variant'
 	 * @return array first entry is our payment_method, second is our payment_submethod
 	 */
-	public static function decodePaymentMethod( $method, $variant ) {
+	public static function decodePaymentMethod( $method, $variant ): array {
 		if ( !array_key_exists( $method, self::$methods ) ) {
 			throw new OutOfBoundsException( "Unknown Payment Method '$method'" );
 		}

@@ -6,8 +6,11 @@ use SmashPig\Core\ApiException;
 use SmashPig\PaymentData\ErrorCode;
 
 class ExceptionMapper {
-	// List gleaned from https://docs.adyen.com/development-resources/error-codes
-	// then roughly classified with a few regexes and some hand-coding
+	/**
+	 * @var array
+	 * List gleaned from https://docs.adyen.com/development-resources/error-codes
+	 * then roughly classified with a few regexes and some hand-coding
+	 */
 	protected static $fatalErrorCodes = [
 		'000' => ErrorCode::UNKNOWN, // Unknown
 		'010' => ErrorCode::UNKNOWN, // Not allowed
@@ -297,7 +300,7 @@ class ExceptionMapper {
 	/**
 	 * @throws ApiException
 	 */
-	public static function throwOnAdyenError( $adyenResponse ) {
+	public static function throwOnAdyenError( $adyenResponse ): void {
 		$exceptionCode = null;
 		$exceptionMessage = null;
 

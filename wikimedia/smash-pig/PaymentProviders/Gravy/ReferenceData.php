@@ -119,8 +119,6 @@ class ReferenceData {
 		"vipps" => ""
 	];
 
-	// At least one dLocal bank code is used for both credit cards
-	// and bank transfers. We have a different internal code for each.
 	protected static $cardPaymentSubmethods = [
 		"amex" => 'amex',
 		"bancontact" => '',
@@ -166,7 +164,7 @@ class ReferenceData {
 		"trustlyeurope" => ''
 	];
 
-	public static function decodePaymentMethod( string $method, ?string $scheme = '' ) {
+	public static function decodePaymentMethod( string $method, ?string $scheme = '' ): array {
 		$methods = self::$methods;
 		$payment_method = $methods[$method] ?? '';
 		$payment_submethod = '';
