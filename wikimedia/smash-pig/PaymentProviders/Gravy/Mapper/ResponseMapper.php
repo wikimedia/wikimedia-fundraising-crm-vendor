@@ -23,7 +23,7 @@ class ResponseMapper {
 		return $this->mapSuccessfulPaymentResponse( $response );
 	}
 
-	public function mapDonorResponse( array $response ) : array {
+	public function mapDonorResponse( array $response ): array {
 		$buyer = $response;
 		$donorDetails = $buyer['billing_details'] ?? [];
 		$params = [
@@ -91,7 +91,7 @@ class ResponseMapper {
 			return $this->mapErrorFromResponse( $response );
 		}
 		return [
-			"is_successful" => true
+			'is_successful' => true
 		];
 	}
 
@@ -114,14 +114,14 @@ class ResponseMapper {
 		if ( ( isset( $response['type'] ) && $response['type'] == 'error' ) || isset( $response['error_code'] ) ) {
 			return $this->mapErrorFromResponse( $response );
 		}
-		$report = $response["report"];
+		$report = $response['report'];
 		return [
-			"is_successful" => true,
-			"report_execution_id" => $response["id"],
-			"report_id" => $report["id"],
-			"raw_response" => $response,
-			"status" => $this->normalizeStatus( $response["status"] ),
-			"raw_status" => $response["status"]
+			'is_successful' => true,
+			'report_execution_id' => $response['id'],
+			'report_id' => $report['id'],
+			'raw_response' => $response,
+			'status' => $this->normalizeStatus( $response['status'] ),
+			'raw_status' => $response['status']
 		];
 	}
 
@@ -135,18 +135,18 @@ class ResponseMapper {
 		}
 
 		return [
-			"is_successful" => true,
-			"report_url" => $response["url"],
-			"expires" => $response["expires_at"],
-			"raw_response" => $response,
-			"status" => $this->normalizeStatus( "succeeded" ),
-			"raw_status" => "succeeded"
+			'is_successful' => true,
+			'report_url' => $response['url'],
+			'expires' => $response['expires_at'],
+			'raw_response' => $response,
+			'status' => $this->normalizeStatus( 'succeeded' ),
+			'raw_status' => 'succeeded'
 		];
 	}
 
 	/**
 	 * Maps from gravy payment response payment method details
-	 * @param array $result
+	 * @param array &$result
 	 * @param array $response
 	 * @return void
 	 */
@@ -168,7 +168,7 @@ class ResponseMapper {
 
 	/**
 	 * Maps from gravy payment response donor details
-	 * @param array $result
+	 * @param array &$result
 	 * @param array $response
 	 * @return void
 	 */
@@ -204,7 +204,7 @@ class ResponseMapper {
 
 	/**
 	 * Maps from gravy payment response payment service details
-	 * @param array $result
+	 * @param array &$result
 	 * @param array $response
 	 * @return void
 	 */
@@ -246,20 +246,22 @@ class ResponseMapper {
 	/**
 	 * Normalize Gravy payment refund response from Gravy format to pick out the key parameters
 	 * @param array $response
+	 * @param string $type
 	 * @return array
 	 */
-	protected function mapSuccessfulRefundMessage( array $response ): array {
+	protected function mapSuccessfulRefundMessage( array $response, string $type = 'refund' ): array {
 		return [
-			"is_successful" => true,
-			"gateway_parent_id" => $response["transaction_id"],
-			"gateway_refund_id" => $response["id"],
-			"currency" => $response["currency"],
-			"amount" => $response["amount"] / 100,
-			"reason" => $response["reason"],
-			"status" => $this->normalizeStatus( $response["status"] ),
-			"raw_status" => $response["status"],
-			"type" => 'refund',
-			"raw_response" => $response,
+			'is_successful' => true,
+			'gateway_parent_id' => $response['transaction_id'] ?? $response['id'],
+			'gateway_refund_id' => $response['id'],
+			'currency' => $response['currency'],
+			'amount' => $response['amount'] / 100,
+			'reason' => $response['reason'] ?? '',
+			'status' => $this->normalizeStatus( $response['status'] ),
+			'raw_status' => $response['status'],
+			'type' => $type,
+			'raw_response' => $response,
+			'backend_processor' => $this->getBackendProcessor( $response ) ?? ''
 		];
 	}
 
@@ -303,9 +305,9 @@ class ResponseMapper {
 	 */
 	protected function mapErrorFromResponse( array $error ): array {
 		$errorParameters = [
-			"code" => '',
-			"message" => '',
-			"description" => ''
+			'code' => '',
+			'message' => '',
+			'description' => ''
 		];
 		if ( $error['type'] == 'error' ) {
 			$errorParameters['code'] = $error['status'] ?? '';
@@ -314,6 +316,14 @@ class ResponseMapper {
 		} elseif ( $error['intent_outcome'] == 'failed' ) {
 			$errorParameters['code'] = $error['error_code'] ?? '';
 			$errorParameters['message'] = $error['status'] ?? '';
+
+			// Only chargeback for specific payment methods
+			if ( $this->requiresChargebackIfFailed( $error ) ) {
+				// Gravy returns this failed transaction errors with the same structure as successful payments.
+				// We can map this failed transactions as a chargeback in the normalized_response
+				$errorParameters['normalized_response'] = $this->mapSuccessfulRefundMessage( $error, 'chargeback' );
+				$errorParameters['normalized_response']['reason'] = 'Payment failed';
+			}
 		} else {
 			$errorParameters['code'] = $error['error_code'] ?? '';
 			$errorParameters['message'] = $error['raw_response_code'] ?? '';
@@ -334,15 +344,19 @@ class ResponseMapper {
 			'description' => $errorParameters['description'],
 			'raw_response' => $error
 		];
-		return $errorResponse;
+		if ( !isset( $errorParameters['normalized_response'] ) ) {
+			return $errorResponse;
+		}
+
+		return array_merge( $errorParameters['normalized_response'], $errorResponse );
 	}
 
 	protected function mapFrom3DSecureErrorResponse( array $params ): array {
 		$errorData = $params['error_data'];
 		$error = [
-			"code" => $errorData['code'],
-			"message" => $errorData['description'],
-			"description" => $errorData['detail']
+			'code' => $errorData['code'],
+			'message' => $errorData['description'],
+			'description' => $errorData['detail']
 		];
 
 		return $error;
@@ -377,5 +391,15 @@ class ResponseMapper {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Some payment method requires a chargeback message when it fails
+	 * because they are set to complete status before getting a successful response
+	 * @param array $response
+	 * @return bool
+	 */
+	protected function requiresChargebackIfFailed( array $response ): bool {
+		return $this->getBackendProcessor( $response ) === 'trustly';
 	}
 }

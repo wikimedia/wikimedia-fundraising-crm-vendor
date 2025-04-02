@@ -26,15 +26,15 @@ class Api {
 	/**
 	 * Creates a new payment session for an apple or card payment
 	 */
-	public function createPaymentSession( $params = [], $method = "card" ) {
+	public function createPaymentSession( $params = [], $method = 'card' ) {
 		$response = null;
 		$tl = new TaggedLogger( 'RawData' );
-		if ( $method == "apple" ) {
+		if ( $method == 'apple' ) {
 			$response = $this->gravyApiClient->newApplePaySession( $params );
-			$tl->info( "New Apple Pay Session response " . json_encode( $response ) );
+			$tl->info( 'New Apple Pay Session response ' . json_encode( $response ) );
 		} else {
 			$response = $this->gravyApiClient->newCheckoutSession( $params );
-			$tl->info( "New Checkout Session response " . json_encode( $response ) );
+			$tl->info( 'New Checkout Session response ' . json_encode( $response ) );
 		}
 		return $response;
 	}
@@ -87,7 +87,7 @@ class Api {
 	 */
 	public function createPayment( array $params ): array {
 		$tl = new TaggedLogger( 'RawData' );
-		$tl->info( "Create payment request params: " . json_encode( $params ) );
+		$tl->info( 'Create payment request params: ' . json_encode( $params ) );
 		$response = $this->gravyApiClient->authorizeNewTransaction( $params );
 		$response_string = json_encode( $response );
 		$tl->info( "Create payment response $response_string" );
@@ -227,6 +227,18 @@ class Api {
 		$response = $this->gravyApiClient->generateReportDownloadUrl( $report_id, $report_execution_id );
 		$response_string = json_encode( $response );
 		$tl->info( "Report url for report with execution ID {$report_execution_id} $response_string" );
+		return $response;
+	}
+
+	/**
+	 * Uses the rest API to fetch the payment service definition for specified method
+	 * @param array $params
+	 * @throws \SmashPig\Core\ApiException
+	 * @return array
+	 * @link https://docs.gr4vy.com/reference/payment-service-definitions/get-payment-service-definition#parameter-payment-service-definition-id
+	 */
+	public function getPaymentServiceDefinition( string $method = '' ): array {
+		$response = $this->gravyApiClient->getPaymentServiceDefinition( $method );
 		return $response;
 	}
 }

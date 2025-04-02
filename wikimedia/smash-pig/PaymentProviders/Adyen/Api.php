@@ -1,7 +1,6 @@
 <?php namespace SmashPig\PaymentProviders\Adyen;
 
 use SmashPig\Core\Context;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\Helpers\UniqueId;
 use SmashPig\Core\Http\OutboundRequest;
 use SmashPig\Core\Logging\Logger;
@@ -200,7 +199,7 @@ class Api {
 		$restParams = [
 			'amount' => [
 				'currency' => $params['currency'],
-				'value' => CurrencyRoundingHelper::getAmountInMinorUnits(
+				'value' => AdyenCurrencyRoundingHelper::getAmountInMinorUnits(
 					$params['amount'], $params['currency']
 				)
 			],
@@ -235,10 +234,10 @@ class Api {
 
 	/**
 	 * Uses the rest API to create a bank transfer payment from the
-	 * Component web integration. Handles NL (iDEAL) and CZ bank transfer.
+	 * Component web integration. Handles NL (iDEAL 2.0) and CZ bank transfer.
 	 *
 	 * @param array $params
-	 * amount, currency, value, issuer, returnUrl
+	 * amount, currency, value, issuer_id (for CZ), return_url
 	 * @throws \SmashPig\Core\ApiException
 	 */
 	public function createBankTransferPaymentFromCheckout( $params ) {
@@ -405,7 +404,7 @@ class Api {
 	 * handled for you in Adyen's code.
 	 * https://developer.apple.com/documentation/apple_pay_on_the_web/apple_pay_js_api/requesting_an_apple_pay_payment_session
 	 */
-	public function createApplePaySession( array $params ) : array {
+	public function createApplePaySession( array $params ): array {
 		$request = new OutboundRequest( $params['validation_url'], 'POST' );
 		$request->setBody( json_encode( [
 			// Your Apple Pay merchant ID
@@ -572,7 +571,7 @@ class Api {
 		$restParams = [
 			'amount' => [
 				'currency' => $params['currency'],
-				'value' => CurrencyRoundingHelper::getAmountInMinorUnits(
+				'value' => AdyenCurrencyRoundingHelper::getAmountInMinorUnits(
 					$params['amount'], $params['currency']
 				)
 			],
@@ -643,7 +642,7 @@ class Api {
 	private function getArrayAmount( array $params ): array {
 		return [
 			'currency' => $params['currency'],
-			'value' => CurrencyRoundingHelper::getAmountInMinorUnits(
+			'value' => AdyenCurrencyRoundingHelper::getAmountInMinorUnits(
 				$params['amount'], $params['currency']
 			)
 		];
