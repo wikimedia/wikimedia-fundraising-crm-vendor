@@ -34,6 +34,15 @@ class ExportListRequest extends SilverpopBaseRequest
   protected $exportType;
 
   /**
+   * @var array
+   */
+  protected array $columns = [];
+
+  public function getColumns(): array {
+    return $this->columns;
+  }
+
+    /**
    * @return string
    */
   public function getExportType() {
@@ -103,6 +112,10 @@ class ExportListRequest extends SilverpopBaseRequest
     return $this->endTimeStamp;
   }
 
+  public function setColumns($columns): void {
+    $this->columns = $columns;
+  }
+
   /**
    * @param int $endTimeStamp
    */
@@ -138,7 +151,9 @@ class ExportListRequest extends SilverpopBaseRequest
       $this->getGroupIdentifier(),
       $this->getStartTimeStamp(),
       $this->getEndTimeStamp(),
-      $this->getExportType()
+      $this->getExportType(),
+      'CSV',
+      $this->getColumns()
     );
     $this->setRetrievalParameters(array(
       'jobId' => (string) $result['jobId'],
@@ -159,7 +174,7 @@ class ExportListRequest extends SilverpopBaseRequest
       'includeTest' => FALSE,
       'startTimeStamp' => strtotime('1 week ago'),
       'endTimeStamp' => strtotime('now'),
-      'exportType' => 'ALL'
+      'exportType' => 'ALL',
     );
   }
 

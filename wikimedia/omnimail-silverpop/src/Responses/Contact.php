@@ -329,9 +329,12 @@ class Contact {
   }
 
   /**
-   * @return mixed
+   * @return string|null
    */
-  public function getContactReference() {
+  public function getContactReference(): ?string {
+    if (!$this->contactReference && empty($this->data['ContactID'])) {
+      return NULL;
+    }
     return (string) $this->contactReference ?: $this->data['ContactID'];
   }
 
@@ -343,7 +346,7 @@ class Contact {
   }
 
   public function getCustomData($key) {
-    return (string) $this->data[$key];
+    return (string) ($this->data[$key] ?? '');
   }
 
   /**
