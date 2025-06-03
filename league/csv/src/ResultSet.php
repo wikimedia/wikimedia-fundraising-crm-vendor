@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace League\Csv;
 
 use CallbackFilterIterator;
+use Generator;
 use Iterator;
 use JsonSerializable;
 use LimitIterator;
@@ -22,30 +23,17 @@ use function array_search;
 use function is_string;
 use function iterator_count;
 use function iterator_to_array;
-use function sprintf;
 
 /**
  * Represents the result set of a {@link Reader} processed by a {@link Statement}.
  */
 class ResultSet implements TabularDataReader, JsonSerializable
 {
-    /**
-     * The CSV records collection.
-     *
-     * @var Iterator
-     */
-    protected $records;
+    /** The CSV records collection. */
+    protected Iterator $records;
+    /** @var array<string> The CSV records collection header. */
+    protected array $header = [];
 
-    /**
-     * The CSV records collection header.
-     *
-     * @var array
-     */
-    protected $header = [];
-
-    /**
-     * New instance.
-     */
     public function __construct(Iterator $records, array $header)
     {
         $this->validateHeader($header);
@@ -59,21 +47,22 @@ class ResultSet implements TabularDataReader, JsonSerializable
      */
     protected function validateHeader(array $header): void
     {
-        if ($header !== array_unique(array_filter($header, 'is_string'))) {
-            throw new SyntaxError('The header record must be an empty or a flat array with unique string values.');
+        if ($header !== ($filtered_header = array_filter($header, 'is_string'))) {
+            throw SyntaxError::dueToInvalidHeaderColumnNames();
+        }
+
+        if ($header !== array_unique($filtered_header)) {
+            throw SyntaxError::dueToDuplicateHeaderColumnNames($header);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function __destruct()
     {
         unset($this->records);
     }
 
     /**
-     * Returns a new instance from a League\Csv\Reader object.
+     * Returns a new instance from an object implementing the TabularDataReader interface.
      */
     public static function createFromTabularDataReader(TabularDataReader $reader): self
     {
@@ -83,24 +72,18 @@ class ResultSet implements TabularDataReader, JsonSerializable
     /**
      * Returns the header associated with the result set.
      *
-     * @return string[]
+     * @return array<string>
      */
     public function getHeader(): array
     {
         return $this->header;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getIterator(): Iterator
     {
         return $this->getRecords();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getRecords(array $header = []): Iterator
     {
         $this->validateHeader($header);
@@ -134,99 +117,118 @@ class ResultSet implements TabularDataReader, JsonSerializable
         return new MapIterator($this->records, $mapper);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function count(): int
     {
         return iterator_count($this->records);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function jsonSerialize(): array
     {
         return iterator_to_array($this->records, false);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function fetchOne(int $nth_record = 0): array
     {
         if ($nth_record < 0) {
-            throw new InvalidArgument(sprintf('%s() expects the submitted offset to be a positive integer or 0, %s given', __METHOD__, $nth_record));
+            throw InvalidArgument::dueToInvalidRecordOffset($nth_record, __METHOD__);
         }
 
         $iterator = new LimitIterator($this->records, $nth_record, 1);
         $iterator->rewind();
 
-        return (array) $iterator->current();
+        $result = $iterator->current();
+        if (!is_array($result)) {
+            return [];
+        }
+
+        return $result;
     }
 
     /**
-     * {@inheritdoc}
+     * @throws Exception
      */
+    public function fetchColumnByName(string $name): Iterator
+    {
+        return $this->yieldColumn(
+            $this->getColumnIndexByValue($name, 'name', __METHOD__)
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function fetchColumnByOffset(int $offset): Iterator
+    {
+        return $this->yieldColumn(
+            $this->getColumnIndexByKey($offset, 'offset', __METHOD__)
+        );
+    }
+
     public function fetchColumn($index = 0): Iterator
     {
-        $offset = $this->getColumnIndex($index, __METHOD__.'() expects the column index to be a valid string or integer, `%s` given');
-        $filter = static function (array $record) use ($offset): bool {
-            return isset($record[$offset]);
-        };
+        return $this->yieldColumn(
+            $this->getColumnIndex($index, 'offset', __METHOD__)
+        );
+    }
 
-        $select = static function (array $record) use ($offset): string {
-            return $record[$offset];
-        };
+    /**
+     * @param string|int $offset
+     */
+    protected function yieldColumn($offset): Generator
+    {
+        $iterator = new MapIterator(
+            new CallbackFilterIterator($this->records, fn (array $record): bool => isset($record[$offset])),
+            fn (array $record): string => $record[$offset]
+        );
 
-        $iterator = new MapIterator(new CallbackFilterIterator($this->records, $filter), $select);
-        foreach ($iterator as $tKey => $tValue) {
-            yield $tKey => $tValue;
+        foreach ($iterator as $key => $value) {
+            yield $key => $value;
         }
     }
 
     /**
      * Filter a column name against the header if any.
      *
-     * @param string|int $field         the field name or the field index
-     * @param string     $error_message the associated error message
+     * @param string|int $field the field name or the field index
+     *
+     * @throws InvalidArgument if the field is invalid or not found
      *
      * @return string|int
      */
-    protected function getColumnIndex($field, string $error_message)
+    protected function getColumnIndex($field, string $type, string $method)
     {
         if (is_string($field)) {
-            return $this->getColumnIndexByValue($field, $error_message);
+            return $this->getColumnIndexByValue($field, $type, $method);
         }
 
-        return $this->getColumnIndexByKey($field, $error_message);
+        return $this->getColumnIndexByKey($field, $type, $method);
     }
 
     /**
      * Returns the selected column name.
      *
-     * @throws Exception if the column is not found
+     * @throws InvalidArgument if the column is not found
      */
-    protected function getColumnIndexByValue(string $value, string $error_message): string
+    protected function getColumnIndexByValue(string $value, string $type, string $method): string
     {
-        if (false !== array_search($value, $this->header, true)) {
-            return $value;
+        if (false === array_search($value, $this->header, true)) {
+            throw InvalidArgument::dueToInvalidColumnIndex($value, $type, $method);
         }
 
-        throw new InvalidArgument(sprintf($error_message, $value));
+        return $value;
     }
 
     /**
      * Returns the selected column name according to its offset.
      *
-     * @throws Exception if the field is invalid or not found
+     * @throws InvalidArgument if the field is invalid or not found
      *
      * @return int|string
      */
-    protected function getColumnIndexByKey(int $index, string $error_message)
+    protected function getColumnIndexByKey(int $index, string $type, string $method)
     {
         if ($index < 0) {
-            throw new InvalidArgument($error_message);
+            throw InvalidArgument::dueToInvalidColumnIndex($index, $type, $method);
         }
 
         if ([] === $this->header) {
@@ -234,30 +236,24 @@ class ResultSet implements TabularDataReader, JsonSerializable
         }
 
         $value = array_search($index, array_flip($this->header), true);
-        if (false !== $value) {
-            return $value;
+        if (false === $value) {
+            throw InvalidArgument::dueToInvalidColumnIndex($index, $type, $method);
         }
 
-        throw new InvalidArgument(sprintf($error_message, $index));
+        return $value;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function fetchPairs($offset_index = 0, $value_index = 1): Iterator
     {
-        $offset = $this->getColumnIndex($offset_index, __METHOD__.'() expects the offset index value to be a valid string or integer, `%s` given');
-        $value = $this->getColumnIndex($value_index, __METHOD__.'() expects the value index value to be a valid string or integer, `%s` given');
+        $offset = $this->getColumnIndex($offset_index, 'offset', __METHOD__);
+        $value = $this->getColumnIndex($value_index, 'value', __METHOD__);
 
-        $filter = static function (array $record) use ($offset): bool {
-            return isset($record[$offset]);
-        };
+        $iterator = new MapIterator(
+            new CallbackFilterIterator($this->records, fn (array $record): bool => isset($record[$offset])),
+            fn (array $record): array => [$record[$offset], $record[$value] ?? null]
+        );
 
-        $select = static function (array $record) use ($offset, $value): array {
-            return [$record[$offset], $record[$value] ?? null];
-        };
-
-        $iterator = new MapIterator(new CallbackFilterIterator($this->records, $filter), $select);
+        /** @var array{0:int|string, 1:string|null} $pair */
         foreach ($iterator as $pair) {
             yield $pair[0] => $pair[1];
         }

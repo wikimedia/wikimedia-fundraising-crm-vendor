@@ -23,31 +23,26 @@ use function preg_match;
  */
 class HTMLConverter
 {
+    /** table class attribute value. */
+    protected string $class_name = 'table-csv-data';
+    /** table id attribute value. */
+    protected string $id_value = '';
+    protected XMLConverter $xml_converter;
+
+    public static function create(): self
+    {
+        return new self();
+    }
+
     /**
-     * table class attribute value.
+     * DEPRECATION WARNING! This method will be removed in the next major point release.
      *
-     * @var string
-     */
-    protected $class_name = 'table-csv-data';
-
-    /**
-     * table id attribute value.
-     *
-     * @var string
-     */
-    protected $id_value = '';
-
-    /**
-     * @var XMLConverter
-     */
-    protected $xml_converter;
-
-    /**
-     * New Instance.
+     * @deprecated since version 9.7.0
+     * @see HTMLConverterTest::create()
      */
     public function __construct()
     {
-        $this->xml_converter = (new XMLConverter())
+        $this->xml_converter = XMLConverter::create()
             ->rootElement('table')
             ->recordElement('tr')
             ->fieldElement('td')
@@ -75,10 +70,13 @@ class HTMLConverter
         }
 
         $table = $doc->createElement('table');
+
         $this->addHTMLAttributes($table);
         $this->appendHeaderSection('thead', $header_record, $table);
         $this->appendHeaderSection('tfoot', $footer_record, $table);
+
         $table->appendChild($this->xml_converter->rootElement('tbody')->import($records, $doc));
+
         $doc->appendChild($table);
 
         /** @var string $content */

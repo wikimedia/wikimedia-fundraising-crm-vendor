@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace League\Csv;
 
 use IteratorIterator;
+use ReturnTypeWillChange;
 use Traversable;
 
 /**
@@ -21,18 +22,11 @@ use Traversable;
  *
  * @internal used internally to modify CSV content
  */
-class MapIterator extends IteratorIterator
+final class MapIterator extends IteratorIterator
 {
-    /**
-     * The callback to apply on all InnerIterator current value.
-     *
-     * @var callable
-     */
-    protected $callable;
+    /** @var callable The callback to apply on all InnerIterator current value. */
+    private $callable;
 
-    /**
-     * New instance.
-     */
     public function __construct(Traversable $iterator, callable $callable)
     {
         parent::__construct($iterator);
@@ -42,8 +36,9 @@ class MapIterator extends IteratorIterator
     /**
      * @return mixed The value of the current element.
      */
+    #[ReturnTypeWillChange]
     public function current()
     {
-        return ($this->callable)(parent::current(), $this->key());
+        return ($this->callable)(parent::current(), parent::key());
     }
 }
