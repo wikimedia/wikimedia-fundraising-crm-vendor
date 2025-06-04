@@ -3,7 +3,7 @@
         'name' => 'wikimedia/fundraising-crm',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '64a00cd760c97944b96fc8dba561500f242e480f',
+        'reference' => '942daf2d765c1203ba7a28860b41cccbe0bc44a7',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -280,7 +280,7 @@
         'omnimail/omnimail' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '6b5104b8df3000f',
+            'reference' => '6b5104b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../omnimail/omnimail',
             'aliases' => array(
@@ -772,7 +772,7 @@
         'wikimedia/fundraising-crm' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '64a00cd760c97944b96fc8dba561500f242e480f',
+            'reference' => '942daf2d765c1203ba7a28860b41cccbe0bc44a7',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
