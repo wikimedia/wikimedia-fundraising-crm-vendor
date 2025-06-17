@@ -2,6 +2,7 @@
 namespace SmashPig\PaymentProviders\Gravy;
 
 use SmashPig\PaymentData\PaymentMethod;
+use SmashPig\PaymentProviders\Gravy\PaymentMethod as PaymentSubmethod;
 
 /**
  * These codes are listed per country here
@@ -9,7 +10,7 @@ use SmashPig\PaymentData\PaymentMethod;
  */
 class ReferenceData {
 
-	protected static $methods = [
+	protected static $paymentMethodMapper = [
 		'abitab' => PaymentMethod::CASH,
 		'afterpay' => '',
 		'alipay' => PaymentMethod::EW,
@@ -89,6 +90,7 @@ class ReferenceData {
 		'razorpay' => '',
 		'rupay' => PaymentMethod::CC,
 		'redpagos' => PaymentMethod::CASH,
+		'rapipago' => PaymentMethod::CASH,
 		'scalapay' => '',
 		'sepa' => PaymentMethod::RTBT,
 		'shopeepay' => '',
@@ -169,29 +171,31 @@ class ReferenceData {
 	];
 
 	protected static $cashSubmethods = [
-		'pix' => 'pix',
-		'oxxo' => 'cash_oxxo',
-		'redpagos' => 'redpagos',
-		'boleto' => 'cash_boleto',
-		'abitab' => 'cash_abitab',
+		'pix' => PaymentSubmethod::PIX->value,
+		'oxxo' => PaymentSubmethod::CASH_OXXO->value,
+		'redpagos' => PaymentSubmethod::CASH_RED_PAGOS->value,
+		'boleto' => PaymentSubmethod::CASH_BOLETO->value,
+		'abitab' => PaymentSubmethod::CASH_ABITAB->value,
+		'rapipago' => PaymentSubmethod::CASH_RAPIPAGO->value,
+		'pagoefectivo' => PaymentSubmethod::CASH_PAGO_EFECTIVO->value
 	];
 
 	public static function decodePaymentMethod( string $method, ?string $scheme = '' ): array {
-		$methods = self::$methods;
-		$payment_method = $methods[$method] ?? '';
+		$gravyMethods = self::$paymentMethodMapper;
+		$payment_method = $gravyMethods[$method] ?? '';
 		$payment_submethod = '';
 
 		switch ( $payment_method ) {
 			case PaymentMethod::EW:
-				$payment_submethod = self::$ewSubmethods[$scheme];
+				$payment_submethod = $scheme ? self::$ewSubmethods[$scheme] : '';
 				break;
 			case PaymentMethod::RTBT:
-				$payment_submethod = self::$rtbtSubmethods[$scheme];
+				$payment_submethod = $scheme ? self::$rtbtSubmethods[$scheme] : '';
 				break;
 			case PaymentMethod::CC:
 			case PaymentMethod::APPLE:
 			case PaymentMethod::GOOGLE:
-				$payment_submethod = self::$cardPaymentSubmethods[$scheme];
+				$payment_submethod = $scheme ? self::$cardPaymentSubmethods[$scheme] : '';
 				break;
 			case PaymentMethod::DD:
 				$payment_submethod = self::$ddSubmethods[$method];
@@ -207,5 +211,14 @@ class ReferenceData {
 		}
 
 		return [ $payment_method, $payment_submethod ];
+	}
+
+	public static function getShorthandPaymentMethod( string $paymentMethod ): string {
+		$gravyMethods = self::$paymentMethodMapper;
+		if ( !isset( $gravyMethods[$paymentMethod] ) ) {
+			throw new \InvalidArgumentException( "Payment method '$paymentMethod' not found" );
+		}
+
+		return $gravyMethods[$paymentMethod];
 	}
 }

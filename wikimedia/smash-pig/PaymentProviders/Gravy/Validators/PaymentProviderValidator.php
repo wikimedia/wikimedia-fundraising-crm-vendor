@@ -4,6 +4,9 @@ namespace SmashPig\PaymentProviders\Gravy\Validators;
 
 use SmashPig\PaymentProviders\ValidationException;
 
+/**
+ * This base abstract class contains common validator logic for all payment method types.
+ */
 abstract class PaymentProviderValidator {
 	use ValidatorTrait;
 
@@ -14,15 +17,46 @@ abstract class PaymentProviderValidator {
 	 */
 	private const FIELD_COUNTRY_REQUIREMENTS = [
 		'fiscal_number' => [
-			'AR', 'BR', 'CL', 'CO', 'ID', 'IN', 'JP', 'MX', 'MY', 'PH', 'TH', 'ZA',
+			'AR', 'BR', 'CL', 'CO', 'ID', 'IN', 'MX', 'PH', 'TH', 'ZA',
 		],
 	];
 
 	/**
+	 * Checks the one time create payment input parameters for correctness and completeness.
+	 *
+	 * Each payment method type has specific requirements, as such this function should be defined
+	 * in each Provider class to ensure the parameters are complete and correct.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
-	abstract public function validateOneTimeCreatePaymentInput( array $params ): void;
+	public function validateOneTimeCreatePaymentInput( array $params ): void {
+		$defaultRequiredFields = [
+			'amount',
+			'currency',
+			'country',
+			'order_id',
+		];
 
+		$this->validateFields( $defaultRequiredFields, $params );
+
+		$amount = $params['amount'] ?? null;
+		// Check if amount is set and is a positive number
+		if ( !is_numeric( $amount ) || (float)$amount <= 0 ) {
+			throw new ValidationException( 'Invalid amount. Amount must be numeric and a positive number.', [
+				'amount' => "Invalid amount: $amount",
+			] );
+		}
+	}
+
+	/**
+	 * Resolves the type of validation for the create payment input depending on the transaction type.
+	 *
+	 * @param array $params
+	 * @throws ValidationException
+	 * @return void
+	 */
 	public function validateCreatePaymentInput( array $params ): void {
 		// recurring charge is same across all methods
 		if ( isset( $params['recurring_payment_token'] ) ) {
@@ -33,19 +67,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the recurring create payment input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
-	 * Useful for PayPal transaction flow
-	 */
-	public function validateDonorInput( array $params ): void {
-		$required = [
-			'email',
-		];
-
-		$this->validateFields( $required, $params );
-	}
-
-	/**
-	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateRecurringCreatePaymentInput( array $params ): void {
 		$defaultRequiredFields = [
@@ -68,7 +96,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the payment status request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateGetLatestPaymentStatusInput( array $params ): void {
 		$required = [
@@ -79,7 +113,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the refund details request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateGetRefundInput( array $params ): void {
 		$required = [
@@ -90,7 +130,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the report execution request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateGetReportExecutionInput( array $params ): void {
 		$required = [
@@ -101,7 +147,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the generate report request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateGenerateReportUrlInput( array $params ): void {
 		$required = [
@@ -113,7 +165,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the initiate refund request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateRefundInput( array $params ): void {
 		$required = [
@@ -128,7 +186,13 @@ abstract class PaymentProviderValidator {
 	}
 
 	/**
+	 * Checks the approve payment request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
 	 * @throws ValidationException
+	 * @return void
 	 */
 	public function validateApprovePaymentInput( array $params ): void {
 		$required = [
@@ -140,6 +204,15 @@ abstract class PaymentProviderValidator {
 		$this->validateFields( $required, $params );
 	}
 
+	/**
+	 * Checks the delete payment token request input parameters for correctness and completeness.
+	 *
+	 * This method is the same for all payment methods on Gravy.
+	 *
+	 * @param array $params
+	 * @throws ValidationException
+	 * @return bool
+	 */
 	public function validateDeletePaymentTokenInput( array $params ) {
 		$required = [
 			'recurring_payment_token'
@@ -147,20 +220,6 @@ abstract class PaymentProviderValidator {
 
 		$this->validateFields( $required, $params );
 		return true;
-	}
-
-	/**
-	 * @throws ValidationException
-	 * Useful for PayPal transaction flow
-	 */
-	public function validateCreateDonorInput( array $params ): void {
-		$required = [
-			'first_name',
-			'last_name',
-			'email'
-		];
-
-		$this->validateFields( $required, $params );
 	}
 
 	/**

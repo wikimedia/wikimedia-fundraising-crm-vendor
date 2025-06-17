@@ -14,3 +14,4 @@ composer.phar
 .phpunit.result.cache
 *.pem
 *.key
+.DS_Store

@@ -1291,17 +1291,17 @@
         },
         {
             "name": "gr4vy/gr4vy-php",
-            "version": "v0.23.2",
-            "version_normalized": "0.23.2.0",
+            "version": "v0.26.0",
+            "version_normalized": "0.26.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gr4vy/gr4vy-php.git",
-                "reference": "1b0ece57c02f99536f8986d34685d2fa94e95ba3"
+                "reference": "2c85b6d8b44e1afb4a21b16f5f414fe659e1dcb8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gr4vy/gr4vy-php/zipball/1b0ece57c02f99536f8986d34685d2fa94e95ba3",
-                "reference": "1b0ece57c02f99536f8986d34685d2fa94e95ba3",
+                "url": "https://api.github.com/repos/gr4vy/gr4vy-php/zipball/2c85b6d8b44e1afb4a21b16f5f414fe659e1dcb8",
+                "reference": "2c85b6d8b44e1afb4a21b16f5f414fe659e1dcb8",
                 "shasum": ""
             },
             "require": {
@@ -1310,13 +1310,13 @@
                 "ext-mbstring": "*",
                 "guzzlehttp/guzzle": ">=6.5.5",
                 "lcobucci/jwt": "^4.1.5",
-                "php": ">=7.3"
+                "php": ">=8.1"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.4.0",
                 "phpunit/phpunit": "^9.5.20"
             },
-            "time": "2025-01-07T17:40:18+00:00",
+            "time": "2025-04-23T18:25:53+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -1346,7 +1346,7 @@
                 "sdk"
             ],
             "support": {
-                "source": "https://github.com/gr4vy/gr4vy-php/tree/v0.23.2"
+                "source": "https://github.com/gr4vy/gr4vy-php/tree/v0.26.0"
             },
             "install-path": "../gr4vy/gr4vy-php"
         },
@@ -5436,17 +5436,17 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.9.4.1",
-            "version_normalized": "0.9.4.1",
+            "version": "v0.9.6.7",
+            "version_normalized": "0.9.6.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "81c04f5f2c9c32d77388fa5d1e1ef165e9388912"
+                "reference": "8d2bd7d321da5f4e66397a9d2dc3360044a24e63"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/81c04f5f2c9c32d77388fa5d1e1ef165e9388912",
-                "reference": "81c04f5f2c9c32d77388fa5d1e1ef165e9388912",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/8d2bd7d321da5f4e66397a9d2dc3360044a24e63",
+                "reference": "8d2bd7d321da5f4e66397a9d2dc3360044a24e63",
                 "shasum": ""
             },
             "require": {
@@ -5456,7 +5456,7 @@
                 "ext-curl": "*",
                 "ext-json": "*",
                 "ext-pdo": "*",
-                "gr4vy/gr4vy-php": "0.23.2",
+                "gr4vy/gr4vy-php": "0.26.0",
                 "php": ">=8.0",
                 "phpmailer/phpmailer": "^6",
                 "predis/predis": "^1.1",
@@ -5471,7 +5471,7 @@
                 "php-parallel-lint/php-parallel-lint": "^1.2",
                 "phpunit/phpunit": "^9.5"
             },
-            "time": "2025-04-21T17:38:54+00:00",
+            "time": "2025-06-16T19:03:52+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5524,7 +5524,7 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.9.4.1"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.9.6.7"
             },
             "install-path": "../wikimedia/smash-pig"
         },
