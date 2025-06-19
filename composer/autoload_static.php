@@ -302,7 +302,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'Omnimail\\Silverpop\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/src',
+            0 => __DIR__ . '/../..' . '/ext/org.wikimedia.omnimail/src',
             1 => __DIR__ . '/..' . '/wikimedia/omnimail-silverpop/src',
         ),
         'Omnimail\\' => 

@@ -45,7 +45,7 @@ return array(
     'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
     'PayWithAmazon\\' => array($vendorDir . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon'),
     'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
-    'Omnimail\\Silverpop\\' => array($baseDir . '/drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/src', $vendorDir . '/wikimedia/omnimail-silverpop/src'),
+    'Omnimail\\Silverpop\\' => array($baseDir . '/ext/org.wikimedia.omnimail/src', $vendorDir . '/wikimedia/omnimail-silverpop/src'),
     'Omnimail\\' => array($vendorDir . '/omnimail/omnimail/src'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
     'League\\Csv\\' => array($vendorDir . '/league/csv/src'),
