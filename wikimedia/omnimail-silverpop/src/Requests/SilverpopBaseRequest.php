@@ -31,6 +31,7 @@ abstract class SilverpopBaseRequest extends BaseRequest {
    */
   protected $endTimeStamp;
 
+  protected int $retryDelay = 1;
 
   /**
    * Url to direct requests to.
@@ -90,6 +91,15 @@ abstract class SilverpopBaseRequest extends BaseRequest {
     public function setLimit(int $limit) {
         $this->limit = $limit;
     }
+
+
+  public function getRetryDelay(): int {
+    return $this->retryDelay;
+  }
+
+  public function setRetryDelay(int $retryDelay): void {
+    $this->retryDelay = $retryDelay;
+  }
 
   /**
    * @return int

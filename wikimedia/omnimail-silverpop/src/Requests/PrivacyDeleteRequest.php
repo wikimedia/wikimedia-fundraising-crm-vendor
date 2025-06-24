@@ -89,7 +89,7 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
     protected function requestData() {
         $requests = [];
         foreach ((array) $this->getDatabaseId() as $databaseID) {
-            $requests[] = new EraseResponse($this->silverPop->gdpr_erasure(['data' => $this->getEmailArray(), 'database_id' => $databaseID, 'retrieval_parameters' => $this->getRetrievalParameters()]));
+            $requests[] = new EraseResponse($this->silverPop->gdpr_erasure(['data' => $this->getEmailArray(), 'database_id' => $databaseID, 'retrieval_parameters' => $this->getRetrievalParameters(), 'retry_delay' => $this->getRetryDelay()]));
         }
         return $requests;
     }
