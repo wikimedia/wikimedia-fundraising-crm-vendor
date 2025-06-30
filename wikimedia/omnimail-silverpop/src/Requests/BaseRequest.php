@@ -73,6 +73,16 @@ abstract class BaseRequest implements RequestInterface
 
   protected $xmlConnector;
 
+  protected float $timeout = 10;
+
+  public function getTimeout(): float {
+    return $this->timeout;
+  }
+
+  public function setTimeout(float $timeout): void {
+    $this->timeout = $timeout;
+  }
+
     /**
      * @var \Omnimail\Common\Credentials
      */
@@ -209,7 +219,10 @@ abstract class BaseRequest implements RequestInterface
      */
   public function __construct($parameters) {
     Helper::initialize($this, array_merge($this->getDefaultParameters(), $parameters));
-    $this->silverPop = SilverpopGuzzleConnector::getInstance($this->getEndPoint());
+    $this->silverPop = SilverpopGuzzleConnector::getInstance($this->getEndPoint(), 'MM/dd/yyyy', $parameters['timeout'] ?? 10.0);
+    if (isset($parameters['timeout'])) {
+        $this->silverPop->setTimeout($parameters['timeout']);
+    }
     if ($this->sftpEndPoint) {
         $this->silverPop->setSftpUrl($this->sftpEndPoint);
     }

@@ -29,7 +29,7 @@
     "mrmarkfrench/silverpop-php-connector": "*",
     "league/csv" : "^9",
     "omnimail/omnimail": "*",
-    "phpseclib/phpseclib":  "~2.0"
+    "phpseclib/phpseclib":  "*"
   },
   "require-dev": {
     "guzzlehttp/guzzle": "*",
@@ -39,7 +39,7 @@
   "prefer-stable" : true,
   "config": {
     "platform": {
-      "php": "7.4.33"
+      "php": "8.2.28"
     }
   }
 }

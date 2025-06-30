@@ -7,7 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'sgoettsch\\monologRotatingFileHandler\\' => array($vendorDir . '/sgoettsch/monolog-rotating-file-handler/src'),
-    'phpseclib\\' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
+    'phpseclib3\\' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'Wikimedia\\Composer\\Merge\\V2\\' => array($vendorDir . '/wikimedia/composer-merge-plugin/src'),
     'Webmozart\\PathUtil\\' => array($vendorDir . '/webmozart/path-util/src'),
     'Webmozart\\Assert\\' => array($vendorDir . '/webmozart/assert/src'),
@@ -44,6 +44,7 @@ return array(
     'Predis\\' => array($vendorDir . '/predis/predis/src'),
     'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
     'PayWithAmazon\\' => array($vendorDir . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon'),
+    'ParagonIE\\ConstantTime\\' => array($vendorDir . '/paragonie/constant_time_encoding/src'),
     'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
     'Omnimail\\Silverpop\\' => array($baseDir . '/ext/org.wikimedia.omnimail/src', $vendorDir . '/wikimedia/omnimail-silverpop/src'),
     'Omnimail\\' => array($vendorDir . '/omnimail/omnimail/src'),
