@@ -8,7 +8,6 @@
 
 namespace Omnimail\Silverpop\Responses;
 
-use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
 use SilverpopConnector\SilverpopConnector;
 use SilverpopConnector\SilverpopConnectorException;
 use Omnimail\Exception\InvalidRequestException;
@@ -253,12 +252,12 @@ class Mailing
     /**
      * Get Silverpop connector object.
      *
-     * @return \SilverpopConnector\SilverpopXmlConnector
+     * @return \SilverpopConnector\SilverpopConnector
      */
     protected function getSilverPop()
     {
         if (!$this->silverPop) {
-            $this->silverPop = SilverpopGuzzleConnector::getInstance();
+            $this->silverPop = SilverpopConnector::getInstance();
         }
         return $this->silverPop;
     }

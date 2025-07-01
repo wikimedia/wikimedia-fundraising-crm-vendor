@@ -6,14 +6,9 @@
  * Time: 7:34 AM
  */
 namespace Omnimail\Silverpop\Requests;
-
-use Omnimail\Common\Helper;
-use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
-use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
-
 abstract class SilverpopBaseRequest extends BaseRequest {
   /**
-   * @var \Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector
+   * @var \SilverpopConnector\SilverpopXmlConnector
    */
   protected $silverPop;
 
@@ -197,15 +192,6 @@ abstract class SilverpopBaseRequest extends BaseRequest {
    */
   public function setPassword($password) {
     $this->password = $password;
-  }
-
-  /**
-   * SilverpopBaseRequest constructor.
-   *
-   * @param $parameters
-   */
-  public function __construct($parameters) {
-    parent::__construct($parameters);
   }
 
   /**

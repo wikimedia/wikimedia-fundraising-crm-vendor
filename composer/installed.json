@@ -5455,12 +5455,12 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.20",
-            "version_normalized": "1.20.0.0",
+            "version": "dev-master",
+            "version_normalized": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "ae6ec53864ba88b42ffaaf32ab4023db70ad470a"
+                "reference": "61143f5"
             },
             "require": {
                 "league/csv": "^9",
@@ -5473,6 +5473,7 @@
                 "phpunit/phpunit": "*"
             },
             "time": "2025-06-30T08:17:58+00:00",
+            "default-branch": true,
             "type": "library",
             "installation-source": "source",
             "autoload": {

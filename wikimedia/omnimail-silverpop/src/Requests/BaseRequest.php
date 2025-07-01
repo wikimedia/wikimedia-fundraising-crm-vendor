@@ -9,8 +9,8 @@ namespace Omnimail\Silverpop\Requests;
 
 use Omnimail\Common\Credentials;
 use Omnimail\Common\Helper;
-use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
-use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
+use SilverpopConnector\SilverpopConnector;
+use SilverpopConnector\SilverpopXmlConnector;
 use SilverpopConnector\SilverpopRestConnector;
 
 abstract class BaseRequest implements RequestInterface
@@ -219,7 +219,7 @@ abstract class BaseRequest implements RequestInterface
      */
   public function __construct($parameters) {
     Helper::initialize($this, array_merge($this->getDefaultParameters(), $parameters));
-    $this->silverPop = SilverpopGuzzleConnector::getInstance($this->getEndPoint(), 'MM/dd/yyyy', $parameters['timeout'] ?? 10.0);
+    $this->silverPop = SilverpopConnector::getInstance($this->getEndPoint(), 'MM/dd/yyyy', $parameters['timeout'] ?? 10.0);
     if (isset($parameters['timeout'])) {
         $this->silverPop->setTimeout($parameters['timeout']);
     }
@@ -235,7 +235,7 @@ abstract class BaseRequest implements RequestInterface
       $this->setDatabaseId($this->getCredential('database_id'));
     }
     else {
-      $this->xmlConnector = SilverpopGuzzleXmlConnector::getInstance();
+      $this->xmlConnector = SilverpopXmlConnector::getInstance();
       if ($this->client) {
           $this->xmlConnector->setClient($this->client);
       }
