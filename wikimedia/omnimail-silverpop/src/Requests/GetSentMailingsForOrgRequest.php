@@ -110,7 +110,7 @@ class GetSentMailingsForOrgRequest extends SilverpopBaseRequest
    * @return array
    */
   public function getResponse() {
-    $flags = array('SHARED');
+    $flags = ['SHARED', 'INCLUDE_TAGS'];
     if (!$this->isIncludeTest()) {
       $flags[] = 'EXCLUDE_TEST_MAILINGS';
     }

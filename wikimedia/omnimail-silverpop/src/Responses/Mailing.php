@@ -42,9 +42,9 @@ class Mailing
         $this->data = $data;
     }
 
-    public function getName()
+    public function getName(): string
     {
-        return (string)$this->data->MailingName;
+        return (string) $this->data->MailingName;
     }
 
     public function getMailingIdentifier()
@@ -55,6 +55,20 @@ class Mailing
     public function getSubject()
     {
         return (string)$this->data->Subject;
+    }
+
+    public function getTags(): array
+    {
+        if (!isset($this->data->Tags)) {
+            return [];
+        }
+        $tags = [];
+        foreach ($this->data->Tags as $tag) {
+            if ($tag) {
+                $tags[] = (string) $tag->Tag;
+            }
+        }
+        return $tags;
     }
 
     public function getScheduledDate()
