@@ -138,7 +138,7 @@ class GetSentMailingsForOrgRequest extends SilverpopBaseRequest
    */
   public function getDefaultParameters(): array {
     return [
-      'endpoint' => 'https://api4.silverpop.com',
+      'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
       'statuses' => ['SENT', 'SENDING', 'SENT_CANCELLED'],
       'includeZeroSent' => FALSE,
       'includeTest' => FALSE,

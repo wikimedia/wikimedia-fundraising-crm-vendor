@@ -167,15 +167,15 @@ class ExportListRequest extends SilverpopBaseRequest
    * @return array
    */
   public function getDefaultParameters() {
-    return array(
-      'endpoint' => 'https://api4.silverpop.com',
-      'statuses' => array('SENT', 'SENDING'),
+    return [
+      'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
+      'statuses' => ['SENT', 'SENDING'],
       'includeZeroSent' => FALSE,
       'includeTest' => FALSE,
       'startTimeStamp' => strtotime('1 week ago'),
       'endTimeStamp' => strtotime('now'),
       'exportType' => 'ALL',
-    );
+    ];
   }
 
 }

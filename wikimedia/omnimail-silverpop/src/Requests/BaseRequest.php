@@ -250,8 +250,8 @@ abstract class BaseRequest implements RequestInterface
    */
   public function getDefaultParameters() {
     return [
-      'endpoint' => 'https://api4.silverpop.com',
-      'sftpEndPoint' => 'transfer4.silverpop.com',
+      'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
+      'sftpEndPoint' => 'transfer-campaign-us-4.goacoustic.com',
     ];
   }
 

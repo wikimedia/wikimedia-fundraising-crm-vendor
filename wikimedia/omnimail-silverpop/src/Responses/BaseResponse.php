@@ -142,7 +142,7 @@ abstract class BaseResponse extends \arrayObject implements ResponseInterface
    */
   public function getDefaultParameters(): array {
     return [
-      'endpoint' => 'https://api4.silverpop.com',
+      'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
     ];
   }
 

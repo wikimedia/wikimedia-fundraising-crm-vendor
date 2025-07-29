@@ -99,8 +99,8 @@ class WebTrackingDataExportRequest extends SilverpopBaseRequest {
    */
   public function getDefaultParameters(): array {
     return [
-      'endpoint' => 'https://api-campaign-us-4.goacoustic.com/XMLAPI',
-      'sftpEndpoint' => 'transfer4.silverpop.com',
+      'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
+      'sftpEndpoint' => 'transfer-campaign-us-4.goacoustic.com',
       'startTimeStamp' => strtotime('1 week ago'),
       'endTimeStamp' => strtotime('now'),
     ];

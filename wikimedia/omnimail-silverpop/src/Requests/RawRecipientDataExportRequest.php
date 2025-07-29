@@ -94,14 +94,14 @@ class RawRecipientDataExportRequest extends SilverpopBaseRequest
    * @return array
    */
   public function getDefaultParameters() {
-    return array(
-      'endpoint' => 'https://api4.silverpop.com',
-      'statuses' => array('sent', 'sending'),
+    return [
+      'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
+      'statuses' => ['sent', 'sending'],
       'includeZeroSent' => FALSE,
       'includeTest' => FALSE,
       'startTimeStamp' => strtotime('1 week ago'),
       'endTimeStamp' => strtotime('now'),
-    );
+    ];
   }
 
   /**
