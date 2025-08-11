@@ -6,7 +6,23 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Validate' => array($vendorDir . '/pear/validate_finance_creditcard'),
+    'TOGoS_GitIgnore_' => array($vendorDir . '/civicrm/gitignore/src/main/php'),
+    'PHPUnit_' => array($baseDir . '/core/packages'),
     'PHPQueue' => array($vendorDir . '/coderkungfu/php-queue/src'),
+    'Net' => array($vendorDir . '/pear/net_socket', $vendorDir . '/pear/net_smtp'),
+    'Mail' => array($vendorDir . '/pear/mail', $vendorDir . '/pear/mail_mime'),
+    'Lurker' => array($vendorDir . '/totten/lurkerlite/src'),
+    'Log' => array($vendorDir . '/pear/log'),
+    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
     'Dflydev\\DotAccessData' => array($vendorDir . '/dflydev/dot-access-data/src'),
+    'Dflydev\\ApacheMimeTypes' => array($vendorDir . '/dflydev/apache-mime-types/src'),
+    'DB' => array($vendorDir . '/pear/db'),
+    'Console' => array($vendorDir . '/pear/console_getopt'),
     'Clio' => array($vendorDir . '/clio/clio/src'),
+    'Civi\\' => array($baseDir . '/core/tests/phpunit'),
+    'Civi' => array($baseDir . '/core'),
+    'CCL' => array($vendorDir . '/civicrm/composer-compile-lib'),
+    'CA_Config' => array($vendorDir . '/totten/ca-config/src'),
+    'Auth' => array($vendorDir . '/pear/auth_sasl'),
 );

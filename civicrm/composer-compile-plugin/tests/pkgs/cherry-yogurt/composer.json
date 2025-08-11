@@ -1,0 +1,24 @@
+{
+    "authors": [
+        {
+            "name": "Tester McFakus",
+            "email": "tester@example.org"
+        }
+    ],
+    "name": "test/cherry-yogurt",
+    "description": "(MOCK) Cherry yogurt implementation",
+    "require": {
+        "civicrm/composer-compile-plugin": "@dev",
+        "test/jam-implementation": "~1.0"
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "compile": [
+            {
+                "tag": ["yogurt"],
+                "title": "Compile <comment>yogurt.out</comment> from <comment>yogurt.in</comment>",
+                "shell": "echo START > yogurt.out; cat yogurt.in ../cherry-jam/jam.out >> yogurt.out; echo END >> yogurt.out"
+            }
+        ]
+    }
+}

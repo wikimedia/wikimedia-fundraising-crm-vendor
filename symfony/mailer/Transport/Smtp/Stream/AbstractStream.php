@@ -24,18 +24,22 @@ use Symfony\Component\Mailer\Exception\TransportException;
  */
 abstract class AbstractStream
 {
+    /** @var resource|null */
     protected $stream;
+    /** @var resource|null */
     protected $in;
+    /** @var resource|null */
     protected $out;
     protected $err;
 
-    private $debug = '';
+    private string $debug = '';
 
     public function write(string $bytes, bool $debug = true): void
     {
         if ($debug) {
+            $timestamp = (new \DateTimeImmutable())->format('Y-m-d\TH:i:s.up');
             foreach (explode("\n", trim($bytes)) as $line) {
-                $this->debug .= sprintf("> %s\n", $line);
+                $this->debug .= \sprintf("[%s] > %s\n", $timestamp, $line);
             }
         }
 
@@ -77,19 +81,18 @@ abstract class AbstractStream
 
         $line = @fgets($this->out);
         if ('' === $line || false === $line) {
-            $metas = stream_get_meta_data($this->out);
-            if ($metas['timed_out']) {
-                throw new TransportException(sprintf('Connection to "%s" timed out.', $this->getReadConnectionDescription()));
+            if (stream_get_meta_data($this->out)['timed_out']) {
+                throw new TransportException(\sprintf('Connection to "%s" timed out.', $this->getReadConnectionDescription()));
             }
-            if ($metas['eof']) {
-                throw new TransportException(sprintf('Connection to "%s" has been closed unexpectedly.', $this->getReadConnectionDescription()));
+            if (feof($this->out)) { // don't use "eof" metadata, it's not accurate on Windows
+                throw new TransportException(\sprintf('Connection to "%s" has been closed unexpectedly.', $this->getReadConnectionDescription()));
             }
             if (false === $line) {
-                throw new TransportException(sprintf('Unable to read from connection to "%s": ', $this->getReadConnectionDescription()).error_get_last()['message']);
+                throw new TransportException(\sprintf('Unable to read from connection to "%s": ', $this->getReadConnectionDescription().error_get_last()['message'] ?? ''));
             }
         }
 
-        $this->debug .= sprintf('< %s', $line);
+        $this->debug .= \sprintf('[%s] < %s', (new \DateTimeImmutable())->format('Y-m-d\TH:i:s.up'), $line);
 
         return $line;
     }

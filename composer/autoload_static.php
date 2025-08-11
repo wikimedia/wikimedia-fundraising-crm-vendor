@@ -8,59 +8,104 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
-        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
-        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
-        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
-        'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
-        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
+        'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '9e4824c5afbdc1482b6025ce3d4dfde8' => __DIR__ . '/..' . '/league/csv/src/functions_include.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
+        'def43f6c87e4f8dfd0c9e1b1bab14fe8' => __DIR__ . '/..' . '/symfony/polyfill-iconv/bootstrap.php',
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '23c18046f52bef3eea034657bafda50f' => __DIR__ . '/..' . '/symfony/polyfill-php81/bootstrap.php',
+        '5897ea0ac4cccf14d323035e65887801' => __DIR__ . '/..' . '/symfony/polyfill-php82/bootstrap.php',
+        '9d2b9fc6db0f153a0a149fefb182415e' => __DIR__ . '/..' . '/symfony/polyfill-php84/bootstrap.php',
+        '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
+        'bad842bce63596a608e2623519fb382c' => __DIR__ . '/..' . '/xkerman/restricted-unserialize/src/function.php',
+        '4acee481111f7661abffdbf0019b86aa' => __DIR__ . '/../..' . '/core/functions.php',
+        'cda16a875b935ffac51755216c19f95b' => __DIR__ . '/../..' . '/core/guzzle_php81_shim.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        'x' => 
+        array (
+            'xKerman\\Restricted\\' => 19,
+        ),
+        't' => 
+        array (
+            'tubalmartin\\CssMin\\' => 19,
+        ),
         's' => 
         array (
             'sgoettsch\\monologRotatingFileHandler\\' => 37,
         ),
         'p' => 
         array (
-            'phpseclib3\\' => 11,
+            'phpseclib\\' => 10,
+        ),
+        'c' => 
+        array (
+            'cweagans\\Composer\\' => 18,
+        ),
+        'Z' => 
+        array (
+            'ZipStream\\' => 10,
         ),
         'W' => 
         array (
             'Wikimedia\\Composer\\Merge\\V2\\' => 28,
+            'When\\' => 5,
+            'WebSocket\\' => 10,
         ),
         'T' => 
         array (
             'TheIconic\\NameParser\\' => 21,
+            'TYPO3\\PharStreamWrapper\\' => 24,
         ),
         'S' => 
         array (
+            'Symfony\\Polyfill\\Php84\\' => 23,
             'Symfony\\Polyfill\\Php83\\' => 23,
+            'Symfony\\Polyfill\\Php82\\' => 23,
+            'Symfony\\Polyfill\\Php81\\' => 23,
             'Symfony\\Polyfill\\Php80\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
+            'Symfony\\Polyfill\\Iconv\\' => 23,
             'Symfony\\Polyfill\\Ctype\\' => 23,
             'Symfony\\Contracts\\Service\\' => 26,
             'Symfony\\Contracts\\EventDispatcher\\' => 34,
             'Symfony\\Component\\Yaml\\' => 23,
+            'Symfony\\Component\\VarExporter\\' => 30,
+            'Symfony\\Component\\VarDumper\\' => 28,
+            'Symfony\\Component\\Process\\' => 26,
             'Symfony\\Component\\Mime\\' => 23,
             'Symfony\\Component\\Mailer\\' => 25,
             'Symfony\\Component\\HttpFoundation\\' => 33,
+            'Symfony\\Component\\Finder\\' => 25,
+            'Symfony\\Component\\Filesystem\\' => 29,
             'Symfony\\Component\\EventDispatcher\\' => 34,
+            'Symfony\\Component\\DependencyInjection\\' => 38,
+            'Symfony\\Component\\CssSelector\\' => 30,
+            'Symfony\\Component\\Config\\' => 25,
+            'Svg\\' => 4,
             'Statistics\\' => 11,
+            'Soundasleep\\' => 12,
             'SmashPig\\' => 9,
             'SilverpopConnector\\' => 19,
+            'ScssPhp\\ScssPhp\\' => 16,
+            'Sabberworm\\CSS\\' => 15,
         ),
         'P' => 
         array (
+            'Psr\\SimpleCache\\' => 16,
             'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
@@ -69,8 +114,14 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Psr\\Clock\\' => 10,
             'Psr\\Cache\\' => 10,
             'Predis\\' => 7,
+            'Pontedilana\\PhpWeasyPrint\\' => 26,
+            'Phrity\\Util\\' => 12,
+            'Phrity\\Net\\' => 11,
+            'PhpOffice\\PhpWord\\' => 18,
+            'PhpOffice\\PhpSpreadsheet\\' => 25,
+            'PhpOffice\\Math\\' => 15,
             'PayWithAmazon\\' => 14,
-            'ParagonIE\\ConstantTime\\' => 23,
+            'Padaliyajay\\PHPAutoprefixer\\' => 28,
             'PHPMailer\\PHPMailer\\' => 20,
         ),
         'O' => 
@@ -81,12 +132,24 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'M' => 
         array (
             'Monolog\\' => 8,
+            'MimeTyper\\' => 10,
+            'Matrix\\' => 7,
+            'Masterminds\\' => 12,
+            'MJS\\TopSort\\Tests\\' => 18,
+            'MJS\\TopSort\\' => 12,
         ),
         'L' => 
         array (
+            'League\\OAuth2\\Client\\' => 21,
             'League\\Csv\\' => 11,
             'Lcobucci\\JWT\\' => 13,
             'Lcobucci\\Clock\\' => 15,
+            'LastCall\\DownloadsPlugin\\' => 25,
+            'Laravel\\SerializableClosure\\' => 28,
+        ),
+        'K' => 
+        array (
+            'Knp\\Snappy\\' => 11,
         ),
         'H' => 
         array (
@@ -112,41 +175,99 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Geocoder\\Http\\' => 14,
             'Geocoder\\' => 9,
         ),
+        'F' => 
+        array (
+            'FontLib\\' => 8,
+            'Firebase\\JWT\\' => 13,
+        ),
         'E' => 
         array (
             'Egulias\\EmailValidator\\' => 23,
         ),
         'D' => 
         array (
+            'Dompdf\\' => 7,
             'Doctrine\\Common\\Lexer\\' => 22,
+            'DMore\\ChromeDriver\\' => 19,
         ),
         'C' => 
         array (
+            'Composer\\Pcre\\' => 14,
+            'Complex\\' => 8,
             'Clue\\StreamFilter\\' => 18,
+            'Civi\\CompilePlugin\\' => 19,
+            'Civi\\' => 5,
+            'CCL\\' => 4,
+        ),
+        'B' => 
+        array (
+            'Brick\\Money\\' => 12,
+            'Brick\\Math\\' => 11,
+            'Behat\\Mink\\' => 11,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'xKerman\\Restricted\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/xkerman/restricted-unserialize/src',
+        ),
+        'tubalmartin\\CssMin\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tubalmartin/cssmin/src',
+        ),
         'sgoettsch\\monologRotatingFileHandler\\' => 
         array (
             0 => __DIR__ . '/..' . '/sgoettsch/monolog-rotating-file-handler/src',
         ),
-        'phpseclib3\\' => 
+        'phpseclib\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
+        ),
+        'cweagans\\Composer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/cweagans/composer-patches/src',
+        ),
+        'ZipStream\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
         ),
         'Wikimedia\\Composer\\Merge\\V2\\' => 
         array (
             0 => __DIR__ . '/..' . '/wikimedia/composer-merge-plugin/src',
+        ),
+        'When\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tplaner/when/src',
+        ),
+        'WebSocket\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/websocket/lib',
         ),
         'TheIconic\\NameParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/theiconic/name-parser/src',
             1 => __DIR__ . '/..' . '/theiconic/name-parser/tests',
         ),
+        'TYPO3\\PharStreamWrapper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/typo3/phar-stream-wrapper/src',
+        ),
+        'Symfony\\Polyfill\\Php84\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php84',
+        ),
         'Symfony\\Polyfill\\Php83\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php83',
+        ),
+        'Symfony\\Polyfill\\Php82\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php82',
+        ),
+        'Symfony\\Polyfill\\Php81\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php81',
         ),
         'Symfony\\Polyfill\\Php80\\' => 
         array (
@@ -164,6 +285,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-intl-idn',
         ),
+        'Symfony\\Polyfill\\Iconv\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-iconv',
+        ),
         'Symfony\\Polyfill\\Ctype\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
@@ -180,6 +305,18 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/symfony/yaml',
         ),
+        'Symfony\\Component\\VarExporter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/var-exporter',
+        ),
+        'Symfony\\Component\\VarDumper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/var-dumper',
+        ),
+        'Symfony\\Component\\Process\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/process',
+        ),
         'Symfony\\Component\\Mime\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/mime',
@@ -192,13 +329,41 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/symfony/http-foundation',
         ),
+        'Symfony\\Component\\Finder\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/finder',
+        ),
+        'Symfony\\Component\\Filesystem\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/filesystem',
+        ),
         'Symfony\\Component\\EventDispatcher\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
         ),
+        'Symfony\\Component\\DependencyInjection\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/dependency-injection',
+        ),
+        'Symfony\\Component\\CssSelector\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/css-selector',
+        ),
+        'Symfony\\Component\\Config\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/config',
+        ),
+        'Svg\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg',
+        ),
         'Statistics\\' => 
         array (
             0 => __DIR__ . '/..' . '/jackgleeson/stats-collector/src',
+        ),
+        'Soundasleep\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/soundasleep/html2text/src',
         ),
         'SmashPig\\' => 
         array (
@@ -207,6 +372,18 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'SilverpopConnector\\' => 
         array (
             0 => __DIR__ . '/..' . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector',
+        ),
+        'ScssPhp\\ScssPhp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/scssphp/scssphp/src',
+        ),
+        'Sabberworm\\CSS\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/sabberworm/php-css-parser/src',
+        ),
+        'Psr\\SimpleCache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/simple-cache/src',
         ),
         'Psr\\Log\\' => 
         array (
@@ -241,13 +418,38 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/predis/predis/src',
         ),
+        'Pontedilana\\PhpWeasyPrint\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/pontedilana/php-weasyprint/src',
+        ),
+        'Phrity\\Util\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/util-errorhandler/src',
+        ),
+        'Phrity\\Net\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/net-uri/src',
+            1 => __DIR__ . '/..' . '/phrity/net-stream/src',
+        ),
+        'PhpOffice\\PhpWord\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpoffice/phpword/src/PhpWord',
+        ),
+        'PhpOffice\\PhpSpreadsheet\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
+        ),
+        'PhpOffice\\Math\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpoffice/math/src/Math',
+        ),
         'PayWithAmazon\\' => 
         array (
             0 => __DIR__ . '/..' . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon',
         ),
-        'ParagonIE\\ConstantTime\\' => 
+        'Padaliyajay\\PHPAutoprefixer\\' => 
         array (
-            0 => __DIR__ . '/..' . '/paragonie/constant_time_encoding/src',
+            0 => __DIR__ . '/..' . '/padaliyajay/php-autoprefixer/src',
         ),
         'PHPMailer\\PHPMailer\\' => 
         array (
@@ -266,6 +468,31 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
         ),
+        'MimeTyper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/adrienrn/php-mimetyper/src',
+        ),
+        'Matrix\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
+        ),
+        'Masterminds\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/masterminds/html5/src',
+        ),
+        'MJS\\TopSort\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/marcj/topsort/tests/Tests',
+        ),
+        'MJS\\TopSort\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/marcj/topsort/src',
+        ),
+        'League\\OAuth2\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/league/oauth2-client/src',
+            1 => __DIR__ . '/..' . '/league/oauth2-google/src',
+        ),
         'League\\Csv\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/csv/src',
@@ -277,6 +504,18 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Lcobucci\\Clock\\' => 
         array (
             0 => __DIR__ . '/..' . '/lcobucci/clock/src',
+        ),
+        'LastCall\\DownloadsPlugin\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/civicrm/composer-downloads-plugin/src',
+        ),
+        'Laravel\\SerializableClosure\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laravel/serializable-closure/src',
+        ),
+        'Knp\\Snappy\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/knplabs/knp-snappy/src/Knp/Snappy',
         ),
         'Http\\Promise\\' => 
         array (
@@ -350,26 +589,128 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/willdurand/geocoder',
         ),
+        'FontLib\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/dompdf/php-font-lib/src/FontLib',
+        ),
+        'Firebase\\JWT\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
+        ),
         'Egulias\\EmailValidator\\' => 
         array (
             0 => __DIR__ . '/..' . '/egulias/email-validator/src',
+        ),
+        'Dompdf\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/dompdf/dompdf/src',
         ),
         'Doctrine\\Common\\Lexer\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/lexer/src',
         ),
+        'DMore\\ChromeDriver\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/dmore/chrome-mink-driver/src',
+        ),
+        'Composer\\Pcre\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/pcre/src',
+        ),
+        'Complex\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
+        ),
         'Clue\\StreamFilter\\' => 
         array (
             0 => __DIR__ . '/..' . '/clue/stream-filter/src',
         ),
+        'Civi\\CompilePlugin\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/civicrm/composer-compile-plugin/src',
+        ),
+        'Civi\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/core',
+            1 => __DIR__ . '/../..' . '/core/Civi',
+            2 => __DIR__ . '/../..' . '/core/setup/src',
+        ),
+        'CCL\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/civicrm/composer-compile-lib/src',
+        ),
+        'Brick\\Money\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/brick/money/src',
+        ),
+        'Brick\\Math\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/brick/math/src',
+        ),
+        'Behat\\Mink\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/behat/mink/src',
+        ),
     );
 
     public static $prefixesPsr0 = array (
+        'V' => 
+        array (
+            'Validate' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/validate_finance_creditcard',
+            ),
+        ),
+        'T' => 
+        array (
+            'TOGoS_GitIgnore_' => 
+            array (
+                0 => __DIR__ . '/..' . '/civicrm/gitignore/src/main/php',
+            ),
+        ),
         'P' => 
         array (
+            'PHPUnit_' => 
+            array (
+                0 => __DIR__ . '/../..' . '/core/packages',
+            ),
             'PHPQueue' => 
             array (
                 0 => __DIR__ . '/..' . '/coderkungfu/php-queue/src',
+            ),
+        ),
+        'N' => 
+        array (
+            'Net' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/net_socket',
+                1 => __DIR__ . '/..' . '/pear/net_smtp',
+            ),
+        ),
+        'M' => 
+        array (
+            'Mail' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/mail',
+                1 => __DIR__ . '/..' . '/pear/mail_mime',
+            ),
+        ),
+        'L' => 
+        array (
+            'Lurker' => 
+            array (
+                0 => __DIR__ . '/..' . '/totten/lurkerlite/src',
+            ),
+            'Log' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/log',
+            ),
+        ),
+        'H' => 
+        array (
+            'HTMLPurifier' => 
+            array (
+                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
             ),
         ),
         'D' => 
@@ -378,19 +719,65 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             array (
                 0 => __DIR__ . '/..' . '/dflydev/dot-access-data/src',
             ),
+            'Dflydev\\ApacheMimeTypes' => 
+            array (
+                0 => __DIR__ . '/..' . '/dflydev/apache-mime-types/src',
+            ),
+            'DB' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/db',
+            ),
         ),
         'C' => 
         array (
+            'Console' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/console_getopt',
+            ),
             'Clio' => 
             array (
                 0 => __DIR__ . '/..' . '/clio/clio/src',
+            ),
+            'Civi\\' => 
+            array (
+                0 => __DIR__ . '/../..' . '/core/tests/phpunit',
+            ),
+            'Civi' => 
+            array (
+                0 => __DIR__ . '/../..' . '/core',
+            ),
+            'CCL' => 
+            array (
+                0 => __DIR__ . '/..' . '/civicrm/composer-compile-lib',
+            ),
+            'CA_Config' => 
+            array (
+                0 => __DIR__ . '/..' . '/totten/ca-config/src',
+            ),
+        ),
+        'A' => 
+        array (
+            'Auth' => 
+            array (
+                0 => __DIR__ . '/..' . '/pear/auth_sasl',
             ),
         ),
     );
 
     public static $classMap = array (
+        'AllowDynamicProperties' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/AllowDynamicProperties.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
+        'CURLStringFile' => __DIR__ . '/..' . '/symfony/polyfill-php81/Resources/stubs/CURLStringFile.php',
+        'Callback' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackBody' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackParam' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackParameterToReference' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackReturnReference' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackReturnValue' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'DOMDocumentWrapper' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/DOMDocumentWrapper.php',
+        'DOMEvent' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/DOMEvent.php',
+        'Datamatrix' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/datamatrix.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
         'DateInvalidOperationException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateInvalidOperationException.php',
@@ -400,13 +787,153 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'DateMalformedStringException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateMalformedStringException.php',
         'DateObjectError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateObjectError.php',
         'DateRangeError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateRangeError.php',
+        'Deprecated' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
+        'Dompdf\\Cpdf' => __DIR__ . '/..' . '/dompdf/dompdf/lib/Cpdf.php',
+        'ICallbackNamed' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/Callback.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
+        'OS_Guess' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/OS/Guess.php',
         'Override' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/Override.php',
+        'PDF417' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/pdf417.php',
+        'PEAR' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/PEAR.php',
+        'PEAR_Error' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/PEAR.php',
+        'PEAR_ErrorStack' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/PEAR/ErrorStack.php',
+        'PEAR_Exception' => __DIR__ . '/..' . '/pear/pear_exception/PEAR/Exception.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
+        'QRcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/qrcode.php',
+        'Random\\BrokenRandomEngineError' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/BrokenRandomEngineError.php',
+        'Random\\CryptoSafeEngine' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/CryptoSafeEngine.php',
+        'Random\\Engine' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/Engine.php',
+        'Random\\Engine\\Secure' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/Engine/Secure.php',
+        'Random\\RandomError' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/RandomError.php',
+        'Random\\RandomException' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/RandomException.php',
+        'ReturnTypeWillChange' => __DIR__ . '/..' . '/symfony/polyfill-php81/Resources/stubs/ReturnTypeWillChange.php',
         'SQLite3Exception' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/SQLite3Exception.php',
+        'SensitiveParameter' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/SensitiveParameter.php',
+        'SensitiveParameterValue' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/SensitiveParameterValue.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
+        'System' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/System.php',
+        'TCPDF' => __DIR__ . '/..' . '/tecnickcom/tcpdf/tcpdf.php',
+        'TCPDF2DBarcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/tcpdf_barcodes_2d.php',
+        'TCPDFBarcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/tcpdf_barcodes_1d.php',
+        'TCPDF_COLORS' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/tcpdf_colors.php',
+        'TCPDF_FILTERS' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/tcpdf_filters.php',
+        'TCPDF_FONTS' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/tcpdf_fonts.php',
+        'TCPDF_FONT_DATA' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/tcpdf_font_data.php',
+        'TCPDF_IMAGES' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/tcpdf_images.php',
+        'TCPDF_STATIC' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/tcpdf_static.php',
         'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
         'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
+        'ezcBase' => __DIR__ . '/..' . '/zetacomponents/base/src/base.php',
+        'ezcBaseAutoloadException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/autoload.php',
+        'ezcBaseAutoloadOptions' => __DIR__ . '/..' . '/zetacomponents/base/src/options/autoload.php',
+        'ezcBaseConfigurationInitializer' => __DIR__ . '/..' . '/zetacomponents/base/src/interfaces/configuration_initializer.php',
+        'ezcBaseDoubleClassRepositoryPrefixException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/double_class_repository_prefix.php',
+        'ezcBaseException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/exception.php',
+        'ezcBaseExportable' => __DIR__ . '/..' . '/zetacomponents/base/src/interfaces/exportable.php',
+        'ezcBaseExtensionNotFoundException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/extension_not_found.php',
+        'ezcBaseFeatures' => __DIR__ . '/..' . '/zetacomponents/base/src/features.php',
+        'ezcBaseFile' => __DIR__ . '/..' . '/zetacomponents/base/src/file.php',
+        'ezcBaseFileException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/file_exception.php',
+        'ezcBaseFileFindContext' => __DIR__ . '/..' . '/zetacomponents/base/src/structs/file_find_context.php',
+        'ezcBaseFileIoException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/file_io.php',
+        'ezcBaseFileNotFoundException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/file_not_found.php',
+        'ezcBaseFilePermissionException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/file_permission.php',
+        'ezcBaseFunctionalityNotSupportedException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/functionality_not_supported.php',
+        'ezcBaseInit' => __DIR__ . '/..' . '/zetacomponents/base/src/init.php',
+        'ezcBaseInitCallbackConfiguredException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/init_callback_configured.php',
+        'ezcBaseInitInvalidCallbackClassException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/invalid_callback_class.php',
+        'ezcBaseInvalidParentClassException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/invalid_parent_class.php',
+        'ezcBaseMetaData' => __DIR__ . '/..' . '/zetacomponents/base/src/metadata.php',
+        'ezcBaseMetaDataPearReader' => __DIR__ . '/..' . '/zetacomponents/base/src/metadata/pear.php',
+        'ezcBaseMetaDataTarballReader' => __DIR__ . '/..' . '/zetacomponents/base/src/metadata/tarball.php',
+        'ezcBaseOptions' => __DIR__ . '/..' . '/zetacomponents/base/src/options.php',
+        'ezcBasePersistable' => __DIR__ . '/..' . '/zetacomponents/base/src/interfaces/persistable.php',
+        'ezcBasePropertyNotFoundException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/property_not_found.php',
+        'ezcBasePropertyPermissionException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/property_permission.php',
+        'ezcBaseRepositoryDirectory' => __DIR__ . '/..' . '/zetacomponents/base/src/structs/repository_directory.php',
+        'ezcBaseSettingNotFoundException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/setting_not_found.php',
+        'ezcBaseSettingValueException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/setting_value.php',
+        'ezcBaseStruct' => __DIR__ . '/..' . '/zetacomponents/base/src/struct.php',
+        'ezcBaseValueException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/value.php',
+        'ezcBaseWhateverException' => __DIR__ . '/..' . '/zetacomponents/base/src/exceptions/whatever.php',
+        'ezcMail' => __DIR__ . '/..' . '/zetacomponents/mail/src/mail.php',
+        'ezcMailAddress' => __DIR__ . '/..' . '/zetacomponents/mail/src/structs/mail_address.php',
+        'ezcMailCharsetConverter' => __DIR__ . '/..' . '/zetacomponents/mail/src/internal/charset_convert.php',
+        'ezcMailComposer' => __DIR__ . '/..' . '/zetacomponents/mail/src/composer.php',
+        'ezcMailComposerOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/composer_options.php',
+        'ezcMailContentDispositionHeader' => __DIR__ . '/..' . '/zetacomponents/mail/src/structs/content_disposition_header.php',
+        'ezcMailDeliveryStatus' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/delivery_status.php',
+        'ezcMailDeliveryStatusParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/delivery_status_parser.php',
+        'ezcMailException' => __DIR__ . '/..' . '/zetacomponents/mail/src/exceptions/mail_exception.php',
+        'ezcMailFile' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/fileparts/disk_file.php',
+        'ezcMailFileParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/file_parser.php',
+        'ezcMailFilePart' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/file.php',
+        'ezcMailFileSet' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/file/file_set.php',
+        'ezcMailHeaderFolder' => __DIR__ . '/..' . '/zetacomponents/mail/src/internal/header_folder.php',
+        'ezcMailHeadersHolder' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/headers_holder.php',
+        'ezcMailImapSet' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/imap/imap_set.php',
+        'ezcMailImapSetOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/imap_set_options.php',
+        'ezcMailImapTransport' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/imap/imap_transport.php',
+        'ezcMailImapTransportOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/imap_options.php',
+        'ezcMailInvalidLimitException' => __DIR__ . '/..' . '/zetacomponents/mail/src/exceptions/invalid_limit.php',
+        'ezcMailMboxSet' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/mbox/mbox_set.php',
+        'ezcMailMboxTransport' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/mbox/mbox_transport.php',
+        'ezcMailMtaTransport' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/mta/mta_transport.php',
+        'ezcMailMultipart' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/multipart.php',
+        'ezcMailMultipartAlternative' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/multiparts/multipart_alternative.php',
+        'ezcMailMultipartAlternativeParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/multipart_alternative_parser.php',
+        'ezcMailMultipartDigest' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/multiparts/multipart_digest.php',
+        'ezcMailMultipartDigestParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/multipart_digest_parser.php',
+        'ezcMailMultipartMixed' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/multiparts/multipart_mixed.php',
+        'ezcMailMultipartMixedParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/multipart_mixed_parser.php',
+        'ezcMailMultipartParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/multipart_parser.php',
+        'ezcMailMultipartRelated' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/multiparts/multipart_related.php',
+        'ezcMailMultipartRelatedParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/multipart_related_parser.php',
+        'ezcMailMultipartReport' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/multiparts/multipart_report.php',
+        'ezcMailMultipartReportParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/multipart_report_parser.php',
+        'ezcMailNoSuchMessageException' => __DIR__ . '/..' . '/zetacomponents/mail/src/exceptions/no_such_message.php',
+        'ezcMailOffsetOutOfRangeException' => __DIR__ . '/..' . '/zetacomponents/mail/src/exceptions/offset_out_of_range.php',
+        'ezcMailOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/mail_options.php',
+        'ezcMailParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parser.php',
+        'ezcMailParserOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/parser_options.php',
+        'ezcMailParserSet' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/interfaces/parser_set.php',
+        'ezcMailParserShutdownHandler' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/shutdown_handler.php',
+        'ezcMailPart' => __DIR__ . '/..' . '/zetacomponents/mail/src/interfaces/part.php',
+        'ezcMailPartParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/interfaces/part_parser.php',
+        'ezcMailPartWalkContext' => __DIR__ . '/..' . '/zetacomponents/mail/src/structs/walk_context.php',
+        'ezcMailPop3Set' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/pop3/pop3_set.php',
+        'ezcMailPop3Transport' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/pop3/pop3_transport.php',
+        'ezcMailPop3TransportOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/pop3_options.php',
+        'ezcMailRfc2231Implementation' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/rfc2231_implementation.php',
+        'ezcMailRfc822Digest' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/rfc822_digest.php',
+        'ezcMailRfc822DigestParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/rfc822_digest_parser.php',
+        'ezcMailRfc822Parser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/rfc822_parser.php',
+        'ezcMailSmtpTransport' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/smtp/smtp_transport.php',
+        'ezcMailSmtpTransportOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/smtp_options.php',
+        'ezcMailStorageSet' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/storage/storage_set.php',
+        'ezcMailStreamFile' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/fileparts/stream_file.php',
+        'ezcMailText' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/text.php',
+        'ezcMailTextParser' => __DIR__ . '/..' . '/zetacomponents/mail/src/parser/parts/text_parser.php',
+        'ezcMailTools' => __DIR__ . '/..' . '/zetacomponents/mail/src/tools.php',
+        'ezcMailTransport' => __DIR__ . '/..' . '/zetacomponents/mail/src/interfaces/transport.php',
+        'ezcMailTransportConnection' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/transport_connection.php',
+        'ezcMailTransportException' => __DIR__ . '/..' . '/zetacomponents/mail/src/exceptions/transport_exception.php',
+        'ezcMailTransportMta' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/mta/transport_mta.php',
+        'ezcMailTransportOptions' => __DIR__ . '/..' . '/zetacomponents/mail/src/options/transport_options.php',
+        'ezcMailTransportSmtp' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/smtp/transport_smtp.php',
+        'ezcMailTransportSmtpException' => __DIR__ . '/..' . '/zetacomponents/mail/src/exceptions/transport_smtp_exception.php',
+        'ezcMailVariableSet' => __DIR__ . '/..' . '/zetacomponents/mail/src/transports/variable/var_set.php',
+        'ezcMailVirtualFile' => __DIR__ . '/..' . '/zetacomponents/mail/src/parts/fileparts/virtual_file.php',
+        'phpQuery' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery.php',
+        'phpQueryEvents' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/phpQueryEvents.php',
+        'phpQueryObject' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/phpQueryObject.php',
+        'phpQueryObjectPlugin_Scripts' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/plugins/Scripts.php',
+        'phpQueryObjectPlugin_WebBrowser' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/plugins/WebBrowser.php',
+        'phpQueryObjectPlugin_example' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/plugins/example.php',
+        'phpQueryPlugin_Scripts' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/plugins/Scripts.php',
+        'phpQueryPlugin_WebBrowser' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/plugins/WebBrowser.php',
+        'phpQueryPlugin_example' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery/plugins/example.php',
+        'phpQueryPlugins' => __DIR__ . '/..' . '/rubobaquero/phpquery/phpQuery/phpQuery.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
