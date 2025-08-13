@@ -75,7 +75,7 @@ return array(
     'Masterminds\\' => array($vendorDir . '/masterminds/html5/src'),
     'MJS\\TopSort\\Tests\\' => array($vendorDir . '/marcj/topsort/tests/Tests'),
     'MJS\\TopSort\\' => array($vendorDir . '/marcj/topsort/src'),
-    'League\\OAuth2\\Client\\' => array($vendorDir . '/league/oauth2-client/src', $vendorDir . '/league/oauth2-google/src'),
+    'League\\OAuth2\\Client\\' => array($vendorDir . '/league/oauth2-google/src', $vendorDir . '/league/oauth2-client/src'),
     'League\\Csv\\' => array($vendorDir . '/league/csv/src'),
     'Lcobucci\\JWT\\' => array($vendorDir . '/lcobucci/jwt/src'),
     'Lcobucci\\Clock\\' => array($vendorDir . '/lcobucci/clock/src'),
