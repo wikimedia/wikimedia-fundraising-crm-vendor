@@ -226,17 +226,17 @@
         },
         {
             "name": "brick/money",
-            "version": "0.10.1",
-            "version_normalized": "0.10.1.0",
+            "version": "0.10.2",
+            "version_normalized": "0.10.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brick/money.git",
-                "reference": "779c1d3b708e4dd37fe8a32a189b9f241b52f194"
+                "reference": "4ee860c0371aabef5faaddcc28b27f208bb67b76"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brick/money/zipball/779c1d3b708e4dd37fe8a32a189b9f241b52f194",
-                "reference": "779c1d3b708e4dd37fe8a32a189b9f241b52f194",
+                "url": "https://api.github.com/repos/brick/money/zipball/4ee860c0371aabef5faaddcc28b27f208bb67b76",
+                "reference": "4ee860c0371aabef5faaddcc28b27f208bb67b76",
                 "shasum": ""
             },
             "require": {
@@ -254,7 +254,7 @@
             "suggest": {
                 "ext-intl": "Required to format Money objects"
             },
-            "time": "2025-03-05T13:00:01+00:00",
+            "time": "2025-08-05T13:08:53+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -274,7 +274,7 @@
             ],
             "support": {
                 "issues": "https://github.com/brick/money/issues",
-                "source": "https://github.com/brick/money/tree/0.10.1"
+                "source": "https://github.com/brick/money/tree/0.10.2"
             },
             "funding": [
                 {
@@ -4626,17 +4626,17 @@
         },
         {
             "name": "phpoffice/phpspreadsheet",
-            "version": "2.3.10",
-            "version_normalized": "2.3.10.0",
+            "version": "2.4.0",
+            "version_normalized": "2.4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPOffice/PhpSpreadsheet.git",
-                "reference": "22058ce75b774bf40ceefcadd090a424d558f1ca"
+                "reference": "3a3cad86101a77019eb2fc693aab1a8c11b18b94"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/22058ce75b774bf40ceefcadd090a424d558f1ca",
-                "reference": "22058ce75b774bf40ceefcadd090a424d558f1ca",
+                "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/3a3cad86101a77019eb2fc693aab1a8c11b18b94",
+                "reference": "3a3cad86101a77019eb2fc693aab1a8c11b18b94",
                 "shasum": ""
             },
             "require": {
@@ -4682,7 +4682,7 @@
                 "mpdf/mpdf": "Option for rendering PDF with PDF Writer",
                 "tecnickcom/tcpdf": "Option for rendering PDF with PDF Writer"
             },
-            "time": "2025-07-23T04:43:28+00:00",
+            "time": "2025-08-10T06:45:13+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -4728,7 +4728,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHPOffice/PhpSpreadsheet/issues",
-                "source": "https://github.com/PHPOffice/PhpSpreadsheet/tree/2.3.10"
+                "source": "https://github.com/PHPOffice/PhpSpreadsheet/tree/2.4.0"
             },
             "install-path": "../phpoffice/phpspreadsheet"
         },
@@ -5079,17 +5079,17 @@
         },
         {
             "name": "phrity/util-errorhandler",
-            "version": "1.2.0",
-            "version_normalized": "1.2.0.0",
+            "version": "1.2.1",
+            "version_normalized": "1.2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sirn-se/phrity-util-errorhandler.git",
-                "reference": "61813189e4525fde4aecad3df849829d526d6f76"
+                "reference": "9825f15ef9b4a93252ce53ca8962278832d834da"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sirn-se/phrity-util-errorhandler/zipball/61813189e4525fde4aecad3df849829d526d6f76",
-                "reference": "61813189e4525fde4aecad3df849829d526d6f76",
+                "url": "https://api.github.com/repos/sirn-se/phrity-util-errorhandler/zipball/9825f15ef9b4a93252ce53ca8962278832d834da",
+                "reference": "9825f15ef9b4a93252ce53ca8962278832d834da",
                 "shasum": ""
             },
             "require": {
@@ -5101,7 +5101,7 @@
                 "phpunit/phpunit": "^10.0 | ^11.0  | ^12.0",
                 "squizlabs/php_codesniffer": "^3.5"
             },
-            "time": "2025-05-26T18:26:51+00:00",
+            "time": "2025-08-08T09:48:45+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5128,7 +5128,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sirn-se/phrity-util-errorhandler/issues",
-                "source": "https://github.com/sirn-se/phrity-util-errorhandler/tree/1.2.0"
+                "source": "https://github.com/sirn-se/phrity-util-errorhandler/tree/1.2.1"
             },
             "install-path": "../phrity/util-errorhandler"
         },
