@@ -22,6 +22,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaCOM',
 			'gross' => '1.00',
 			'contribution_tracking_id' => '33992337',
@@ -32,10 +33,19 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'payment_method' => 'cc',
 			'payment_submethod' => 'visa-debit',
 			'date' => 1455840651,
-			'settled_currency' => 'USD',
 			'fee' => '0.24',
 			'settled_gross' => '0.76',
-			'settled_fee' => '0.24',
+			'settlement_batch_reference' => '2',
+			'exchange_rate' => '1',
+			'settled_date' => null,
+			'settled_currency' => 'USD',
+			'original_currency' => 'USD',
+			'original_total_amount' => 1.0,
+			'original_fee_amount' => 0.24,
+			'original_net_amount' => 0.76,
+			'settled_fee_amount' => 0.24,
+			'settled_net_amount' => 0.76,
+			'settled_total_amount' => 1.0,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse donation correctly' );
 	}
@@ -50,6 +60,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaCOM',
 			'gross' => '1.00',
 			'contribution_tracking_id' => '33992337',
@@ -63,7 +74,17 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'settled_currency' => 'USD',
 			'fee' => '0.24',
 			'settled_gross' => '0.76',
-			'settled_fee' => '0.24',
+			'settlement_batch_reference' => '2',
+			'exchange_rate' => '1',
+			'settled_date' => null,
+			'settled_currency' => 'USD',
+			'original_currency' => 'USD',
+			'original_total_amount' => 1.0,
+			'original_fee_amount' => 0.24,
+			'original_net_amount' => 0.76,
+			'settled_fee_amount' => 0.24,
+			'settled_net_amount' => 0.76,
+			'settled_total_amount' => 1.0,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse donation correctly' );
 	}
@@ -78,6 +99,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaCOM',
 			'gross' => '5.35',
 			'contribution_tracking_id' => '80188432',
@@ -89,9 +111,19 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'payment_submethod' => 'rtbt_ideal',
 			'date' => 1582488844,
 			'settled_currency' => 'USD',
-			'fee' => '0.25',
+			'fee' => 0.25,
 			'settled_gross' => '5.43',
-			'settled_fee' => '0.27',
+			'settlement_batch_reference' => '630',
+			'exchange_rate' => 1.0656568,
+			'settled_date' => null,
+			'settled_currency' => 'USD',
+			'original_currency' => 'EUR',
+			'original_total_amount' => 5.35,
+			'original_fee_amount' => 0.25,
+			'original_net_amount' => 5.1,
+			'settled_fee_amount' => 0.27,
+			'settled_net_amount' => 5.43,
+			'settled_total_amount' => 5.7,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse donation correctly' );
 	}
@@ -106,6 +138,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaCOM',
 			'gross' => '1.00',
 			'contribution_tracking_id' => '206543313',
@@ -119,7 +152,17 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'settled_currency' => 'USD',
 			'fee' => '0.22',
 			'settled_gross' => '0.78',
-			'settled_fee' => '0.22',
+			'settlement_batch_reference' => 1061,
+			'exchange_rate' => 1,
+			'settled_date' => null,
+			'settled_currency' => 'USD',
+			'original_currency' => 'USD',
+			'original_total_amount' => 1,
+			'original_fee_amount' => 0.22,
+			'original_net_amount' => 0.78,
+			'settled_fee_amount' => 0.22,
+			'settled_net_amount' => 0.78,
+			'settled_total_amount' => 1,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse donation correctly' );
 	}
@@ -134,6 +177,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaCOM',
 			'contribution_tracking_id' => '92598312',
 			'date' => 1455128736,
@@ -146,6 +190,18 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'gateway_txn_id' => '4522268860022701',
 			'payment_method' => 'cc',
 			'payment_submethod' => 'visa',
+			'settlement_batch_reference' => 3,
+			'exchange_rate' => 1,
+			'fee' => 0,
+			'settled_date' => null,
+			'settled_currency' => 'USD',
+			'original_currency' => 'USD',
+			'original_total_amount' => -1.0,
+			'original_fee_amount' => 0,
+			'original_net_amount' => -1.0,
+			'settled_fee_amount' => 0,
+			'settled_net_amount' => -1.0,
+			'settled_total_amount' => -1.0,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse refund correctly' );
 	}
@@ -160,6 +216,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaCOM',
 			'contribution_tracking_id' => '92598318',
 			'date' => 1455128736,
@@ -172,6 +229,18 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'gateway_txn_id' => '4555568860022701',
 			'payment_method' => 'cc',
 			'payment_submethod' => 'visa',
+			'settlement_batch_reference' => '3',
+			'exchange_rate' => 1,
+			'fee' => -2.0,
+			'settled_date' => null,
+			'settled_currency' => 'USD',
+			'original_currency' => 'USD',
+			'original_fee_amount' => -2.0,
+			'original_net_amount' => -1.0,
+			'original_total_amount' => -3.0,
+			'settled_fee_amount' => -2.0,
+			'settled_net_amount' => -1.0,
+			'settled_total_amount' => -3.0,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse chargeback correctly' );
 	}
@@ -183,6 +252,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaDonations',
 			'gross' => '10.40',
 			'contribution_tracking_id' => '191638898',
@@ -196,7 +266,12 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'settled_currency' => 'USD',
 			'fee' => '0.38',
 			'settled_gross' => '10.02',
-			'settled_fee' => '0.38',
+			'settlement_batch_reference' => null,
+			'exchange_rate' => 1,
+			'original_currency' => 'USD',
+			'original_fee_amount' => 0.38,
+			'settled_total_amount' => 10.02,
+			'settled_fee_amount' => 0.38,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse donation correctly' );
 	}
@@ -208,6 +283,7 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 		$actual = $output[0];
 		$expected = [
 			'gateway' => 'adyen',
+			'audit_file_gateway' => 'adyen',
 			'gateway_account' => 'WikimediaDonations',
 			'gross' => 13.43,
 			'contribution_tracking_id' => '189748459',
@@ -220,13 +296,19 @@ class AuditTest extends BaseSmashPigUnitTestCase {
 			'date' => 1697133875,
 			'type' => 'chargeback',
 			'gateway_txn_id' => 'DASD76ASD7ASD4AS',
+			'settlement_batch_reference' => null,
+			'exchange_rate' => 1,
+			'original_currency' => 'USD',
+			'original_total_amount' => 13.43,
 		];
 		$this->assertEquals( $expected, $actual, 'Did not parse donation correctly' );
 	}
 
-	public function testIgnoreMerchantReference() {
+	public function testPresentMerchantReference() {
 		$processor = new AdyenSettlementDetailReport();
 		$output = $processor->parseFile( __DIR__ . '/../Data/settlement_detail_report_ignore.csv' );
-		$this->assertCount( 0, $output );
+		$this->assertCount( 1, $output );
+		$this->assertEquals( 'adyen', $output[0]['audit_file_gateway'] );
+		$this->assertEquals( 'gravy', $output[0]['gateway'] );
 	}
 }

@@ -54,19 +54,19 @@ data-store:
         connection_string: 'sqlite::memory:'
         queue: email_preferences
 
+  set-primary-email:
+    class: PHPQueue\Backend\PDO
+    constructor-parameters:
+      -
+        connection_string: 'sqlite::memory:'
+        queue: set_primary_email
+
   recurring-modify:
     class: PHPQueue\Backend\PDO
     constructor-parameters:
       -
         connection_string: 'sqlite::memory:'
         queue: recurring_modify
-
-  recurring-upgrade:
-    class: PHPQueue\Backend\PDO
-    constructor-parameters:
-      -
-        connection_string: 'sqlite::memory:'
-        queue: recurring_upgrade
 
   jobs-paypal:
     class: PHPQueue\Backend\PDO
