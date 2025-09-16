@@ -13,6 +13,10 @@ use SmashPig\PaymentProviders\Responses\RefundPaymentResponse;
 class RefundAction extends GravyAction {
 	use RefundTrait;
 
+	private const ERROR_CODE_UNEXPECTED_STATE = 'unexpected_state';
+	private const RAW_RESPONSE_CODE_CAPTURE_FULLY_REFUNDED = 'CAPTURE_FULLY_REFUNDED';
+	const ERROR_CODE_REFUND_ALREADY_SATISFIED = 'refund_already_satisfied';
+
 	public function execute( ListenerMessage $msg ): bool {
 		$tl = new TaggedLogger( 'RefundAction' );
 		$refundDetails = $this->getRefundDetails( $msg );
@@ -30,7 +34,17 @@ class RefundAction extends GravyAction {
 				$tl->info( "Skipping in-progress refund notification for refund {$refundDetails->getGatewayRefundId()}" );
 			}
 		} else {
-			$tl->info( "Problem locating refund with refund id {$refundDetails->getGatewayRefundId()}" );
+			// Get more specific error information from the refund details
+			$rawResponse = $refundDetails->getRawResponse();
+			$errorCode = $rawResponse['error_code'] ?? null;
+			$rawResponseCode = $rawResponse['raw_response_code'] ?? null;
+			$refundId = $refundDetails->getGatewayRefundId() ?? $rawResponse['id'] ?? '';
+
+			if ( $this->isAlreadyFullyRefundedError( $errorCode, $rawResponseCode ) ) {
+				$tl->info( "Refund {$refundId} failed - transaction already fully refunded" );
+			} else {
+				$tl->info( "Problem locating refund with refund id {$refundId}. Error: {$errorCode}" );
+			}
 		}
 
 		return true;
@@ -45,5 +59,14 @@ class RefundAction extends GravyAction {
 		] );
 
 		return $refundDetails;
+	}
+
+	/**
+	 * Check if the error indicates the transaction is already fully refunded
+	 * So far we've seen both 'unexpected_state' and 'refund_already_satisfied' for this scenario.
+	 */
+	private function isAlreadyFullyRefundedError( ?string $errorCode, ?string $rawResponseCode ): bool {
+		return ( $errorCode === self::ERROR_CODE_UNEXPECTED_STATE || $errorCode === self::ERROR_CODE_REFUND_ALREADY_SATISFIED )
+		&& $rawResponseCode === self::RAW_RESPONSE_CODE_CAPTURE_FULLY_REFUNDED;
 	}
 }

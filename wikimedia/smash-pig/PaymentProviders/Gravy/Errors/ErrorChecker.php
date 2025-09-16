@@ -5,33 +5,69 @@ namespace SmashPig\PaymentProviders\Gravy\Errors;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Gravy\PaymentStatusNormalizer;
 
+/**
+ * Class ErrorChecker
+ *
+ * Provides methods to check for and retrieve error details from Gravy payment responses.
+ * Determines the presence of errors based on specific conditions such as error response type,
+ * error codes, intent outcomes, 3D Secure errors, and failed payment statuses.
+ */
+
 class ErrorChecker {
+	public const UNKNOWN_FAILED_PAYMENT_STATUS_ERROR_CODE = 'unknown_failed_payment_status_error_code';
+	public const UNKNOWN_3_D_SECURE_ERROR_CODE = 'unknown_3d_secure_error_code';
+	public const UNKNOWN_FAILED_INTENT_ERROR_CODE = 'unknown_failed_intent_error_code';
+	public const UNKNOWN_ERROR_CODE = 'unknown_error_code';
+	public const ERROR_RESPONSE_UNKNOWN_ERROR_CODE = 'error_response_unknown_error_code';
 
 	/**
 	 * Check if a Gravy payment response contains any error indicators
 	 */
 	public function responseHasErrors( array $response ): bool {
+		return $this->hasErrorResponseType( $response ) ||
+			$this->hasErrorCode( $response ) ||
+			$this->hasFailedIntentOutcome( $response ) ||
+			$this->has3DSecureError( $response ) ||
+			$this->hasFailedPaymentStatus( $response );
+	}
+
+	/**
+	 * Get error details from a Gravy payment response
+	 */
+	public function getResponseErrorDetails( array $response ): array {
+		$errorDetails = [];
+
 		if ( $this->hasErrorResponseType( $response ) ) {
-			return true;
+			$errorDetails['error_type'] = ErrorType::RESPONSE_TYPE->value;
+			$errorDetails['error_code'] = $response['status'] ?? self::ERROR_RESPONSE_UNKNOWN_ERROR_CODE;
+			return $errorDetails;
 		}
 
 		if ( $this->hasErrorCode( $response ) ) {
-			return true;
+			$errorDetails['error_type'] = ErrorType::ERROR_CODE->value;
+			$errorDetails['error_code'] = $response['error_code'] ?? self::UNKNOWN_ERROR_CODE;
+			return $errorDetails;
 		}
 
 		if ( $this->hasFailedIntentOutcome( $response ) ) {
-			return true;
+			$errorDetails['error_type'] = ErrorType::FAILED_INTENT->value;
+			$errorDetails['error_code'] = $response['intent_outcome'] ?? self::UNKNOWN_FAILED_INTENT_ERROR_CODE;
+			return $errorDetails;
 		}
 
 		if ( $this->has3DSecureError( $response ) ) {
-			return true;
+			$errorDetails['error_type'] = ErrorType::THREE_D_SECURE->value;
+			$errorDetails['error_code'] = $response['three_d_secure']['status'] ?? self::UNKNOWN_3_D_SECURE_ERROR_CODE;
+			return $errorDetails;
 		}
 
 		if ( $this->hasFailedPaymentStatus( $response ) ) {
-			return true;
+			$errorDetails['error_type'] = ErrorType::FAILED_PAYMENT->value;
+			$errorDetails['error_code'] = $response['status'] ?? self::UNKNOWN_FAILED_PAYMENT_STATUS_ERROR_CODE;
+			return $errorDetails;
 		}
 
-		return false;
+		return [];
 	}
 
 	protected function hasErrorResponseType( array $response ): bool {
@@ -51,6 +87,6 @@ class ErrorChecker {
 	}
 
 	protected function hasFailedPaymentStatus( array $response ): bool {
-		return isset( $response['status'] ) && ( new PaymentStatusNormalizer() )->normalizeStatus( $response['status'] ) === FinalStatus::FAILED;
+		return isset( $response['status'] ) && ( new PaymentStatusNormalizer )->normalizeStatus( $response['status'] ) === FinalStatus::FAILED;
 	}
 }

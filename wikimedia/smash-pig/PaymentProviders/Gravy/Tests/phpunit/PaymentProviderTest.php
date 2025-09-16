@@ -2,6 +2,7 @@
 
 namespace SmashPig\PaymentProviders\Gravy\Tests\phpunit;
 
+use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Gravy\PaymentProvider;
 use SmashPig\PaymentProviders\Gravy\Tests\BaseGravyTestCase;
@@ -57,6 +58,58 @@ class PaymentProviderTest extends BaseGravyTestCase {
 		$this->assertFalse( $response );
 	}
 
+	/**
+	 * Test that the `deleteRecurringPaymentToken` method correctly handles a cURL error string returned by the
+	 * Gravy SDK client.
+	 *
+	 * This test ensures that:
+	 * 1. The provider returns `false` when a cURL error occurs in the SDK client.
+	 * 2. The API layer processes the cURL error string and converts it into an appropriate error array.
+	 *
+	 * The test verifies the entire flow from the provider to the API and the SDK client while simulating the cURL
+	 * error scenario.
+	 *
+	 * @return void
+	 */
+	public function testDeletePaymentTokenHandlesCurlErrorString(): void {
+		$paymentMethodId = 'test-payment-method-id';
+		$params = [ 'recurring_payment_token' => $paymentMethodId ];
+		$curlErrorMessage = 'cURL error 28: Operation timed out after 30000 milliseconds';
+
+		// Mock the Gravy SDK client to return a cURL error string
+		$mockGravyClient = $this->createMock( \Gr4vy\Gr4vyConfig::class );
+		$mockGravyClient->expects( $this->exactly( 2 ) )
+			->method( 'deletePaymentMethod' )
+			->with( $paymentMethodId )
+			->willReturn( $curlErrorMessage ); // SDK returns raw cURL error string
+
+		// Create a real API instance and inject the mocked SDK client
+		$api = new \SmashPig\PaymentProviders\Gravy\Api();
+		$reflection = new \ReflectionClass( $api );
+		$property = $reflection->getProperty( 'gravyApiClient' );
+		$property->setAccessible( true );
+		$property->setValue( $api, $mockGravyClient );
+
+		// Replace the provider's API with our modified one
+		$providerReflection = new \ReflectionClass( $this->provider );
+		$apiProperty = $providerReflection->getProperty( 'api' );
+		$apiProperty->setAccessible( true );
+		$apiProperty->setValue( $this->provider, $api );
+
+		// Test the complete flow: Provider -> API -> SDK (returns cURL error) -> bubbles back up
+		$providerResult = $this->provider->deleteRecurringPaymentToken( $params );
+
+		// Verify the provider correctly handles the error and returns false
+		$this->assertFalse( $providerResult, 'Provider should return false when encountering cURL error' );
+
+		// Also verify the API layer converts the string error correctly
+		$apiResult = $api->deletePaymentToken( [ 'payment_method_id' => $paymentMethodId ] );
+		$this->assertArrayHasKey( 'type', $apiResult, 'API should convert cURL error string to error array' );
+		$this->assertArrayHasKey( 'message', $apiResult, 'API should convert cURL error string to error array' );
+		$this->assertEquals( 'error', $apiResult['type'], 'API should return error type' );
+		$this->assertEquals( $curlErrorMessage, $apiResult['message'], 'API should preserve the original cURL error message' );
+	}
+
 	public function testApiErrorDeletePaymentTokenApiCall() {
 		$responseBody = json_decode( file_get_contents( __DIR__ . '/../Data/delete-token-api-error.json' ), true );
 		$params = [
@@ -98,6 +151,27 @@ class PaymentProviderTest extends BaseGravyTestCase {
 		$this->assertEquals( $responseBody['payment_service_transaction_id'], $response->getBackendProcessorTransactionId() );
 
 		$this->assertTrue( $response->isSuccessful() );
+	}
+
+	public function testGetLatestPaymentStatusCancelledApproval(): void {
+		$responseBody = json_decode( file_get_contents( __DIR__ . '/../Data/buyer-cancel-approval-from-redirect.json' ), true );
+		$params = [
+			'gateway_txn_id' => 'random_txn_id'
+		];
+
+		$this->mockApi->expects( $this->once() )
+			->method( 'getTransaction' )
+			->with( $params )
+			->willReturn( $responseBody );
+
+		$response = $this->provider->getLatestPaymentStatus( $params );
+
+		$this->assertInstanceOf( '\SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse',
+			$response );
+
+		$this->assertFalse( $response->isSuccessful() );
+		$this->assertSame( ErrorCode::CANCELLED_BY_DONOR, $response->getNormalizedResponse()['code'] );
+		$this->assertSame( FinalStatus::CANCELLED, $response->getStatus() );
 	}
 
 	public function testValidationErrorRefundBeforeApiCall() {

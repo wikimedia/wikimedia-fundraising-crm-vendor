@@ -115,6 +115,15 @@ payment-provider:
         validator: "validators/redirect"
         <<: *CACHE
 
+  stripetoken:
+    class: SmashPig\PaymentProviders\Gravy\PaymentProvider
+    constructor-parameters:
+      -
+        request-mapper: "mappers/stripetoken-request"
+        response-mapper: "mappers/stripetoken-response"
+        validator: "validators/default"
+        <<: *CACHE
+
 
 # Setting value to false to mirror production configuration
 capture-from-ipn-listener: false
@@ -122,6 +131,44 @@ capture-from-ipn-listener: false
 proxy:
   proxy_host: ~ # example.proxy.url
   proxy_port: -1 # 80
+
+error-checker:
+  # Service responsible for detecting and categorizing payment errors from API responses
+  class: SmashPig\PaymentProviders\Gravy\Errors\ErrorChecker
+
+error-tracker:
+  # Service that monitors error frequency and triggers alerts when thresholds are exceeded
+  # Uses Redis to track error counts within expiring time buckets
+  class: SmashPig\PaymentProviders\Gravy\Errors\ErrorTracker
+  constructor-parameters:
+    -
+      # Redis-based tracking and alerting can be toggled on/off.
+      enabled: true
+      # Number of errors required to trigger an alert (default: 20)
+      threshold: 20
+      # Time window in seconds for error counting (1800 = 30 minutes)
+      time_window: 1800
+      # Redis key prefix for storing error counts
+      key_prefix: 'gravy_error_threshold_'
+      # Redis key expiry period in seconds (default: 2400 = 40 minutes)
+      key_expiry_period: 2400
+      # Alert suppression period in seconds to prevent duplicate alerts (default: 300 = 5 minutes)
+      alert_suppression_period: 300
+      # List of error codes to ignore from tracking and alerting
+      ignore_list:
+        # We get this error when a PayPal transaction times out
+        - 'incomplete_buyer_approval'
+        # We get this error when a donor cancels a payment
+        - 'cancelled_buyer_approval'
+        # We get these for non-standard declines. e.g. Insufficient funds & Exceeding daily card limits.
+        # Gravy mentions that we can also get them due to legal reasons (e.g. watch list, embargo, sanctions).
+        # See: https://docs.gr4vy.com/guides/api/error-codes
+        - 'refused_transaction'
+
+notifications:
+  fraud-alerts:
+    to:
+      - 'fr-tech@wikimedia.org'
 
 mappers:
   cc-request:
@@ -152,6 +199,10 @@ mappers:
     class: SmashPig\PaymentProviders\Gravy\Mapper\BankPaymentProviderRequestMapper
   bt-response:
     class: SmashPig\PaymentProviders\Gravy\Mapper\BankPaymentProviderResponseMapper
+  rtbt-request:
+    class: SmashPig\PaymentProviders\Gravy\Mapper\BankPaymentProviderRequestMapper
+  rtbt-response:
+    class: SmashPig\PaymentProviders\Gravy\Mapper\BankPaymentProviderResponseMapper
   cash-request:
     class: SmashPig\PaymentProviders\Gravy\Mapper\RedirectPaymentProviderRequestMapper
   cash-response:
@@ -160,6 +211,10 @@ mappers:
     class: SmashPig\PaymentProviders\Gravy\Mapper\VenmoPaymentProviderRequestMapper
   venmo-response:
     class: SmashPig\PaymentProviders\Gravy\Mapper\RedirectPaymentProviderResponseMapper
+  stripetoken-request:
+    class: SmashPig\PaymentProviders\Gravy\Mapper\RequestMapper
+  stripetoken-response:
+    class: SmashPig\PaymentProviders\Gravy\Mapper\ResponseMapper
 
 validators:
   cc:
@@ -176,6 +231,8 @@ validators:
     class: SmashPig\PaymentProviders\Gravy\Validators\PaypalPaymentProviderValidator
   venmo:
     class: SmashPig\PaymentProviders\Gravy\Validators\VenmoPaymentProviderValidator
+  default:
+    class: SmashPig\PaymentProviders\Gravy\Validators\PaymentProviderValidator
 
 fraud-filters:
   # Authorization notifications include AVS and CVV result codes.
