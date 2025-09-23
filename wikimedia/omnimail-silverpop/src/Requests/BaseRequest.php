@@ -226,6 +226,10 @@ abstract class BaseRequest implements RequestInterface
     if ($this->sftpEndPoint) {
         $this->silverPop->setSftpUrl($this->sftpEndPoint);
     }
+    $this->silverPop->setClientId($this->getCredential('client_id'));
+    $this->silverPop->setClientSecret($this->getCredential('client_secret'));
+    $this->silverPop->setRefreshToken($this->getCredential('refresh_token'));
+
     if (!empty($parameters['is_use_rest'])) {
         $this->restConnector = SilverpopRestConnector::getInstance();
         if (!empty($parameters['client'])) {
