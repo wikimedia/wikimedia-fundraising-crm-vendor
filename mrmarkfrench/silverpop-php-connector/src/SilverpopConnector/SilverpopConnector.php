@@ -22,22 +22,18 @@ use SilverpopConnector\SilverpopXmlConnector;
  */
 class SilverpopConnector {
   protected static $instance = null;
-  protected $restConnector   = null;
-  protected $xmlConnector    = null;
+  protected SilverpopRestConnector $restConnector;
+  protected SilverpopXmlConnector $xmlConnector;
 
   protected $baseUrl      = null;
   protected $dateFormat   = null;
   protected $timeout      = null;
-  protected $username     = null;
-  protected $password     = null;
-  protected $clientId     = null;
-  protected $clientSecret = null;
-  protected $refreshToken = null;
-  protected $accessToken  = null;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // MAGIC /////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////
+  protected ?string $username;
+  protected ?string $password;
+  protected ?string $clientId;
+  protected ?string $clientSecret;
+  protected ?string $refreshToken;
+  protected ?string $accessToken;
 
   /**
    * Construct a connector object. If you will be authenticating with only a
@@ -49,7 +45,7 @@ class SilverpopConnector {
    * @param string $dateFormat Passed through to API requests to specify output format
    * @param float $timeout Timeout in seconds for API requests
    */
-  public function __construct($baseUrl='http://api.pilot.silverpop.com', $dateFormat='MM/dd/yyyy', $timeout=10.0) {
+  public function __construct(string $baseUrl = 'http://api.pilot.silverpop.com', $dateFormat='MM/dd/yyyy', $timeout=10.0) {
     $this->restConnector = SilverpopRestConnector::getInstance();
     $this->xmlConnector  = SilverpopXmlConnector::getInstance();
     $this->setBaseUrl($baseUrl);
@@ -77,10 +73,6 @@ class SilverpopConnector {
     }
     throw new SilverpopConnectorException("No authenticated connector available for call to {$method}. You must authenticate before calling API resource endpoints.");
   }
-
-  //////////////////////////////////////////////////////////////////////////
-  // STATIC ///////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////
 
   /**
    * Get a singleton instance of the connector. If you will be
@@ -111,10 +103,6 @@ class SilverpopConnector {
     return static::$instance;
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // PUBLIC ////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////
-
   /**
    * Perform Silverpop authentication. If three arguments are supplied, will
    * be treated as a REST authentication. If only two arugments are supplied,
@@ -142,7 +130,7 @@ class SilverpopConnector {
     $this->refreshToken = empty($refreshToken) ? $this->refreshToken : $refreshToken;
 
     $this->restConnector = SilverpopRestConnector::getInstance();
-    return $this->restConnector->authenticate(
+    $this->restConnector->authenticate(
       $this->clientId,
       $this->clientSecret,
       $this->refreshToken);
@@ -163,22 +151,42 @@ class SilverpopConnector {
     $this->username = empty($username) ? $this->username : $username;
     $this->password = empty($password) ? $this->password : $password;
     $this->xmlConnector = SilverpopXmlConnector::getInstance();
-    return $this->xmlConnector->authenticate(
+    $this->xmlConnector->authenticate(
       $this->username,
       $this->password);
   }
 
-  /**
-   * //SK 20140203 Set accessToken to 1 (expiry now?) for REST so auth params can be set.
-   *
-   * @param string $accessToken
-   * @param int   $expiry  Timestamp for when the token expires, set to now for temporary tokens
-   */
-  public function initialiseRest($accessToken='1', $expiry=null) {
-    if (empty($expiry) || $accessToken == '1') { $expiry = time(); }
-    if (!is_int($expiry)) { $expiry = strtotime($expiry); }
+  public function setClientId(?string $clientId): self{
+    $this->restConnector->setClientId($clientId);
+    $this->xmlConnector->setClientId($clientId);
+    return $this;
+  }
 
-    return $this->restConnector->setAccessToken($accessToken, $expiry);
+  public function setClientSecret(?string $clientSecret): self{
+    $this->restConnector->setClientSecret($clientSecret);
+    $this->xmlConnector->setClientSecret($clientSecret);
+    return $this;
+  }
+
+  public function setRefreshToken(?string $refreshToken): self{
+    $this->restConnector->setRefreshToken($refreshToken);
+    $this->xmlConnector->setRefreshToken($refreshToken);
+    $this->refreshToken = $refreshToken;
+    return $this;
+  }
+
+  public function setUsername(?string $username): SilverpopConnector {
+    $this->restConnector->setUsername($username);
+    $this->xmlConnector->setUsername($username);
+    $this->username = $username;
+    return $this;
+  }
+
+  public function setPassword(?string $password): SilverpopConnector {
+    $this->restConnector->setPassword($password);
+    $this->xmlConnector->setPassword($password);
+    $this->password = $password;
+    return $this;
   }
 
   /**
@@ -218,9 +226,5 @@ class SilverpopConnector {
     $this->restConnector->setTimeout($timeout);
     $this->xmlConnector->setTimeout($timeout);
   }
-
-  //////////////////////////////////////////////////////////////////////////
-  // PROTECTED ////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////
 
 }

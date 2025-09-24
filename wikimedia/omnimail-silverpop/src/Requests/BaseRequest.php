@@ -229,21 +229,25 @@ abstract class BaseRequest implements RequestInterface
     $this->silverPop->setClientId($this->getCredential('client_id'));
     $this->silverPop->setClientSecret($this->getCredential('client_secret'));
     $this->silverPop->setRefreshToken($this->getCredential('refresh_token'));
-
+    $this->silverPop->setPassword($this->getCredential('password'));
+    $this->silverPop->setUsername($this->getCredential('username'));
+    $this->restConnector = SilverpopRestConnector::getInstance();
+    $this->xmlConnector = SilverpopXmlConnector::getInstance();
+    // Below here we probably can simplify to consistent setClient
+    // which authenticates for both now.
     if (!empty($parameters['is_use_rest'])) {
-        $this->restConnector = SilverpopRestConnector::getInstance();
-        if (!empty($parameters['client'])) {
-            $this->restConnector->setClient($parameters['client']);
-        }
-      $this->silverPop->authenticateRest($this->getCredential('client_id'), $this->getCredential('client_secret'), $this->getCredential('refresh_token'));
+      if (!empty($parameters['client'])) {
+        $this->restConnector->setClient($parameters['client']);
+      }
       $this->setDatabaseId($this->getCredential('database_id'));
+      $this->xmlConnector->setClient($this->restConnector->getClient());
     }
     else {
-      $this->xmlConnector = SilverpopXmlConnector::getInstance();
       if ($this->client) {
-          $this->xmlConnector->setClient($this->client);
+        $this->xmlConnector->setClient($this->client);
       }
       $this->silverPop->authenticateXml($this->getCredential('username'), $this->getCredential('password'));
+      $this->restConnector->setClient($this->xmlConnector->getClient());
     }
   }
 

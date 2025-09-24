@@ -22,6 +22,8 @@ abstract class SilverpopBaseConnector {
   protected $refreshToken;
   protected $accessToken;
   protected $accessTokenExpires;
+  protected ?string $username;
+  protected ?string $password;
   private array $container = [];
 
   /**
@@ -43,9 +45,15 @@ abstract class SilverpopBaseConnector {
     return $this;
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // MAGIC /////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////
+  public function setUsername(?string $userName): self {
+    $this->username = $userName;
+    return $this;
+  }
+
+  public function setPassword(?string $password): self {
+    $this->password = $password;
+    return $this;
+  }
 
   /**
    * Construct a connector object. If you will be authenticating with only a
@@ -63,10 +71,6 @@ abstract class SilverpopBaseConnector {
     $this->setTimeout($timeout);
   }
 
-  //////////////////////////////////////////////////////////////////////////
-  // STATIC ///////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////
-
   /**
    * Get a singleton instance of the connector. If you will be
    * authenticating with only a single set of credentials, fetching a
@@ -83,18 +87,14 @@ abstract class SilverpopBaseConnector {
    * "protected static $instance=null;" property in your child class
    * for this method to reference.
    *
-   * @return SilverpopConnector
+   * @return SilverpopXmlConnector|SilverpopRestConnector
    */
-  public static function getInstance() {
+  public static function getInstance(): SilverpopRestConnector|SilverpopXmlConnector {
     if (static::$instance == null) {
       static::$instance = new static();
     }
     return static::$instance;
   }
-
-  ///////////////////////////////////////////////////////////////////////////
-  // PUBLIC ////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////
 
   /**
    * Performs Silverpop authentication using the supplied credentials,
