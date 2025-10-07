@@ -104,6 +104,20 @@ class Mailer extends AbstractMailer implements MailerInterface
   }
 
   /**
+   * Get Recipients.
+   *
+   * @param array $parameters
+   *
+   * @return \Omnimail\Silverpop\Requests\RemoveRecipientRequest
+   */
+  public function removeGroupMember($parameters = []) {
+    return $this->createRequest('RemoveRecipient', array_merge($parameters, [
+      'credentials' => $this->getCredentials(),
+      'client' => $this->getClient(),
+    ]));
+  }
+
+  /**
    * Get Contact.
    *
    * @param array $parameters
@@ -185,7 +199,7 @@ class Mailer extends AbstractMailer implements MailerInterface
    *
    * @return \Omnimail\Silverpop\Requests\WebTrackingDataExportRequest
    */
-  public function getWebActions($parameters = array()) {
+  public function getWebActions($parameters = []) {
     return $this->createRequest('WebTrackingDataExportRequest', array_merge($parameters, [
       'credentials' => $this->getCredentials(),
       'client' => $this->getClient(),
@@ -206,7 +220,7 @@ class Mailer extends AbstractMailer implements MailerInterface
      *
      * @return \Omnimail\Silverpop\Requests\GetQueryRequest
      */
-    public function getQueryCriteria($parameters = array()) {
+    public function getQueryCriteria($parameters = []) {
       return $this->createRequest('GetQueryRequest', array_merge($parameters, array(
         'credentials' => $this->getCredentials(),
         'client' => $this->getClient(),
