@@ -39,9 +39,9 @@ class ConsentInformationRequest extends SilverpopBaseRequest
      */
   protected $destination;
 
-    private int $phone;
+  private string $phone;
 
-    /**
+  /**
    * @return int
    */
   public function getDatabaseId() {
@@ -56,16 +56,16 @@ class ConsentInformationRequest extends SilverpopBaseRequest
   }
 
   /**
-   * @return int
+   * @return string
    */
-  public function getPhone() {
+  public function getPhone(): string {
      return $this->phone;
    }
 
   /**
-   * @param int $phone
+   * @param string $phone
    */
-  public function setPhone(int $phone) {
+  public function setPhone(string $phone) {
     $this->phone = $phone;
   }
 
