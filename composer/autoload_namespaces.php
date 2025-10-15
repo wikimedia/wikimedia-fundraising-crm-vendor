@@ -11,7 +11,7 @@ return array(
     'PHPUnit_' => array($baseDir . '/core/packages'),
     'PHPQueue' => array($vendorDir . '/coderkungfu/php-queue/src'),
     'Net' => array($vendorDir . '/pear/net_smtp', $vendorDir . '/pear/net_socket'),
-    'Mail' => array($vendorDir . '/pear/mail', $vendorDir . '/pear/mail_mime'),
+    'Mail' => array($vendorDir . '/pear/mail_mime', $vendorDir . '/pear/mail'),
     'Lurker' => array($vendorDir . '/totten/lurkerlite/src'),
     'Log' => array($vendorDir . '/pear/log'),
     'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
