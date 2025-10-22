@@ -428,8 +428,8 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'Phrity\\Net\\' => 
         array (
-            0 => __DIR__ . '/..' . '/phrity/net-stream/src',
-            1 => __DIR__ . '/..' . '/phrity/net-uri/src',
+            0 => __DIR__ . '/..' . '/phrity/net-uri/src',
+            1 => __DIR__ . '/..' . '/phrity/net-stream/src',
         ),
         'PhpOffice\\PhpWord\\' => 
         array (
@@ -490,8 +490,8 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'League\\OAuth2\\Client\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/oauth2-client/src',
-            1 => __DIR__ . '/..' . '/league/oauth2-google/src',
+            0 => __DIR__ . '/..' . '/league/oauth2-google/src',
+            1 => __DIR__ . '/..' . '/league/oauth2-client/src',
         ),
         'League\\Csv\\' => 
         array (
@@ -691,8 +691,8 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             'Mail' => 
             array (
-                0 => __DIR__ . '/..' . '/pear/mail',
-                1 => __DIR__ . '/..' . '/pear/mail_mime',
+                0 => __DIR__ . '/..' . '/pear/mail_mime',
+                1 => __DIR__ . '/..' . '/pear/mail',
             ),
         ),
         'L' => 
