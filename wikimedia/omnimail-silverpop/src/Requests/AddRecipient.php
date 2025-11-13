@@ -24,6 +24,22 @@ class AddRecipient extends SilverpopBaseRequest
   protected $groupIdentifier;
 
   /**
+   * Acoustic recipient ID.
+   *
+   * @var ?int
+   */
+  protected ?int $recipientIdentifier = NULL;
+
+  public function getRecipientIdentifier(): ?int {
+    return $this->recipientIdentifier;
+  }
+
+  public function setRecipientIdentifier(?int $recipientID): AddRecipient {
+    $this->recipientIdentifier = $recipientID;
+    return $this;
+  }
+
+  /**
    * The data base to be updated.
    *
    * @var int
@@ -33,9 +49,9 @@ class AddRecipient extends SilverpopBaseRequest
   /**
    * Email to add.
    *
-   * @var string
+   * @var ?string
    */
-  protected $email;
+  protected ?string $email;
 
   /**
    * Email to add.
@@ -92,7 +108,8 @@ class AddRecipient extends SilverpopBaseRequest
    * @return array
    */
   public function getFields(): array {
-    return array_merge(['Email' => $this->getEmail()], $this->fields);
+    $emailField = $this->getEmail() ? ['Email' => $this->getEmail()] : [];
+    return array_merge($emailField, $this->fields);
   }
 
   /**
@@ -106,18 +123,18 @@ class AddRecipient extends SilverpopBaseRequest
   }
 
   /**
-   * @return string
+   * @return ?string
    */
-  public function getEmail(): string {
+  public function getEmail(): ?string {
     return $this->email;
   }
 
   /**
-   * @param string $email
+   * @param ?string $email
    *
    * @return self
    */
-  public function setEmail(string $email): self {
+  public function setEmail(?string $email): self {
     $this->email = $email;
     return $this;
   }
@@ -159,15 +176,25 @@ class AddRecipient extends SilverpopBaseRequest
    * @return Contact
    */
   public function getResponse() {
-    $result = $this->silverPop->addRecipient(
-      $this->getDatabaseID(),
-      $this->getFields(),
-      TRUE,
-      FALSE,
-      3,
-      $this->getGroupIdentifier(),
-      $this->getSyncFields()
-    );
+      if ($this->getRecipientIdentifier()) {
+        $result = $this->silverPop->updateRecipient(
+          $this->getDatabaseID(),
+          $this->getRecipientIdentifier(),
+          $this->getFields(),
+        );
+      }
+      else {
+        $result = $this->silverPop->addRecipient(
+          $this->getDatabaseID(),
+          $this->getFields(),
+          TRUE,
+          FALSE,
+          3,
+          $this->getGroupIdentifier(),
+          $this->getSyncFields()
+
+        );
+      }
     if ($this->getSnoozeDate()) {
       $updateResult = $this->silverPop->updateRecipient(
         $this->getDatabaseID(),

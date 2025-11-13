@@ -29,15 +29,12 @@ abstract class AbstractConfigurator
     /**
      * @var \Closure(mixed, bool):mixed|null
      */
-    public static $valuePreProcessor;
+    public static ?\Closure $valuePreProcessor = null;
 
     /** @internal */
     protected Definition|Alias|null $definition = null;
 
-    /**
-     * @return mixed
-     */
-    public function __call(string $method, array $args)
+    public function __call(string $method, array $args): mixed
     {
         if (method_exists($this, 'set'.$method)) {
             return $this->{'set'.$method}(...$args);
@@ -46,15 +43,12 @@ abstract class AbstractConfigurator
         throw new \BadMethodCallException(\sprintf('Call to undefined method "%s::%s()".', static::class, $method));
     }
 
-    public function __sleep(): array
+    public function __serialize(): array
     {
         throw new \BadMethodCallException('Cannot serialize '.__CLASS__);
     }
 
-    /**
-     * @return void
-     */
-    public function __wakeup()
+    public function __unserialize(array $data): void
     {
         throw new \BadMethodCallException('Cannot unserialize '.__CLASS__);
     }

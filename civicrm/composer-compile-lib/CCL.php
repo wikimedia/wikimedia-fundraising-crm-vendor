@@ -1,5 +1,5 @@
 <?php
-// AUTO-GENERATED VIA /srv/civi-sites/wmf/vendor/civicrm/composer-compile-lib/src/StubsTpl.php
+// AUTO-GENERATED VIA /home/elliott/src/docker/fundraising-dev/src/civi-sites/wmf/vendor/civicrm/composer-compile-lib/src/StubsTpl.php
 // If this file somehow becomes invalid (eg when patching CCL), you may safely delete and re-run install.
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
@@ -195,7 +195,7 @@ class CCL {
   }
 
   /**
-   * Returns whether the file path is an absolute path.
+   * Returns whether the given path is absolute.
    */
   public static function isAbsolutePath($file) {
     self::_sym()->isAbsolutePath($file);

@@ -36,10 +36,7 @@ class ResolveBindingsPass extends AbstractRecursivePass
     private array $unusedBindings = [];
     private array $errorMessages = [];
 
-    /**
-     * @return void
-     */
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         $this->usedBindings = $container->getRemovedBindingIds();
 
@@ -121,10 +118,10 @@ class ResolveBindingsPass extends AbstractRecursivePass
         foreach ($bindings as $key => $binding) {
             [$bindingValue, $bindingId, $used, $bindingType, $file] = $binding->getValues();
             if ($used) {
-                $this->usedBindings[$bindingId] = true;
-                unset($this->unusedBindings[$bindingId]);
-            } elseif (!isset($this->usedBindings[$bindingId])) {
-                $this->unusedBindings[$bindingId] = [$key, $this->currentId, $bindingType, $file];
+                $this->usedBindings[$bindingId ?? ''] = true;
+                unset($this->unusedBindings[$bindingId ?? '']);
+            } elseif (!isset($this->usedBindings[$bindingId ?? ''])) {
+                $this->unusedBindings[$bindingId ?? ''] = [$key, $this->currentId, $bindingType, $file];
             }
 
             if (preg_match('/^(?:(?:array|bool|float|int|string|iterable|([^ $]++)) )\$/', $key, $m)) {
@@ -263,8 +260,8 @@ class ResolveBindingsPass extends AbstractRecursivePass
     {
         [$bindingValue, $bindingId] = $binding->getValues();
 
-        $this->usedBindings[$bindingId] = true;
-        unset($this->unusedBindings[$bindingId]);
+        $this->usedBindings[$bindingId ?? ''] = true;
+        unset($this->unusedBindings[$bindingId ?? '']);
 
         return $bindingValue;
     }

@@ -146,7 +146,7 @@ class DB_common extends PEAR
      */
     function __construct()
     {
-        parent::__construct('DB_Error');
+        $this->PEAR('DB_Error');
     }
 
     // }}}
@@ -1920,7 +1920,7 @@ class DB_common extends PEAR
      *
      * @see PEAR_Error
      */
-    function raiseError($code = DB_ERROR, $mode = null, $options = null,
+    function &raiseError($code = DB_ERROR, $mode = null, $options = null,
                          $userinfo = null, $nativecode = null, $dummy1 = null,
                          $dummy2 = null)
     {
@@ -2293,20 +2293,6 @@ class DB_common extends PEAR
     }
 
     // }}}
-    // {{{ lastInsertId()
-
-   /**
-    * Get the most recently inserted Id
-    *
-    * @throws RuntimeException
-    */
-    function lastInsertId()
-    {
-        throw new \RuntimeException("Not implemented: " . get_class($this) . '::lastInsertId');
-    }
-
-    // }}}
-
 }
 
 /*
