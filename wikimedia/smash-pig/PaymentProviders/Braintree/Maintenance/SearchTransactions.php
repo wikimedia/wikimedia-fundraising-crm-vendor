@@ -69,7 +69,7 @@ class SearchTransactions extends MaintenanceBase {
 			if ( $this->isRunChargebackReport() ) {
 				// @todo - this would be disputes. The input date field is not respected because it's unclear we call this &
 				// if we do which date field to use.
-				$disputeInput = [ "receivedDate" => [ "greaterThanOrEqualTo" => $greaterThanDate, "lessThanOrEqualTo" => $endDate ] ];
+				$disputeInput = [ "receivedDate" => [ "greaterThanOrEqualTo" => $greaterThanDate, "lessThanOrEqualTo" => gmdate( 'Y-m-d', strtotime( $endDate ) ) ] ];
 				$this->normalizeTransactions( $provider->searchDisputes( $disputeInput, $after ), 'chargeback' );
 			}
 
@@ -171,6 +171,10 @@ class SearchTransactions extends MaintenanceBase {
 				if ( $logRaw ) {
 					Logger::info( "logging raw transaction " . json_encode( $d ) );
 				}
+				if ( !isset( $d['node'] ) ) {
+					Logger::info( "no results found of type " . $type );
+					continue;
+				}
 				if ( $outputRaw ) {
 					$this->fileData[$context][] = $d['node'];
 					continue;
@@ -223,8 +227,8 @@ class SearchTransactions extends MaintenanceBase {
 			$endDate = $this->getOption( 'end-date' ) ?: $startDate;
 			return [
 				'disbursementDate' => [
-					'greaterThanOrEqualTo' => date( 'Y-m-d', strtotime( $startDate ) ),
-					'lessThanOrEqualTo' => date( 'Y-m-d', strtotime( $endDate ) ),
+					'greaterThanOrEqualTo' => gmdate( 'Y-m-d', strtotime( $startDate ) ),
+					'lessThanOrEqualTo' => gmdate( 'Y-m-d', strtotime( $endDate ) ),
 				]
 			];
 		}
@@ -282,7 +286,7 @@ class SearchTransactions extends MaintenanceBase {
 				$pathPrefix .= $context . '_';
 			}
 			// Start and end but end first for recency sorting.
-			$mainFile = $path . $pathPrefix . gmdate( 'Y-m-d', strtotime( $this->getEndDate() ) ) . '_' . gmdate( 'Y-m-d', strtotime( $this->getStartDate() ) ) . ".json";
+			$mainFile = $path . $pathPrefix . gmdate( 'Y-m-d', strtotime( $this->getStartDate() ) ) . '_' . $this->getEndDate() . ".json";
 			$this->files[$context] = fopen( $mainFile, "w" ) or die( "Unable to open file!" );
 		}
 		return $this->files[$context];
@@ -308,7 +312,7 @@ class SearchTransactions extends MaintenanceBase {
 	private function getEndDate(): string {
 		$endDate = $this->getOption( 'end-date' );
 		if ( $endDate ) {
-			$endDate = date( 'c', strtotime( $endDate ) );
+			$endDate = gmdate( 'Y-m-d', strtotime( $endDate ) );
 		} else {
 			$endDate = substr( $this->now, 0, 10 );
 		}
