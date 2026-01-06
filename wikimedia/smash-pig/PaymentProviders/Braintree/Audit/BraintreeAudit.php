@@ -19,7 +19,7 @@ class BraintreeAudit implements AuditParser {
 	public function parseFile( string $path ): array {
 		$this->fileData = [];
 		$file = json_decode( file_get_contents( $path, 'r' ), true );
-		if ( $file ) {
+		if ( $file && !isset( $file['id'] ) ) {
 			// File is in the old format where the json is valid for the whole file.
 			// This format is harder to grep and has a higher risk of invalid json if it crashes
 			// while writing.
@@ -38,6 +38,9 @@ class BraintreeAudit implements AuditParser {
 			// File is in new NDJSON format - each line is a valid json object.
 			$item = json_decode( $line, true );
 			try {
+				if ( !is_array( $item ) ) {
+					throw new NormalizationException( 'Invalid Item ' . $line );
+				}
 				$this->parseLine( $item );
 			} catch ( NormalizationException $ex ) {
 				Logger::error( $ex->getMessage() );
