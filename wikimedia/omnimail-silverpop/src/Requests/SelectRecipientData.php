@@ -139,7 +139,7 @@ class SelectRecipientData extends SilverpopBaseRequest
       $response->setContactIdentifier($result->RecipientId);
       $response->setEmail((string) $result->Email);
       $response->setOptInTimestamp(empty($result->OptedIn) ? NULL : strtotime($result->OptedIn));
-      $response->setOptOutTimestamp(empty($result->OptedOpt) ? NULL : strtotime($result->OptedOut));
+      $response->setOptOutTimestamp(empty($result->OptedOut) ? NULL : strtotime($result->OptedOut));
       $response->setLastModifiedTimestamp(strtotime($result->LastModified));
       $response->setSnoozeEndTimestamp(empty($result->ResumeSendDate) ? NULL : strtotime($result->ResumeSendDate));
       $fields = [];
