@@ -8899,17 +8899,17 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.0.6.2",
-            "version_normalized": "1.0.6.2",
+            "version": "v1.1.0",
+            "version_normalized": "1.1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "e5f67fd4ac55f5d8c2f80956eb8f78bb78eb3bac"
+                "reference": "72dadd14ed1ac787772ae9b276044e1312ae2ca1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/e5f67fd4ac55f5d8c2f80956eb8f78bb78eb3bac",
-                "reference": "e5f67fd4ac55f5d8c2f80956eb8f78bb78eb3bac",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/72dadd14ed1ac787772ae9b276044e1312ae2ca1",
+                "reference": "72dadd14ed1ac787772ae9b276044e1312ae2ca1",
                 "shasum": ""
             },
             "require": {
@@ -8936,9 +8936,9 @@
                 "php-parallel-lint/php-parallel-lint": "^1.2",
                 "phpunit/phpunit": "^9.5"
             },
-            "time": "2026-01-15T00:28:28+00:00",
+            "time": "2026-01-16T03:51:43+00:00",
             "type": "library",
-            "installation-source": "dist",
+            "installation-source": "source",
             "autoload": {
                 "psr-4": {
                     "SmashPig\\": "./"
@@ -8989,7 +8989,7 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.0.6.2"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.1.0"
             },
             "install-path": "../wikimedia/smash-pig"
         },
