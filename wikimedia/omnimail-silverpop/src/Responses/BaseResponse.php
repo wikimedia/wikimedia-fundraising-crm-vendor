@@ -7,8 +7,6 @@
  */
 namespace Omnimail\Silverpop\Responses;
 
-use Omnimail\Common\Helper;
-
 abstract class BaseResponse extends \arrayObject implements ResponseInterface
 {
   /**

@@ -7,10 +7,6 @@
  */
 namespace Omnimail\Silverpop\Responses;
 
-use phpseclib\Net\Sftp;
-use League\Csv\Reader;
-use League\Csv\Statement;
-
 class RecipientsResponse extends DownloadResponse
 {
 

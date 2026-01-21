@@ -7,11 +7,6 @@
  */
 namespace Omnimail\Silverpop\Responses;
 
-use phpseclib\Net\Sftp;
-use League\Csv\Reader;
-use League\Csv\Statement;
-use Omnimail\Silverpop\Responses\Contact;
-
 class GroupResponse extends BaseResponse {
 
     /**

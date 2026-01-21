@@ -7,14 +7,13 @@
  */
 namespace Omnimail\Silverpop\Responses;
 
-use phpseclib\Net\Sftp;
 use League\Csv\Reader;
 use League\Csv\Statement;
-use Omnimail\Silverpop\Responses\Contact;
+use Omnimail\Silverpop\Downloader;
 
 class GroupMembersResponse extends BaseResponse
 {
-  use \Omnimail\Silverpop\Downloader;
+  use Downloader;
 
   /**
    * Parameters for retrieving the results.

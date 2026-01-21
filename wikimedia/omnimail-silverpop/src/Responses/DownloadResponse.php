@@ -10,10 +10,11 @@ namespace Omnimail\Silverpop\Responses;
 
 use League\Csv\Reader;
 use League\Csv\Statement;
+use Omnimail\Silverpop\Downloader;
 
 class DownloadResponse extends BaseResponse {
 
-    use \Omnimail\Silverpop\Downloader;
+    use Downloader;
 
     /**
      * Parameters for retrieving the results.
