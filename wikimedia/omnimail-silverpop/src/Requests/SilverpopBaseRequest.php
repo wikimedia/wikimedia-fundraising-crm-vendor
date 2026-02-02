@@ -73,6 +73,20 @@ abstract class SilverpopBaseRequest extends BaseRequest {
      */
   protected $limit = 0;
 
+  protected array $curlOptions = [];
+
+  protected array $postHeaders = [];
+
+    public function setCurlOptions(array $curlOptions): SilverpopBaseRequest {
+        $this->curlOptions = $curlOptions;
+        return $this;
+    }
+
+    public function setPostHeaders(array $postHeaders): SilverpopBaseRequest {
+        $this->postHeaders = $postHeaders;
+        return $this;
+    }
+
     /**
      * @return int
      */

@@ -223,6 +223,12 @@ abstract class BaseRequest implements RequestInterface
     if (isset($parameters['timeout'])) {
         $this->silverPop->setTimeout($parameters['timeout']);
     }
+    if (isset($parameters['post_headers'])) {
+        $this->silverPop->setPostHeaders($parameters['post_headers']);
+    }
+      if (isset($parameters['curl_options'])) {
+          $this->silverPop->setCurlOptions($parameters['curl_options']);
+      }
     if ($this->sftpEndPoint) {
         $this->silverPop->setSftpUrl($this->sftpEndPoint);
     }
