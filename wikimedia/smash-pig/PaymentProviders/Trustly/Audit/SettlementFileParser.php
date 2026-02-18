@@ -11,6 +11,7 @@ use SmashPig\Core\UnhandledException;
  * Parser for Trustly settlement files.
  *
  * @see https://amer.developers.trustly.com/payments/docs/reference-reporting
+ * @see https://www.trustly.com/us/blog/a-merchants-guide-to-ach-returns-and-ach-return-codes
  */
 class SettlementFileParser extends BaseParser {
 
@@ -67,7 +68,9 @@ class SettlementFileParser extends BaseParser {
 		if ( $this->isChargeback() ) {
 			return [
 				'type' => 'chargeback',
-				'parent_gateway_id' => Base62Helper::toUuid( $this->row['original_merchant_reference'] ),
+				'gateway_parent_id' => Base62Helper::toUuid( $this->row['original_merchant_reference'] ),
+				// Doesn't seem to be anything better than this, but it's not 100% clear whose it is.
+				'gateway_refund_id' => $this->row['payment_provider_transaction_id'],
 			];
 		}
 		return $reversalFields;
@@ -77,6 +80,10 @@ class SettlementFileParser extends BaseParser {
 	 * @return bool
 	 */
 	protected function isChargeback(): bool {
+		if ( $this->row['reason'] === 'R08' && $this->row['amount'] < 0 && $this->row['settlement_batch_transaction_type'] === 'Return' ) {
+			return true;
+		}
+		// Perhaps the same amount check should apply here too?
 		return $this->row['reason'] === 'R10';
 	}
 
