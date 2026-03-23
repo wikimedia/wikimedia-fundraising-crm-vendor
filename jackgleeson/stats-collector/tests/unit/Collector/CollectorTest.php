@@ -1,7 +1,5 @@
 <?php
 
-use PHPUnit\Framework\Constraint\IsType as PHPUnit_IsType;
-
 /**
  * @covers \Statistics\Collector\Traits\SingletonInheritance
  * @covers \Statistics\Collector\Collector<extended>
@@ -14,7 +12,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
      */
     protected $statsCollector;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->statsCollector = Statistics\Collector\Collector::getInstance();
         parent::setUp();
@@ -61,9 +59,6 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(8, $stats["test_namespace.number_of_planets"]);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testCanAddStringAsStat()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -71,12 +66,9 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
 
         $stats = $this->statsCollector->getAllStats();
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_STRING, $stats["test_namespace.hello"]);
+        $this->assertIsString($stats["test_namespace.hello"]);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testCanAddIntegerAsStat()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -84,12 +76,9 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
 
         $stats = $this->statsCollector->getAllStats();
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_INT, $stats["test_namespace.days_per_year"]);
+        $this->assertIsInt($stats["test_namespace.days_per_year"]);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testCanAddFloatAsStat()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -97,12 +86,9 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
 
         $stats = $this->statsCollector->getAllStats();
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_FLOAT, $stats["test_namespace.pi"]);
+        $this->assertIsFloat($stats["test_namespace.pi"]);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testCanAddArrayAsStat()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -111,12 +97,9 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
 
         $stats = $this->statsCollector->getAllStats();
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_ARRAY, $stats["test_namespace.fibonacci_sequence"]);
+        $this->assertIsArray($stats["test_namespace.fibonacci_sequence"]);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testCanAddAssociativeArrayAsStat()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -134,7 +117,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
           'golden_ratio' => 1.61803398875,
         ];
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_ARRAY, $stats["test_namespace.math_constants"]);
+        $this->assertIsArray($stats["test_namespace.math_constants"]);
         $this->assertEquals($expected, $stats["test_namespace.math_constants"]);
     }
 
@@ -363,9 +346,6 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1.61803398875, $stats["test_namespace.math.golden_ratio"]);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testStartTimerRecordsTimestampValue()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -373,12 +353,9 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $this->statsCollector->startTimer("test");
         $stats = $this->statsCollector->getAllStats();
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_FLOAT, $stats['test_namespace.timer.test']['start']);
+        $this->assertIsFloat($stats['test_namespace.timer.test']['start']);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testEndTimerRecordsTimestampValue()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -388,12 +365,9 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
 
         $stats = $this->statsCollector->getAllStats();
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_FLOAT, $stats['test_namespace.timer.test']['end']);
+        $this->assertIsFloat($stats['test_namespace.timer.test']['end']);
     }
 
-    /**
-     * @requires PHPUnit 6
-     */
     public function testEndTimerRecordsCorrectTimestampsDiffValue()
     {
         $this->statsCollector->setNamespace("test_namespace");
@@ -406,7 +380,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
         $end = $stats['test_namespace.timer.test']['end'];
         $diff = $end - $start;
 
-        $this->assertInternalType(PHPUnit_IsType::TYPE_FLOAT, $stats['test_namespace.timer.test']['diff']);
+        $this->assertIsFloat($stats['test_namespace.timer.test']['diff']);
         $this->assertEquals($diff, $stats['test_namespace.timer.test']['diff']);
     }
 
@@ -1477,7 +1451,7 @@ class CollectorTest extends \PHPUnit\Framework\TestCase
     /**
      * @covers \Statistics\Collector\Traits\SingletonInheritance::tearDown()
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         Statistics\Collector\Collector::tearDown();
         parent::tearDown();

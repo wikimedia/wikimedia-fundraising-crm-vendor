@@ -31,7 +31,7 @@ class FileTest extends \PHPUnit\Framework\TestCase
         $fileLocation = $this->filePath . DIRECTORY_SEPARATOR . $this->filename . $this->fileExtension;
 
         // confirm file doesn't exist before export
-        $this->assertFileNotExists($fileLocation);
+        $this->assertFileDoesNotExist($fileLocation);
 
         $statsCollector = $this->getTestStatsCollectorInstance();
         $statsCollector->addStat("test", 1);
@@ -182,7 +182,7 @@ class FileTest extends \PHPUnit\Framework\TestCase
         $this->removeTmpDir($this->filePath);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         Statistics\Collector\Collector::tearDown(true);
     }

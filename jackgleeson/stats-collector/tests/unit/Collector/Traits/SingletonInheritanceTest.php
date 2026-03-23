@@ -37,7 +37,7 @@ class SingletonInheritanceTest extends \PHPUnit\Framework\TestCase
         $this->assertEmpty($reflectionProperty->getValue($statsCollector));
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         Statistics\Collector\AbstractCollector::tearDown(true);
         parent::tearDown();

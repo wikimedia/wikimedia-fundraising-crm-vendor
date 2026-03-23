@@ -17,6 +17,7 @@ class Webkit extends Vendor {
         'transform' => '-webkit-transform',
         'transform-origin' => '-webkit-transform-origin',
         'backface-visibility' => '-webkit-backface-visibility',
+        'backdrop-filter' => '-webkit-backdrop-filter',
         'perspective' => '-webkit-perspective',
         'background-clip' => '-webkit-background-clip',
         'filter' => '-webkit-filter',
@@ -25,6 +26,9 @@ class Webkit extends Vendor {
         'flow-into' => '-webkit-flow-into',
         'hyphens' => '-webkit-hyphens',
         'mask-image' => '-webkit-mask-image',
+        'mask-repeat' => '-webkit-mask-repeat',
+        'mask-position' => '-webkit-mask-position',
+        'mask-size' => '-webkit-mask-size',
     );
     
     protected static $RULE_VALUE = array(

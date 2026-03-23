@@ -15,7 +15,6 @@ return array(
     'Lurker' => array($vendorDir . '/totten/lurkerlite/src'),
     'Log' => array($vendorDir . '/pear/log'),
     'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
-    'Dflydev\\DotAccessData' => array($vendorDir . '/dflydev/dot-access-data/src'),
     'Dflydev\\ApacheMimeTypes' => array($vendorDir . '/dflydev/apache-mime-types/src'),
     'DB' => array($vendorDir . '/pear/db'),
     'Console' => array($vendorDir . '/pear/console_getopt'),

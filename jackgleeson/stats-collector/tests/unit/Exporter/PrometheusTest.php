@@ -31,7 +31,7 @@ class PrometheusTest extends \PHPUnit\Framework\TestCase
         $promFileLocation = $this->promFilePath . DIRECTORY_SEPARATOR . $this->promFilename . $this->promFileExtension;
 
         // confirm file doesn't exist before export
-        $this->assertFileNotExists($promFileLocation);
+        $this->assertFileDoesNotExist($promFileLocation);
 
         $statsCollector = $this->getTestStatsCollectorInstance();
         $statsCollector->addStat("test", 1);
@@ -162,7 +162,7 @@ class PrometheusTest extends \PHPUnit\Framework\TestCase
         $this->removeTmpDir($this->promFilePath);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         Statistics\Collector\Collector::tearDown(true);
     }
