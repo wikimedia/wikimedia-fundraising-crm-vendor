@@ -43,6 +43,60 @@ use phpseclib\Crypt\RSA;
  * Pure-PHP implementation of SFTP.
  *
  * @package SFTP
+ * @method static void setCryptoEngine(string $engine)
+ * @method void sendIdentificationStringFirst()
+ * @method void sendIdentificationStringLast()
+ * @method void sendKEXINITFirst()
+ * @method void sendKEXINITLast()
+ * @method int|float getTimeout()
+ * @method void setTimeout(int|float $timeout)
+ * @method void setKeepAlive(int|float $interval)
+ * @method string getStdError()
+ * @method string|bool exec(string $command, callable ?$callback = null)
+ * @method bool requestAgentForwarding()
+ * @method string|bool|null read(string $expect = '', int $mode = SSH2::READ_SIMPLE)
+ * @method void write(string $cmd)
+ * @method bool startSubsystem(string $subsystem)
+ * @method bool stopSubsystem()
+ * @method void reset()
+ * @method bool isTimeout()
+ * @method void disconnect()
+ * @method bool isConnected()
+ * @method bool isAuthenticated()
+ * @method bool ping()
+ * @method void enableQuietMode()
+ * @method void disableQuietMode()
+ * @method bool isQuietModeEnabled()
+ * @method void enablePTY()
+ * @method void disablePTY()
+ * @method bool isPTYEnabled()
+ * @method array|false|string getLog()
+ * @method string[] getErrors()
+ * @method ?string getLastError()
+ * @method string|false getServerIdentification()
+ * @method mixed[] getServerAlgorithms()
+ * @method static string[] getSupportedKEXAlgorithms()
+ * @method static string[] getSupportedHostKeyAlgorithms()
+ * @method static string[] getSupportedEncryptionAlgorithms()
+ * @method static string[] getSupportedMACAlgorithms()
+ * @method static string[] getSupportedCompressionAlgorithms()
+ * @method mixed[] getAlgorithmsNegotiated()
+ * @method void setTerminal(string $term)
+ * @method void setPreferredAlgorithms(mixed[] $methods)
+ * @method string getBannerMessage()
+ * @method string|false getServerPublicHostKey()
+ * @method false|int getExitStatus()
+ * @method int getWindowColumns()
+ * @method int getWindowRows()
+ * @method setWindowColumns(int $value)
+ * @method setWindowRows(int $value)
+ * @method setWindowSize(int $columns = 80, int $rows = 24)
+ * @method string getResourceId()
+ * @method static bool|SSH2 getConnectionByResourceId(string $id)
+ * @method static array<string, SSH2> getConnections()
+ * @method ?mixed[] getAuthMethodsToContinue()
+ * @method void enableSmartMFA()
+ * @method void disableSmartMFA()
  * @method void disableStatCache()
  * @method void enableStatCache()
  * @method void clearStatCache()
@@ -54,10 +108,7 @@ use phpseclib\Crypt\RSA;
  * @method string|false realpath(string $path)
  * @method bool chdir(string $dir)
  * @method string[]|false nlist(string $dir = '.', bool $recursive = false)
- * @method mixed[]|false rawlist(string $dir = '.', bool $recursive = false)
  * @method void setListOrder(mixed ...$args)
- * @method mixed[]|false stat(string $filename)
- * @method mixed[]|false lstat(string $filename)
  * @method bool truncate(string $filename, int $new_size)
  * @method bool touch(string $filename, int $time = null, int $atime = null)
  * @method bool chown(string $filename, int|string $uid, bool $recursive = false)
@@ -181,24 +232,6 @@ class SFTP
     }
 
     /**
-     * Parse Attributes
-     *
-     * See '7.  File Attributes' of draft-ietf-secsh-filexfer-13 for more info.
-     *
-     * @param string $response
-     * @return array
-     * @access private
-     */
-    protected function parseAttributes(&$response)
-    {
-        $r = $this->sftp->parseAttributes($response);
-        if (isset($r['mode'])) {
-            $r['permissions'] = $r['mode'];
-        }
-        return $r;
-    }
-
-    /**
      * Defines how nlist() and rawlist() will be sorted - if at all.
      *
      * If sorting is enabled directories and files will be sorted independently with
@@ -258,6 +291,72 @@ class SFTP
     public function getSFTPObject()
     {
         return $this->sftp;
+    }
+
+        /**
+     * Returns general information about a file.
+     *
+     * Returns an array on success and false otherwise.
+     *
+     * @param string $filename
+     * @return array|false
+     */
+    public function stat($filename)
+    {
+        $result = $this->sftp->stat($filename);
+        if (isset($result['mode'])) {
+            $result['permissions'] = $result['mode'];
+        }
+        return $result;
+    }
+
+    /**
+     * Returns general information about a file or symbolic link.
+     *
+     * Returns an array on success and false otherwise.
+     *
+     * @param string $filename
+     * @return array|false
+     */
+    public function lstat($filename)
+    {
+        $result = $this->sftp->lstat($filename);
+        if (isset($result['mode'])) {
+            $result['permissions'] = $result['mode'];
+        }
+        return $result;
+    }
+
+    /**
+     * Returns a detailed list of files in the given directory
+     *
+     * @param string $dir
+     * @param bool $recursive
+     * @return array|false
+     */
+    public function rawlist($dir = '.', $recursive = false)
+    {
+        $result = $this->sftp->rawlist($dir, $recursive);
+        if (!$result) {
+            return false;
+        }
+
+        return self::rawlistHelper($result);
+    }
+
+    /**
+     * Adds permissions variable to each array element
+     */
+    private static function rawlistHelper(array $files)
+    {
+        foreach ($files as $file=>&$data) {
+            if (is_array($data)) {
+                $data = self::rawlistHelper($data);
+            } else {
+                $data->permissions = $data->mode;
+            }
+        }
+        return $files;
     }
 
     /**
