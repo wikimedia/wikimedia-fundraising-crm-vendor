@@ -203,7 +203,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'PhpOffice\\PhpWord\\' => 18,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'PhpOffice\\Math\\' => 15,
-            'PayWithAmazon\\' => 14,
             'ParagonIE\\ConstantTime\\' => 23,
             'Padaliyajay\\PHPAutoprefixer\\' => 28,
             'PHPMailer\\PHPMailer\\' => 20,
@@ -531,10 +530,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'PhpOffice\\Math\\' =>
         array (
             0 => __DIR__ . '/..' . '/phpoffice/math/src/Math',
-        ),
-        'PayWithAmazon\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon',
         ),
         'ParagonIE\\ConstantTime\\' =>
         array (

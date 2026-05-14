@@ -65,7 +65,6 @@ return array(
     'PhpOffice\\PhpWord\\' => array($vendorDir . '/phpoffice/phpword/src/PhpWord'),
     'PhpOffice\\PhpSpreadsheet\\' => array($vendorDir . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet'),
     'PhpOffice\\Math\\' => array($vendorDir . '/phpoffice/math/src/Math'),
-    'PayWithAmazon\\' => array($vendorDir . '/amzn/login-and-pay-with-amazon-sdk-php/PayWithAmazon'),
     'ParagonIE\\ConstantTime\\' => array($vendorDir . '/paragonie/constant_time_encoding/src'),
     'Padaliyajay\\PHPAutoprefixer\\' => array($vendorDir . '/padaliyajay/php-autoprefixer/src'),
     'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
