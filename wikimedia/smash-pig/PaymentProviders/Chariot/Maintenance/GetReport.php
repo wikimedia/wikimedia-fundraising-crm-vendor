@@ -188,6 +188,7 @@ class GetReport extends MaintenanceBase {
 		'properties.Groundswell Company Name',
 		'properties.Marked for export',
 		'properties.Endowment flag?',
+		'properties.CRM status',
 		'settlement',
 		'settlement.deposit_id',
 		'settlement.received_at',
@@ -520,12 +521,13 @@ class GetReport extends MaintenanceBase {
 	 * @return array
 	 */
 	private function flattenDepositPayoutRowForAuditCsv( array $deposit, array $donations ): array {
-		$transfer = is_array( $deposit['transfer'] ?? null ) ? $deposit['transfer'] : [];
-		$ach = is_array( $transfer['inbound_ach_transfer'] ?? null ) ? $transfer['inbound_ach_transfer'] : [];
-		$check = is_array( $transfer['check_deposit'] ?? null ) ? $transfer['check_deposit'] : [];
+		$transfer = $deposit['transfer'];
+		$paymentMethod = empty( $transfer['check_deposit'] ) ? 'EFT' : 'Check';
+		if ( !empty( $transfer['inbound_ach_transfer'] ) ) {
+			$paymentMethod = 'ACH';
+		}
 
 		$currency = (string)( $transfer['currency'] ?? '' );
-		$paymentMethod = $ach !== [] ? 'ACH' : ( $check !== [] ? 'CHECK' : '' );
 		$backendProcessor = $this->getDepositBackendProcessor( $deposit, $donations );
 		$amount = $this->getAmount( $transfer['amount'] );
 

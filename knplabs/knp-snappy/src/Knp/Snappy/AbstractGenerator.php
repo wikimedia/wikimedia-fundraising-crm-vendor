@@ -65,7 +65,7 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
      * @param array       $options
      * @param null|array  $env
      */
-    public function __construct($binary, array $options = [], array $env = null)
+    public function __construct($binary, array $options = [], array|null $env = null)
     {
         $this->configure();
 
@@ -73,9 +73,7 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
         $this->setOptions($options);
         $this->env = empty($env) ? null : $env;
 
-        if (\is_callable([$this, 'removeTemporaryFiles'])) {
-            \register_shutdown_function([$this, 'removeTemporaryFiles']);
-        }
+        \register_shutdown_function($this->removeTemporaryFiles(...));
     }
 
     public function __destruct()
@@ -318,6 +316,15 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
     public function removeTemporaryFiles()
     {
         foreach ($this->temporaryFiles as $file) {
+            $filePath = \realpath($file);
+            $temporaryFolderPath = \realpath($this->getTemporaryFolder());
+            if (
+                !$filePath
+                || !$temporaryFolderPath
+                || !\str_starts_with($filePath, $temporaryFolderPath)
+            ) {
+                continue;
+            }
             $this->unlink($file);
         }
     }
@@ -330,7 +337,7 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
     public function getTemporaryFolder()
     {
         if ($this->temporaryFolder === null) {
-            return \sys_get_temp_dir();
+            $this->temporaryFolder = \sys_get_temp_dir();
         }
 
         return $this->temporaryFolder;
@@ -503,9 +510,8 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
 
         if (null !== $content) {
             \file_put_contents($filename, $content);
+            $this->temporaryFiles[] = $filename;
         }
-
-        $this->temporaryFiles[] = $filename;
 
         return $filename;
     }
@@ -522,11 +528,7 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
      */
     protected function buildCommand($binary, $input, $output, array $options = [])
     {
-        $command = $binary;
-        $escapedBinary = \escapeshellarg($binary);
-        if (\is_executable($escapedBinary)) {
-            $command = $escapedBinary;
-        }
+        $command = $this->getEscapedBinary($binary);
 
         foreach ($options as $key => $option) {
             if (null !== $option && false !== $option) {
@@ -595,11 +597,7 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
      */
     protected function executeCommand($command)
     {
-        if (\method_exists(Process::class, 'fromShellCommandline')) {
-            $process = Process::fromShellCommandline($command, null, $this->env);
-        } else {
-            $process = new Process($command, null, $this->env);
-        }
+        $process = Process::fromShellCommandline($command, null, $this->env);
 
         if (null !== $this->timeout) {
             $process->setTimeout($this->timeout);
@@ -772,5 +770,14 @@ abstract class AbstractGenerator implements GeneratorInterface, LoggerAwareInter
     protected function mkdir($pathname)
     {
         return \mkdir($pathname, 0777, true);
+    }
+
+    protected function getEscapedBinary(string $binary): string
+    {
+        if (!\is_executable($binary)) {
+            throw new RuntimeException("The binary '{$binary}' is not executable.");
+        }
+
+        return \escapeshellarg($binary);
     }
 }
