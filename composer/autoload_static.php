@@ -202,6 +202,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'PhpOffice\\PhpWord\\' => 18,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'PhpOffice\\Math\\' => 15,
+            'Phlib\\XssSanitizer\\' => 19,
             'ParagonIE\\ConstantTime\\' => 23,
             'Padaliyajay\\PHPAutoprefixer\\' => 28,
             'PHPMailer\\PHPMailer\\' => 20,
@@ -529,6 +530,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'PhpOffice\\Math\\' =>
         array (
             0 => __DIR__ . '/..' . '/phpoffice/math/src/Math',
+        ),
+        'Phlib\\XssSanitizer\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phlib/xss-sanitizer/src',
         ),
         'ParagonIE\\ConstantTime\\' =>
         array (
