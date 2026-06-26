@@ -86,4 +86,130 @@ class DonationTest extends TestCase {
 		];
 	}
 
+	public function testGetsDonorAdvisedFundValues(): void {
+		$donation = new Donation( [
+			'donor_advised_fund_grant' => [
+				'organization_name' => 'My Foundation',
+				'donor_fund_name' => 'Daisy Mouse Fund',
+			],
+		] );
+
+		$this->assertSame( 'My Foundation', $donation->getBankingInstitution() );
+		$this->assertSame( 'Daisy Mouse Fund', $donation->getDonorAdvisedFundName() );
+		$this->assertTrue( $donation->isDonorAdvisedFundGrant() );
+	}
+
+	public function testGetsEmptyDonorAdvisedFundValuesWhenMissing(): void {
+		$donation = new Donation( [] );
+
+		$this->assertSame( '', $donation->getBankingInstitution() );
+		$this->assertSame( '', $donation->getDonorAdvisedFundName() );
+		$this->assertSame( [], $donation->getDonorAdvisedFundData() );
+		$this->assertFalse( $donation->isDonorAdvisedFundGrant() );
+	}
+
+	public function testGetsPlatformName(): void {
+		$donation = new Donation( [
+			'platform' => [
+				'name' => 'Benevity',
+			],
+		] );
+
+		$this->assertSame( 'Benevity', $donation->getPlatformName() );
+	}
+
+	public function testGetsEmptyPlatformNameWhenMissing(): void {
+		$donation = new Donation( [] );
+
+		$this->assertSame( '', $donation->getPlatformName() );
+	}
+
+	public function testGetsCorporateMatchValues(): void {
+		$donation = new Donation( [
+			'corporate_match' => [
+				'company_name' => 'Disney',
+				'match_amount' => 400,
+				'program_name' => 'Payroll Match',
+				'source' => 'Payroll',
+			],
+		] );
+
+		$this->assertSame(
+			[
+				'company_name' => 'Disney',
+				'match_amount' => 400,
+				'program_name' => 'Payroll Match',
+				'source' => 'Payroll',
+			],
+			$donation->getCorporateMatchData()
+		);
+		$this->assertTrue( $donation->isMatchingGift() );
+		$this->assertSame( 'Disney', $donation->getMatchingGiftOrganization() );
+		$this->assertSame( '400', $donation->getMatchingGiftAmount() );
+	}
+
+	public function testGetsEmptyCorporateMatchValuesWhenMissing(): void {
+		$donation = new Donation( [] );
+
+		$this->assertSame( [], $donation->getCorporateMatchData() );
+		$this->assertFalse( $donation->isMatchingGift() );
+		$this->assertSame( '', $donation->getMatchingGiftOrganization() );
+		$this->assertSame( '0', $donation->getMatchingGiftAmount() );
+	}
+
+	public function testMatchingGiftCanHaveZeroAmount(): void {
+		$donation = new Donation( [
+			'corporate_match' => [
+				'company_name' => 'Disney',
+				'match_amount' => 0,
+			],
+		] );
+
+		$this->assertTrue( $donation->isMatchingGift() );
+		$this->assertSame( 'Disney', $donation->getMatchingGiftOrganization() );
+		$this->assertSame( '0', $donation->getMatchingGiftAmount() );
+	}
+
+	public function testGetsOriginalAmountsInMinorUnits(): void {
+		$donation = new Donation( [
+			'amount_fee' => 87,
+			'amount_net' => 2013,
+			'amount_gross' => 2100,
+		] );
+
+		$this->assertSame( 87, $donation->getOriginalFeeAmountInMinorUnits() );
+		$this->assertSame( 2013, $donation->getOriginalNetAmountInMinorUnits() );
+		$this->assertSame( 2100, $donation->getOriginalTotalAmountInMinorUnits() );
+	}
+
+	public function testGetsOriginalAmountsInMinorUnitsAsZeroWhenMissing(): void {
+		$donation = new Donation( [] );
+
+		$this->assertSame( 0, $donation->getOriginalFeeAmountInMinorUnits() );
+		$this->assertSame( 0, $donation->getOriginalNetAmountInMinorUnits() );
+		$this->assertSame( 0, $donation->getOriginalTotalAmountInMinorUnits() );
+	}
+
+	public function testGetsSettledAmountsRounded(): void {
+		$donation = new Donation( [
+			'amount_fee' => 87,
+			'amount_net' => 2013,
+			'amount_gross' => 2100,
+		] );
+
+		$exchangeRate = 0.712197;
+
+		$this->assertSame( '0.62', $donation->getSettledFeeAmountRounded( $exchangeRate, 'USD' ) );
+		$this->assertSame( '14.34', $donation->getSettledNetAmountRounded( $exchangeRate, 'USD' ) );
+		$this->assertSame( '14.96', $donation->getSettledTotalAmountRounded( $exchangeRate, 'USD' ) );
+	}
+
+	public function testGetsSettledAmountRoundedToZeroWhenMissing(): void {
+		$donation = new Donation( [] );
+
+		$this->assertSame( '0.00', $donation->getSettledFeeAmountRounded( 0.712197, 'USD' ) );
+		$this->assertSame( '0.00', $donation->getSettledNetAmountRounded( 0.712197, 'USD' ) );
+		$this->assertSame( '0.00', $donation->getSettledTotalAmountRounded( 0.712197, 'USD' ) );
+	}
+
 }
