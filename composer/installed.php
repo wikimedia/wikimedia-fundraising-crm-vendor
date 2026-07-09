@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wikimedia/fundraising-crm',
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
-        'reference' => 'af0c9409ee6f53d6bb6cbb858d5762ed1133c207',
+        'pretty_version' => '1.0.0+no-version-set',
+        'version' => '1.0.0.0',
+        'reference' => null,
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1324,9 +1324,9 @@
             'dev_requirement' => false,
         ),
         'wikimedia/fundraising-crm' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => 'af0c9409ee6f53d6bb6cbb858d5762ed1133c207',
+            'pretty_version' => '1.0.0+no-version-set',
+            'version' => '1.0.0.0',
+            'reference' => null,
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1342,9 +1342,9 @@
             'dev_requirement' => false,
         ),
         'wikimedia/smash-pig' => array(
-            'pretty_version' => 'v1.2.4.19',
-            'version' => '1.2.4.19',
-            'reference' => '2d019ffe3164367087346b2a6d2ff53ca00ead40',
+            'pretty_version' => 'v1.2.4.20',
+            'version' => '1.2.4.20',
+            'reference' => 'e4a1836a67bef0315ea321eb7b0a3e0dd22ba96e',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wikimedia/smash-pig',
             'aliases' => array(),
