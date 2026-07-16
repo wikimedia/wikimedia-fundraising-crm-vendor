@@ -120,6 +120,10 @@ class Donation {
 		return (string)$this->getValue( 'corporate_match.source' );
 	}
 
+	public function getAppeal(): string {
+		return (string)$this->getValue( 'properties.Appeal Code' );
+	}
+
 	public function getBankingInstitution(): string {
 		return trim( (string)( $this->getDonorAdvisedFundData()['organization_name'] ?? '' ) );
 	}
@@ -390,26 +394,43 @@ class Donation {
 	}
 
 	public function getSettledMatchingGiftTotalAmountRounded( float $exchangeRate, string $settledCurrency ): string {
-		return $this->getConvertedAmountRounded(
-			$this->getOriginalMatchingGiftTotalAmountInMinorUnits(),
-			$exchangeRate,
-			$settledCurrency
-		);
-	}
-
-	public function getSettledMatchingGiftFeeAmountRounded( float $exchangeRate, string $settledCurrency ): string {
-		return $this->getConvertedAmountRounded(
-			$this->getOriginalMatchingGiftFeeAmountInMinorUnits(),
-			$exchangeRate,
+		return $this->getDerivedMatchingGiftAmountRounded(
+			$this->getSettledTotalAmountRounded( $exchangeRate, $settledCurrency ),
+			$this->getSettledIndividualGiftTotalAmountRounded( $exchangeRate, $settledCurrency ),
 			$settledCurrency
 		);
 	}
 
 	public function getSettledMatchingGiftNetAmountRounded( float $exchangeRate, string $settledCurrency ): string {
-		return $this->getConvertedAmountRounded(
-			$this->getOriginalMatchingGiftNetAmountInMinorUnits(),
-			$exchangeRate,
+		return $this->getDerivedMatchingGiftAmountRounded(
+			$this->getSettledNetAmountRounded( $exchangeRate, $settledCurrency ),
+			$this->getSettledIndividualGiftNetAmountRounded( $exchangeRate, $settledCurrency ),
 			$settledCurrency
+		);
+	}
+
+	public function getSettledMatchingGiftFeeAmountRounded( float $exchangeRate, string $settledCurrency ): string {
+		return $this->getDerivedMatchingGiftAmountRounded(
+			$this->getSettledFeeAmountRounded( $exchangeRate, $settledCurrency ),
+			$this->getSettledIndividualGiftFeeAmountRounded( $exchangeRate, $settledCurrency ),
+			$settledCurrency
+		);
+	}
+
+	/**
+	 * Derive the matching gift amount from the settled total and settled
+	 * individual amounts so that they always reconcile.
+	 */
+	private function getDerivedMatchingGiftAmountRounded(
+		string $settledTotal,
+		string $settledIndividual,
+		string $currency
+	): string {
+		$matching = (float)$settledTotal - (float)$settledIndividual;
+
+		return CurrencyRoundingHelper::round(
+			$matching,
+			$currency
 		);
 	}
 
