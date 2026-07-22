@@ -2,16 +2,14 @@
 
 namespace SmashPig\PaymentProviders\CheckoutCom\Tests;
 
-use PHPUnit\Framework\TestCase;
 use SmashPig\PaymentProviders\CheckoutCom\Audit\CheckoutComAudit;
+use SmashPig\Tests\BaseSmashPigUnitTestCase;
 
-class AuditTest extends TestCase {
+class AuditTest extends BaseSmashPigUnitTestCase {
 
 	public function testProcessSettlementBreakdownDonation(): void {
-		$processor = new CheckoutComAudit();
-		$output = $processor->parseFile( __DIR__ . '/../Data/settlement-breakdown_ent_testcheckoutfixture_20260702_00000003k599_1.csv' );
+		$actual = $this->processFile( '922d7c4b-9181-4fe9-b5e8-cb3f8c0883c1' );
 
-		$actual = $output[0];
 		$expected = [
 			'gateway' => 'gravy',
 			'audit_file_gateway' => 'checkoutcom',
@@ -43,8 +41,7 @@ class AuditTest extends TestCase {
 	}
 
 	public function testProcessSettlementBreakdownFee(): void {
-		$processor = new CheckoutComAudit();
-		$output = $processor->parseFile( __DIR__ . '/../Data/settlement-breakdown_ent_testcheckoutfixture_20260702_00000003k599_1.csv' );
+		$output = $this->processFile( 'fee-pay_test_fee_0011782910800Charge' );
 
 		$this->assertEquals( [
 			'gateway' => 'checkoutcom',
@@ -59,17 +56,43 @@ class AuditTest extends TestCase {
 			'settled_total_amount' => '0.00',
 			'settled_fee_amount' => '-0.25',
 			'settled_net_amount' => '-0.25',
-		], $output[3] );
+		], $output );
+	}
+
+	public function testProcessSettlementRoundingRow(): void {
+		$feeRow = $this->processFile( 'rounding-00000003K599' );
+		$this->assertSame( 'fee', $feeRow['type'] );
+		$this->assertSame( '0.01', $feeRow['settled_fee_amount'] );
+		$this->assertSame( '0.01', $feeRow['settled_net_amount'] );
+		$this->assertSame( '00000003K599', $feeRow['settlement_batch_reference'] );
+		$this->assertSame( 'rounding-00000003K599', $feeRow['gateway_txn_id'] );
 	}
 
 	public function testProcessSettlementBreakdownPayout(): void {
-		$processor = new CheckoutComAudit();
-		$output = $processor->parseFile( __DIR__ . '/../Data/settlement-breakdown_ent_testcheckoutfixture_20260702_00000003k599_1.csv' );
-
-		$payout = end( $output );
+		$payout = $this->processFile( '00000003K599' );
 		$this->assertSame( 'payout', $payout['type'] );
-		$this->assertSame( '79.50', $payout['settled_total_amount'] );
+		$this->assertSame( '79.51', $payout['settled_total_amount'] );
 		$this->assertSame( '00000003K599', $payout['settlement_batch_reference'] );
 		$this->assertSame( '00000003K599', $payout['gateway_txn_id'] );
 	}
+
+	/**
+	 * @param string|null $txn_id
+	 * @param string $fileName
+	 *
+	 * @return array
+	 */
+	public function processFile( ?string $txn_id = null, string $fileName = 'settlement-breakdown_ent_testcheckoutfixture_20260702_00000003k599_1.csv' ): array {
+		$processor = new CheckoutComAudit();
+		$rows = $processor->parseFile( __DIR__ . '/../Data/' . $fileName );
+		if ( $txn_id !== null ) {
+			foreach ( $rows as $row ) {
+				if ( $row['gateway_txn_id'] === $txn_id ) {
+					return $row;
+				}
+			}
+		}
+		return $rows;
+	}
+
 }
