@@ -10,14 +10,23 @@ use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 class SettlementBreakdownReport extends CheckoutComAudit {
 
 	protected array $row;
+	protected array $feeRows;
 
-	public function __construct( array $row ) {
+	public function __construct( array $row, array $feeRows ) {
 		$this->row = $row;
+		$this->feeRows = $feeRows;
+	}
+
+	/**
+	 * @return float
+	 */
+	public function getExchangeRate(): float {
+		return (float)( $this->row['FX Rate Applied'] ?: 1 );
 	}
 
 	public function getSettledNetAmountRounded(): string {
 		$netAmount = Money::of( $this->getSettledTotalAmountRounded(), $this->getSettledCurrency() )
-		  ->plus( $this->getSettledFeeAmountRounded() );
+		  ->plus( $this->getSettledFees() );
 
 		// Now check our calculated value against the reported value in the CSV.
 		// We expect it to differ by no more than 1 cent in either direction.
@@ -27,6 +36,9 @@ class SettlementBreakdownReport extends CheckoutComAudit {
 			null,
 			RoundingMode::HalfUp
 		);
+		foreach ( $this->feeRows as $feeRow ) {
+			$reported = $reported->plus( $feeRow['Net In Holding Currency'] );
+		}
 
 		$difference = $reported->minus( $netAmount )->getMinorAmount()->toInt();
 
@@ -48,7 +60,26 @@ class SettlementBreakdownReport extends CheckoutComAudit {
 	 * @return string
 	 */
 	public function getSettledFeeAmountRounded(): string {
-		return $this->amount( $this->row['Deduction In Holding Currency'], $this->getSettledCurrency() );
+		return (string)$this->getSettledFees()->getAmount();
+	}
+
+	public function getSettledFees(): Money {
+		$fees = Money::of( $this->row['Deduction In Holding Currency'], $this->getSettledCurrency(), null, RoundingMode::HalfUp );
+		foreach ( $this->feeRows as $row ) {
+			$fees = $fees->plus( $row['Deduction In Holding Currency'], RoundingMode::HalfUp );
+		}
+		return $fees;
+	}
+
+	public function getOriginalFees(): Money {
+		return $this->getSettledFees()->convertedTo( $this->getOriginalCurrency(), (string)$this->getExchangeRate(), null, RoundingMode::HalfUp );
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getOriginalFeeAmountRounded(): string {
+		return (string)$this->getOriginalFees()->getAmount();
 	}
 
 	/**
@@ -76,6 +107,13 @@ class SettlementBreakdownReport extends CheckoutComAudit {
 		return CurrencyRoundingHelper::round( $this->row['Gross In Processing Currency'], $this->getOriginalCurrency() );
 	}
 
+	public function getOriginalNetAmountRounded(): string {
+		$netAmount = Money::of( $this->getOriginalTotalAmountRounded(), $this->getOriginalCurrency() )
+			->plus( $this->getOriginalFeeAmountRounded() );
+
+		return (string)$netAmount->getAmount();
+	}
+
 	/**
 	 * @param array<string,string|null> $row
 	 * @return array<string,mixed>
@@ -86,8 +124,8 @@ class SettlementBreakdownReport extends CheckoutComAudit {
 		$msg['currency'] = $msg['original_currency'] = $this->getOriginalCurrency();
 		$msg['settled_currency'] = $this->getSettledCurrency();
 		$msg['original_total_amount'] = $msg['gross'] = $this->getOriginalTotalAmountRounded();
-		$msg['original_fee_amount'] = $this->amount( (float)$row['Deduction In Holding Currency'] / $msg['exchange_rate'], $this->getOriginalCurrency() );
-		$msg['original_net_amount'] = $this->amount( (float)$msg['original_total_amount'] + (float)$msg['original_fee_amount'], $this->getOriginalCurrency() );
+		$msg['original_fee_amount'] = $this->getOriginalFeeAmountRounded();
+		$msg['original_net_amount'] = $this->getOriginalNetAmountRounded();
 		$msg['settled_fee_amount'] = $this->getSettledFeeAmountRounded();
 		$msg['settled_net_amount'] = $this->getSettledNetAmountRounded();
 		$msg['settled_total_amount'] = $this->getSettledTotalAmountRounded();
@@ -108,8 +146,8 @@ class SettlementBreakdownReport extends CheckoutComAudit {
 		$msg['backend_processor_parent_id'] = $row['Payment ID'];
 		$msg['backend_processor_reversal_id'] = $row['Payment ID'];
 		$msg['original_total_amount'] = -abs( $this->amount( $row['Gross In Processing Currency'], $this->getOriginalCurrency() ) );
-		$msg['original_fee_amount'] = $this->amount( (float)$row['Deduction In Holding Currency'] / $msg['exchange_rate'], $this->getOriginalCurrency() );
-		$msg['original_net_amount'] = $this->amount( ( (float)$msg['original_total_amount'] + (float)$msg['original_fee_amount'] ), $this->getOriginalCurrency() );
+		$msg['original_fee_amount'] = $this->getOriginalFeeAmountRounded();
+		$msg['original_net_amount'] = $this->getOriginalNetAmountRounded();
 		$msg['settled_fee_amount'] = $this->getSettledFeeAmountRounded();
 		$msg['settled_net_amount'] = $this->amount( $row['Net In Holding Currency'], $this->getSettledCurrency() );
 		$msg['settled_total_amount'] = $this->getSettledTotalAmountRounded();
@@ -182,7 +220,7 @@ class SettlementBreakdownReport extends CheckoutComAudit {
 			'payment_submethod' => $paymentSubmethod,
 			'date' => $this->getUtcTimestamp( $row['Processed On'] ),
 			'settled_date' => $this->getUtcTimestamp( $row['Available On'] ),
-			'exchange_rate' => (float)( $row['FX Rate Applied'] ?: 1 ),
+			'exchange_rate' => $this->getExchangeRate(),
 		];
 	}
 
