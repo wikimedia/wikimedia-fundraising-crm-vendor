@@ -147,7 +147,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'T' =>
         array (
-            'TheIconic\\NameParser\\' => 21,
             'TYPO3\\PharStreamWrapper\\' => 24,
         ),
         'S' =>
@@ -233,6 +232,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'K' =>
         array (
             'Knp\\Snappy\\' => 11,
+        ),
+        'I' =>
+        array (
+            'Iliaal\\NameParser\\' => 18,
         ),
         'H' =>
         array (
@@ -331,11 +334,6 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'WebSocket\\' =>
         array (
             0 => __DIR__ . '/..' . '/phrity/websocket/lib',
-        ),
-        'TheIconic\\NameParser\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/theiconic/name-parser/src',
-            1 => __DIR__ . '/..' . '/theiconic/name-parser/tests',
         ),
         'TYPO3\\PharStreamWrapper\\' =>
         array (
@@ -608,6 +606,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Knp\\Snappy\\' =>
         array (
             0 => __DIR__ . '/..' . '/knplabs/knp-snappy/src/Knp/Snappy',
+        ),
+        'Iliaal\\NameParser\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/iliaal/nameparser/src',
         ),
         'Http\\Promise\\' =>
         array (

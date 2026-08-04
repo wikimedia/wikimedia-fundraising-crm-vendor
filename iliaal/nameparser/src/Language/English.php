@@ -1,0 +1,202 @@
+<?php
+
+namespace Iliaal\NameParser\Language;
+
+use Iliaal\NameParser\LanguageInterface;
+
+class English implements LanguageInterface
+{
+    public const SUFFIXES = [
+        '1st' => '1st',
+        '2nd' => '2nd',
+        '3rd' => '3rd',
+        '4th' => '4th',
+        '5th' => '5th',
+        '6th' => '6th',
+        '7th' => '7th',
+        '8th' => '8th',
+        '9th' => '9th',
+        '10th' => '10th',
+        'i' => 'I',
+        'ii' => 'II',
+        'iii' => 'III',
+        'iv' => 'IV',
+        'v' => 'V',
+        'vi' => 'VI',
+        'vii' => 'VII',
+        'viii' => 'VIII',
+        'ix' => 'IX',
+        'x' => 'X',
+        'apr' => 'APR',
+        'cme' => 'CME',
+        'dc' => 'DC',
+        'dds' => 'DDS',
+        'dmd' => 'DMD',
+        'do' => 'DO',
+        'dsw' => 'DSW',
+        'dvm' => 'DVM',
+        'emba' => 'EMBA',
+        'esq' => 'Esq',
+        'esquire' => 'Esquire',
+        'jr' => 'Jr',
+        'jd' => 'JD',
+        'junior' => 'Junior',
+        'lcsw' => 'LCSW',
+        'ma' => 'MA',
+        'mba' => 'MBA',
+        'md' => 'MD',
+        'ms' => 'MS',
+        'msw' => 'MSW',
+        'pe' => 'PE',
+        'phd' => 'PhD',
+        'psyd' => 'PsyD',
+        'rph' => 'RPh',
+        'senior' => 'Senior',
+        'sr' => 'Sr',
+        // Nursing / allied-health credentials, by descending frequency in the
+        // public NPPES/NPI registry. Without these, a trailing credential like
+        // "Jane Doe, RN" leaks into the parsed first name.
+        'aprn' => 'APRN',
+        'arnp' => 'ARNP',
+        'atc' => 'ATC',
+        'ba' => 'BA',
+        'bcba' => 'BCBA',
+        'bs' => 'BS',
+        'ccc-slp' => 'CCC-SLP',
+        'crna' => 'CRNA',
+        'crnp' => 'CRNP',
+        'dpm' => 'DPM',
+        'dpt' => 'DPT',
+        'fnp' => 'FNP',
+        'fnp-bc' => 'FNP-BC',
+        'fnp-c' => 'FNP-C',
+        'lac' => 'LAc',
+        'licsw' => 'LICSW',
+        'lmft' => 'LMFT',
+        'lmhc' => 'LMHC',
+        'lmsw' => 'LMSW',
+        'lmt' => 'LMT',
+        'lpc' => 'LPC',
+        'lpn' => 'LPN',
+        'lsw' => 'LSW',
+        'msn' => 'MSN',
+        'ncc' => 'NCC',
+        'np' => 'NP',
+        'od' => 'OD',
+        'otr' => 'OTR',
+        'otr/l' => 'OTR/L',
+        'pa' => 'PA',
+        'pa-c' => 'PA-C',
+        'pharmd' => 'PharmD',
+        'pt' => 'PT',
+        'pta' => 'PTA',
+        'rbt' => 'RBT',
+        'rd' => 'RD',
+        'rn' => 'RN',
+        'slp' => 'SLP',
+    ];
+
+    public const SALUTATIONS = [
+        'dame' => 'Dame',
+        'dhr' => 'Dhr.',
+        'dr' => 'Dr.',
+        'fr' => 'Fr.',
+        'hon' => 'Hon.',
+        'honorable' => 'Hon.',
+        'the honorable' => 'Hon.',
+        'lady' => 'Lady',
+        'lord' => 'Lord',
+        'madam' => 'Madam',
+        'master' => 'Mr.',
+        'mevr' => 'Mevr.',
+        'miss' => 'Miss',
+        'missus' => 'Mrs.',
+        'mister' => 'Mr.',
+        'mr' => 'Mr.',
+        'mrs' => 'Mrs.',
+        'ms' => 'Ms.',
+        'mw' => 'Mevr.',
+        'mx' => 'Mx.',
+        'pastor' => 'Pastor',
+        'prof' => 'Prof.',
+        'professor' => 'Prof.',
+        'rev' => 'Rev.',
+        'reverend' => 'Rev.',
+        'rt hon' => 'Rt Hon.',
+        'sir' => 'Sir',
+        'his honour' => 'His Honour',
+        'her honour' => 'Her Honour',
+    ];
+
+    public const LASTNAME_PREFIXES = [
+        'da' => 'da',
+        'das' => 'das',
+        'de' => 'de',
+        'del' => 'del',
+        'dela' => 'dela',
+        'delas' => 'delas',
+        'della' => 'della',
+        'delos' => 'delos',
+        'den' => 'den',
+        'der' => 'der',
+        'des' => 'des',
+        'di' => 'di',
+        'do' => 'do',
+        'dos' => 'dos',
+        'du' => 'du',
+        'la' => 'la',
+        'las' => 'las',
+        'le' => 'le',
+        'lo' => 'lo',
+        'los' => 'los',
+        // Irish particles render capitalised, unlike the continental
+        // tussenvoegsels: "Ó Cuív" and "Ní Mhaoileoin" are never written with a
+        // lowercase particle. Only the fada-bearing "Ó" is listed; bare ASCII
+        // "O" is indistinguishable from a middle initial ("John F Kennedy").
+        'mhic' => 'Mhic',
+        'ní' => 'Ní',
+        'nic' => 'Nic',
+        'ó' => 'Ó',
+        'pietro' => 'pietro',
+        'st' => 'st.',
+        'ten' => 'ten',
+        'ter' => 'ter',
+        'ua' => 'Ua',
+        'uí' => 'Uí',
+        'van' => 'van',
+        'vanden' => 'vanden',
+        'vere' => 'vere',
+        'vom' => 'vom',
+        'von' => 'von',
+        'zu' => 'zu',
+        'zum' => 'zum',
+        'zur' => 'zur',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    #[\Override]
+    public function getSuffixes(): array
+    {
+        return self::SUFFIXES;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    #[\Override]
+    public function getSalutations(): array
+    {
+        return self::SALUTATIONS;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    #[\Override]
+    public function getLastnamePrefixes(): array
+    {
+        return self::LASTNAME_PREFIXES;
+    }
+}

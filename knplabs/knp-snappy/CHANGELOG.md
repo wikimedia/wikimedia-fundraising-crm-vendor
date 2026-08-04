@@ -1,3 +1,84 @@
+## 1.7.2
+
+* Fix: prevent deletion of files outside the temporary directory and improve test coverage
+
+## 1.7.1
+
+> [!IMPORTANT]
+> This version introduces a breaking change.
+> The `$binaryPath` is checked with the `is_executable` PHP function. Thus, it is required to use an absolute or relative path without any argument (use the `$options` array or the `setOption` method instead).
+> See the issue [#550](https://github.com/KnpLabs/snappy/pull/550)
+
+* Fix: ensure binary is executable in `buildCommand`
+
+## 1.7.0
+
+* Fix: enhance `Pdf` constructor to allow specific schemes (see [#544](https://github.com/KnpLabs/snappy/pull/544))
+* Chore: update PHPStan to v2 (see [#541](https://github.com/KnpLabs/snappy/pull/541))
+* Doc: add warning based on wkhtmltopdf recommendations (see [#528](https://github.com/KnpLabs/snappy/pull/528))
+
+## 1.6.0
+
+* Feat: allow Symfony 8
+* Test: migrate to PHPUnit 9 (see [#532](https://github.com/KnpLabs/snappy/pull/532))
+* CI: add tests for PHP 8.5
+* CI: upgrade GitHub Actions runner to Ubuntu 22.04
+
+## 1.5.1
+
+* Fix: PHP 8.4 deprecations
+
+## 1.5.0
+
+* Feat: support Symfony 7
+
+## 1.4.4
+
+* Fix: allowed output file protocols on Windows
+
+## 1.4.3
+
+* Fix: security advisory [GHSA-92rv-4j2h-8mjj](https://github.com/KnpLabs/snappy/security/advisories/GHSA-92rv-4j2h-8mjj)
+* CI: add tests for PHP 8.3, bump dev tests to Symfony 6.4
+
+## 1.4.2
+
+* Fix: security issue [GHSA-gq6w-q6wh-jggc](https://github.com/KnpLabs/snappy/security/advisories/GHSA-gq6w-q6wh-jggc)
+* Add `SECURITY.md`
+
+## 1.4.1
+
+* Fix: logger aware interface issue
+
+## 1.4.0
+
+* Feat: allow Symfony 6
+
+## 1.3.1
+
+* Fix: function signatures incompatibilities with previous version
+* Build: migrate to GitHub Actions
+
+## 1.3.0
+
+* Allow newer versions of the `psr/log` package
+* Add PHPStan level 8 CI check
+* Add CS fixer CI check
+* Add contributing guidelines and code of conduct
+
+## 1.2.1
+
+* Add `resetOption` method
+* Explicitly implement `LoggerAwareInterface`
+
+## 1.2.0
+
+* Symfony 5 compatibility for the Process component
+* Fix PDF options order
+* Add missing documentation for `bypass-proxy-for` option
+* Drop support for unmaintained Symfony versions (only supported versions)
+* Fix documentation for displaying PDF in the browser
+
 ## 1.1.0
 
 * Add bypass-proxy-for option added in 0.12.3 (see [#302](https://github.com/KnpLabs/snappy/pull/302))
