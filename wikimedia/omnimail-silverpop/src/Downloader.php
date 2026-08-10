@@ -31,7 +31,7 @@ trait Downloader {
   }
 
   public function downloadCsv() {
-    $filePath = $this->getDownloadDirectory() . '/' . $this->getFileName();
+    $filePath = $this->getDownloadDirectory() . $this->getFileName();
     $csvFilePath = str_replace('.zip', '.csv', $filePath);
     if (
       // We Cannot find the csv or original file

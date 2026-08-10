@@ -46,6 +46,7 @@ return array(
     'Statistics\\' => array($vendorDir . '/jackgleeson/stats-collector/src'),
     'Soundasleep\\' => array($vendorDir . '/soundasleep/html2text/src'),
     'SmashPig\\' => array($vendorDir . '/wikimedia/smash-pig'),
+    'Smarty\\' => array($vendorDir . '/smarty/smarty/src'),
     'SilverpopConnector\\' => array($vendorDir . '/mrmarkfrench/silverpop-php-connector/src/SilverpopConnector'),
     'ScssPhp\\ScssPhp\\' => array($vendorDir . '/scssphp/scssphp/src'),
     'Sabberworm\\CSS\\' => array($vendorDir . '/sabberworm/php-css-parser/src'),
