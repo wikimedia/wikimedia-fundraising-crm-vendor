@@ -28,7 +28,12 @@ class SettlementFileParser extends BaseParser {
 		$msg = [
 			'currency' => (string)$this->row['currency'],
 			'gross' => ( (float)$this->row['amount'] ),
-			'gateway' => 'gravy',
+			// Only the reversal_reversed Sale leg should report gateway 'trustly' -
+			// gravy 'trustly' refunds also fail isGravy() (long merchant reference)
+			// but CRM-side matching (AuditMessage::getExistingContribution()) relies
+			// on gateway staying 'gravy' for those, falling back to backend_processor
+			// fields to find the parent. See T434916.
+			'gateway' => $this->isReversalReversal() ? 'trustly' : 'gravy',
 			'audit_file_gateway' => 'trustly',
 			'gateway_txn_id' => $this->getGatewayTxnId(),
 			'backend_processor' => 'trustly',
@@ -57,6 +62,9 @@ class SettlementFileParser extends BaseParser {
 	}
 
 	protected function isGravy(): bool {
+		if ( $this->isReversalReversal() ) {
+			return false;
+		}
 		// Checking strlen feels a bit blunt - but it all does.
 		// Some refunds seem to bypass gravy. There is precedent for this in the Adyen code.
 		return !empty( $this->row['original_merchant_reference'] && strlen( $this->row['original_merchant_reference'] ) < 64 );
