@@ -246,6 +246,27 @@ class Mailer extends AbstractMailer implements MailerInterface
     }
 
     /**
+     * Opt a phone number into an SMS program.
+     *
+     * This sends a virtual mobile originated (MO) message, which Acoustic
+     * handles as if the phone number had texted the program.
+     *
+     * @param array $parameters
+     *   - phone (string) including country code, eg. 14155552671
+     *   - programID (string) Text-for-Response program
+     *
+     * @return SmsOptInRequest
+     */
+    public function smsOptInRequest($parameters = [])
+    {
+        return $this->createRequest('SmsOptInRequest', array_merge($parameters, array(
+            'credentials' => $this->getCredentials(),
+            'client' => $this->getClient(),
+            'is_use_rest' => TRUE,
+        )));
+    }
+
+    /**
    * Initialize a request object
    *
    * This function is usually used to initialise objects of type

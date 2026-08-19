@@ -82,6 +82,34 @@ require_once 'PEAR.php';
 class Mail_mimePart
 {
     /**
+     * Maximum length of a charset name inside an encoded-word.
+     *
+     * Caps the "=?<charset>?B?" prefix so that a value chunk always fits
+     * within RFC 2047's 75-character limit. Without it an over-long charset
+     * name leaves no room for the value and the encoders cannot make progress.
+     * The longest charset name mbstring recognises is 23 characters, so a
+     * valid name is never truncated.
+     *
+     * @internal
+     * @var int
+     */
+    const MAX_CHARSET_LENGTH = 48;
+
+    /**
+     * Characters that must be escaped as =XX inside an RFC 2047 "Q" encoded-word.
+     *
+     * RFC 2047 restricts encoded-text to printable ASCII other than "?" and SPACE,
+     * so this covers the C0 controls (\x00-\x1F), DEL and every 8-bit byte, along
+     * with the printable characters that are not safe inside a phrase. SPACE is
+     * handled separately: encodeQP() rewrites it as "_", which RFC 2047 permits in
+     * place of "=20".
+     *
+     * @internal
+     * @var string
+     */
+    const QP_ESCAPE_REGEXP = '/([\x00-\x1F\x22-\x29\x2C\x2E\x3A-\x40\x5B-\x60\x7B-\xFF])/';
+
+    /**
      * The encoding type of this part
      *
      * @var string
@@ -302,9 +330,9 @@ class Mail_mimePart
      *
      * @param string $boundary Pre-defined boundary string
      *
-     * @return array An associative array containing two elements,
-     *               body and headers. The headers element is itself
-     *               an indexed array. On error returns PEAR error object.
+     * @return PEAR_Error|array An associative array containing two elements,
+     *                          body and headers. The headers element is itself
+     *                          an indexed array. On error returns PEAR error object.
      */
     public function encode($boundary = null)
     {
@@ -370,8 +398,8 @@ class Mail_mimePart
      * @param string $boundary  Pre-defined boundary string
      * @param bool   $skip_head True if you don't want to save headers
      *
-     * @return array An associative array containing message headers
-     *               or PEAR error object
+     * @return PEAR_Error|array An associative array containing message headers
+     *                          or PEAR error object
      * @since  1.6.0
      */
     public function encodeToFile($filename, $boundary = null, $skip_head = false)
@@ -415,7 +443,7 @@ class Mail_mimePart
      * @param string $boundary  Pre-defined boundary string
      * @param bool   $skip_head True if you don't want to save headers
      *
-     * @return array True on sucess or PEAR error object
+     * @return PEAR_Error|true True on sucess or PEAR error object
      */
     protected function encodePartToFile($fh, $boundary = null, $skip_head = false)
     {
@@ -526,7 +554,7 @@ class Mail_mimePart
      * @param resource $fh       Output file handle. If set, data will be
      *                           stored into it instead of returning it
      *
-     * @return string Encoded data or PEAR error object
+     * @return PEAR_Error|string|null Encoded data or PEAR error object
      */
     protected function getEncodedDataFromFile($filename, $encoding, $fh = null)
     {
@@ -592,6 +620,8 @@ class Mail_mimePart
         if (!$fh) {
             return $data;
         }
+
+        return null;
     }
 
     /**
@@ -606,17 +636,8 @@ class Mail_mimePart
      */
     public static function quotedPrintableEncode($input , $line_max = 76, $eol = "\r\n")
     {
-        /*
-        // imap_8bit() is extremely fast, but doesn't handle properly some characters
-        if (function_exists('imap_8bit') && $line_max == 76) {
-            $input = preg_replace('/\r?\n/', "\r\n", $input);
-            $input = imap_8bit($input);
-            if ($eol != "\r\n") {
-                $input = str_replace("\r\n", $eol, $input);
-            }
-            return $input;
-        }
-        */
+        // Note: imap_8bit() is fast, but doesn't handle properly some characters
+
         $lines  = preg_split("/\r?\n/", $input);
         $escape = '=';
         $output = '';
@@ -744,8 +765,7 @@ class Mail_mimePart
             $headCount++;
         }
 
-        $headers = implode(';' . $this->eol, $headers);
-        return $headers;
+        return implode(';' . $this->eol, $headers);
     }
 
     /**
@@ -765,6 +785,13 @@ class Mail_mimePart
         // WARNING: RFC 2047 says: "An 'encoded-word' MUST NOT be used in
         // parameter of a MIME Content-Type or Content-Disposition field",
         // but... it's supported by many clients/servers
+
+        // Limit the charset length so the encoded-word prefix always leaves
+        // room to fit a value chunk within RFC 2047's 75-character limit.
+        if (strlen($charset) > self::MAX_CHARSET_LENGTH) {
+            $charset = substr($charset, 0, self::MAX_CHARSET_LENGTH);
+        }
+
         $quoted = '';
 
         if ($encoding == 'base64') {
@@ -776,9 +803,13 @@ class Mail_mimePart
             $add_len = strlen($prefix . $suffix) + strlen($name) + 6;
             $len = $add_len + strlen($value);
 
-            while ($len > $maxLength) { 
+            while ($len > $maxLength) {
                 // We can cut base64-encoded string every 4 characters
                 $real_len = floor(($maxLength - $add_len) / 4) * 4;
+                if ($real_len < 4) {
+                    break;
+                }
+
                 $_quote = substr($value, 0, $real_len);
                 $value = substr($value, $real_len);
 
@@ -801,8 +832,10 @@ class Mail_mimePart
             while ($len > $maxLength) {
                 $length = $maxLength - $add_len;
                 // don't break any encoded letters
-                if (preg_match("/^(.{0,$length}[^\=][^\=])/", $value, $matches)) {
+                if ($length > 0 && preg_match("/^(.{0,$length}[^\=][^\=])/", $value, $matches)) {
                     $_quote = $matches[1];
+                } else {
+                    break;
                 }
 
                 $quoted .= $prefix . $_quote . $suffix . $this->eol . ' ';
@@ -1015,7 +1048,7 @@ class Mail_mimePart
         $strlen = strlen($string);
         $quoted_string = '"(?:[^"\\\\]|\\\\.)*"';
 
-        for ($p=$i=0; $i < $strlen; $i++) {
+        for ($p = $i = 0; $i < $strlen; $i++) {
             if ($string[$i] === '"') {
                 $r = preg_match("/$quoted_string/", $string, $matches, 0, $i);
                 if (!$r || empty($matches[0])) {
@@ -1027,7 +1060,9 @@ class Mail_mimePart
                 $p = $i + 1;
             }
         }
+
         $result[] = substr($string, $p);
+
         return $result;
     }
 
@@ -1050,6 +1085,12 @@ class Mail_mimePart
             return $result;
         }
 
+        // Limit the charset length so the encoded-word prefix always leaves
+        // room to fit a value chunk within RFC 2047's 75-character limit.
+        if (strlen($charset) > self::MAX_CHARSET_LENGTH) {
+            $charset = substr($charset, 0, self::MAX_CHARSET_LENGTH);
+        }
+
         // Generate the header using the specified params and dynamicly
         // determine the maximum length of such strings.
         // 75 is the value specified in the RFC.
@@ -1058,6 +1099,16 @@ class Mail_mimePart
         $suffix = '?=';
         $maxLength = 75 - strlen($prefix . $suffix);
         $maxLength1stLine = $maxLength - $prefix_len;
+
+        // Never allow a non-positive chunk length: substr() would return the
+        // input unchanged (and preg_match() would get an invalid pattern), so
+        // the loops below would never consume the value.
+        if ($maxLength < 4) {
+            $maxLength = 4;
+        }
+        if ($maxLength1stLine < 4) {
+            $maxLength1stLine = $maxLength;
+        }
 
         if ($encoding == 'B') {
             // Base64 encode the entire string
@@ -1089,9 +1140,13 @@ class Mail_mimePart
             $value = Mail_mimePart::encodeQP($value);
 
             // This regexp will break QP-encoded text at every $maxLength
-            // but will not break any encoded letters.
-            $reg1st = "|(.{0,$maxLength1stLine}[^\=][^\=])|";
-            $reg2nd = "|(.{0,$maxLength}[^\=][^\=])|";
+            // but will not break any encoded letters. The two trailing atoms
+            // match one character each, so the repetition has to stop two
+            // characters short for the whole match to stay within the limit.
+            $reg1stLen = $maxLength1stLine - 2;
+            $reg2ndLen = $maxLength - 2;
+            $reg1st = "|(.{0,$reg1stLen}[^\=][^\=])|";
+            $reg2nd = "|(.{0,$reg2ndLen}[^\=][^\=])|";
 
             if (strlen($value) > $maxLength1stLine) {
                 // Begin with the regexp for the first line.
@@ -1149,9 +1204,8 @@ class Mail_mimePart
         // ASCII letters, decimal digits, "!", "*", "+", "-", "/", "=", and "_"
 
         // "=",  "_",  "?" must be encoded
-        $regexp = '/([\x22-\x29\x2C\x2E\x3A-\x40\x5B-\x60\x7B-\x7E\x80-\xFF])/';
         $str = preg_replace_callback(
-            $regexp, array('Mail_mimePart', 'qpReplaceCallback'), $str
+            self::QP_ESCAPE_REGEXP, array('Mail_mimePart', 'qpReplaceCallback'), $str
         );
 
         return str_replace(' ', '_', $str);
@@ -1174,7 +1228,7 @@ class Mail_mimePart
     public static function encodeMB($str, $charset, $encoding, $prefix_len=0, $eol="\r\n")
     {
         if (!function_exists('mb_substr') || !function_exists('mb_strlen')) {
-            return;
+            return '';
         }
 
         $encoding = $encoding == 'base64' ? 'B' : 'Q';
@@ -1202,31 +1256,36 @@ class Mail_mimePart
                 $chunk = base64_encode($chunk);
                 $chunk_len = strlen($chunk);
 
-                if ($line_length + $chunk_len == $maxLength || $i == $length) {
+                if ($line_length + $chunk_len > $maxLength && $prev) {
+                    // Chunk does not fit, flush the previous one and re-cut.
+                    // Must run before the $i == $length test below, or the
+                    // last chunk may exceed RFC 2047's 75-character limit.
+                    if ($result) {
+                        $result .= "\n";
+                    }
+                    $result .= $prev;
+                    $prev        = '';
+                    $line_length = 0;
+                    $start       = $i - 1;
+                    $chunk       = mb_substr($str, $start, $i-$start, $mb_charset);
+                    $chunk       = base64_encode($chunk);
+                    $chunk_len   = strlen($chunk);
+                }
+
+                if ($i == $length || $line_length + $chunk_len == $maxLength) {
                     if ($result) {
                         $result .= "\n";
                     }
                     $result .= $chunk;
+                    $prev        = '';
                     $line_length = 0;
-                    $start = $i;
-                } else if ($line_length + $chunk_len > $maxLength) {
-                    if ($result) {
-                        $result .= "\n";
-                    }
-                    if ($prev) {
-                        $result .= $prev;
-                    }
-                    $line_length = 0;
-                    $start = $i - 1;
+                    $start       = $i;
                 } else {
                     $prev = $chunk;
                 }
             }
         } else {
             // quoted-printable
-            // see encodeQP()
-            $regexp = '/([\x22-\x29\x2C\x2E\x3A-\x40\x5B-\x60\x7B-\x7E\x80-\xFF])/';
-
             for ($i=0; $i<=$length; $i++) {
                 $char = mb_substr($str, $i, 1, $mb_charset);
                 // RFC recommends underline (instead of =20) in place of the space
@@ -1236,7 +1295,9 @@ class Mail_mimePart
                     $char_len = 1;
                 } else {
                     $char = preg_replace_callback(
-                        $regexp, array('Mail_mimePart', 'qpReplaceCallback'), $char
+                        self::QP_ESCAPE_REGEXP,
+                        array('Mail_mimePart', 'qpReplaceCallback'),
+                        $char
                     );
                     $char_len = strlen($char);
                 }

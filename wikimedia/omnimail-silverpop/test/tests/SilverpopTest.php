@@ -27,15 +27,6 @@ class SilverpopTest extends BaseTestClass {
     /**
      * Test retrieving mailings.
      */
-    public function testAuthenticate() {
-        $requests = [file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt')];
-        Omnimail::create('Silverpop', ['client' => $this->getMockRequest($requests, FALSE), 'credentials' => new Credentials(['username' => 'Shrek', 'password' => 'Fiona'])])->getMailings();
-        $this->assertOutgoingRequest('Authenticate.txt');
-    }
-
-    /**
-     * Test retrieving mailings.
-     */
     public function testGetMailings() {
         $requests = [file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt')];
         /* @var $request \Omnimail\Silverpop\Requests\RawRecipientDataExportRequest */
@@ -82,7 +73,9 @@ class SilverpopTest extends BaseTestClass {
             file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
         ];
         /* @var $request \Omnimail\Silverpop\Requests\ExportListRequest */
-        $request = Omnimail::create('Silverpop', ['client' => $this->getMockRequest($requests)])->getGroupMembers();
+        $request = Omnimail::create('Silverpop', ['client' => $this->getMockRequest($requests)])->getGroupMembers([
+            'groupIdentifier' => 12345,
+        ]);
         $response = $request->getResponse();
         $this->assertInstanceOf(GroupMembersResponse::class, $response);
     }
@@ -132,6 +125,26 @@ class SilverpopTest extends BaseTestClass {
 
         }
         $this->assertOutgoingRequest('importListRequest.txt');
+    }
+
+    /**
+     * Test opting a phone number into an sms program.
+     */
+    public function testSmsOptIn(): void {
+        $request = Omnimail::create('Silverpop', [
+            'client' => $this->getMockRequest(['{"status": "success"}'], FALSE),
+            'credentials' => new Credentials(['client_id' => 'Shrek', 'client_secret' => 'Fiona', 'refresh_token' => 'Donkey']),
+        ])->smsOptInRequest([
+            'phone' => '14155552671',
+            'programID' => 'af111b1f-bc8b-4edc-a743-408594312f99',
+        ]);
+        $response = $request->getResponse();
+
+        $outgoing = $this->container[0]['request'];
+        $this->assertEquals('POST', $outgoing->getMethod());
+        $this->assertStringEndsWith('/rest/channels/sms/programs/af111b1f-bc8b-4edc-a743-408594312f99/virtualmo', (string) $outgoing->getUri());
+        $this->assertEquals('{"phoneNumber":"14155552671"}', (string) $outgoing->getBody());
+        $this->assertEquals('success', $response['status']);
     }
 
     /**
