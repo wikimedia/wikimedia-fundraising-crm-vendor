@@ -46,37 +46,47 @@ class ReversalFieldsTest extends AuditTestBase {
 	}
 
 	/**
-	 * Test that our backend processor identifier bubbles up.
+	 * Chargebacks use trace_id, not transaction_id, for backend_processor_reversal_id.
 	 */
 	public function testChargebackRefundHasBackendProcessorReversal(): void {
 		$output = $this->processFile( 'P11KFUN-3618-recurring-series-collision.csv' );
 		$chargeback = $this->findByType( $output, 'chargeback' );
-		$this->assertSame( '9100000003', $chargeback['backend_processor_reversal_id'] );
+		$this->assertSame( 'T2', $chargeback['backend_processor_reversal_id'] );
 	}
 
 	/**
-	 * ACH return codes other than R08/R10 (e.g. R03) are treated as reversals or reversal_reversals, if positive.
+	 * ACH return codes other than R08/R10 (e.g. R03) are chargebacks too now -
+	 * the positive (Sale) leg stays untyped since it settled before being
+	 * reversed. Data taken from a real transaction (8202131071/8202130573).
 	 */
-	public function testUnhandledRCodeIsTypedAsReversal(): void {
+	public function testUnhandledRCodeIsTypedAsChargeback(): void {
 		$output = $this->processFile( 'P11KFUN-3618-r-code-reversal.csv' );
 
-		$reversal = $this->findByType( $output, 'reversal' );
-		$this->assertSame( '9400131071', $reversal['backend_processor_reversal_id'] );
+		$chargeback = $this->findByType( $output, 'chargeback' );
+		$this->assertSame( 'gravy', $chargeback['gateway'] );
+		$this->assertSame( '33800551113', $chargeback['backend_processor_reversal_id'] );
+		$this->assertSame( $chargeback['gateway_parent_id'], $chargeback['gateway_txn_id'] );
 
-		$reversed = $this->findByType( $output, 'reversal_reversed' );
-		$this->assertSame( '9400131071', $reversed['backend_processor_txn_id'] );
-		$this->assertArrayNotHasKey( 'backend_processor_reversal_id', $reversed );
+		$saleLeg = null;
+		foreach ( $output as $row ) {
+			if ( !isset( $row['type'] ) && ( $row['backend_processor_txn_id'] ?? null ) === '8202131071' ) {
+				$saleLeg = $row;
+			}
+		}
+		$this->assertNotNull( $saleLeg, 'Sale leg should be untyped' );
+		$this->assertSame( 10.4, $saleLeg['gross'] );
 	}
 
 	/**
-	 * The reversal_reversed Sale leg should report gateway 'trustly' - that's
-	 * what isGravy()'s early return exists for (T434916). But an AC118 refund
-	 * with a long (hashed) original_merchant_reference also fails isGravy()
-	 * for an unrelated reason, and must still report gateway 'gravy': CRM-side
-	 * matching (AuditMessage::getExistingContribution()) only tries the
-	 * backend_processor_txn_id fallback lookup when the raw gateway is
-	 * 'gravy', which is how these refunds - lacking a real gravy gateway_txn_id
-	 * match - get linked to their parent contribution at all.
+	 * Test that an AC118 refund has a gateway of gravy.
+	 *
+	 * It may have a long (hashed) original_merchant_reference that is not a gravy id
+	 * but still need to be matched with a gravy transaction. Seen in real data:
+	 * transaction_id 8090501261 (P11KFUN-3618-20260208120000-20260209120000-0001of0001.csv)
+	 * is a genuinely gravy capture with a normal short reference, but its own AC118 refund -
+	 * transaction_id 8094565296, original_transaction_id 8090501261
+	 * (P11KFUN-3618-20260216120000-20260217120000-0001of0001.csv) - carries a long 64-char
+	 * hash reference instead.
 	 */
 	public function testRefundWithLongMerchantReferenceKeepsGravyGateway(): void {
 		$output = $this->processFile( 'P11KFUN-3618-refund-long-merchant-reference.csv' );
@@ -84,27 +94,5 @@ class ReversalFieldsTest extends AuditTestBase {
 
 		$this->assertSame( 'gravy', $refund['gateway'] );
 		$this->assertSame( '9500000000', $refund['backend_processor_parent_id'] );
-	}
-
-	/**
-	 * Both legs of an unhandled R-code event (e.g. R03) are a pure Trustly ACH
-	 * bank return, not a gravy transaction. The Return leg's
-	 * original_merchant_reference is often short, which would otherwise pass
-	 * isGravy()'s heuristic and (wrongly) report gateway 'gravy' with a
-	 * fabricated gateway_parent_id/gateway_refund_id - causing CRM-side
-	 * matching to find the wrong (original) contribution instead of an
-	 * already-recorded reversal that only carries a backend_processor
-	 * identifier. See T434916.
-	 */
-	public function testRCodeReversalReportsTrustlyGatewayOnBothLegs(): void {
-		$output = $this->processFile( 'P11KFUN-3618-r-code-reversal.csv' );
-
-		$reversal = $this->findByType( $output, 'reversal' );
-		$this->assertSame( 'trustly', $reversal['gateway'] );
-		$this->assertSame( '9400130000', $reversal['backend_processor_parent_id'] );
-		$this->assertArrayNotHasKey( 'gateway_parent_id', $reversal );
-
-		$reversed = $this->findByType( $output, 'reversal_reversed' );
-		$this->assertSame( 'trustly', $reversed['gateway'] );
 	}
 }
