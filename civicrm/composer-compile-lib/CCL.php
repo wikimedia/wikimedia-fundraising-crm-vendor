@@ -1,5 +1,5 @@
 <?php
-// AUTO-GENERATED VIA /Users/lars/FRtech/dev/src/civi-sites/wmf/vendor/civicrm/composer-compile-lib/src/StubsTpl.php
+// AUTO-GENERATED VIA /srv/civi-sites/wmf/vendor/civicrm/composer-compile-lib/src/StubsTpl.php
 // If this file somehow becomes invalid (eg when patching CCL), you may safely delete and re-run install.
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
@@ -185,7 +185,8 @@ class CCL {
    * @param array             $options  An array of boolean options
    *                                    Valid options are:
    *                                    - $options['override'] If true, target files newer than origin files are overwritten (see copy(), defaults to false)
-   *                                    - $options['copy_on_windows'] Whether to copy files instead of links on Windows (see symlink(), defaults to false)
+   *                                    - $options['follow_symlinks'] Whether to copy files instead of links, esp. useful on Windows (see symlink(), defaults to false)
+   *                                    - $options['copy_on_windows'] @deprecated since Symfony 8.1, use $options['follow_symlinks'] instead
    *                                    - $options['delete'] Whether to delete files that are not in the source directory (defaults to false)
    *
    * @throws IOException When file type is unknown

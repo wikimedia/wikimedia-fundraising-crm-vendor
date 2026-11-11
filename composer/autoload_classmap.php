@@ -27,6 +27,8 @@ return array(
     'DateMalformedStringException' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateMalformedStringException.php',
     'DateObjectError' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateObjectError.php',
     'DateRangeError' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateRangeError.php',
+    'DeepClone\\ClassNotFoundException' => $vendorDir . '/symfony/polyfill-deepclone/Resources/stubs/ClassNotFoundException.php',
+    'DeepClone\\NotInstantiableException' => $vendorDir . '/symfony/polyfill-deepclone/Resources/stubs/NotInstantiableException.php',
     'DelayedTargetValidation' => $vendorDir . '/symfony/polyfill-php85/Resources/stubs/DelayedTargetValidation.php',
     'Deprecated' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
     'Dompdf\\Cpdf' => $vendorDir . '/dompdf/dompdf/lib/Cpdf.php',

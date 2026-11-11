@@ -1,0 +1,71 @@
+services:
+
+  mink-fixtures:
+    # Hosts the HTML / PHP fixture files from the mink testsuite at http://mink-fixtures/
+    image: registry.gitlab.com/behat-chrome/chrome-mink-driver/ci-php:${PHP_VERSION:-8.4}
+    entrypoint: php
+    # Mount workspace and serve mink fixtures.
+    command:
+      - -S
+      - 0.0.0.0:80
+      - -t
+      - /workspace/vendor/mink/driver-testsuite/web-fixtures
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    healthcheck:
+      # Note that this healthcheck depends on there being an index.html in the mink web-fixtures directory.
+      test: "curl --fail --silent --show-error --output /dev/null http://127.0.0.1:80/index.html || exit 1"
+      timeout: 1s
+      start_period: 30s
+      start_interval: 1s
+      # There is limited value in continuing to run the healthcheck once the service is running, so we set
+      # interval high to effectively disable it.
+      interval: 1h
+      retries: 1
+
+  chrome:
+    # The Chrome instance that will be controlled
+    image: zenika/alpine-chrome:latest
+    command:
+    - "--remote-debugging-address=0.0.0.0"
+    - "--remote-debugging-port=9222"
+    - "--no-sandbox"
+    - "--use-gl=swiftshader"
+    - "--disable-software-rasterizer"
+    - "--disable-dev-shm-usage"
+    volumes:
+    # Needs to have the workspace mounted for file upload tests (the attachFile command sends Chrome the path
+    # to a *local* file to attach to the file input). It is important that the path on the Chrome container
+    # exactly matches the path in the test runner container.
+    - .:/workspace
+    healthcheck:
+      test: "wget --tries=1 --quiet -O - http://127.0.0.1:9222/json/version || exit 1"
+      timeout: 1s
+      start_period: 60s
+      start_interval: 1s
+      # There is limited value in continuing to run the healthcheck once the service is running, so we set
+      # interval high to effectively disable it.
+      interval: 1h
+      retries: 1
+
+  test-runner:
+    # Runs the tests. Assigned to a profile so `docker compose up` doesn't start it - left with no command to
+    # run, it would just hit EOF on stdin and exit immediately. `docker compose run` targets it explicitly,
+    # which starts it regardless of profile.
+    profiles: ["tools"]
+    depends_on:
+      mink-fixtures:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+    image: registry.gitlab.com/behat-chrome/chrome-mink-driver/ci-php:${PHP_VERSION:-8.4}
+    # Uses bash as the entrypoint so that by default `docker compose run test-runner` opens an interactive shell
+    # for local testing and development.
+    entrypoint: /bin/bash
+    working_dir: /workspace
+    environment:
+      - CHROME_URL=http://chrome:9222
+      - WEB_FIXTURES_HOST=http://mink-fixtures/
+    volumes:
+      - .:/workspace

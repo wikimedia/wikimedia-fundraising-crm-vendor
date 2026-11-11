@@ -3,14 +3,14 @@
 namespace DMore\ChromeDriver;
 
 use Behat\Mink\Exception\DriverException;
-use WebSocket\ConnectionException;
+use WebSocket\Exception\ExceptionInterface;
 
 class ChromeBrowser extends DevToolsConnection
 {
     /**
-     * @var string
+     * The ID of the current BrowserContext.
      */
-    private $context_id;
+    private ?string $context_id = null;
 
     /**
      * @var bool
@@ -34,8 +34,6 @@ class ChromeBrowser extends DevToolsConnection
 
     /**
      * Set the HTTP client.
-     *
-     * @param HttpClient $client
      */
     public function setHttpClient(HttpClient $client): void
     {
@@ -62,10 +60,7 @@ class ChromeBrowser extends DevToolsConnection
         $response = $this->http_client->get($this->http_uri . '/json/version');
         $versionInfo = json_decode($response);
 
-        // Detect if Chrome is running
         if (null === $versionInfo) {
-            $jsonError = json_last_error_msg();
-
             throw new \RuntimeException(
                 sprintf(
                     "Could not fetch version information from %s. Check if Chrome is running. " .
@@ -73,7 +68,7 @@ class ChromeBrowser extends DevToolsConnection
                     "Json Error: %s." . PHP_EOL .
                     "Response was: %s",
                     $this->http_uri . '/json/version',
-                    $jsonError,
+                    json_last_error_msg(),
                     $response
                 )
             );
@@ -85,35 +80,34 @@ class ChromeBrowser extends DevToolsConnection
             $this->version = (int) substr($versionInfo->Browser, $start, strpos($versionInfo->Browser, '.') - $start);
         }
 
-        // Detect if Chrome has been started in Headless Mode
-        if (property_exists($versionInfo, 'Browser') && strpos($versionInfo->Browser, 'Headless') === false) {
-            $this->headless = false;
-        }
-
-        if ($this->headless) {
-            try {
-                $versionInfo = json_decode($this->http_client->get($this->http_uri . '/json/version'));
-                // handling chrome versions 62+ where Target.createBrowserContext moved to new location
-                if (property_exists($versionInfo, 'webSocketDebuggerUrl')) {
-                    $debugUrl = $versionInfo->webSocketDebuggerUrl;
-                    $this->connect($debugUrl);
-                }
-
-                $this->context_id = $this->send('Target.createBrowserContext')['browserContextId'];
-                $data = $this->send(
-                    'Target.createTarget',
-                    ['url' => 'about:blank', 'browserContextId' => $this->context_id]
-                );
-                return $data['targetId'];
-            } catch (DriverException $exception) {
-                if ($exception->getCode() == '-32601' || $exception->getCode() == '-32000') {
-                    $this->headless = false;
-                } else {
-                    throw $exception;
-                }
+        // Isolate the driver's windows into their own browser context. This works the same way whether Chrome
+        // is running headless or not, and keeps the driver's windows separate from any other windows Chrome may
+        // have open (e.g. first-run dialogs, or windows opened outside of the driver, when running headed).
+        //
+        // Whether this succeeds also doubles as our headless-mode signal, since neither the Browser nor
+        // User-Agent version strings reliably indicate it (e.g. headless-shell's strings are indistinguishable
+        // from headed Chrome's). This isn't perfect either - headed Chrome can support isolated contexts too -
+        // but it's the best signal available without a dedicated CDP method to ask Chrome directly.
+        try {
+            $this->context_id = $this->send('Target.createBrowserContext')['browserContextId'];
+            $data = $this->send(
+                'Target.createTarget',
+                ['url' => 'about:blank', 'browserContextId' => $this->context_id]
+            );
+            $this->headless = true;
+            return $data['targetId'];
+        } catch (DriverException $exception) {
+            // -32601: Method not found (e.g., Target.createBrowserContext not available)
+            // -32000: Browser context not supported (e.g., headed mode with limited DevTools)
+            if ($exception->getCode() !== -32601 && $exception->getCode() !== -32000) {
+                throw $exception;
             }
+            $this->headless = false;
+            // Isolated browser contexts are unavailable in this Chrome instance; fall back to the default context.
+            $this->context_id = null;
         }
 
+        // Fall back to non-headless method (/json/new endpoint)
         $json = $this->http_client->put($this->http_uri . '/json/new');
         $response = json_decode($json, true);
         return $response['id'];
@@ -122,11 +116,11 @@ class ChromeBrowser extends DevToolsConnection
     /**
      * Close the session.
      *
-     * @throws ConnectionException
+     * @throws ExceptionInterface
      */
     public function close(): void
     {
-        if ($this->headless) {
+        if (null !== $this->context_id) {
             $this->send('Target.disposeBrowserContext', ['browserContextId' => $this->context_id]);
         }
         parent::close();
@@ -155,5 +149,23 @@ class ChromeBrowser extends DevToolsConnection
     public function getVersion()
     {
         return $this->version;
+    }
+
+    /**
+     * Get the browser's tabs.
+     */
+    public function getTabs(): array
+    {
+        $tabs = [];
+        foreach ($this->send('Target.getTargets')['targetInfos'] as $tab) {
+            // Return targets of type page that are within this browser's
+            // context (if browser context ID is set here and on the tab).
+            $browser_context_set = isset($this->context_id) && isset($tab['browserContextId']);
+            $wrong_browser_context = $browser_context_set && $tab['browserContextId'] !== $this->context_id;
+            if ($tab['type'] === 'page' && !$wrong_browser_context) {
+                $tabs[] = $tab;
+            }
+        }
+        return array_reverse($tabs, true);
     }
 }

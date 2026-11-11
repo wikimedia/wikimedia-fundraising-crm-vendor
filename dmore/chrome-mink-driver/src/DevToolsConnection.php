@@ -4,7 +4,12 @@ namespace DMore\ChromeDriver;
 
 use Behat\Mink\Exception\DriverException;
 use WebSocket\Client;
-use WebSocket\ConnectionException;
+use WebSocket\Configuration;
+use WebSocket\Exception\ConnectionLevelInterface;
+use WebSocket\Exception\ExceptionInterface;
+use WebSocket\Message\Message;
+use WebSocket\Middleware\CloseHandler;
+use WebSocket\Middleware\PingResponder;
 
 abstract class DevToolsConnection
 {
@@ -19,23 +24,22 @@ abstract class DevToolsConnection
     private $command_id = 1;
 
     /**
-     * @var string
-     */
-    private $url;
-
-    /**
-     * @var int|null
+     * @var int|float|null
      */
     private $socket_timeout;
 
     /**
-     * @param $url
-     * @param null $socket_timeout
+     * @param string $url
+     * @param int|float|null $socket_timeout
+     *
+     * @throws \InvalidArgumentException If socket_timeout is not null or a positive number
      */
-    public function __construct($url, $socket_timeout = null)
+    public function __construct(private $url, $socket_timeout = null)
     {
-        $this->url = $url;
-        $this->socket_timeout = $socket_timeout;
+        if ($socket_timeout !== null && (!is_numeric($socket_timeout) || $socket_timeout <= 0)) {
+            throw new \InvalidArgumentException('socket_timeout must be a positive number or null');
+        }
+        $this->socket_timeout = $socket_timeout === null ? null : (float) $socket_timeout;
     }
 
     /**
@@ -61,8 +65,6 @@ abstract class DevToolsConnection
 
     /**
      * Get the current URL.
-     *
-     * @return string
      */
     protected function getUrl(): string
     {
@@ -71,17 +73,19 @@ abstract class DevToolsConnection
 
     /**
      * Connect to the client.
-     *
-     * @param null $url
      */
     public function connect($url = null): void
     {
-        $url = $url == null ? $this->url : $url;
-        $options = ['fragment_size' => 2000000]; // Chrome closes the connection if a message is sent in fragments
-        if (is_numeric($this->socket_timeout) && $this->socket_timeout > 0) {
-            $options['timeout'] = (int)$this->socket_timeout;
-        }
-        $this->client = new Client($url, $options);
+        $configuration = new Configuration(
+            frameSize: 2000000, // Chrome closes the connection if a message is sent in fragments
+            timeout: $this->socket_timeout,
+        );
+
+        $this->client = new Client($url ?? $this->url, $configuration);
+
+        $this->client
+            ->addMiddleware(new CloseHandler())
+            ->addMiddleware(new PingResponder());
     }
 
     /**
@@ -93,10 +97,9 @@ abstract class DevToolsConnection
     }
 
     /**
-     * Send a command to the client.
+     * Send a command to the client, return result.
      *
      * @param string $command
-     * @param array $parameters
      * @return null|string|string[][]
      * @throws \Exception
      */
@@ -108,27 +111,38 @@ abstract class DevToolsConnection
             $payload['params'] = $parameters;
         }
 
-        $this->client->send(json_encode($payload));
+        $this->client->text(json_encode($payload));
 
         $data = $this->waitFor(
-            function ($data) use ($payload) {
-                return array_key_exists('id', $data) && $data['id'] == $payload['id'];
-            }
+            fn($data) => array_key_exists('id', $data) && $data['id'] == $payload['id']
         );
 
-        if (isset($data['result'])) {
-            return $data['result'];
+        return $data['result'] ?? ['result' => ['type' => 'undefined']];
+    }
+
+    /**
+     * Send a command to the client, ignore result.
+     *
+     * Waiting for a reply in processResponse() could consume messages an
+     * outer waitFor() is expecting. Eventual reply is ignored.
+     *
+     * @throws \Exception
+     */
+    protected function sendWithoutWaiting(string $command, array $parameters = []): void
+    {
+        $payload = ['id' => $this->command_id++, 'method' => $command];
+        if (!empty($parameters)) {
+            $payload['params'] = $parameters;
         }
 
-        return ['result' => ['type' => 'undefined']];
+        $this->client->text(json_encode($payload));
     }
 
     /**
      * Wait on response from client.
      *
-     * @param callable $is_ready
      * @return mixed|null
-     * @throws ConnectionException
+     * @throws ExceptionInterface
      * @throws DriverException
      */
     protected function waitFor(callable $is_ready)
@@ -136,9 +150,10 @@ abstract class DevToolsConnection
         $data = [];
         while (true) {
             try {
-                $response = $this->client->receive();
-            } catch (ConnectionException $exception) {
-                // NB - this may throw a TimeoutException if the socket read times out simply because Chrome has nothing
+                $message = $this->client->receive();
+                $response = $message->getContent();
+            } catch (ConnectionLevelInterface $exception) {
+                // NB - this may throw a ConnectionTimeoutException if the socket read times out when Chrome has nothing
                 // to report within the specified socket_timeout - e.g. initial server-side document request takes
                 // longer than the timeout, or Chrome is stalled on a window.alert|confirm|prompt or other client-side
                 // operation. This catch is retained temporarily as this will be the correct place to handle a Timeout
@@ -158,7 +173,7 @@ abstract class DevToolsConnection
             if ($data = json_decode($response, true)) {
                 if (array_key_exists('error', $data)) {
                     $message = isset($data['error']['data']) ?
-                        $data['error']['message'] . '. ' . $data['error']['data'] : $data['error']['message'];
+                    $data['error']['message'] . '. ' . $data['error']['data'] : $data['error']['message'];
                     throw new DriverException($message, $data['error']['code']);
                 }
 
@@ -179,8 +194,6 @@ abstract class DevToolsConnection
     /**
      * Process a client response.
      *
-     * @param  array $data
-     * @return bool
      * @throws DriverException
      */
     abstract protected function processResponse(array $data): bool;

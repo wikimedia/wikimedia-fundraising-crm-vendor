@@ -2,13 +2,17 @@
 
 namespace Phrity\Net;
 
+use Phrity\Util\Interpolator\InterpolatorTrait;
 use RuntimeException;
+use Throwable;
 
 /**
- * Phrity\Net\StreamException class.
+ * StreamException class.
  */
 class StreamException extends RuntimeException
 {
+    use InterpolatorTrait;
+
     // Stream errors
     public const STREAM_DETACHED = 1000;
     public const NOT_READABLE = 1010;
@@ -20,6 +24,7 @@ class StreamException extends RuntimeException
     public const FAIL_TELL = 1023;
     public const FAIL_CONTENTS = 1024;
     public const FAIL_GETS = 1025;
+    public const FAIL_SELECT = 1026;
 
     // Client errors
     public const CLIENT_CONNECT_ERR = 2000;
@@ -35,7 +40,11 @@ class StreamException extends RuntimeException
     public const COLLECT_KEY_CONFLICT = 4000;
     public const COLLECT_SELECT_ERR = 4001;
 
-    private static $messages = [
+    // Context errors
+    public const CONTEXT_SET_ERR = 5000;
+
+    /** @var array<int, string> */
+    private static array $messages = [
         self::STREAM_DETACHED => 'Stream is detached.',
         self::NOT_READABLE => 'Stream is not readable.',
         self::NOT_WRITABLE => 'Stream is not writable.',
@@ -46,6 +55,7 @@ class StreamException extends RuntimeException
         self::FAIL_TELL => 'Failed tell() on stream.',
         self::FAIL_CONTENTS => 'Failed getContents() on stream.',
         self::FAIL_GETS => 'Failed gets() on stream.',
+        self::FAIL_SELECT => 'Failed select() on stream.',
         self::CLIENT_CONNECT_ERR => 'Client could not connect to "{uri}".',
         self::SCHEME_TRANSPORT => 'Scheme "{scheme}" is not supported.',
         self::SCHEME_HANDLER => 'Could not handle scheme "{scheme}".',
@@ -54,19 +64,21 @@ class StreamException extends RuntimeException
         self::SERVER_ACCEPT_ERR => 'Could not accept on socket.',
         self::COLLECT_KEY_CONFLICT => 'Stream with name "{key}" already attached.',
         self::COLLECT_SELECT_ERR => 'Failed to select streams for reading.',
+        self::CONTEXT_SET_ERR => 'Failed to set option/param on context.',
     ];
 
     /**
      * Create exception.
      * @param int $code Error code
-     * @param array $data Additional data
+     * @param array<string, mixed> $data Additional data
      * @param Throwable|null $previous Previous exception
      */
-    public function __construct(int $code, array $data = [], ?Throwable $previous = null)
+    public function __construct(int $code, array $data = [], Throwable|null $previous = null)
     {
         $message = self::$messages[$code];
-        foreach ($data as $key => $content) {
-            $message = str_replace('{' . $key . '}', $content, $message);
+        $message = $this->interpolate($message, $data);
+        if ($previous) {
+            $message .= " ({$previous->getMessage()})";
         }
         parent::__construct($message, $code, $previous);
     }

@@ -15,19 +15,43 @@ composer require dmore/chrome-mink-driver
 
 ## Requirements
 
-* Google Chrome or Chromium running with remote debugging.
+* Google Chrome or Chromium running, with remote debugging enabled.
 
-Example:
+Via available images: [zenika/alpine-chrome](https://github.com/zenika/alpine-chrome), [chromedp/headless-shell](https://github.com/chromedp/docker-headless-shell), and more options out there ... refer to CI test setup for example usages.
 
-```bash
-google-chrome-stable --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
-```
-
-or headless (v59+):
+Or, headed Chrome:
 
 ```bash
-google-chrome-unstable --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
+google-chrome \
+  --disable-client-side-phishing-detection --disable-component-update --disable-default-apps \
+  --disable-features=PrivacySandboxSettings4,PrivacySandboxAdsAPIsOverride,PasswordLeakDetection \
+  --disable-popup-blocking --disable-prompt-on-repost --disable-search-engine-choice-screen --disable-sync \
+  --no-default-browser-check --no-first-run --password-store=basic \
+  --remote-allow-origins=* --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --use-mock-keychain
 ```
+
+Or, headless Chrome (v59+):
+
+```bash
+google-chrome --disable-gpu --headless \
+  --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --remote-allow-origins=*
+```
+
+Refer https://www.chrome-flags.com/ for a full list of flags!
+
+- `--remote-allow-origins=*` disables Chrome's WebSocket origin check (Chrome 111+), which otherwise rejects
+DevTools connections unless they originate from the same host - relevant whenever Chrome is reached from a
+different host/container than it's running on. This is separate from the older HTTP `Host` header check
+Chrome also applies to the `/json/*` endpoints; this driver already works around that one itself (see
+`HttpClient`).
+
+Headless Chrome doesn't render any UI, so Chrome's own first-run/onboarding dialogs (Privacy Sandbox "Ad
+privacy" consent, search engine choice, weak/leaked password warnings, ...) and its popup blocker aren't an
+issue there. When running with a visible window, however, these can open as extra windows or silently swallow
+`window.open()` calls, which confuses window/tab handling (including switching back to the main window) since
+the driver has no way to tell them apart from windows opened by the page under test. The remaining flags in
+the first example above suppress them; adjust the `--disable-features` list for your Chrome version if a
+particular dialog still appears.
 
 It is recommended to start Chrome with the `--disable-extensions` flag.
 
@@ -38,7 +62,7 @@ See https://gitlab.com/DMore/behat-chrome-skeleton for a fully working example.
 To manually test connectivity, you can use `curl` or similar and request the `json/version` endpoint:
 
 ```
-curl http://localhost:9222/json/version
+curl http://chrome:9222/json/version
 ```
 
 ## Contributing
@@ -62,37 +86,80 @@ The base test coverage is that from upstream `mink/driver-testsuite`, and valida
 functionality is correct per those expectations.
 
 Test execution requires a webserver configured to serve fixtures from
-[minkphp/driver-testsuite](https://github.com/minkphp/driver-testsuite/), which is provided by a docker image from the related
-[behat-chrome/docker-chrome-headless](https://gitlab.com/behat-chrome/docker-chrome-headless/) project.
+[minkphp/driver-testsuite](https://github.com/minkphp/driver-testsuite/), which the Docker Compose environment below
+provides via its `mink-fixtures` service.
+
+Additional tests and web fixtures are included in this project. These supplement tests from minkphp/driver-testsuite -
+if a test case applies to other drivers, it's encouraged to upstream tests there. Web fixtures are copied from this
+project into Mink driver-testsuite's fixtures directory before execution in Gitlab CI and `make copy-fixtures` here. See
+https://gitlab.com/behat-chrome/chrome-mink-driver/-/work_items/180 for details.
 
 Tests are executed on each merge request via Gitlab CI. New functionality or bugfixes should seek to expand
 test or at least maintain existing coverage.
 
-### Using `make` to execute commands in Docker
+### Development environment with Docker Compose
 
-| command | purpose |
-|--|--|
-| `make install` | Install dependencies with `composer` |
-| `make test` | Run tests with `phpunit` |
-| `make phpcbf` | Tidy code using `phpcbf` |
-| `make phpcs` | Check coding standards with `phpcs` |
+The following Make commands are available:
 
-### Docker environment to run commands
+| command               | purpose                                                      |
+|-----------------------|--------------------------------------------------------------|
+| `make up-zenika`      | Start the stack with Chrome using zenika/alpine-chrome       |
+| `make up-headless`    | Start the stack with Chrome using chromedp/headless-shell    |
+| `make shell`          | Open an interactive shell in the test runner                 |
+| `make install`        | Install dependencies with `composer`                         |
+| `make phpcbf`         | Tidy code using `phpcbf`                                     |
+| `make phpcs`          | Check coding standards with `phpcs`                          |
+| `make test`           | Run PHPUnit against whichever Chrome image is already up     |
+| `make test-zenika`    | Start the stack with zenika/alpine-chrome and run PHPUnit    |
+| `make test-headless`  | Start the stack with chromedp/headless-shell and run PHPUnit |
+| `make test-all`       | Run `test-zenika` and `test-headless`                        |
+| `make chrome-version` | Show the active Chrome version                               |
 
-To perform these tasks without `make`, you can execute the same commands as above in a container. To run the tests using `phpunit`:
-```text
-docker run --rm -it -v .:/code -e DOCROOT=/code/vendor/mink/driver-testsuite/web-fixtures registry.gitlab.com/behat-chrome/docker-chrome-headless bash
+You can also skip `make` and use Docker Compose directly. Bring up the environment in your preferred state, eg:
+
+```
+# defaults (zenika/alpine-chrome)
+docker compose up -d
+
+# with PHP v8.7
+PHP_VERSION=8.7 docker compose up -d
+
+# with chrome override to chromedp/headless-shell
+docker compose -f docker-compose.yml -f docker-compose.headless-shell.yml up -d
 ```
 
-then, in the container shell:
-```text
+Once the stack is up, you can use it directly for local testing rather than through `make`. There is a web
+fixtures host (`mink-fixtures`), a headless Chrome instance (`chrome`), and a `test-runner` service used for
+tests and interactive work.
+
+Open a shell to the test runner for interactive testing / iterating on a feature:
+
+```shell
+docker compose run --rm --no-deps test-runner
+# Then in the shell that opens (composer is already installed in the image):
 composer install
-vendor/bin/phpunit
+./vendor/bin/phpunit
 ```
 
-### Executing Gitlab CI pipeline locally
+To run the full suite of unit tests in one shot:
 
-You can also run the Gitlab CI pipeline in your local environment, using [firecow/gitlab-ci-local](https://github.com/firecow/gitlab-ci-local)!
+```shell
+docker compose run --rm --no-deps --entrypoint /workspace/vendor/bin/phpunit test-runner
+```
+
+To test on a different PHP version, specify the PHP_VERSION environment variable when starting the stack (you
+may need to reinstall dependencies):
+
+```shell
+PHP_VERSION=8.7 docker compose up -d
+PHP_VERSION=8.7 docker compose run --rm --no-deps --entrypoint /workspace/vendor/bin/phpunit test-runner
+```
+
+When you're done, tear the stack down:
+
+```shell
+docker compose down
+```
 
 ## Versioning & releases
 
@@ -161,6 +228,16 @@ Screenshots are supported using the Mink driver interface method `getScreenshot(
 
 To use this driver with [Behat](https://docs.behat.org/en/latest/), try [the `dmore/behat-chrome-extension` Behat extension](https://gitlab.com/behat-chrome/behat-chrome-extension).
 
-### Docker image
+### Containers and related projects
 
-A [Docker image](https://gitlab.com/behat-chrome/docker-chrome-headless) is used to execute tests against the targeted browser(s), and includes recent Chrome Stable, Chrome Beta and Chromium.
+For project tests, development and CI, there are a few containers used. PHP images with development components are built
+and pushed to the project's Gitlab Container Registry. These cover the various PHP versions which are tested in CI, and
+can be pulled to use for local development.
+
+This project also uses the following containers from external projects in development and CI:
+
+- [zenika/alpine-chrome](https://github.com/zenika/alpine-chrome)
+- [chromedp/headless-shell](https://github.com/chromedp/docker-headless-shell)
+
+The primary test suite applied is Mink's [driver-testsuite](https://github.com/minkphp/driver-testsuite/), extended with
+additional tests and fixtures from this project.

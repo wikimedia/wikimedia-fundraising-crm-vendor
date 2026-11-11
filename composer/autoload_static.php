@@ -18,6 +18,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         '0174385c3be07e86008907d06ee66531' => __DIR__ . '/..' . '/sabberworm/php-css-parser/src/Rule/Rule.php',
         '98aea6e41b9cb79b379b10f37ba1f0b7' => __DIR__ . '/..' . '/sabberworm/php-css-parser/src/RuleSet/RuleContainer.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        'deecf9d6b2672fb73429f9b28fdee35f' => __DIR__ . '/..' . '/symfony/polyfill-deepclone/bootstrap.php',
         '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '9e4824c5afbdc1482b6025ce3d4dfde8' => __DIR__ . '/..' . '/league/csv/src/functions_include.php',
@@ -81,6 +82,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
             'Symfony\\Polyfill\\Iconv\\' => 23,
+            'Symfony\\Polyfill\\DeepClone\\' => 27,
             'Symfony\\Polyfill\\Ctype\\' => 23,
             'Symfony\\Contracts\\Service\\' => 26,
             'Symfony\\Contracts\\EventDispatcher\\' => 34,
@@ -118,8 +120,12 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
             'Psr\\Cache\\' => 10,
             'Predis\\' => 7,
             'Pontedilana\\PhpWeasyPrint\\' => 26,
+            'Phrity\\Util\\Transformer\\' => 24,
+            'Phrity\\Util\\Interpolator\\' => 25,
             'Phrity\\Util\\' => 12,
             'Phrity\\Net\\' => 11,
+            'Phrity\\Http\\' => 12,
+            'Phrity\\Comparison\\' => 18,
             'PhpOffice\\PhpWord\\' => 18,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'PhpOffice\\Math\\' => 15,
@@ -132,6 +138,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             'Omnimail\\Silverpop\\' => 19,
             'Omnimail\\' => 9,
+        ),
+        'N' =>
+        array (
+            'Nyholm\\Psr7\\' => 12,
         ),
         'M' =>
         array (
@@ -255,7 +265,7 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         ),
         'WebSocket\\' =>
         array (
-            0 => __DIR__ . '/..' . '/phrity/websocket/lib',
+            0 => __DIR__ . '/..' . '/phrity/websocket/src',
         ),
         'TYPO3\\PharStreamWrapper\\' =>
         array (
@@ -296,6 +306,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Symfony\\Polyfill\\Iconv\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-iconv',
+        ),
+        'Symfony\\Polyfill\\DeepClone\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-deepclone',
         ),
         'Symfony\\Polyfill\\Ctype\\' =>
         array (
@@ -434,14 +448,31 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         array (
             0 => __DIR__ . '/..' . '/pontedilana/php-weasyprint/src',
         ),
+        'Phrity\\Util\\Transformer\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phrity/util-transformer/src',
+        ),
+        'Phrity\\Util\\Interpolator\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phrity/util-interpolator/src',
+        ),
         'Phrity\\Util\\' =>
         array (
             0 => __DIR__ . '/..' . '/phrity/util-errorhandler/src',
+            1 => __DIR__ . '/..' . '/phrity/util-accessor/src',
         ),
         'Phrity\\Net\\' =>
         array (
             0 => __DIR__ . '/..' . '/phrity/net-uri/src',
             1 => __DIR__ . '/..' . '/phrity/net-stream/src',
+        ),
+        'Phrity\\Http\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phrity/http/src',
+        ),
+        'Phrity\\Comparison\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phrity/comparison/src',
         ),
         'PhpOffice\\PhpWord\\' =>
         array (
@@ -479,6 +510,10 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'Omnimail\\' =>
         array (
             0 => __DIR__ . '/..' . '/omnimail/omnimail/src',
+        ),
+        'Nyholm\\Psr7\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/nyholm/psr7/src',
         ),
         'Monolog\\' =>
         array (
@@ -806,6 +841,8 @@ class ComposerStaticInite2cf40aa19aa951664a89bbe1f70489b
         'DateMalformedStringException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateMalformedStringException.php',
         'DateObjectError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateObjectError.php',
         'DateRangeError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateRangeError.php',
+        'DeepClone\\ClassNotFoundException' => __DIR__ . '/..' . '/symfony/polyfill-deepclone/Resources/stubs/ClassNotFoundException.php',
+        'DeepClone\\NotInstantiableException' => __DIR__ . '/..' . '/symfony/polyfill-deepclone/Resources/stubs/NotInstantiableException.php',
         'DelayedTargetValidation' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/DelayedTargetValidation.php',
         'Deprecated' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
         'Dompdf\\Cpdf' => __DIR__ . '/..' . '/dompdf/dompdf/lib/Cpdf.php',

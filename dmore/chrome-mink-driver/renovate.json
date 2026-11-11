@@ -8,7 +8,7 @@
   "baseBranchPatterns": [
     "main"
   ],
-  "branchPrefix": "deps/",
+  "branchPrefix": "renovate/",
   "extends": [
     "config:recommended",
     "group:symfony"
@@ -16,7 +16,16 @@
   "labels": [
     "dependencies"
   ],
+  "packageRules": [
+    {
+      "matchDepTypes": ["dependencies"],
+      "rangeStrategy": "widen"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "rangeStrategy": "bump"
+    }
+  ],
   "prConcurrentLimit": 1,
-  "rangeStrategy": "bump",
   "rebaseWhen": "auto"
 }

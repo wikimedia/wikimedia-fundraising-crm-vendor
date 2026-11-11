@@ -3,7 +3,7 @@
 namespace DMore\ChromeDriver;
 
 use Behat\Mink\Exception\DriverException;
-use WebSocket\ConnectionException;
+use WebSocket\Exception\ExceptionInterface;
 
 class ChromePage extends DevToolsConnection
 {
@@ -23,9 +23,18 @@ class ChromePage extends DevToolsConnection
     private $has_javascript_dialog = false;
 
     /**
-     * @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response
+     * @var string|null ID of the top-level frame.
+     *
+     * @see https://chromedevtools.github.io/devtools-protocol/#/Page.FrameId
      */
-    private $response = null;
+    private $main_frame_id;
+
+    /**
+     * @var array the top-level response.
+     *
+     * @see https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response
+     */
+    private $response;
 
     /**
      * @var array
@@ -35,7 +44,6 @@ class ChromePage extends DevToolsConnection
     /**
      * Connect and set up.
      *
-     * @param null $url
      * @throws \Exception
      */
     public function connect($url = null): void
@@ -44,8 +52,14 @@ class ChromePage extends DevToolsConnection
         $this->send('Page.enable');
         $this->send('DOM.enable');
         $this->send('Network.enable');
+        // @see https://gitlab.com/behat-chrome/chrome-mink-driver/-/merge_requests/253
+        $this->send('Fetch.enable', [
+            'handleAuthRequests' => true,
+            'patterns' => [['urlPattern' => '*', 'resourceType' => 'Document']],
+        ]);
         $this->send('Animation.setPlaybackRate', ['playbackRate' => 100000]);
         $this->send('Console.enable');
+        $this->main_frame_id = $this->send('Page.getFrameTree')['frameTree']['frame']['id'] ?? null;
     }
 
     /**
@@ -60,16 +74,14 @@ class ChromePage extends DevToolsConnection
      * Visit a new URL.
      *
      * @param $url
-     * @throws ConnectionException
+     * @throws ExceptionInterface
      * @throws DriverException
      */
     public function visit($url): void
     {
         if (count($this->pending_requests) > 0) {
             $this->waitFor(
-                function () {
-                    return count($this->pending_requests) == 0;
-                }
+                fn() => count($this->pending_requests) == 0
             );
         }
         $this->response = null;
@@ -84,6 +96,7 @@ class ChromePage extends DevToolsConnection
      */
     public function reload()
     {
+        $this->response = null;
         $this->page_ready = false;
         $this->send('Page.reload');
     }
@@ -98,11 +111,9 @@ class ChromePage extends DevToolsConnection
         if (!$this->page_ready) {
             try {
                 $this->waitFor(
-                    function () {
-                        return $this->page_ready;
-                    }
+                    fn() => $this->page_ready
                 );
-            } catch (ConnectionException $exception) {
+            } catch (ExceptionInterface) {
                 throw new DriverException("Page not loaded");
             }
         }
@@ -112,7 +123,7 @@ class ChromePage extends DevToolsConnection
      * Get the response.
      *
      * @return array|null
-     * @throws ConnectionException
+     * @throws ExceptionInterface
      * @throws DriverException
      */
     public function getResponse()
@@ -121,9 +132,6 @@ class ChromePage extends DevToolsConnection
         return $this->response;
     }
 
-    /**
-     * @return boolean
-     */
     public function hasJavascriptDialog(): bool
     {
         return $this->has_javascript_dialog;
@@ -132,8 +140,11 @@ class ChromePage extends DevToolsConnection
     /**
      * Get the browser's tabs.
      *
-     * @return array
+     * This method can return tabs outside of the driver's current browser
+     * context, and thus should not be relied upon.
+     *
      * @throws \Exception
+     * @deprecated Deprecated in favor of ChromeBrowser::getTabs().
      */
     public function getTabs(): array
     {
@@ -148,8 +159,6 @@ class ChromePage extends DevToolsConnection
 
     /**
      * Get all console messages since start or last clear.
-     *
-     * @return array
      */
     public function getConsoleMessages(): array
     {
@@ -167,7 +176,7 @@ class ChromePage extends DevToolsConnection
     /**
      * Wait for an HTTP response.
      *
-     * @throws ConnectionException
+     * @throws ExceptionInterface
      * @throws DriverException
      */
     private function waitForHttpResponse()
@@ -184,9 +193,7 @@ class ChromePage extends DevToolsConnection
             }
 
             $this->waitFor(
-                function () {
-                    return null !== $this->response && count($this->pending_requests) == 0;
-                }
+                fn() => null !== $this->response && count($this->pending_requests) == 0
             );
         }
     }
@@ -204,6 +211,15 @@ class ChromePage extends DevToolsConnection
                 case 'Page.javascriptDialogClosed':
                     $this->has_javascript_dialog = false;
                     break;
+                case 'Fetch.requestPaused':
+                    $this->sendWithoutWaiting('Fetch.continueRequest', ['requestId' => $data['params']['requestId']]);
+                    break;
+                case 'Fetch.authRequired':
+                    $this->sendWithoutWaiting('Fetch.continueWithAuth', [
+                        'requestId' => $data['params']['requestId'],
+                        'authChallengeResponse' => ['response' => 'CancelAuth'],
+                    ]);
+                    break;
                 case 'Network.requestWillBeSent':
                     if ($data['params']['type'] == 'Document') {
                         $this->pending_requests[$data['params']['requestId']] = true;
@@ -212,7 +228,10 @@ class ChromePage extends DevToolsConnection
                 case 'Network.responseReceived':
                     if ($data['params']['type'] == 'Document') {
                         unset($this->pending_requests[$data['params']['requestId']]);
-                        $this->response = $data['params']['response'];
+                        $frame_id = $data['params']['frameId'] ?? null;
+                        if ($this->main_frame_id === null || $frame_id === $this->main_frame_id) {
+                            $this->response = $data['params']['response'];
+                        }
                     }
                     break;
                 case 'Network.loadingFailed':
@@ -220,7 +239,6 @@ class ChromePage extends DevToolsConnection
                         unset($this->pending_requests[$data['params']['requestId']]);
                     }
                     break;
-                case 'Page.frameNavigated':
                 case 'Page.loadEventFired':
                 case 'Page.frameStartedLoading':
                     $this->page_ready = false;

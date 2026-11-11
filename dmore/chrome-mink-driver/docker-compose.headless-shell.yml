@@ -1,0 +1,31 @@
+# Overrides `chrome` service to use chromedp/headless-shell instead of the default zenika/alpine-chrome.
+# Use with `make test-headless`, or directly:
+#   docker compose -f docker-compose.yml -f docker-compose.headless-shell.yml run --rm test-runner
+services:
+
+  chrome:
+    image: chromedp/headless-shell:latest
+    # headless-shell's entrypoint already runs the headless binary with --no-sandbox and swiftshader, and
+    # listens on 9222 (forwarded to the browser on 9223). Passing the flags the zenika service needs would
+    # make the browser bind 9222 itself and collide with that forwarding, so the command is cleared.
+    command: []
+    volumes:
+      # Needs to have the workspace mounted for file upload tests (the attachFile command sends Chrome the path
+      # to a *local* file to attach to the file input). It is important that the path on the Chrome container
+      # exactly matches the path in the test runner container.
+      - .:/workspace
+    healthcheck:
+      # The image has no wget or curl, so the request is made over one of bash's /dev/tcp sockets. Chrome
+      # rejects requests whose Host header is neither localhost nor an IP, hence the explicit header. It also
+      # rejects HTTP/1.0 requests outright, so HTTP/1.1 is used even though the connection isn't kept open.
+      test: >-
+        bash -c 'exec 3<>/dev/tcp/127.0.0.1/9222
+        && printf "GET /json/version HTTP/1.1\r\nHost: localhost\r\n\r\n" >&3
+        && head -n 1 <&3 | grep -q " 200 "' || exit 1
+      timeout: 1s
+      start_period: 60s
+      start_interval: 1s
+      # There is limited value in continuing to run the healthcheck once the service is running, so we set
+      # interval high to effectively disable it.
+      interval: 1h
+      retries: 1

@@ -7,12 +7,12 @@ use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\ElementNotFoundException;
 use Behat\Mink\KeyModifier;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use WebSocket\ConnectionException;
+use WebSocket\Exception\ExceptionInterface;
 
 class ChromeDriver extends CoreDriver
 {
     /**
-     * @var ChromeBrowser
+     * @var ChromeBrowser|null Created when driver started.
      */
     private $browser;
 
@@ -25,11 +25,6 @@ class ChromeDriver extends CoreDriver
      * @var bool Is driver started.
      */
     private $is_started = false;
-
-    /**
-     * @var string
-     */
-    private $api_url;
 
     /**
      * @var string
@@ -95,12 +90,14 @@ class ChromeDriver extends CoreDriver
      * ChromeDriver constructor.
      *
      * @param string $api_url
-     * @param HttpClient $http_client
-     * @param string $base_url
+     * @param HttpClient|null $http_client
+     * @param string|null $base_url
      * @param array $options
+     *
+     * @throws \InvalidArgumentException If base_url is empty
      */
     public function __construct(
-        $api_url = 'http://localhost:9222',
+        private $api_url = 'http://localhost:9222',
         ?HttpClient $http_client = null,
         $base_url = null,
         $options = []
@@ -112,21 +109,55 @@ class ChromeDriver extends CoreDriver
             $http_client = new HttpClient();
         }
         $this->http_client = $http_client;
-        $this->api_url = $api_url;
-        $this->ws_url = str_replace('http', 'ws', $api_url);
         $this->base_url = $base_url;
-        $this->browser = new ChromeBrowser(
-            $this->ws_url . '/devtools/browser',
-            $options['socketTimeout'] ?? self::$socketTimeoutDefault
-        );
-        $this->browser->setHttpClient($http_client);
-        $this->browser->setHttpUri($api_url);
         $this->domWaitTimeout = $options['domWaitTimeout'] ?? self::$domWaitTimeoutDefault;
         $this->options = $options;
     }
 
+    /**
+     * Resolve the browser's WebSocket URL and create the browser connection.
+     *
+     * Deferred until ::start() to not require a running Chrome unless suite
+     * actually uses it.
+     *
+     * @throws \RuntimeException If Chrome version URL fetch fails
+     */
+    private function createBrowser(): ChromeBrowser
+    {
+        // Get ws_url from chrome version response.
+        $version_url = $this->api_url . '/json/version';
+        $version = $this->http_client->get($version_url);
+        if ($version) {
+            $version = json_decode($version);
+            $this->ws_url = $version->webSocketDebuggerUrl;
+        } else {
+            throw new \RuntimeException(
+                sprintf(
+                    "Could not fetch version information from %s. Check if Chrome is running. " .
+                    "See docs/troubleshooting.md if Chrome crashed unexpectedly." . PHP_EOL .
+                    "Response was: %s",
+                    $version_url,
+                    $version
+                )
+            );
+        }
+
+        $browser = new ChromeBrowser(
+            $this->ws_url,
+            $this->options['socketTimeout'] ?? self::$socketTimeoutDefault
+        );
+        $browser->setHttpClient($this->http_client);
+        $browser->setHttpUri($this->api_url);
+
+        return $browser;
+    }
+
+    /**
+     * @throws \RuntimeException If Chrome version URL fetch fails
+     */
     public function start()
     {
+        $this->browser = $this->createBrowser();
         $this->browser->connect();
         $this->main_window = $this->browser->start();
         $this->connectToWindow($this->main_window);
@@ -152,7 +183,7 @@ class ChromeDriver extends CoreDriver
     /**
      * Flag for whether driver is started.
      *
-     * @return Boolean
+     * @return bool
      */
     public function isStarted()
     {
@@ -180,9 +211,6 @@ class ChromeDriver extends CoreDriver
      * Calling stop on a stopped driver is an undefined behavior. Driver
      * implementations are free to handle it silently or to fail with an
      * exception.
-     *
-     * @throws \Behat\Mink\Exception\DriverException
-     *   When the driver cannot be closed
      */
     public function stop()
     {
@@ -191,9 +219,8 @@ class ChromeDriver extends CoreDriver
             if ($this->page) {
                 $this->page->close();
             }
-            $this->browser->close();
-        } catch (ConnectionException $exception) {
-        } catch (DriverException $exception) {
+            $this->browser?->close();
+        } catch (ExceptionInterface | DriverException) {
         }
 
         $this->is_started = false;
@@ -225,18 +252,25 @@ class ChromeDriver extends CoreDriver
     {
         $this->ensureStarted();
         $this->document = 'document';
-        $this->deleteAllCookies();
-        $this->closeWindows(
-            array_filter(
-                $this->getWindowNames(),
-                fn ($window_id) => $window_id !== $this->main_window
-            )
-        );
-        $this->switchToWindow($this->main_window);
-        $this->page->reset();
-        if ($this->request_headers !== []) {
-            $this->request_headers = [];
-            $this->sendRequestHeaders();
+
+        // If we've hit a connection exception already, do not throw a new
+        // handshake exception trying to delete cookies etc.
+        try {
+            $this->deleteAllCookies();
+            $this->closeWindows(
+                array_filter(
+                    $this->getWindowNames(),
+                    fn ($window_id) => $window_id !== $this->main_window
+                )
+            );
+            $this->switchToWindow($this->main_window);
+            $this->page->reset();
+            if ($this->request_headers !== []) {
+                $this->request_headers = [];
+                $this->sendRequestHeaders();
+            }
+        // Ignore teardown failures
+        } catch (ExceptionInterface) {
         }
     }
 
@@ -380,7 +414,7 @@ class ChromeDriver extends CoreDriver
         if (null === $name) {
             $this->connectToWindow($this->main_window);
         } else {
-            foreach ($this->page->getTabs() as $tab) {
+            foreach ($this->browser->getTabs() as $tab) {
                 if ($tab['targetId'] == $name || $tab['title'] == $name) {
                     $this->connectToWindow($tab['targetId']);
                     return;
@@ -527,7 +561,7 @@ JS;
     {
         try {
             return $this->getHtml('//html');
-        } catch (ElementNotFoundException $e) {
+        } catch (ElementNotFoundException) {
             return '';
         }
     }
@@ -575,7 +609,7 @@ JS;
     public function getWindowNames()
     {
         $names = [];
-        $tabs = (array)$this->page->getTabs();
+        $tabs = (array)$this->browser->getTabs();
         foreach ($tabs as $tab) {
             $names[] = $tab['targetId'];
         }
@@ -677,8 +711,7 @@ JS;
     public function getText($xpath)
     {
         $text = $this->getElementProperty($xpath, 'innerText');
-        $text = trim(preg_replace('/\s+/u', ' ', $text), ' ');
-        return $text;
+        return trim(preg_replace('/\s+/u', ' ', $text), ' ');
     }
 
     /**
@@ -749,7 +782,6 @@ JS;
 
     /**
      * @param $xpath
-     * @return bool
      * @throws ElementNotFoundException
      */
     protected function isTextTypeInput($xpath): bool
@@ -846,7 +878,7 @@ JS;
             // the triggering of the change event for that element and/or we assume that clientside code that focused
             // an alternate element has taken responsibility for triggering events on input / change.
             $this->runScriptOnXpathElement($xpath, 'if (element === document.activeElement) {element.blur();}');
-        } catch (ElementNotFoundException $e) {
+        } catch (ElementNotFoundException) {
             // Ignore, sometimes input elements can get removed from a document after they are modified.
             // For example, editing a title inline and sending a newline character at the end
             // which submits the inline edit and saves the changes.
@@ -892,6 +924,7 @@ JS;
     var expected_value = $json_value;
     var result = 0;
     var trigger_change = true;
+    var change_element = element;
     var last_value = element.value;
     element.scrollIntoViewIfNeeded();
     element.focus();
@@ -905,6 +938,7 @@ JS;
                 if (field.value == expected_value) {
                     field.checked = true;
                     field.click();
+                    change_element = field;
                 } else {
                     field.checked = false;
                 }
@@ -932,21 +966,21 @@ JS;
         element.value = expected_value
     }
     if (trigger_change) {
-        var event = new Event("change", { target: element, bubbles: true });
+        var event = new Event("change", { bubbles: true });
         // React 15
         event.simulated = true;
         // React 16
-        var tracker = element._valueTracker;
+        var tracker = change_element._valueTracker;
         if (tracker) {
             tracker.setValue(last_value);
         }
-        element.dispatchEvent(event);
+        change_element.dispatchEvent(event);
     }
     element.blur();
     null
 JS;
 
-        $result = $this->runScriptOnXpathElement($xpath, $expression);
+        $this->runScriptOnXpathElement($xpath, $expression);
     }
 
     /**
@@ -1023,7 +1057,7 @@ JS;
             $result = $this->runScriptOnXpathElement($xpath, $script);
 
             if ($result !== null) {
-                list($left, $top) = $result;
+                [$left, $top] = $result;
                 $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
                 $parameters = [
@@ -1068,8 +1102,6 @@ JS;
 JS;
 
         $name = $this->runScriptOnXpathElement($xpath, $script, 'file input');
-
-        $node_id = null;
         $parameters = [
             'pierce' => $this->document !== 'document',
         ];
@@ -1144,7 +1176,7 @@ JS;
     public function mouseOver($xpath)
     {
         $this->runScriptOnXpathElement($xpath, 'element.scrollIntoViewIfNeeded()');
-        list($left, $top) = $this->getCoordinatesForXpath($xpath);
+        [$left, $top] = $this->getCoordinatesForXpath($xpath);
         $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
     }
 
@@ -1193,12 +1225,12 @@ JS;
      */
     public function dragTo($sourceXpath, $destinationXpath)
     {
-        list($left, $top) = $this->getCoordinatesForXpath($sourceXpath);
+        [$left, $top] = $this->getCoordinatesForXpath($sourceXpath);
         $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
         $parameters = ['type' => 'mousePressed', 'x' => $left + 1, 'y' => $top + 1, 'button' => 'left'];
         $this->page->send('Input.dispatchMouseEvent', $parameters);
 
-        list($left, $top) = $this->getCoordinatesForXpath($destinationXpath);
+        [$left, $top] = $this->getCoordinatesForXpath($destinationXpath);
         $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
         $parameters = ['type' => 'mouseReleased', 'x' => $left + 1, 'y' => $top + 1, 'button' => 'left'];
         $this->page->send('Input.dispatchMouseEvent', $parameters);
@@ -1217,9 +1249,9 @@ JS;
      */
     public function evaluateScript($script)
     {
-        if (substr($script, 0, 8) === 'function') {
+        if (str_starts_with($script, 'function')) {
             $script = '(' . $script . ')';
-            if (substr($script, -2) == ';)') {
+            if (str_ends_with($script, ';)')) {
                 $script = substr($script, 0, -2) . ')';
             }
         }
@@ -1227,7 +1259,7 @@ JS;
         $result = $this->runScript($script)['result'];
 
         if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
-            if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
+            if ($result['className'] === 'SyntaxError' && str_contains($result['description'], 'Illegal return')) {
                 return $this->evaluateScript('(function() {' . $script . '}());');
             }
             if (preg_match('/Cannot read property .document. of null/', $result['description']) === 1) {
@@ -1317,7 +1349,7 @@ JS;
     public function maximizeWindow($name = null)
     {
         if (true === $this->browser->isHeadless()) {
-            list($width, $height) = $this->evaluateScript('[screen.width, screen.height]');
+            [$width, $height] = $this->evaluateScript('[screen.width, screen.height]');
             $this->setVisibleSize($width, $height);
         } else {
             $this->page->send('Browser.setWindowBounds', ['windowId' => 1, 'bounds' => ['windowState' => 'maximized']]);
@@ -1462,54 +1494,28 @@ JS;
      */
     protected function getKeycodeKeyValue(int $keycode)
     {
-        switch ($keycode) {
-            case 8:
-                return 'Backspace';
-            case 9:
-                return 'Tab';
-            case 13:
-                return 'Enter';
-            case 16:
-            case 160:
-            case 161:
-                return 'Shift';
-            case 17:
-            case 162:
-            case 163:
-                return 'Control';
-            case 18:
-            case 164:
-            case 165:
-                return 'Alt';
-            case 19:
-                return 'Pause';
-            case 20:
-                return 'CapsLock';
-            case 27:
-                return 'Escape';
-            case 35:
-                return 'End';
-            case 36:
-                return 'Home';
-            case 37:
-                return 'ArrowLeft';
-            case 38:
-                return 'ArrowUp';
-            case 39:
-                return 'ArrowRight';
-            case 40:
-                return 'ArrowDown';
-            case 45:
-                return 'Insert';
-            case 46:
-                return 'Delete';
-            case 33:
-                return 'PageUp';
-            case 34:
-                return 'PageDown';
-            default:
-                return null;
-        }
+        return match ($keycode) {
+            8 => 'Backspace',
+            9 => 'Tab',
+            13 => 'Enter',
+            16, 160, 161 => 'Shift',
+            17, 162, 163 => 'Control',
+            18, 164, 165 => 'Alt',
+            19 => 'Pause',
+            20 => 'CapsLock',
+            27 => 'Escape',
+            35 => 'End',
+            36 => 'Home',
+            37 => 'ArrowLeft',
+            38 => 'ArrowUp',
+            39 => 'ArrowRight',
+            40 => 'ArrowDown',
+            45 => 'Insert',
+            46 => 'Delete',
+            33 => 'PageUp',
+            34 => 'PageDown',
+            default => null,
+        };
     }
 
     /**
@@ -1588,9 +1594,9 @@ JS;
     }
 
     /**
-     * @param  $xpath
-     * @param  $script
-     * @param null $type
+     * @param string $xpath
+     * @param string $script
+     * @param string|null $type
      * @return array
      * @throws \Behat\Mink\Exception\ElementNotFoundException
      * @throws \Exception
@@ -1608,7 +1614,7 @@ JS;
         try {
             $result = $this->evaluateScript($expression);
         } catch (\Exception $exception) {
-            if (strpos($exception->getMessage(), 'Element not found') !== false) {
+            if (str_contains($exception->getMessage(), 'Element not found')) {
                 throw new ElementNotFoundException($this, $type, 'xpath', $xpath);
             }
             throw $exception;
@@ -1618,7 +1624,7 @@ JS;
 
     /**
      * @param  $xpath
-     * @return array
+     * @return array<int, float>
      */
     protected function getCoordinatesForXpath($xpath)
     {
@@ -1629,7 +1635,7 @@ JS;
     [rect.left, rect.top, rect.width, rect.height]
 JS;
 
-        list($left, $top, $width, $height) = $this->evaluateScript($expression);
+        [$left, $top, $width, $height] = $this->evaluateScript($expression);
         return [ceil($left), ceil($top), floor($width), floor($height)];
     }
 
@@ -1671,7 +1677,6 @@ JS;
 
     /**
      * @param  $script
-     * @return null
      */
     protected function runScript($script)
     {
@@ -1728,12 +1733,14 @@ JS;
         if ($window_id === $this->current_window) {
             return;
         }
-
-        $debuggerUrl = null;
         $windows = json_decode($this->http_client->get($this->api_url . '/json/list'), true);
 
         foreach ($windows as $window) {
             if ($window['id'] == $window_id) {
+                try {
+                    $this->page?->close();
+                } catch (ExceptionInterface | DriverException) {
+                }
                 $this->page = new ChromePage(
                     $window['webSocketDebuggerUrl'],
                     $this->options['socketTimeout'] ?? self::$socketTimeoutDefault
