@@ -424,15 +424,8 @@ class SentinelReplication extends AbstractAggregateConnection implements Replica
         $slaves = [];
 
         $payload = $sentinel->executeCommand(
-            RawCommand::create('SENTINEL', 'replicas', $service)
+            RawCommand::create('SENTINEL', 'slaves', $service)
         );
-
-        // NOTE: SENTINEL REPLICAS is available since Redis 5.0, older sentinels only know SENTINEL SLAVES.
-        if ($payload instanceof ErrorResponseInterface && stripos($payload->getMessage(), 'unknown sentinel subcommand') !== false) {
-            $payload = $sentinel->executeCommand(
-                RawCommand::create('SENTINEL', 'slaves', $service)
-            );
-        }
 
         if ($payload instanceof ErrorResponseInterface) {
             $this->handleSentinelErrorResponse($sentinel, $payload);
@@ -850,13 +843,5 @@ class SentinelReplication extends AbstractAggregateConnection implements Replica
         }
 
         return null;
-    }
-
-    /**
-     * @return string
-     */
-    public function __toString()
-    {
-        return implode(',', array_keys($this->pool));
     }
 }

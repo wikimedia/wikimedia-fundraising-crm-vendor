@@ -29,7 +29,6 @@ use Predis\Connection\FactoryInterface;
 use Predis\Connection\NodeConnectionInterface;
 use Predis\Connection\ParametersInterface;
 use Predis\Connection\RelayFactory;
-use Predis\Connection\Resource\Exception\StreamInitException;
 use Predis\NotSupportedException;
 use Predis\Response\Error as ErrorResponse;
 use Predis\Response\ErrorInterface as ErrorResponseInterface;
@@ -77,11 +76,6 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
     private $retryInterval = 10;
 
     /**
-     * @var int|string|null
-     */
-    private $database;
-
-    /**
      * @var int
      */
     private $readTimeout = 1000;
@@ -104,7 +98,6 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
     ) {
         $this->connections = $connections;
         $this->connectionParameters = $parameters;
-        $this->database = $parameters->database;
         $this->strategy = $strategy ?: new RedisClusterStrategy();
         $this->slotmap = new SlotMap();
 
@@ -186,10 +179,6 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
      */
     public function add(NodeConnectionInterface $connection)
     {
-        if (!$this->pool) {
-            $this->database = $connection->getParameters()->database;
-        }
-
         $this->pool[(string) $connection] = $connection;
         $this->slotmap->reset();
     }
@@ -278,7 +267,8 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
         // Backward-compatible hardcoded retry
         $retry = new Retry(
             new ExponentialBackoff($this->retryInterval * 1000, -1),
-            $this->retryLimit
+            $this->retryLimit,
+            [ConnectionException::class]
         );
 
         $command = RawCommand::create('CLUSTER', 'SLOTS');
@@ -287,17 +277,14 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
             return $connection->executeCommand($command);
         };
 
-        $failCallback = function (Throwable $exception) use (&$connection) {
-            if ($exception instanceof ConnectionException) {
-                $connection = $exception->getConnection();
-            }
-
+        $failCallback = function (ConnectionException $exception) use (&$connection) {
+            $connection = $exception->getConnection();
             $connection->disconnect();
 
             $this->remove($connection);
 
             if (!$connection = $this->getRandomConnection()) {
-                throw $exception;
+                throw new ClientException('No connections left in the pool for `CLUSTER SLOTS`');
             }
         };
 
@@ -378,7 +365,6 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
         return $this->connections->create([
             'host' => substr($connectionID, 0, $separator),
             'port' => substr($connectionID, $separator + 1),
-            'database' => $this->database,
         ]);
     }
 
@@ -509,40 +495,12 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
     protected function onReadOnlyResponse(CommandInterface $command)
     {
         if ($this->useClusterSlots) {
-            $this->applyReadOnlyResponse($this->getConnectionByCommand($command));
-        }
-
-        return $this->executeCommand($command);
-    }
-
-    /**
-     * Disconnects a node that answered with -READONLY and refreshes the slots
-     * map, without executing again the command that generated the response.
-     *
-     * @param NodeConnectionInterface $connection Connection to the node.
-     */
-    public function applyReadOnlyResponse(NodeConnectionInterface $connection): void
-    {
-        if ($this->useClusterSlots) {
+            $connection = $this->getConnectionByCommand($command);
             $connection->disconnect();
             $this->askSlotMap();
         }
-    }
 
-    /**
-     * Evicts a node that could not be reached and refreshes the slots map,
-     * without executing again the command that failed.
-     *
-     * @param NodeConnectionInterface $connection Connection to the node.
-     */
-    public function applyNodeFailure(NodeConnectionInterface $connection): void
-    {
-        $connection->disconnect();
-        $this->remove($connection);
-
-        if ($this->useClusterSlots) {
-            $this->askSlotMap();
-        }
+        return $this->executeCommand($command);
     }
 
     /**
@@ -555,19 +513,6 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
      * @return mixed
      */
     protected function onMovedResponse(CommandInterface $command, $details)
-    {
-        $this->applyMovedResponse($details);
-
-        return $this->executeCommand($command);
-    }
-
-    /**
-     * Associates a slot to the node indicated by a -MOVED response, without
-     * executing again the command that generated it.
-     *
-     * @param string $details Parameters of the -MOVED response.
-     */
-    public function applyMovedResponse(string $details): void
     {
         [$slot, $connectionID] = explode(' ', $details, 2);
 
@@ -588,6 +533,8 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
         }
 
         $this->move($connection, $slot);
+
+        return $this->executeCommand($command);
     }
 
     /**
@@ -831,10 +778,6 @@ class RedisCluster extends AbstractAggregateConnection implements ClusterInterfa
             if ($this->useClusterSlots) {
                 $this->askSlotMap();
             }
-        }
-
-        if ($exception instanceof StreamInitException && $this->useClusterSlots) {
-            $this->askSlotMap();
         }
 
         if ($exception instanceof TimeoutException) {

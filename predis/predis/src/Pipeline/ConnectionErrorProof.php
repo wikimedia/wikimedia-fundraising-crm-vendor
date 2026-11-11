@@ -73,7 +73,7 @@ class ConnectionErrorProof extends Pipeline
             try {
                 $responses[$i] = $connection->readResponse($command);
             } catch (CommunicationException $exception) {
-                $add = $sizeOfPipe - count($responses);
+                $add = count($commands) - count($responses);
                 $responses = array_merge($responses, array_fill(0, $add, $exception));
 
                 break;
@@ -101,10 +101,10 @@ class ConnectionErrorProof extends Pipeline
             $command = $commands->dequeue();
 
             $cmdConnection = $connection->getConnectionByCommand($command);
-            $connectionId = spl_object_id($cmdConnection);
+            $connectionHash = spl_object_hash($cmdConnection);
 
-            if (isset($exceptions[$connectionId])) {
-                $responses[$i] = $exceptions[$connectionId];
+            if (isset($exceptions[$connectionHash])) {
+                $responses[$i] = $exceptions[$connectionHash];
                 continue;
             }
 
@@ -112,7 +112,7 @@ class ConnectionErrorProof extends Pipeline
                 $responses[$i] = $cmdConnection->readResponse($command);
             } catch (CommunicationException $exception) {
                 $responses[$i] = $exception;
-                $exceptions[$connectionId] = $exception;
+                $exceptions[$connectionHash] = $exception;
             }
         }
 

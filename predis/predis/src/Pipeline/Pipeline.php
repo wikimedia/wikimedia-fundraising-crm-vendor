@@ -12,6 +12,7 @@
 
 namespace Predis\Pipeline;
 
+use Exception;
 use InvalidArgumentException;
 use Predis\ClientContextInterface;
 use Predis\ClientException;
@@ -307,22 +308,7 @@ class Pipeline implements ClientContextInterface
     public function flushPipeline($send = true)
     {
         if ($send && !$this->pipeline->isEmpty()) {
-            $connection = $this->getConnection();
-
-            try {
-                $responses = $this->executePipeline($connection, $this->pipeline);
-            } catch (Throwable $exception) {
-                $this->pipeline = new SplQueue();
-
-                try {
-                    if ($connection->isConnected()) {
-                        $connection->disconnect();
-                    }
-                } finally {
-                    throw $exception;
-                }
-            }
-
+            $responses = $this->executePipeline($this->getConnection(), $this->pipeline);
             $this->responses = array_merge($this->responses, $responses);
         } else {
             $this->pipeline = new SplQueue();
@@ -353,7 +339,7 @@ class Pipeline implements ClientContextInterface
      * @param mixed $callable Optional callback for execution.
      *
      * @return array
-     * @throws Throwable
+     * @throws Exception
      * @throws InvalidArgumentException
      */
     public function execute($callable = null)
@@ -362,6 +348,7 @@ class Pipeline implements ClientContextInterface
             throw new InvalidArgumentException('The argument must be a callable object.');
         }
 
+        $exception = null;
         $this->setRunning(true);
 
         try {
@@ -370,12 +357,14 @@ class Pipeline implements ClientContextInterface
             }
 
             $this->flushPipeline();
-        } catch (Throwable $exception) {
-            $this->pipeline = new SplQueue();
+        } catch (Exception $exception) {
+            // NOOP
+        }
 
+        $this->setRunning(false);
+
+        if ($exception) {
             throw $exception;
-        } finally {
-            $this->setRunning(false);
         }
 
         return $this->responses;
