@@ -579,17 +579,17 @@
         },
         {
             "name": "coderkungfu/php-queue",
-            "version": "1.0.3",
-            "version_normalized": "1.0.3.0",
+            "version": "1.0.5",
+            "version_normalized": "1.0.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/CoderKungfu/php-queue.git",
-                "reference": "773763fe78d1193cc890735d4892a8dfa5fe6f8f"
+                "reference": "947bdee0687820012b8b08ccacdcc7e261cdbd51"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CoderKungfu/php-queue/zipball/773763fe78d1193cc890735d4892a8dfa5fe6f8f",
-                "reference": "773763fe78d1193cc890735d4892a8dfa5fe6f8f",
+                "url": "https://api.github.com/repos/CoderKungfu/php-queue/zipball/947bdee0687820012b8b08ccacdcc7e261cdbd51",
+                "reference": "947bdee0687820012b8b08ccacdcc7e261cdbd51",
                 "shasum": ""
             },
             "require": {
@@ -617,7 +617,7 @@
                 "pecl-mongodb": "For MongoDB backend support",
                 "predis/predis": "For Redis backend support"
             },
-            "time": "2026-05-06T15:01:50+00:00",
+            "time": "2026-11-12T15:21:34+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -648,7 +648,7 @@
             ],
             "support": {
                 "issues": "https://github.com/CoderKungfu/php-queue/issues",
-                "source": "https://github.com/CoderKungfu/php-queue/tree/1.0.3"
+                "source": "https://github.com/CoderKungfu/php-queue/tree/1.0.5"
             },
             "install-path": "../coderkungfu/php-queue"
         },
@@ -5892,17 +5892,17 @@
         },
         {
             "name": "predis/predis",
-            "version": "v3.6.1",
-            "version_normalized": "3.6.1.0",
+            "version": "v3.7.1",
+            "version_normalized": "3.7.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/predis/predis.git",
-                "reference": "e2db96312ecf57a01a3477bf192d1ebc0ad7e9fb"
+                "reference": "2496e6d91ba4e137b47a6b802dc7e088ebf31df4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/predis/predis/zipball/e2db96312ecf57a01a3477bf192d1ebc0ad7e9fb",
-                "reference": "e2db96312ecf57a01a3477bf192d1ebc0ad7e9fb",
+                "url": "https://api.github.com/repos/predis/predis/zipball/2496e6d91ba4e137b47a6b802dc7e088ebf31df4",
+                "reference": "2496e6d91ba4e137b47a6b802dc7e088ebf31df4",
                 "shasum": ""
             },
             "require": {
@@ -5918,8 +5918,7 @@
             "suggest": {
                 "ext-relay": "Faster connection with in-memory caching (>=0.6.2)"
             },
-            "time": "2026-09-17T20:41:00+00:00",
-            "published-time": "2026-09-17T20:42:59+00:00",
+            "time": "2026-11-03T17:55:20+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5947,7 +5946,7 @@
             ],
             "support": {
                 "issues": "https://github.com/predis/predis/issues",
-                "source": "https://github.com/predis/predis/tree/v3.6.1"
+                "source": "https://github.com/predis/predis/tree/v3.7.1"
             },
             "funding": [
                 {
@@ -8722,23 +8721,23 @@
         },
         {
             "name": "symfony/process",
-            "version": "v8.1.10",
-            "version_normalized": "8.1.10.0",
+            "version": "v7.4.22",
+            "version_normalized": "7.4.22.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/process.git",
-                "reference": "08aa69fa0998bb65a089f9e148a2c0f8b391398e"
+                "reference": "a5a6912edbbfc4c98cd080bc4bbe37c8e7eeb20a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/process/zipball/08aa69fa0998bb65a089f9e148a2c0f8b391398e",
-                "reference": "08aa69fa0998bb65a089f9e148a2c0f8b391398e",
+                "url": "https://api.github.com/repos/symfony/process/zipball/a5a6912edbbfc4c98cd080bc4bbe37c8e7eeb20a",
+                "reference": "a5a6912edbbfc4c98cd080bc4bbe37c8e7eeb20a",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.4.1"
+                "php": ">=8.2"
             },
-            "time": "2026-10-25T14:40:25+00:00",
+            "time": "2026-10-25T14:40:16+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -8766,7 +8765,7 @@
             "description": "Executes commands in sub-processes",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/process/tree/v8.1.10"
+                "source": "https://github.com/symfony/process/tree/v7.4.22"
             },
             "funding": [
                 {
@@ -9702,7 +9701,6 @@
                 "phpunit/phpunit": "^9"
             },
             "time": "2026-11-11T03:11:15+00:00",
-            "published-time": "2026-11-11T05:26:01+00:00",
             "type": "library",
             "installation-source": "source",
             "autoload": {
