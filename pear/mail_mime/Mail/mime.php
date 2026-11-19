@@ -1532,9 +1532,6 @@ class Mail_mime
             $this->{$type} .= $data;
         }
 
-        // wordwrap the txtbody to be 750 characters to comply with RFC 2821
-        // CRM-3133
-        $this->{$type} = wordwrap($this->{$type}, 750);
         return true;
     }
 
@@ -1576,7 +1573,7 @@ class Mail_mime
     public static function isError($data)
     {
         // PEAR::isError() is not PHP 5.4 compatible (see Bug #19473)
-        if (is_a($data, 'PEAR_Error')) {
+        if ($data instanceof PEAR_Error) {
             return true;
         }
 

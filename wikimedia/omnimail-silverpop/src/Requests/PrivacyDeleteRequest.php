@@ -114,7 +114,7 @@ class PrivacyDeleteRequest extends SilverpopBaseRequest
      */
     public function getDefaultParameters() {
         return array(
-            'endpoint' => 'https://api4.ibmmarketingcloud.com',
+            'endpoint' => 'https://api-campaign-us-4.goacoustic.com',
         );
     }
 
